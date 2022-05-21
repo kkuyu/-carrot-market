@@ -23,7 +23,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 **#3 SETUP**
 
 - [x] 3.0 NextJS Setup
-- [ ] 3.1 TailwindCSS Setup
+- [x] 3.1 TailwindCSS Setup
 
 **#4 TOUR OF TAILWIND**
 
