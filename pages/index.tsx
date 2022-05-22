@@ -2,9 +2,9 @@ import type { NextPage } from "next";
 
 const Home: NextPage = () => {
   return (
-    <div className="grid gap-10 px-20 py-20 bg-slate-400">
+    <div className="min-h-screen grid gap-10 px-20 py-20 bg-slate-400">
       <div className="p-6 bg-white rounded-3xl shadow-xl">
-        <strong className="block font-semibold text-3xl">Select Item</strong>
+        <strong className="block font-semibold text-2xl">Select Item</strong>
         <div className="mt-4">
           <div className="flex justify-between">
             <strong className="font-normal text-gray-500">Grey Chair</strong>
@@ -22,7 +22,7 @@ const Home: NextPage = () => {
           </div>
         </div>
         <div className="mt-6">
-          <button className="mx-auto block w-1/2 text-center text-white p-2 bg-blue-500 rounded-xl">Checkout</button>
+          <button className="mx-auto block w-3/4 text-center text-white p-2 bg-blue-500 rounded-xl">Checkout</button>
         </div>
       </div>
       <div className="bg-white overflow-hidden rounded-3xl shadow-xl">
@@ -32,23 +32,51 @@ const Home: NextPage = () => {
         <div className="relative -top-5 p-6 bg-white rounded-3xl">
           <div className="relative -top-16 flex items-end justify-between">
             <div className="flex flex-col items-center">
-              <span className="text-sm text-gray-500">Orders</span>
+              <span className="text-xs text-gray-500">Orders</span>
               <span className="font-medium">340</span>
             </div>
-            <div className="w-24 h-24 bg-red-400 rounded-full" />
+            <div className="w-24 h-24 bg-zinc-300 rounded-full" />
             <div className="flex flex-col items-center">
-              <span className="text-sm text-gray-500">Spent</span>
+              <span className="text-xs text-gray-500">Spent</span>
               <span className="font-medium">$340</span>
             </div>
           </div>
-          <div className="relative -mt-10 -mb-5 flex flex-col items-center">
+          <div className="relative -mt-14 -mb-5 flex flex-col items-center">
             <span className="text-lg font-medium">Tony Molloy</span>
             <span className="text-sm text-gray-500">미국</span>
           </div>
         </div>
       </div>
-      <div className="p-10 bg-white rounded-2xl shadow-xl"></div>
-      <div className="p-10 bg-white rounded-2xl shadow-xl"></div>
+      <div className="p-6 bg-white rounded-3xl shadow-xl">
+        <div className="mb-5 flex justify-between items-center">
+          <span>⬅️</span>
+          <div className="space-x-3">
+            <span>⭐️ 4.9</span>
+            <span className="p-2 shadow-xl rounded-md">💖</span>
+          </div>
+        </div>
+        <div className="mb-5 h-72 bg-zinc-400" />
+        <div className="flex flex-col">
+          <span className="text-xl font-medium">Swoon Lounge</span>
+          <span className="text-xs text-gray-500">Chair</span>
+          <div className="mt-3 mb-5 flex justify-between items-center">
+            <div>
+              <input type="radio" />
+              <input type="radio" />
+              <input type="radio" />
+            </div>
+            <div className="space-x-5 flex items-center">
+              <button className="w-8 flex justify-center items-center aspect-square text-xl text-gray-500 bg-blue-200 rounded-lg">-</button>
+              <span>1</span>
+              <button className="w-8 flex justify-center items-center aspect-square text-xl text-gray-500 bg-blue-200 rounded-lg">+</button>
+            </div>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-2xl font-medium">$450</span>
+            <button className="px-8 py-2 text-xs text-center text-white bg-blue-500 rounded-lg">Add to cart</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 };

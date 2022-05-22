@@ -30,7 +30,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 4.0 Introduction
 - [x] 4.1 Test Drive part One
 - [x] 4.2 Test Drive part Two
-- [ ] 4.3 Test Drive part Three
+- [x] 4.3 Test Drive part Three
 - [ ] 4.4 Modifiers
 - [ ] 4.5 Transitions
 - [ ] 4.6 Modifiers for Lists
