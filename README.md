@@ -34,7 +34,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 4.4 Modifiers
 - [x] 4.5 Transitions
 - [x] 4.6 Modifiers for Lists
-- [ ] 4.7 Modifiers for Forms
+- [x] 4.7 Modifiers for Forms
 - [ ] 4.8 More Modifiers
 - [ ] 4.9 Responsive Modifiers
 - [ ] 4.10 Responsive Modifiers part Two

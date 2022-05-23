@@ -45,7 +45,7 @@ const Home: NextPage = () => {
           </button>
         </div>
       </div>
-      <div className="bg-white overflow-hidden rounded-3xl shadow-xl">
+      <div className="bg-white overflow-hidden rounded-3xl shadow-xl group">
         <div className="p-6 pb-14 bg-blue-500">
           <span className="text-2xl text-white">Profile</span>
         </div>
@@ -55,7 +55,7 @@ const Home: NextPage = () => {
               <span className="text-xs text-gray-500">Orders</span>
               <span className="font-medium">340</span>
             </div>
-            <div className="w-24 h-24 bg-zinc-300 rounded-full" />
+            <div className="w-24 h-24 bg-zinc-300 rounded-full group-hover:bg-red-300 transition-colors" />
             <div className="flex flex-col items-center">
               <span className="text-xs text-gray-500">Spent</span>
               <span className="font-medium">$340</span>
@@ -105,6 +105,15 @@ const Home: NextPage = () => {
             <button className="px-8 py-2 text-xs text-center text-white bg-blue-500 rounded-lg">Add to cart</button>
           </div>
         </div>
+      </div>
+      <div className="p-6 bg-white rounded-3xl shadow-xl">
+        <form className="space-y-2 p-5 flex flex-col">
+          <input type="text" required placeholder="Username" className="p-1 peer border-gray-400 border rounded-md " />
+          <span className="hidden peer-invalid:block peer-invalid:text-red-500">This input is invalid</span>
+          <span className="hidden peer-valid:block peer-valid:text-teal-500">Awesome username</span>
+          <span className="hidden peer-hover:block peer-hover:text-amber-500">Hello</span>
+          <input type="submit" value="Login" className="bg-white" />
+        </form>
       </div>
     </div>
   );
