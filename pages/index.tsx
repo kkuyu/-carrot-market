@@ -6,9 +6,24 @@ const Home: NextPage = () => {
       <div className="p-6 bg-white rounded-3xl shadow-xl">
         <strong className="block font-semibold text-2xl">Select Item</strong>
         <div className="mt-4">
-          <div className="flex justify-between">
-            <strong className="font-normal text-gray-500">Grey Chair</strong>
-            <span className="font-semibold">$19</span>
+          <ul>
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="my-2 odd:bg-blue-50 even:bg-yellow-50 first:bg-teal-50 last:bg-amber-50">
+                <div className="flex justify-between">
+                  <strong className="font-normal text-gray-500">Grey Chair</strong>
+                  <span className="font-semibold">$19</span>
+                </div>
+              </div>
+            ))}
+          </ul>
+          <div className="mt-4">
+            <ul>
+              {["a", "b", "c", ""].map((c, i) => (
+                <li className="my-2 bg-red-100 empty:hidden" key={i}>
+                  {c}
+                </li>
+              ))}
+            </ul>
           </div>
           <div className="flex justify-between mt-1">
             <strong className="font-normal text-gray-500">Grey Chair</strong>
