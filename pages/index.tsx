@@ -115,6 +115,29 @@ const Home: NextPage = () => {
           <input type="submit" value="Login" className="bg-white" />
         </form>
       </div>
+      <div className="p-6 bg-white rounded-3xl shadow-xl">
+        <div className="flex flex-col">
+          <p className="first-letter:text-4xl first-letter:hover:text-purple-400">Hello everyone!</p>
+        </div>
+        <ol className="my-5 pl-5 list-decimal marker:text-teal-500">
+          <li>Hello.</li>
+          <li>Hello..</li>
+          <li>Hello...</li>
+        </ol>
+        <details className="open:bg-indigo-100">
+          <summary className="select-none cursor-pointer">Details</summary>
+          <div className="selection:bg-indigo-600">
+            <p>Something small enough to escape casual notice.</p>
+            <p>
+              Lorem ipsum dolor sit amet, consectetur adipisicing elit. Corrupti, error iste id maxime voluptate nemo ab delectus laboriosam non enim aliquid possimus magni fugiat voluptatibus ipsam
+              iusto, eum asperiores pariatur.
+            </p>
+          </div>
+        </details>
+        <div className="my-5">
+          <input type="file" className="file:px-5 file:text-purple-300 file:hover:text-purple-600 file:bg-purple-100 file:border-0 file:rounded-md" />
+        </div>
+      </div>
     </div>
   );
 };
