@@ -2,11 +2,11 @@ import type { NextPage } from "next";
 
 const Home: NextPage = () => {
   return (
-    <div className="min-h-screen grid gap-10 px-20 py-20 bg-slate-400">
-      <div
-        className="p-6 bg-white rounded-3xl shadow-xl
-        sm:bg-red-400 bd:bg-teal-400 lg:bg-indigo-400 xl:bg-yellow-400 2xl:bg-pink-500"
-      >
+    <div
+      className="min-h-screen grid gap-10 px-20 py-20 bg-slate-400
+      xl:place-content-center xl:grid-cols-3 lg:grid-cols-2"
+    >
+      <div className="p-6 flex flex-col justify-between bg-white rounded-3xl shadow-xl">
         <strong className="block font-semibold text-2xl">Select Item</strong>
         <div className="mt-4">
           <ul>
@@ -49,7 +49,10 @@ const Home: NextPage = () => {
         </div>
       </div>
       <div className="bg-white overflow-hidden rounded-3xl shadow-xl group">
-        <div className="p-6 pb-14 bg-blue-500">
+        <div
+          className="p-6 pb-14 bg-blue-500
+          portrait:bg-indigo-600 landscape:bg-teal-500 xl:pb-40"
+        >
           <span className="text-2xl text-white">Profile</span>
         </div>
         <div className="relative -top-5 p-6 bg-white rounded-3xl">
@@ -70,7 +73,10 @@ const Home: NextPage = () => {
           </div>
         </div>
       </div>
-      <div className="p-6 bg-white rounded-3xl shadow-xl">
+      <div
+        className="p-6 bg-white rounded-3xl shadow-xl
+         lg:col-span-2 xl:col-span-1"
+      >
         <div className="mb-5 flex justify-between items-center">
           <span>⬅️</span>
           <div className="space-x-3">
