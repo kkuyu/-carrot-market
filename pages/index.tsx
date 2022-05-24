@@ -3,7 +3,10 @@ import type { NextPage } from "next";
 const Home: NextPage = () => {
   return (
     <div className="min-h-screen grid gap-10 px-20 py-20 bg-slate-400">
-      <div className="p-6 bg-white rounded-3xl shadow-xl">
+      <div
+        className="p-6 bg-white rounded-3xl shadow-xl
+        sm:bg-red-400 bd:bg-teal-400 lg:bg-indigo-400 xl:bg-yellow-400 2xl:bg-pink-500"
+      >
         <strong className="block font-semibold text-2xl">Select Item</strong>
         <div className="mt-4">
           <ul>
