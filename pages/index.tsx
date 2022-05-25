@@ -149,6 +149,9 @@ const Home: NextPage = () => {
         </details>
         <div className="my-5">
           <input type="file" className="file:px-5 file:text-purple-300 file:hover:text-purple-600 file:bg-purple-100 file:border-0 file:rounded-md" />
+          <div className="bg-[url('/vercel.svg')]">
+            <strong className="text-[50px] text-[#abcdef]">lorem</strong>
+          </div>
         </div>
       </div>
     </div>
