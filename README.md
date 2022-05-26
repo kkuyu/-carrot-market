@@ -49,7 +49,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 5.2 Auth part Two
 - [x] 5.3 Home Screen
 - [x] 5.4 Item Detail
-- [ ] 5.5 Upload Item
+- [x] 5.5 Upload Item
 - [ ] 5.6 Community
 - [ ] 5.7 Community Detail
 - [ ] 5.7 Write
