@@ -5,10 +5,10 @@ const Home: NextPage = () => {
     <div className="flex flex-col py-10">
       {[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].map((_, i) => (
         <div key={i} className="border-b">
-          <button type="button" className="flex justify-between items-stretch w-full p-4">
+          <button type="button" className="flex justify-between items-stretch w-full p-4 text-left">
             <div className="flex space-x-4">
               <div className="flex-none w-20 h-20 bg-gray-400 rounded-md" />
-              <div className="flex flex-col justify-center text-left">
+              <div className="flex flex-col justify-center">
                 <h3 className="text-sm font-semibold text-gray-900">New iPhone 14</h3>
                 <span className="mt-0.5 text-xs text-gray-500">Black</span>
                 <span className="mt-1 font-semibold text-gray-900">$95</span>

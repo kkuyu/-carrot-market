@@ -12,6 +12,11 @@ label {
   cursor: pointer;
 }
 
+input,
+textarea {
+  display: block;
+}
+
 .a11y-hidden {
   position: absolute;
   width: 1px;

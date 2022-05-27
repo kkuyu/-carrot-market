@@ -5,13 +5,15 @@ const ItemDetail: NextPage = () => {
     <div className="px-4 py-10">
       <div>
         <div className="h-96 bg-slate-300" />
-        <button className="flex items-center w-full space-x-3 py-3 text-left border-t border-b">
-          <div className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
-          <div>
-            <strong className="text-sm font-semibold text-gray-700">Steve Jebs</strong>
-            <p className="text-xs font-semibold text-gray-500">View profile &rarr;</p>
-          </div>
-        </button>
+        <div className="border-t border-b">
+          <button className="flex items-center w-full space-x-3 py-3 text-left">
+            <div className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
+            <div>
+              <strong className="text-sm font-semibold text-gray-700">Steve Jebs</strong>
+              <p className="text-xs font-semibold text-gray-500">View profile &rarr;</p>
+            </div>
+          </button>
+        </div>
         <div className="mt-5">
           <h1 className="text-3xl font-bold text-gray-900">Galaxy S50</h1>
           <span className="mt-3 block text-3xl text-gray-900">$140</span>

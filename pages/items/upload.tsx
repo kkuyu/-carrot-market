@@ -46,12 +46,14 @@ const Upload: NextPage = () => {
           />
         </div>
       </div>
-      <button
-        className="mt-5 w-full px-4 py-2 text-sm font-semibold text-white bg-orange-500 border border-transparent rounded-md shadow-sm
+      <div className="mt-5">
+        <button
+          className="w-full px-4 py-2 text-sm font-semibold text-white bg-orange-500 border border-transparent rounded-md shadow-sm
         hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-      >
-        Upload product
-      </button>
+        >
+          Upload product
+        </button>
+      </div>
     </div>
   );
 };
