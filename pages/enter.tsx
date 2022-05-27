@@ -62,7 +62,7 @@ export default function Enter() {
         </form>
         <div className="mt-8">
           <div className="reactive">
-            <div className="absolute left-4 right-4 border-t border-gray-300" />
+            <div className="absolute inset-x-4 border-t border-gray-300" />
             <div className="relative -top-3 text-center ">
               <span className="px-2 text-sm text-gray-500 bg-white">Or enter with</span>
             </div>
