@@ -2,8 +2,8 @@ import type { NextPage } from "next";
 
 const Write: NextPage = () => {
   return (
-    <form className="px-4 py-10">
-      <div className="mt-5">
+    <form className="container">
+      <div>
         <textarea
           className="w-full shadow-sm border border-gray-300 rounded-md shadow-sm
             focus:outline-none focus:ring-orange-500 focus:border-orange-500"

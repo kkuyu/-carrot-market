@@ -7,6 +7,11 @@ body {
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
+body {
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
 button,
 label {
   cursor: pointer;
@@ -15,6 +20,11 @@ label {
 input,
 textarea {
   display: block;
+}
+
+.container {
+  padding-top: 4rem;
+  padding-bottom: 4rem;
 }
 
 .a11y-hidden {

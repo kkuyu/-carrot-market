@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 
 const ItemDetail: NextPage = () => {
   return (
-    <div className="px-4 py-10">
+    <div className="container">
       <div>
         <div className="h-96 bg-slate-300" />
         <div className="border-t border-b">

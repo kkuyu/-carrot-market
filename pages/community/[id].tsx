@@ -2,8 +2,8 @@ import type { NextPage } from "next";
 
 const CommunityPostDetail: NextPage = () => {
   return (
-    <div className="px-4">
-      <div className="mt-3">
+    <div className="container">
+      <div>
         <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">동네질문</span>
       </div>
       <div className="-mx-4 border-b">
@@ -51,7 +51,7 @@ const CommunityPostDetail: NextPage = () => {
         <div className="flex items-start space-x-3">
           <div className="flex-none w-8 h-8 bg-slate-200 rounded-full" />
           <div>
-            <span className="block text-sm font-medium text-gray-700">Steve Jebs</span>
+            <span className="block text-sm font-semibold text-gray-700">Steve Jebs</span>
             <span className="block text-xs text-gray-500">2시간 전</span>
             <p className="mt-2 text-gray-700">The best mandu restaurant is the one next to my house.</p>
           </div>
