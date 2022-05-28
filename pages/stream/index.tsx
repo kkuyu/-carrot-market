@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 
-const Live: NextPage = () => {
+const Stream: NextPage = () => {
   return (
     <div className="container">
       <div className="-mx-4 divide-y">
@@ -29,4 +29,4 @@ const Live: NextPage = () => {
   );
 };
 
-export default Live;
+export default Stream;
