@@ -1,10 +1,9 @@
 import { useState } from "react";
+import type { NextPage } from "next";
 
-function cls(...classnames: string[]) {
-  return classnames.join(" ");
-}
+import { cls } from "../libs/utils";
 
-export default function Enter() {
+const Enter: NextPage = () => {
   const [method, setMethod] = useState<"email" | "phone">("email");
   const onEmailClick = () => setMethod("email");
   const onPhoneClick = () => setMethod("phone");
@@ -62,7 +61,7 @@ export default function Enter() {
         </form>
         <div className="mt-8">
           <div className="reactive">
-            <div className="absolute inset-x-4 border-t border-gray-300" />
+            <div className="absolute inset-x-0 border-t border-gray-300" />
             <div className="relative -top-3 text-center ">
               <span className="px-2 text-sm text-gray-500 bg-white">Or enter with</span>
             </div>
@@ -87,4 +86,6 @@ export default function Enter() {
       </div>
     </div>
   );
-}
+};
+
+export default Enter;
