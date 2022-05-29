@@ -1,14 +1,15 @@
 import type { NextPage } from "next";
+
 import Layout from "../components/layout";
 
 const Home: NextPage = () => {
   return (
-    <Layout title="Home" hasTabBar={true}>
-      <div>
+    <Layout hasTabBar title="Home">
+      <div className="container">
         <div className="-mx-4 flex flex-col divide-y">
           {[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1].map((_, i) => (
             <div key={i}>
-              <button type="button" className="flex justify-between items-stretch w-full p-4 text-left">
+              <button type="button" className="flex justify-between items-stretch w-full px-4 py-5 text-left">
                 <div className="flex space-x-4">
                   <div className="flex-none w-20 h-20 bg-gray-400 rounded-md" />
                   <div className="flex flex-col justify-center">

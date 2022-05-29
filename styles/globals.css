@@ -17,6 +17,14 @@ textarea {
   display: block;
 }
 
+.main {
+  min-height: 100vh;
+  max-height: -webkit-fill-available;
+  outline-style: solid;
+  outline-width: 1px;
+  outline-color: #e5e7eb;
+}
+
 .container {
   padding-left: 1rem;
   padding-right: 1rem;

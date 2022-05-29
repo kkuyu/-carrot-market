@@ -62,7 +62,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 5.14 Stream
 - [x] 5.15 Add Stream
 - [x] 5.16 Layout part One
-- [ ] 5.17 Layout part Two
+- [x] 5.17 Layout part Two
 - [ ] 5.18 Conclusions
 
 **#6 DATABASE SETUP**
