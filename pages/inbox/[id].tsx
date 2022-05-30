@@ -1,30 +1,16 @@
 import type { NextPage } from "next";
 
 import Layout from "../../components/layout";
+import Message from "../../components/message";
 
 const ChatDetail: NextPage = () => {
   return (
-    <Layout canGoBack>
+    <Layout canGoBack title="Steve">
       <div className="container pt-5 pb-16">
         <div className="space-y-4">
-          <div className="flex items-start space-x-2">
-            <div className="w-8 h-8 rounded-full bg-slate-400" />
-            <div className="flex-none w-1/2 p-2 border rounded-md">
-              <p className="text-sm text-gray-700">Hi how much are you selling them for?</p>
-            </div>
-          </div>
-          <div className="flex flex-row-reverse items-start space-x-2 space-x-reverse">
-            <div className="w-8 h-8 rounded-full bg-slate-400" />
-            <div className="flex-none w-1/2 p-2 border rounded-md">
-              <p className="text-sm text-gray-700">I want ￦20,000</p>
-            </div>
-          </div>
-          <div className="flex items-start space-x-2">
-            <div className="w-8 h-8 rounded-full bg-slate-400" />
-            <div className="flex-none w-1/2 p-2 border rounded-md">
-              <p className="text-sm text-gray-700">No..</p>
-            </div>
-          </div>
+          <Message message="Hi how much are you selling them for?" />
+          <Message message="I want ￦20,000" reversed />
+          <Message message="No..." />
         </div>
         <div className="fixed bottom-0 left-0 w-full">
           <div className="mx-auto w-full max-w-xl bg-white border-t">

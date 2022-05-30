@@ -1,6 +1,7 @@
 import type { NextPage } from "next";
 
 import Layout from "../../components/layout";
+import Button from "../../components/button";
 
 const ItemDetail: NextPage = () => {
   return (
@@ -26,9 +27,7 @@ const ItemDetail: NextPage = () => {
               motherfucker. You listen: we go in there, and that ni**a Winston or anybody else is in there, you the first motherfucker to get shot. You understand?
             </p>
             <div className="flex items-center justify-between space-x-2">
-              <button className="flex-1 bg-orange-500 text-white py-3 font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500 hover:bg-orange-600">
-                Talk to seller
-              </button>
+              <Button large text="Talk to seller" />
               <button className="flex items-center justify-center p-3 text-gray-400 rounded-md hover:bg-gray-100 hover:text-gray-500">
                 <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                   <path

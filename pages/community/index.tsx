@@ -1,6 +1,8 @@
 import type { NextPage } from "next";
+import Link from "next/link";
 
 import Layout from "../../components/layout";
+import FloatingButton from "../../components/floating-button";
 
 const Community: NextPage = () => {
   return (
@@ -8,8 +10,8 @@ const Community: NextPage = () => {
       <div className="container">
         <div className="-mx-4 divide-y divide-gray-300">
           {[1, 1, 1, 1, 1].map((_, i) => (
-            <div key={i}>
-              <button type="button" className="flex flex-col items-stretch w-full text-left">
+            <Link key={i} href={`/community/${i}`}>
+              <a className="flex flex-col items-stretch w-full">
                 <div className="pt-5 px-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">동네질문</span>
                   <div className="mt-2 text-gray-700">
@@ -43,15 +45,15 @@ const Community: NextPage = () => {
                     </span>
                   </div>
                 </div>
-              </button>
-            </div>
+              </a>
+            </Link>
           ))}
-          <button className="fixed bottom-24 right-5 p-4 text-white bg-orange-400 transition-colors rounded-full shadow-xl hover:bg-orange-500">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-            </svg>
-          </button>
         </div>
+        <FloatingButton href="/community/write">
+          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
+          </svg>
+        </FloatingButton>
       </div>
     </Layout>
   );

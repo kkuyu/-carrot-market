@@ -1,6 +1,8 @@
 import type { NextPage } from "next";
 
 import Layout from "../../components/layout";
+import TextArea from "../../components/textarea";
+import Button from "../../components/button";
 
 const CommunityPostDetail: NextPage = () => {
   return (
@@ -50,7 +52,15 @@ const CommunityPostDetail: NextPage = () => {
           </button>
         </div>
 
-        <div className="mt-5 space-y-5">
+        <div className="mt-6 space-y-5">
+          <div className="flex items-start space-x-3">
+            <div className="flex-none w-8 h-8 bg-slate-200 rounded-full" />
+            <div>
+              <span className="block text-sm font-semibold text-gray-700">Steve Jebs</span>
+              <span className="block text-xs text-gray-500">2시간 전</span>
+              <p className="mt-2 text-gray-700">The best mandu restaurant is the one next to my house.</p>
+            </div>
+          </div>
           <div className="flex items-start space-x-3">
             <div className="flex-none w-8 h-8 bg-slate-200 rounded-full" />
             <div>
@@ -61,21 +71,11 @@ const CommunityPostDetail: NextPage = () => {
           </div>
         </div>
 
-        <div className="mt-5">
-          <textarea
-            className="w-full shadow-sm border border-gray-300 rounded-md shadow-sm
-              focus:outline-none focus:ring-orange-500 focus:border-orange-500"
-            rows={4}
-            placeholder="Answer this question!"
-          />
-        </div>
-        <div className="mt-5">
-          <button
-            className="w-full px-4 py-2 text-sm font-semibold text-white bg-orange-500 border border-transparent rounded-md shadow-sm
-        hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-500"
-          >
-            Reply
-          </button>
+        <div className="mt-6">
+          <form className="space-y-5">
+            <TextArea name="description" placeholder="Answer this question!" required />
+            <Button text="Reply" />
+          </form>
         </div>
       </div>
     </Layout>
