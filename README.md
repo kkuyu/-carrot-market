@@ -75,12 +75,12 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 6.5 Push To PlanetScale
 - [x] 6.6 Prisma Client
 - [x] 6.7 API Routes
-- [ ] 6.8 Recap
+- [x] 6.8 Recap
 
 **#7 REACT HOOK FORM**
 
-- [ ] 7.0 Introduction
-- [ ] 7.1 Making Forms Alone
+- [x] 7.0 Introduction
+- [x] 7.1 Making Forms Alone
 - [ ] 7.2 The Register Function
 - [ ] 7.3 Validation
 - [ ] 7.4 Validation part Two
