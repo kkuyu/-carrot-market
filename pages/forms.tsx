@@ -9,7 +9,13 @@ interface LoginForm {
 }
 
 const Forms: NextPage = () => {
-  const { register, handleSubmit } = useForm<LoginForm>();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginForm>({
+    mode: "onBlur",
+  });
 
   const onValid = (data: LoginForm) => {
     console.log("onValid", data);
@@ -35,7 +41,23 @@ const Forms: NextPage = () => {
           required
           minLength={5}
         />
-        <input {...register("email", { required: "Email is required" })} type="email" placeholder="Email" required />
+        <input
+          {...register("email", {
+            required: "Email is required",
+            validate: {
+              notGmail: (value) => !value.includes("@gmail.com") || "Gmail is not allowed",
+            },
+            pattern: {
+              value: /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/i,
+              message: "Email is invalid",
+            },
+          })}
+          type="email"
+          placeholder="Email"
+          required
+          className={`${Boolean(errors.email) ? "border-red-500" : ""}`}
+        />
+        {errors.email?.message}
         <input {...register("password", { required: "Password is required" })} type="password" placeholder="Password" required />
         <button type="submit">Create Account</button>
       </form>
