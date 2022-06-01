@@ -85,7 +85,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 7.3 Validation
 - [x] 7.4 Validation part Two
 - [x] 7.5 Errors
-- [ ] 7.6 Extras
+- [x] 7.6 Extras
 
 **#8 REFACTORING**
 
