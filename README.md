@@ -93,7 +93,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 8.1 Form Submission
 - [x] 8.2 Clean Code part One
 - [x] 8.3 Clean Code part Two
-- [ ] 8.4 withHandler
+- [x] 8.4 withHandler
 - [ ] 8.5 Paths
 
 **#9 AUTHENTICATION**
