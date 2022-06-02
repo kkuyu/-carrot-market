@@ -18,8 +18,8 @@ const Enter: NextPage = () => {
   const { register, handleSubmit, reset } = useForm<EnterForm>();
 
   const [enter, { loading, data, error }] = useMutation("/api/users/enter");
-  const [submitting, setSubmitting] = useState(false);
   const [method, setMethod] = useState<"email" | "phone">("email");
+
   const onEmailClick = () => {
     reset();
     setMethod("email");
@@ -29,19 +29,11 @@ const Enter: NextPage = () => {
     setMethod("phone");
   };
 
-  const onValid = (data: EnterForm) => {
-    // enter(data);
-    setSubmitting(true);
-    fetch("/api/users/enter", {
-      method: "POST",
-      body: JSON.stringify(data),
-      headers: {
-        "Content-Type": "application/json",
-      },
-    }).then(() => {
-      setSubmitting(false);
-    });
+  const onValid = (validForm: EnterForm) => {
+    enter(validForm);
   };
+
+  console.log({ loading, data, error });
 
   return (
     <Layout canGoBack hasTabBar>
@@ -65,8 +57,8 @@ const Enter: NextPage = () => {
             {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
             {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
 
-            {method === "email" ? <Button text={submitting ? "Loading" : "Get login link"} disabled={submitting} /> : null}
-            {method === "phone" ? <Button text={submitting ? "Loading" : "Get one-time password"} disabled={submitting} /> : null}
+            {method === "email" ? <Button text={loading ? "Loading" : "Get login link"} disabled={loading} /> : null}
+            {method === "phone" ? <Button text={loading ? "Loading" : "Get one-time password"} disabled={loading} /> : null}
           </form>
         </div>
 
