@@ -1,11 +1,16 @@
+import type { UseFormRegisterReturn } from "react-hook-form";
+
 interface InputProps {
   label: string;
   name: string;
   kind?: "text" | "phone" | "price";
+  type: string;
+  required: boolean;
+  register: UseFormRegisterReturn;
   [key: string]: any;
 }
 
-export default function Input({ label, name, kind = "text", ...rest }: InputProps) {
+export default function Input({ label, name, kind = "text", type, required, register, ...rest }: InputProps) {
   return (
     <div className="space-y-1">
       <label className="block text-sm font-semibold text-gray-700" htmlFor={name}>
@@ -15,6 +20,9 @@ export default function Input({ label, name, kind = "text", ...rest }: InputProp
         <div className="relative flex items-center rounded-md shadow-sm">
           <input
             id={name}
+            type={type}
+            required={required}
+            {...register}
             {...rest}
             className="w-full px-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
               focus:outline-none focus:ring-orange-500 focus:border-orange-500"
@@ -28,6 +36,9 @@ export default function Input({ label, name, kind = "text", ...rest }: InputProp
           </div>
           <input
             id={name}
+            type={type}
+            required={required}
+            {...register}
             {...rest}
             className="w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 placeholder-gray-400
               focus:outline-none focus:ring-orange-500 focus:border-orange-500"
@@ -42,6 +53,9 @@ export default function Input({ label, name, kind = "text", ...rest }: InputProp
           <span className="flex items-center justify-center px-3 text-sm text-gray-500 bg-gray-50 border border-r-0 border-gray-300 rounded-l-md select-none">+82</span>
           <input
             id={name}
+            type={type}
+            required={required}
+            {...register}
             {...rest}
             className="w-full px-3 py-2 appearance-none border border-gray-300 rounded-md rounded-l-none shadow-sm placeholder-gray-400
               focus:outline-none focus:ring-orange-500 focus:border-orange-500"

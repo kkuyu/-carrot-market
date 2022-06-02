@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 
 import { cls } from "../libs/utils";
@@ -7,10 +8,27 @@ import Layout from "../components/layout";
 import Button from "../components/button";
 import Input from "../components/input";
 
+interface EnterForm {
+  email?: string;
+  phone?: string;
+}
+
 const Enter: NextPage = () => {
+  const { register, handleSubmit, reset } = useForm<EnterForm>();
+
   const [method, setMethod] = useState<"email" | "phone">("email");
-  const onEmailClick = () => setMethod("email");
-  const onPhoneClick = () => setMethod("phone");
+  const onEmailClick = () => {
+    reset();
+    setMethod("email");
+  };
+  const onPhoneClick = () => {
+    reset();
+    setMethod("phone");
+  };
+
+  const onValid = (data: EnterForm) => {
+    console.log(data);
+  };
 
   return (
     <Layout canGoBack hasTabBar>
@@ -30,9 +48,9 @@ const Enter: NextPage = () => {
         </div>
 
         <div className="mt-6">
-          <form className="space-y-5">
-            {method === "email" ? <Input name="email" label="Email address" type="email" required /> : null}
-            {method === "phone" ? <Input name="phone" label="Phone number" type="number" kind="phone" required /> : null}
+          <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+            {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
+            {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
 
             {method === "email" ? <Button text={"Get login link"} /> : null}
             {method === "phone" ? <Button text={"Get one-time password"} /> : null}
