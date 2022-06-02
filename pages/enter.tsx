@@ -16,6 +16,7 @@ interface EnterForm {
 const Enter: NextPage = () => {
   const { register, handleSubmit, reset } = useForm<EnterForm>();
 
+  const [submitting, setSubmitting] = useState(false);
   const [method, setMethod] = useState<"email" | "phone">("email");
   const onEmailClick = () => {
     reset();
@@ -27,7 +28,16 @@ const Enter: NextPage = () => {
   };
 
   const onValid = (data: EnterForm) => {
-    console.log(data);
+    setSubmitting(true);
+    fetch("/api/users/enter", {
+      method: "POST",
+      body: JSON.stringify(data),
+      headers: {
+        "Content-Type": "application/json",
+      },
+    }).then(() => {
+      setSubmitting(false);
+    });
   };
 
   return (
@@ -52,8 +62,8 @@ const Enter: NextPage = () => {
             {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
             {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
 
-            {method === "email" ? <Button text={"Get login link"} /> : null}
-            {method === "phone" ? <Button text={"Get one-time password"} /> : null}
+            {method === "email" ? <Button text={submitting ? "Loading" : "Get login link"} disabled={submitting} /> : null}
+            {method === "phone" ? <Button text={submitting ? "Loading" : "Get one-time password"} disabled={submitting} /> : null}
           </form>
         </div>
 
