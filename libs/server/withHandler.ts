@@ -9,7 +9,11 @@ function withHandler(method: "GET" | "POST" | "DELETE", fn: (req: NextApiRequest
       await fn(req, res);
     } catch (error) {
       console.log(error);
-      return res.status(500).json({ error });
+      if (error instanceof Error) {
+        res.status(500).json({ error: error.message });
+      } else {
+        res.status(500).json({ error: "Internal Server Error" });
+      }
     }
   };
 }
