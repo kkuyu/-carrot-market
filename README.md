@@ -98,8 +98,8 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 
 **#9 AUTHENTICATION**
 
-- [ ] 9.0 Introduction
-- [ ] 9.1 Accounts Logic
+- [x] 9.0 Introduction
+- [x] 9.1 Accounts Logic
 - [ ] 9.2 Token Logic
 - [ ] 9.3 Twilo Setup
 - [ ] 9.4 Sending SMS
