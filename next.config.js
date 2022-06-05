@@ -8,6 +8,7 @@ const nextConfig = {
     TWILIO_TOKEN: process.env.TWILIO_TOKEN,
     TWILIO_MSID: process.env.TWILIO_MSID,
     MY_PHONE: process.env.MY_PHONE,
+    SESSION_PASSWORD: process.env.SESSION_PASSWORD,
   },
 };
 
