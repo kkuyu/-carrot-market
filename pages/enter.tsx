@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
+import { useRouter } from "next/router";
 
 import { cls } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
@@ -23,6 +24,7 @@ interface MutationResult {
 }
 
 const Enter: NextPage = () => {
+  const router = useRouter();
   const { register, handleSubmit, reset } = useForm<EnterForm>();
   const { register: tokenRegister, handleSubmit: tokenHandleSubmit } = useForm<TokenForm>();
 
@@ -49,7 +51,11 @@ const Enter: NextPage = () => {
     confirmToken(validForm);
   };
 
-  console.log({ loading, data, error });
+  useEffect(() => {
+    if (tokenData?.success) {
+      router.push("/");
+    }
+  }, [tokenData, router]);
 
   return (
     <Layout canGoBack hasTabBar>

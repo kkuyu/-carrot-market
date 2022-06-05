@@ -107,7 +107,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 9.6 Token UI
 - [x] 9.7 Serverless Sessions
 - [x] 9.8 Profile Handler
-- [ ] 9.9 Cleaning Code
+- [x] 9.9 Cleaning Code
 - [ ] 9.10 NextAuth
 
 **#10 AUTHORIZATION**

@@ -15,9 +15,13 @@ function withHandler(method: "GET" | "POST" | "DELETE", fn: (req: NextApiRequest
     } catch (error) {
       console.log(error);
       if (error instanceof Error) {
-        res.status(500).json({ error: error.message });
+        res.status(500).json({
+          error: error.message,
+        });
       } else {
-        res.status(500).json({ error: "Internal Server Error" });
+        res.status(500).json({
+          error: "Internal Server Error",
+        });
       }
     }
   };
