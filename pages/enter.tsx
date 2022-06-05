@@ -14,10 +14,21 @@ interface EnterForm {
   phone?: string;
 }
 
+interface TokenForm {
+  token: string;
+}
+
+interface MutationResult {
+  success: boolean;
+}
+
 const Enter: NextPage = () => {
   const { register, handleSubmit, reset } = useForm<EnterForm>();
+  const { register: tokenRegister, handleSubmit: tokenHandleSubmit } = useForm<TokenForm>();
 
-  const [enter, { loading, data, error }] = useMutation("/api/users/enter");
+  const [enter, { loading, data, error }] = useMutation<MutationResult>("/api/users/enter");
+  const [confirmToken, { loading: tokenLoading, data: tokenData, error: tokenError }] = useMutation<MutationResult>("/api/users/confirm");
+
   const [method, setMethod] = useState<"email" | "phone">("email");
 
   const onEmailClick = () => {
@@ -30,7 +41,12 @@ const Enter: NextPage = () => {
   };
 
   const onValid = (validForm: EnterForm) => {
+    if (loading) return;
     enter(validForm);
+  };
+  const onTokenValid = (validForm: TokenForm) => {
+    if (tokenLoading) return;
+    confirmToken(validForm);
   };
 
   console.log({ loading, data, error });
@@ -39,28 +55,40 @@ const Enter: NextPage = () => {
     <Layout canGoBack hasTabBar>
       <div className="container pt-5 pb-5">
         <h3 className="text-3xl font-bold text-center">Enter to Carrot</h3>
-        <h5 className="pt-6 text-sm font-semibold text-center text-gray-500">Enter using:</h5>
 
-        <div className="mt-6">
-          <div className="w-full grid grid-cols-2 gap-16 border-b">
-            <button className={cls("pb-4 font-semibold border-b-2", method === "email" ? "text-orange-400 border-b-orange-500" : "text-gray-500 border-b-transparent")} onClick={onEmailClick}>
-              Email
-            </button>
-            <button className={cls("pb-4 font-semibold border-b-2", method === "phone" ? "text-orange-400 border-b-orange-500" : "text-gray-500 border-b-transparent")} onClick={onPhoneClick}>
-              Phone
-            </button>
-          </div>
-        </div>
+        {data?.success ? (
+          <>
+            <div className="mt-6">
+              <form onSubmit={tokenHandleSubmit(onTokenValid)} noValidate className="space-y-5">
+                <Input register={tokenRegister("token", { required: true })} name="token" label="Confirmation token" type="number" required={true} />
+                <Button text={tokenLoading ? "Loading" : "Confirm token"} disabled={tokenLoading} />
+              </form>
+            </div>
+          </>
+        ) : (
+          <>
+            <h5 className="pt-6 text-sm font-semibold text-center text-gray-500">Enter using:</h5>
+            <div className="mt-6">
+              <div className="w-full grid grid-cols-2 gap-16 border-b">
+                <button className={cls("pb-4 font-semibold border-b-2", method === "email" ? "text-orange-400 border-b-orange-500" : "text-gray-500 border-b-transparent")} onClick={onEmailClick}>
+                  Email
+                </button>
+                <button className={cls("pb-4 font-semibold border-b-2", method === "phone" ? "text-orange-400 border-b-orange-500" : "text-gray-500 border-b-transparent")} onClick={onPhoneClick}>
+                  Phone
+                </button>
+              </div>
+            </div>
+            <div className="mt-6">
+              <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+                {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
+                {method === "email" ? <Button text={loading ? "Loading" : "Get login link"} disabled={loading} /> : null}
 
-        <div className="mt-6">
-          <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
-            {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
-            {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
-
-            {method === "email" ? <Button text={loading ? "Loading" : "Get login link"} disabled={loading} /> : null}
-            {method === "phone" ? <Button text={loading ? "Loading" : "Get one-time password"} disabled={loading} /> : null}
-          </form>
-        </div>
+                {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
+                {method === "phone" ? <Button text={loading ? "Loading" : "Get one-time password"} disabled={loading} /> : null}
+              </form>
+            </div>
+          </>
+        )}
 
         <div className="mt-9">
           <div className="reactive">

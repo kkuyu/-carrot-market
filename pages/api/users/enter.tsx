@@ -16,7 +16,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
 
   const userPayload = {
-    ...(phone ? { phone: +phone } : {}),
+    ...(phone ? { phone } : {}),
     ...(email ? { email } : {}),
   };
   const tokenPayload = Math.floor(100000 + Math.random() * 900000) + "";
@@ -36,34 +36,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     },
   });
-  if (phone) {
-    const message = await twilioClient.messages.create({
-      messagingServiceSid: process.env.TWILIO_MSID,
-      to: process.env.MY_PHONE!,
-      body: `Your login token is ${JSON.stringify({ ...userPayload, tokenPayload })}.`,
-    });
-    console.log(message);
-  }
-  if (email) {
-    const mailOptions = {
-      from: process.env.MAIL_ID,
-      to: email,
-      subject: "Your Carrot Market Verification Email",
-      html: `<div>
-        <h1>Verify Your Email Address</h1>
-        <p>Authentication Code : ${JSON.stringify({ ...userPayload, tokenPayload })}</p>
-      </div>`,
-    };
-    const result = await smtpTransport.sendMail(mailOptions, (error, responses) => {
-      if (error) {
-        console.log(error);
-      } else {
-        console.log(responses);
-      }
-    });
-    smtpTransport.close();
-    console.log(result);
-  }
+  // if (phone) {
+  //   const message = await twilioClient.messages.create({
+  //     messagingServiceSid: process.env.TWILIO_MSID,
+  //     to: process.env.MY_PHONE!,
+  //     body: `Your login token is ${JSON.stringify({ ...userPayload, tokenPayload })}.`,
+  //   });
+  //   console.log(message);
+  // }
+  // if (email) {
+  //   const mailOptions = {
+  //     from: process.env.MAIL_ID,
+  //     to: email,
+  //     subject: "Your Carrot Market Verification Email",
+  //     html: `<div>
+  //       <h1>Verify Your Email Address</h1>
+  //       <p>Authentication Code : ${JSON.stringify({ ...userPayload, tokenPayload })}</p>
+  //     </div>`,
+  //   };
+  //   const result = await smtpTransport.sendMail(mailOptions, (error, responses) => {
+  //     if (error) {
+  //       console.log(error);
+  //     } else {
+  //       console.log(responses);
+  //     }
+  //   });
+  //   smtpTransport.close();
+  //   console.log(result);
+  // }
   return res.json({
     success: true,
   });
