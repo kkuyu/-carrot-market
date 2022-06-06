@@ -39,4 +39,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   });
 }
 
-export default withSessionRoute(withHandler("POST", handler));
+export default withSessionRoute(
+  withHandler({
+    method: "POST",
+    handler,
+    isPrivate: false,
+  })
+);
