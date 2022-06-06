@@ -1,10 +1,18 @@
 import type { NextPage } from "next";
 
+import useUser from "@libs/client/useUser";
+
 import Layout from "@components/layout";
 import Item from "@components/item";
 import FloatingButton from "@components/floating-button";
 
 const Home: NextPage = () => {
+  const user = useUser();
+
+  if (!user) {
+    return null;
+  }
+
   return (
     <Layout hasTabBar title="Home">
       <div className="container">

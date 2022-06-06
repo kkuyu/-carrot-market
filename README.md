@@ -114,7 +114,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 
 - [x] 10.0 Introduction
 - [x] 10.1 Protected Handlers
-- [ ] 10.2 useUser Hook
+- [x] 10.2 useUser Hook
 - [ ] 10.3 SWR
 - [ ] 10.4 useUser Refactor
 
