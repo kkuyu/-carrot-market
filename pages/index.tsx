@@ -9,6 +9,8 @@ import FloatingButton from "@components/floating-button";
 const Home: NextPage = () => {
   const user = useUser();
 
+  console.log(user);
+
   if (!user) {
     return null;
   }
