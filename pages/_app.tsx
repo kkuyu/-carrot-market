@@ -1,18 +1,15 @@
-import Head from "next/head";
 import type { AppProps } from "next/app";
+import { SWRConfig } from "swr";
 
 import "../styles/globals.css";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
-    <>
-      <Head>
-        <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard/dist/web/static/pretendard.css" />
-      </Head>
+    <SWRConfig value={{ fetcher: (url: string) => fetch(url).then((response) => response.json()) }}>
       <div className="mx-auto w-full max-w-xl">
         <Component {...pageProps} />
       </div>
-    </>
+    </SWRConfig>
   );
 }
 

@@ -7,11 +7,9 @@ import Item from "@components/item";
 import FloatingButton from "@components/floating-button";
 
 const Home: NextPage = () => {
-  const user = useUser();
+  const { user, isLoading } = useUser();
 
-  console.log(user);
-
-  if (!user) {
+  if (isLoading || !user) {
     return null;
   }
 
