@@ -67,7 +67,7 @@ const Enter: NextPage = () => {
             <div className="mt-6">
               <form onSubmit={tokenHandleSubmit(onTokenValid)} noValidate className="space-y-5">
                 <Input register={tokenRegister("token", { required: true })} name="token" label="Confirmation token" type="number" required={true} />
-                <Button text={tokenLoading ? "Loading" : "Confirm token"} disabled={tokenLoading} />
+                <Button type="submit" text={tokenLoading ? "Loading" : "Confirm token"} disabled={tokenLoading} />
               </form>
             </div>
           </>
@@ -87,10 +87,10 @@ const Enter: NextPage = () => {
             <div className="mt-6">
               <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
                 {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
-                {method === "email" ? <Button text={loading ? "Loading" : "Get login link"} disabled={loading} /> : null}
+                {method === "email" ? <Button type="submit" text={loading ? "Loading" : "Get login link"} disabled={loading} /> : null}
 
                 {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
-                {method === "phone" ? <Button text={loading ? "Loading" : "Get one-time password"} disabled={loading} /> : null}
+                {method === "phone" ? <Button type="submit" text={loading ? "Loading" : "Get one-time password"} disabled={loading} /> : null}
               </form>
             </div>
           </>

@@ -40,7 +40,7 @@ export default function Input({ label, name, kind = "text", type, required, regi
             required={required}
             {...register}
             {...rest}
-            className="w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 placeholder-gray-400
+            className="w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
               focus:outline-none focus:ring-orange-500 focus:border-orange-500"
           />
           <div className="absolute right-0 flex items-center pr-3 pointer-events-none">

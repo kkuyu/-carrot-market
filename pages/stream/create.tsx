@@ -13,7 +13,7 @@ const Create: NextPage = () => {
           <Input required label="Name" name="name" type="text" />
           <Input required label="Price" placeholder="0.00" name="price" type="text" kind="price" />
           <TextArea name="description" label="Description" />
-          <Button text="Go live" />
+          <Button type="submit" text="Go live" />
         </form>
       </div>
     </Layout>

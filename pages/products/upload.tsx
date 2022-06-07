@@ -1,15 +1,33 @@
 import type { NextPage } from "next";
+import { useForm } from "react-hook-form";
+
+import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
 import Button from "@components/button";
 import Input from "@components/input";
 import TextArea from "@components/textarea";
 
+interface UploadProductForm {
+  name: string;
+  price: number;
+  description: string;
+}
+
 const Upload: NextPage = () => {
+  const { register, handleSubmit } = useForm<UploadProductForm>();
+
+  const [uploadProduct, { loading, data }] = useMutation("/api/products");
+
+  const onValid = (data: UploadProductForm) => {
+    if (loading) return;
+    uploadProduct(data);
+  };
+
   return (
     <Layout canGoBack title="Upload Product">
       <div className="container pt-5 pb-5">
-        <form className="space-y-5">
+        <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
           <div>
             <label className="w-full flex items-center justify-center h-48 text-gray-600 border-2 border-dashed border-gray-300 rounded-md hover:text-orange-500 hover:border-orange-500">
               <svg className="h-12 w-12" stroke="currentColor" fill="none" viewBox="0 0 48 48" aria-hidden="true">
@@ -23,10 +41,10 @@ const Upload: NextPage = () => {
               <input className="a11y-hidden" type="file" />
             </label>
           </div>
-          <Input required label="Name" name="name" type="text" />
-          <Input required label="Price" placeholder="0.00" name="price" type="text" kind="price" />
-          <TextArea name="description" label="Description" />
-          <Button text="Upload product" />
+          <Input register={register("name", { required: true })} required label="Name" name="name" type="text" />
+          <Input register={register("price", { required: true })} required label="Price" placeholder="0.00" name="price" type="text" kind="price" />
+          <TextArea register={register("description", { required: true, validate: (value) => !value.replace(/(\s*)$/g, "").length })} required name="description" label="Description" />
+          <Button type="submit" text={loading ? "Loading" : "Upload product"} />
         </form>
       </div>
     </Layout>

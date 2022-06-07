@@ -18,7 +18,7 @@ const EditProfile: NextPage = () => {
           </div>
           <Input required label="Email address" name="email" type="email" />
           <Input required label="Phone number" name="phone" type="number" kind="phone" />
-          <Button text="Update profile" />
+          <Button type="submit" text="Update profile" />
         </form>
       </div>
     </Layout>

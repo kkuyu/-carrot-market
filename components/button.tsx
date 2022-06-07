@@ -4,12 +4,14 @@ interface ButtonProps {
   large?: boolean;
   text: string;
   disabled?: boolean;
+  type?: "button" | "submit" | "reset";
   [key: string]: any;
 }
 
-export default function Button({ large = false, onClick, text, disabled, ...rest }: ButtonProps) {
+export default function Button({ large = false, text, disabled, type = "button", ...rest }: ButtonProps) {
   return (
     <button
+      type={type}
       disabled={disabled}
       {...rest}
       className={cls(

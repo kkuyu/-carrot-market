@@ -74,7 +74,7 @@ const CommunityPostDetail: NextPage = () => {
         <div className="mt-6">
           <form className="space-y-5">
             <TextArea name="description" placeholder="Answer this question!" required />
-            <Button text="Reply" />
+            <Button type="submit" text="Reply" />
           </form>
         </div>
       </div>

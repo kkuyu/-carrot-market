@@ -10,7 +10,7 @@ const Write: NextPage = () => {
       <div className="container pt-5 pb-5">
         <form className="space-y-5">
           <TextArea required placeholder="Ask a question!" />
-          <Button text="Submit" />
+          <Button type="submit" text="Submit" />
         </form>
       </div>
     </Layout>
