@@ -41,7 +41,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
 export default withSessionRoute(
   withHandler({
-    method: "POST",
+    methods: ["POST"],
     handler,
     isPrivate: false,
   })

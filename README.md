@@ -123,7 +123,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 11.0 Product Model
 - [x] 11.1 Upload Form
 - [x] 11.2 Upload API
-- [ ] 11.3 See Products
+- [x] 11.3 See Products
 - [ ] 11.4 Product Detail
 - [ ] 11.5 Related Products
 - [ ] 11.6 Favorite Products
