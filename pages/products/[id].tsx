@@ -10,6 +10,7 @@ import Button from "@components/button";
 interface ProductDetailResponse {
   success: boolean;
   product: Product & { user: Pick<User, "id" | "name" | "avatar"> };
+  relatedProducts: Product[];
 }
 
 const ProductDetail: NextPage = () => {
@@ -35,7 +36,7 @@ const ProductDetail: NextPage = () => {
           </div>
           <div className="mt-5">
             <h1 className="text-3xl font-bold text-gray-900">{data?.product.name}</h1>
-            <span className="mt-3 block text-3xl text-gray-900">{data?.product.price}</span>
+            <span className="mt-3 block text-3xl text-gray-900">${data?.product.price}</span>
             <p className="my-6 text-gray-700">{data?.product.description}</p>
             <div className="flex items-center justify-between space-x-2">
               <Button large text="Talk to seller" />
@@ -52,18 +53,22 @@ const ProductDetail: NextPage = () => {
             </div>
           </div>
         </div>
-        <div className="mt-8">
-          <h2 className="text-2xl font-bold text-gray-900">Similar items</h2>
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((_, i) => (
-              <div key={i}>
-                <div className="w-full h-56 bg-slate-300" />
-                <h3 className="mt-4 text-gray-700">Galaxy S60</h3>
-                <span className="-mt-1 text-sm font-semibold text-gray-900">$6</span>
-              </div>
-            ))}
+        {!data?.relatedProducts || !data.relatedProducts.length ? null : (
+          <div className="mt-8">
+            <h2 className="text-2xl font-bold text-gray-900">Similar items</h2>
+            <div className="mt-6 grid grid-cols-2 gap-4">
+              {data.relatedProducts.map((product) => (
+                <Link key={product.id} href={`/products/${product.id}`}>
+                  <a>
+                    <div className="w-full h-56 bg-slate-300" />
+                    <h3 className="mt-4 text-gray-700">{product.name}</h3>
+                    <span className="-mt-1 text-sm font-semibold text-gray-900">${product.price}</span>
+                  </a>
+                </Link>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </Layout>
   );
