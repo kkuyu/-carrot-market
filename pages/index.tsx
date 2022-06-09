@@ -26,7 +26,7 @@ const Home: NextPage = () => {
       <div className="container">
         <div className="-mx-4 flex flex-col divide-y">
           {data?.products?.map((product) => (
-            <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} comments={1} hearts={1} />
+            <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={1} />
           ))}
           <FloatingButton href="/products/upload">
             <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
