@@ -2,7 +2,7 @@ import { useRouter } from "next/router";
 import type { NextPage } from "next";
 import Link from "next/link";
 import { Product, User } from "@prisma/client";
-import useSWR from "swr";
+import useSWR, { useSWRConfig } from "swr";
 
 import { cls } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
@@ -20,14 +20,16 @@ interface ProductDetailResponse {
 const ProductDetail: NextPage = () => {
   const router = useRouter();
 
-  const { data, mutate } = useSWR<ProductDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  // const { mutate: unboundMutate } = useSWRConfig();
+  const { data, mutate: boundMutate } = useSWR<ProductDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
 
   const [toggleFavorite] = useMutation(`/api/products/${router.query.id}/favorite`);
 
   const onFavoriteClick = () => {
     if (!data) return;
-    mutate({ ...data, isFavorite: !data.isFavorite }, false);
+    boundMutate((prev) => prev && { ...prev, isFavorite: !prev.isFavorite }, false);
     toggleFavorite({});
+    // unboundMutate("/api/users/me", (prev: any) => ({ ...prev, success: !prev.success }), false);
   };
 
   return (
