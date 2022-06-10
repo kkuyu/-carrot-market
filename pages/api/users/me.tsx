@@ -10,6 +10,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       id: req.session.user?.id,
     },
   });
+  if (!profile) {
+    const error = new Error("Not found profile");
+    throw error;
+  }
   return res.status(200).json({
     success: true,
     profile,

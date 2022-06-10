@@ -13,7 +13,7 @@ const Community: NextPage = () => {
             <Link key={i} href={`/community/${i}`}>
               <a className="flex flex-col items-stretch w-full">
                 <div className="pt-5 px-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">동네질문</span>
+                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">Community</span>
                   <div className="mt-2 text-gray-700">
                     <span className="font-semibold text-orange-500">Q.</span> What is the best mandu restaurant?
                   </div>
@@ -30,7 +30,7 @@ const Community: NextPage = () => {
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                       </svg>
-                      <span>궁금해요 1</span>
+                      <span>Curiosity 1</span>
                     </span>
                     <span className="flex items-center space-x-2 text-sm">
                       <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -41,7 +41,7 @@ const Community: NextPage = () => {
                           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
                         ></path>
                       </svg>
-                      <span>답변 1</span>
+                      <span>Comments 1</span>
                     </span>
                   </div>
                 </div>

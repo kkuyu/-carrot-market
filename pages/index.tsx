@@ -25,7 +25,7 @@ const Home: NextPage = () => {
     <Layout hasTabBar title="Home">
       <div className="container">
         <div className="-mx-4 flex flex-col divide-y">
-          {data?.products?.map((product) => (
+          {data?.products.map((product) => (
             <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product._count.favorites} />
           ))}
           <FloatingButton href="/products/upload">

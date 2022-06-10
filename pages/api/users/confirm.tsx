@@ -7,9 +7,8 @@ import { withSessionRoute } from "@libs/server/withSession";
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   const { token } = req.body;
   if (!token) {
-    return res.status(400).json({
-      success: false,
-    });
+    const error = new Error("Invalid request body");
+    throw error;
   }
 
   const foundToken = await client.token.findUnique({
@@ -21,9 +20,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // },
   });
   if (!foundToken) {
-    return res.status(400).json({
-      success: false,
-    });
+    const error = new Error("Invalid token");
+    throw error;
   }
   req.session.user = {
     id: foundToken.userId,

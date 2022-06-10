@@ -1,8 +1,9 @@
+import { useEffect } from "react";
 import { useRouter } from "next/router";
 import type { NextPage } from "next";
 import Link from "next/link";
 import { Product, User } from "@prisma/client";
-import useSWR, { useSWRConfig } from "swr";
+import useSWR from "swr";
 
 import { cls } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
@@ -20,8 +21,7 @@ interface ProductDetailResponse {
 const ProductDetail: NextPage = () => {
   const router = useRouter();
 
-  // const { mutate: unboundMutate } = useSWRConfig();
-  const { data, mutate: boundMutate } = useSWR<ProductDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data, error, mutate: boundMutate } = useSWR<ProductDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
 
   const [toggleFavorite] = useMutation(`/api/products/${router.query.id}/favorite`);
 
@@ -29,8 +29,17 @@ const ProductDetail: NextPage = () => {
     if (!data) return;
     boundMutate((prev) => prev && { ...prev, isFavorite: !prev.isFavorite }, false);
     toggleFavorite({});
-    // unboundMutate("/api/users/me", (prev: any) => ({ ...prev, success: !prev.success }), false);
   };
+
+  useEffect(() => {
+    if (data && !data.success) {
+      router.push("/");
+    }
+  }, [data, router]);
+
+  if (!data || !data.success || error) {
+    return null;
+  }
 
   return (
     <Layout canGoBack>

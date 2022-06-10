@@ -6,9 +6,8 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   const { id } = req.query;
-  const { user } = req.session;
   const cleanId = +id?.toString()!;
-  const product = await client.product.findUnique({
+  const post = await client.post.findUnique({
     where: {
       id: cleanId,
     },
@@ -20,39 +19,32 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           avatar: true,
         },
       },
-    },
-  });
-  if (!product) {
-    const error = new Error("Not found product");
-    throw error;
-  }
-  const terms = product?.name.split(" ").map((word) => ({ name: { contains: word } }));
-  const relatedProducts = await client.product.findMany({
-    where: {
-      OR: terms,
-      AND: {
-        id: {
-          not: product?.id,
+      comments: {
+        select: {
+          id: true,
+          comment: true,
+          user: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+      _count: {
+        select: {
+          comments: true,
+          curiosities: true,
         },
       },
     },
   });
-  const isFavorite = Boolean(
-    await client.favorite.findFirst({
-      where: {
-        productId: product?.id,
-        userId: user?.id,
-      },
-      select: {
-        id: true,
-      },
-    })
-  );
+  if (!post) {
+    const error = new Error("Not found post");
+    throw error;
+  }
   return res.status(200).json({
     success: true,
-    product,
-    isFavorite,
-    relatedProducts,
+    post,
   });
 }
 

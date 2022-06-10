@@ -10,9 +10,8 @@ const twilioClient = twilio(process.env.TWILIO_SID, process.env.TWILIO_TOKEN);
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   const { phone, email } = req.body;
   if (!phone && !email) {
-    return res.status(400).json({
-      success: false,
-    });
+    const error = new Error("Invalid request body");
+    throw error;
   }
 
   const userPayload = {

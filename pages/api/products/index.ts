@@ -24,9 +24,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const { name, price, description } = req.body;
     const { user } = req.session;
     if (!name && !price && !description) {
-      return res.status(400).json({
-        success: false,
-      });
+      const error = new Error("Invalid request body");
+      throw error;
     }
     const product = await client.product.create({
       data: {

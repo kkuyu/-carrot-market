@@ -34,7 +34,7 @@ const Upload: NextPage = () => {
   };
 
   useEffect(() => {
-    if (data?.success) {
+    if (data && data.success) {
       router.push(`/products/${data.product.id}`);
     }
   }, [data, router]);
