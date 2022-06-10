@@ -1,16 +1,57 @@
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
+import { useRouter } from "next/router";
+import { Post } from "@prisma/client";
+
+import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
 import Button from "@components/button";
 import TextArea from "@components/textarea";
 
+interface WriteForm {
+  question: string;
+}
+
+interface MutationResult {
+  success: boolean;
+  post: Post;
+}
+
 const Write: NextPage = () => {
+  const router = useRouter();
+  const { register, handleSubmit } = useForm<WriteForm>();
+
+  const [post, { loading, data }] = useMutation<MutationResult>("/api/posts");
+
+  const onValid = (data: WriteForm) => {
+    if (loading) return;
+    post(data);
+  };
+
+  useEffect(() => {
+    if (data && data.success) {
+      router.push(`/community/${data.post.id}`);
+    }
+  }, [data, router]);
+
   return (
     <Layout canGoBack title="Write Post">
       <div className="container pt-5 pb-5">
-        <form className="space-y-5">
-          <TextArea required placeholder="Ask a question!" />
-          <Button type="submit" text="Submit" />
+        <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+          <TextArea
+            register={register("question", {
+              required: true,
+              minLength: 10,
+              validate: (value) => !!value.replace(/(\s*)$/g, "").length,
+            })}
+            required
+            minLength="10"
+            name="question"
+            placeholder="Ask a question!"
+          />
+          <Button type="submit" text={loading ? "Loading" : "Submit"} disabled={loading} />
         </form>
       </div>
     </Layout>

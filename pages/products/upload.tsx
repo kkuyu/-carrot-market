@@ -58,8 +58,18 @@ const Upload: NextPage = () => {
           </div>
           <Input register={register("name", { required: true })} required label="Name" name="name" type="text" />
           <Input register={register("price", { required: true })} required label="Price" placeholder="0.00" name="price" type="text" kind="price" />
-          <TextArea register={register("description", { required: true, validate: (value) => !!value.replace(/(\s*)$/g, "").length })} required name="description" label="Description" />
-          <Button type="submit" text={loading ? "Loading" : "Upload product"} />
+          <TextArea
+            register={register("description", {
+              required: true,
+              minLength: 10,
+              validate: (value) => !!value.replace(/(\s*)$/g, "").length,
+            })}
+            required
+            minLength="10"
+            name="description"
+            label="Description"
+          />
+          <Button type="submit" text={loading ? "Loading" : "Upload product"} disabled={loading} />
         </form>
       </div>
     </Layout>

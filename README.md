@@ -135,7 +135,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 **#12 동네생활**
 
 - [x] 12.0 Models
-- [ ] 12.1 Forms and Handlers
+- [x] 12.1 Forms and Handlers
 - [ ] 12.2 Post Detail
 - [ ] 12.3 궁금해요
 - [ ] 12.4 Answer
