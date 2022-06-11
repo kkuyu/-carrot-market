@@ -75,8 +75,9 @@ const CommunityDetail: NextPage = () => {
   useEffect(() => {
     if (commentData && commentData.success) {
       reset();
+      boundMutate();
     }
-  }, [commentData, reset]);
+  }, [commentData, reset, boundMutate]);
 
   if (!data || !data.success || error) {
     return null;
@@ -107,7 +108,12 @@ const CommunityDetail: NextPage = () => {
                 <span className="font-semibold text-orange-500">Q.</span> {data?.post.question}
               </div>
             </div>
-            <div className="mt-5 px-4 border-t">
+            <div className="mt-5 px-4">
+              <div className="flex items-center justify-end w-full text-xs font-semibold text-gray-500">
+                <span className="flex-none">{String(data.post.createdAt)}</span>
+              </div>
+            </div>
+            <div className="mt-3 px-4 border-t">
               <div className="flex w-full py-2.5 space-x-5 text-gray-700">
                 <button type="button" onClick={onCuriosityClick} className={cls("flex items-center space-x-1 text-sm", data.isCuriosity ? "text-teal-600" : "")} disabled={curiosityLoading}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -115,7 +121,7 @@ const CommunityDetail: NextPage = () => {
                   </svg>
                   <span>Curiosities {data.post._count.curiosities}</span>
                 </button>
-                <div className="flex items-center space-x-1 text-sm">
+                <span className="flex items-center space-x-1 text-sm">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path
                       strokeLinecap="round"
@@ -125,7 +131,7 @@ const CommunityDetail: NextPage = () => {
                     ></path>
                   </svg>
                   <span>Comments {data.post._count.comments}</span>
-                </div>
+                </span>
               </div>
             </div>
           </div>
