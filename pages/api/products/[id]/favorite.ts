@@ -13,6 +13,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       userId: user?.id,
       productId: cleanId,
     },
+    select: {
+      id: true,
+    },
   });
   if (exists) {
     await client.favorite.delete({

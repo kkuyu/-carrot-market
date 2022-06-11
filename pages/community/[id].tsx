@@ -5,6 +5,9 @@ import Link from "next/link";
 import { Comment, Post, User } from "@prisma/client";
 import useSWR from "swr";
 
+import { cls } from "@libs/utils";
+import useMutation from "@libs/client/useMutation";
+
 import Layout from "@components/layout";
 import TextArea from "@components/textarea";
 import Button from "@components/button";
@@ -16,12 +19,34 @@ interface CommunityDetailResponse {
     comments: (Comment & { user: Pick<User, "name"> })[];
     _count: { curiosities: number; comments: number };
   };
+  isCuriosity: boolean;
 }
 
 const CommunityDetail: NextPage = () => {
   const router = useRouter();
 
-  const { data, error } = useSWR<CommunityDetailResponse>(router.query.id ? `/api/posts/${router.query.id}` : null);
+  const { data, error, mutate: boundMutate } = useSWR<CommunityDetailResponse>(router.query.id ? `/api/posts/${router.query.id}` : null);
+
+  const [toggleCuriosity] = useMutation(`/api/posts/${router.query.id}/curiosity`);
+
+  const onCuriosityClick = () => {
+    if (!data) return;
+    boundMutate(
+      {
+        ...data,
+        post: {
+          ...data.post,
+          _count: {
+            ...data.post._count,
+            curiosities: data.isCuriosity ? data.post._count.curiosities - 1 : data.post._count.curiosities + 1,
+          },
+        },
+        isCuriosity: !data.isCuriosity,
+      },
+      false
+    );
+    toggleCuriosity({});
+  };
 
   useEffect(() => {
     if (data && !data.success) {
@@ -52,7 +77,7 @@ const CommunityDetail: NextPage = () => {
         </div>
 
         <div className="-mx-4 border-b border-b-gray-300">
-          <button type="button" className="flex flex-col items-stretch w-full text-left">
+          <div className="flex flex-col items-stretch w-full text-left">
             <div className="pt-5 px-4">
               <div className="text-gray-700">
                 <span className="font-semibold text-orange-500">Q.</span> {data?.post.question}
@@ -60,13 +85,13 @@ const CommunityDetail: NextPage = () => {
             </div>
             <div className="mt-5 px-4 border-t">
               <div className="flex w-full py-2.5 space-x-5 text-gray-700">
-                <span className="flex items-center space-x-1 text-sm">
+                <button type="button" onClick={onCuriosityClick} className={cls("flex items-center space-x-1 text-sm", data.isCuriosity ? "text-teal-600" : "")}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <span>Curiosities {data.post._count.curiosities}</span>
-                </span>
-                <span className="flex items-center space-x-1 text-sm">
+                </button>
+                <button type="button" className="flex items-center space-x-1 text-sm">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path
                       strokeLinecap="round"
@@ -76,10 +101,10 @@ const CommunityDetail: NextPage = () => {
                     ></path>
                   </svg>
                   <span>Comments {data.post._count.comments}</span>
-                </span>
+                </button>
               </div>
             </div>
-          </button>
+          </div>
         </div>
 
         {data?.post?.comments && !data.post.comments.length
