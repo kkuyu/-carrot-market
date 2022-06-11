@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
@@ -12,6 +13,10 @@ import Layout from "@components/layout";
 import TextArea from "@components/textarea";
 import Button from "@components/button";
 
+interface CommentForm {
+  comment: string;
+}
+
 interface CommunityDetailResponse {
   success: boolean;
   post: Post & {
@@ -22,15 +27,22 @@ interface CommunityDetailResponse {
   isCuriosity: boolean;
 }
 
+interface MutationResult {
+  success: true;
+}
+
 const CommunityDetail: NextPage = () => {
   const router = useRouter();
+  const { register, handleSubmit, reset } = useForm<CommentForm>();
 
   const { data, error, mutate: boundMutate } = useSWR<CommunityDetailResponse>(router.query.id ? `/api/posts/${router.query.id}` : null);
 
-  const [toggleCuriosity] = useMutation(`/api/posts/${router.query.id}/curiosity`);
+  const [curiosityToggle, { loading: curiosityLoading }] = useMutation(`/api/posts/${router.query.id}/curiosity`);
+  const [commentSend, { data: commentData, loading: commentLoading }] = useMutation<MutationResult>(`/api/posts/${router.query.id}/comment`);
 
   const onCuriosityClick = () => {
     if (!data) return;
+    if (curiosityLoading) return;
     boundMutate(
       {
         ...data,
@@ -45,7 +57,13 @@ const CommunityDetail: NextPage = () => {
       },
       false
     );
-    toggleCuriosity({});
+    curiosityToggle({});
+  };
+
+  const onValid = (data: CommentForm) => {
+    if (!data) return;
+    if (commentLoading) return;
+    commentSend(data);
   };
 
   useEffect(() => {
@@ -53,6 +71,12 @@ const CommunityDetail: NextPage = () => {
       router.push("/community");
     }
   }, [data, router]);
+
+  useEffect(() => {
+    if (commentData && commentData.success) {
+      reset();
+    }
+  }, [commentData, reset]);
 
   if (!data || !data.success || error) {
     return null;
@@ -85,13 +109,13 @@ const CommunityDetail: NextPage = () => {
             </div>
             <div className="mt-5 px-4 border-t">
               <div className="flex w-full py-2.5 space-x-5 text-gray-700">
-                <button type="button" onClick={onCuriosityClick} className={cls("flex items-center space-x-1 text-sm", data.isCuriosity ? "text-teal-600" : "")}>
+                <button type="button" onClick={onCuriosityClick} className={cls("flex items-center space-x-1 text-sm", data.isCuriosity ? "text-teal-600" : "")} disabled={curiosityLoading}>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                   </svg>
                   <span>Curiosities {data.post._count.curiosities}</span>
                 </button>
-                <button type="button" className="flex items-center space-x-1 text-sm">
+                <div className="flex items-center space-x-1 text-sm">
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path
                       strokeLinecap="round"
@@ -101,7 +125,7 @@ const CommunityDetail: NextPage = () => {
                     ></path>
                   </svg>
                   <span>Comments {data.post._count.comments}</span>
-                </button>
+                </div>
               </div>
             </div>
           </div>
@@ -115,7 +139,7 @@ const CommunityDetail: NextPage = () => {
                   <div className="flex-none w-8 h-8 bg-slate-200 rounded-full" />
                   <div>
                     <span className="block text-sm font-semibold text-gray-700">{comment.user.name}</span>
-                    <span className="block text-xs text-gray-500">{comment.createdAt.toString()}</span>
+                    <span className="block text-xs text-gray-500">{String(comment.createdAt)}</span>
                     <p className="mt-2 text-gray-700">{comment.comment}</p>
                   </div>
                 </div>
@@ -123,9 +147,19 @@ const CommunityDetail: NextPage = () => {
             ))}
 
         <div className="mt-6">
-          <form className="space-y-5">
-            <TextArea name="description" placeholder="Answer this question!" required />
-            <Button type="submit" text="Reply" />
+          <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+            <TextArea
+              register={register("comment", {
+                required: true,
+                minLength: 10,
+                validate: (value) => !!value.replace(/(\s*)$/g, "").length,
+              })}
+              required
+              minLength="10"
+              name="comment"
+              placeholder="Answer this question!"
+            />
+            <Button type="submit" text={commentLoading ? "Loading" : "Reply"} disabled={commentLoading} />
           </form>
         </div>
       </div>

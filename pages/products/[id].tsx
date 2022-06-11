@@ -23,12 +23,13 @@ const ProductDetail: NextPage = () => {
 
   const { data, error, mutate: boundMutate } = useSWR<ProductDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
 
-  const [toggleFavorite] = useMutation(`/api/products/${router.query.id}/favorite`);
+  const [favoriteToggle, { loading: favoriteLoading }] = useMutation(`/api/products/${router.query.id}/favorite`);
 
   const onFavoriteClick = () => {
     if (!data) return;
+    if (favoriteLoading) return;
     boundMutate((prev) => prev && { ...prev, isFavorite: !prev.isFavorite }, false);
-    toggleFavorite({});
+    favoriteToggle({});
   };
 
   useEffect(() => {
@@ -66,6 +67,7 @@ const ProductDetail: NextPage = () => {
               <button
                 onClick={onFavoriteClick}
                 className={cls("flex items-center justify-center p-3 rounded-md hover:bg-gray-100", data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500")}
+                disabled={favoriteLoading}
               >
                 {data?.isFavorite ? (
                   <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">

@@ -6,6 +6,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   const { id } = req.query;
+  const { comment } = req.body;
   const { user } = req.session;
   const cleanId = +id?.toString()!;
   const post = await client.post.findUnique({
@@ -20,38 +21,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const error = new Error("Not found post");
     throw error;
   }
-  const exists = await client.curiosity.findFirst({
-    where: {
-      userId: user?.id,
-      postId: cleanId,
-    },
-    select: {
-      id: true,
+  await client.comment.create({
+    data: {
+      user: {
+        connect: {
+          id: user?.id,
+        },
+      },
+      post: {
+        connect: {
+          id: cleanId,
+        },
+      },
+      comment,
     },
   });
-  if (exists) {
-    await client.curiosity.delete({
-      where: {
-        id: exists.id,
-      },
-    });
-  }
-  if (!exists) {
-    await client.curiosity.create({
-      data: {
-        user: {
-          connect: {
-            id: user?.id,
-          },
-        },
-        post: {
-          connect: {
-            id: cleanId,
-          },
-        },
-      },
-    });
-  }
   return res.status(200).json({
     success: true,
   });

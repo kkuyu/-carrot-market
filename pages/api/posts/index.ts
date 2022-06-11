@@ -10,7 +10,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   if (req.method === "POST") {
     const { question } = req.body;
     const { user } = req.session;
-    const post = await client.post.create({
+    const newPost = await client.post.create({
       data: {
         question,
         user: {
@@ -22,7 +22,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
     return res.status(200).json({
       success: true,
-      post,
+      post: newPost,
     });
   }
 }
