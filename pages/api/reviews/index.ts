@@ -5,19 +5,30 @@ import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  const profile = await client.user.findUnique({
+  const { user } = req.session;
+  const reviews = await client.review.findMany({
     where: {
-      id: req.session.user?.id,
+      createdForId: user?.id,
+    },
+    include: {
+      createdBy: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
     },
   });
-  if (!profile) {
-    return res.status(200).json({
-      success: false,
+  if (!reviews) {
+    res.status(200).json({
+      success: true,
+      reviews: [],
     });
   }
   return res.status(200).json({
     success: true,
-    profile,
+    reviews,
   });
 }
 

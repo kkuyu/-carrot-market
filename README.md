@@ -146,8 +146,8 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 
 **#13 PROFILE**
 
-- [ ] 13.0 Models
-- [ ] 13.1 Reviews
+- [x] 13.0 Models
+- [x] 13.1 Reviews
 - [ ] 13.2 Handlers
 - [ ] 13.3 Profile Page
 - [ ] 13.4 Sales, Purchases, Favorites

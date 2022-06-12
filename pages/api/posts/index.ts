@@ -34,6 +34,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       },
     });
+    if (!posts) {
+      return res.status(200).json({
+        success: true,
+        posts: [],
+      });
+    }
     return res.status(200).json({
       success: true,
       posts,

@@ -15,6 +15,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       },
     });
+    if (!products) {
+      res.json({
+        success: true,
+        products: [],
+      });
+    }
     res.json({
       success: true,
       products,
