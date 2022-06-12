@@ -3,6 +3,8 @@ import Link from "next/link";
 import { Post, User } from "@prisma/client";
 import useSWR from "swr";
 
+import useCoords from "@libs/client/useCoords";
+
 import Layout from "@components/layout";
 import FloatingButton from "@components/floating-button";
 
@@ -15,7 +17,9 @@ interface PostsResponse {
 }
 
 const Community: NextPage = () => {
-  const { data } = useSWR<PostsResponse>("/api/posts");
+  const { latitude, longitude } = useCoords();
+
+  const { data } = useSWR<PostsResponse>(`/api/posts?latitude=${latitude}&longitude=${longitude}`);
 
   return (
     <Layout hasTabBar title="Community">

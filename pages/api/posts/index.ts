@@ -6,6 +6,9 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
+    const { latitude, longitude } = req.query;
+    const parsedLatitude = parseFloat((latitude || 0).toString());
+    const parsedLongitude = parseFloat((longitude || 0).toString());
     const posts = await client.post.findMany({
       include: {
         user: {
@@ -18,6 +21,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             curiosities: true,
             comments: true,
           },
+        },
+      },
+      where: {
+        latitude: {
+          gte: parsedLatitude - 0.01,
+          lte: parsedLatitude + 0.01,
+        },
+        longitude: {
+          gte: parsedLongitude - 0.01,
+          lte: parsedLongitude + 0.01,
         },
       },
     });
