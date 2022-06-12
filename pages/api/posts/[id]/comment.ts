@@ -9,6 +9,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   const { comment } = req.body;
   const { user } = req.session;
   const cleanId = +id?.toString()!;
+  if (!comment) {
+    const error = new Error("Invalid request body");
+    throw error;
+  }
   const post = await client.post.findUnique({
     where: {
       id: cleanId,

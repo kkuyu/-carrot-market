@@ -4,6 +4,7 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { Post } from "@prisma/client";
 
+import useCoords from "@libs/client/useCoords";
 import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
@@ -23,11 +24,12 @@ const Write: NextPage = () => {
   const router = useRouter();
   const { register, handleSubmit } = useForm<WriteForm>();
 
+  const { state, latitude, longitude } = useCoords();
   const [post, { loading, data }] = useMutation<MutationResult>("/api/posts");
 
   const onValid = (data: WriteForm) => {
     if (loading) return;
-    post(data);
+    post({ ...data, latitude, longitude });
   };
 
   useEffect(() => {
@@ -39,7 +41,10 @@ const Write: NextPage = () => {
   return (
     <Layout canGoBack title="Write Post">
       <div className="container pt-5 pb-5">
-        <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+        <div className="flex items-center justify-end w-full text-xs font-semibold text-gray-500">
+          <span className="flex-none">Location permission: {state}</span>
+        </div>
+        <form onSubmit={handleSubmit(onValid)} noValidate className="mt-1 space-y-5">
           <TextArea
             register={register("question", {
               required: true,
