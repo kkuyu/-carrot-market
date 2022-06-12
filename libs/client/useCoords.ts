@@ -12,11 +12,11 @@ function useCoords() {
     setCoords({ state: "granted", latitude, longitude });
   };
   const onError = (error: GeolocationPositionError) => {
-    if (error.code == error.PERMISSION_DENIED) {
-      setCoords({ state: "denied", latitude: null, longitude: null });
-    } else {
-      setCoords({ state: "error", latitude: null, longitude: null });
-    }
+    setCoords({
+      state: error.code == error.PERMISSION_DENIED ? "denied" : "error",
+      latitude: null,
+      longitude: null,
+    });
   };
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(onSuccess, onError);

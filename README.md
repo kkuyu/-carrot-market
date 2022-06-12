@@ -142,7 +142,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 12.5 All Posts
 - [x] 12.6 useCoords
 - [x] 12.7 Geo Search
-- [ ] 12.8 Geo Bug
+- [x] 12.8 Geo Bug
 
 **#13 PROFILE**
 
