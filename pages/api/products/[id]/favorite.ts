@@ -26,24 +26,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const error = new Error("Not found product");
     throw error;
   }
-  const exists = await client.favorite.findFirst({
+  const exists = await client.record.findFirst({
     where: {
       userId: user?.id,
       productId: cleanId,
+      kind: "Favorite",
     },
     select: {
       id: true,
     },
   });
   if (exists) {
-    await client.favorite.delete({
+    await client.record.delete({
       where: {
         id: exists.id,
       },
     });
   }
   if (!exists) {
-    await client.favorite.create({
+    await client.record.create({
       data: {
         user: {
           connect: {
@@ -55,6 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             id: cleanId,
           },
         },
+        kind: "Favorite",
       },
     });
   }

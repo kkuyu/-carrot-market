@@ -6,7 +6,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 
 [carrot-market](https://nomadcoders.co/carrot-market)
 
-## Curriculum
+### Curriculum
 
 **#1 ❤️ COMING SOON!**
 
@@ -245,3 +245,26 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [ ] 22.4 Preview Deployments
 - [ ] 22.5 Limits in Vercel
 - [ ] 22.6 Bye Bye!
+
+### PlanetScale Database
+
+```
+Create DB
+pscale database create [name] --region [area]
+Connect DB
+pscale connect [name]
+```
+
+### Prisma Client
+
+```
+클라이언트 생성
+npx prisma generate
+Prisma 관리자 실행
+npx prisma studio
+```
+
+### Code Challenges
+
+- [ ] Input geo range & search products
+- [x] Separate schema record & enum

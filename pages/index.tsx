@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import { Product } from "@prisma/client";
+import { Product, Record } from "@prisma/client";
 import useSWR from "swr";
 
 import useUser from "@libs/client/useUser";
@@ -10,7 +10,7 @@ import FloatingButton from "@components/floating-button";
 
 interface ProductResponse {
   success: boolean;
-  products: (Product & { _count: { favorites: number } })[];
+  products: (Product & { records: Pick<Record, "id">[] })[];
 }
 
 const Home: NextPage = () => {
@@ -26,7 +26,7 @@ const Home: NextPage = () => {
       <div className="container">
         <div className="-mx-4 flex flex-col divide-y">
           {data?.products.map((product) => (
-            <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product._count.favorites} />
+            <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product.records.length} />
           ))}
           <FloatingButton href="/products/upload">
             <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">

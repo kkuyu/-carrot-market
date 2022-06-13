@@ -27,10 +27,7 @@ model User {
   curiosities     Curiosity[]
   writtenReviews  Review[]    @relation(name: "writtenReviews")
   receivedReviews Review[]    @relation(name: "receivedReviews")
-  favorites       Favorite[]
-  sales           Sale[]
-  purchases       Purchase[]
-  // records         Record[]
+  records         Record[]
 }
 
 model Token {
@@ -43,19 +40,16 @@ model Token {
 }
 
 model Product {
-  id          Int        @id @default(autoincrement())
-  imageUrl    String     @db.Text
+  id          Int      @id @default(autoincrement())
+  imageUrl    String   @db.Text
   name        String
   price       Int
-  description String     @db.MediumText
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  description String   @db.MediumText
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
-  favorites   Favorite[]
-  sales       Sale[]
-  purchases   Purchase[]
-  // records     Record[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  records     Record[]
 }
 
 model Post {
@@ -104,8 +98,15 @@ model Review {
   updatedAt    DateTime @updatedAt
 }
 
-model Favorite {
+enum Kind {
+  Favorite
+  Sale
+  Purchase
+}
+
+model Record {
   id        Int      @id @default(autoincrement())
+  kind      Kind
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -113,40 +114,3 @@ model Favorite {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-model Sale {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-model Purchase {
-  id        Int      @id @default(autoincrement())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId Int
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-}
-
-// enum Kind {
-//   Favorite
-//   Sale
-//   Purchase
-// }
-
-// model Record {
-//   id        Int      @id @default(autoincrement())
-//   kind      Kind
-//   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-//   userId    Int
-//   product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-//   productId Int
-//   createdAt DateTime @default(now())
-//   updatedAt DateTime @updatedAt
-// }
