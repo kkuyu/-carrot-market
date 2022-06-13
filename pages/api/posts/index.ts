@@ -13,6 +13,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         user: {
           select: {
+            id: true,
             name: true,
           },
         },

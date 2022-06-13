@@ -15,9 +15,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     where: {
       payload: token,
     },
-    // include: {
-    //   user: true,
-    // },
   });
   if (!foundToken) {
     const error = new Error("Invalid token");
