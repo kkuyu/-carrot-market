@@ -11,7 +11,7 @@ interface UserResponse {
 function useUser() {
   const router = useRouter();
 
-  const { data, error } = useSWR<UserResponse>("/api/users/me");
+  const { data, error } = useSWR<UserResponse>("/api/users/my");
 
   useEffect(() => {
     if (data && !data.success) {
