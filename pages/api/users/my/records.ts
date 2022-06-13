@@ -18,6 +18,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       userId: user?.id,
       kind: kindValue,
     },
+    include: {
+      product: {
+        include: {
+          records: {
+            where: {
+              kind: "Favorite",
+            },
+          },
+        },
+      },
+    },
   });
   if (!records) {
     return res.status(200).json({
