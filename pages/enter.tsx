@@ -73,7 +73,7 @@ const Enter: NextPage = () => {
           </>
         ) : (
           <>
-            <h5 className="pt-6 text-sm font-semibold text-center text-gray-500">Enter using:</h5>
+            <h5 className="mt-6 text-sm font-semibold text-center text-gray-500">Enter using:</h5>
             <div className="mt-6">
               <div className="w-full grid grid-cols-2 gap-16 border-b">
                 <button className={cls("pb-4 font-semibold border-b-2", method === "email" ? "text-orange-400 border-b-orange-500" : "text-gray-500 border-b-transparent")} onClick={onEmailClick}>
@@ -89,7 +89,7 @@ const Enter: NextPage = () => {
                 {method === "email" ? <Input register={register("email", { required: true })} name="email" label="Email address" type="email" required={true} /> : null}
                 {method === "email" ? <Button type="submit" text={loading ? "Loading" : "Get login link"} disabled={loading} /> : null}
 
-                {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="phone" required={true} /> : null}
+                {method === "phone" ? <Input register={register("phone", { required: true })} name="phone" label="Phone number" type="number" kind="text" required={true} /> : null}
                 {method === "phone" ? <Button type="submit" text={loading ? "Loading" : "Get one-time password"} disabled={loading} /> : null}
               </form>
             </div>
