@@ -268,3 +268,4 @@ npx prisma studio
 
 - [ ] Input geo range & search products
 - [x] Separate schema record & enum
+- [x] Generate a random name when registering as a member

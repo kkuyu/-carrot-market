@@ -86,7 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
     }
-    if (name) {
+    if (name && name !== currentProfile?.name) {
       await client.user.update({
         where: {
           id: user?.id,

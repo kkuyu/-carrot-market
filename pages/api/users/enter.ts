@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import twilio from "twilio";
 
+import { getRandomName } from "@libs/utils";
 import client from "@libs/client/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import smtpTransport from "@libs/server/email";
@@ -14,6 +15,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     throw error;
   }
 
+  const name = getRandomName();
   const userPayload = {
     ...(phone ? { phone } : {}),
     ...(email ? { email } : {}),
@@ -28,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             ...userPayload,
           },
           create: {
-            name: "Anonymous",
+            name,
             ...userPayload,
           },
         },

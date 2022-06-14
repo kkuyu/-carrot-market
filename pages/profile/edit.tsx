@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 
+import { getRandomName } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 
@@ -44,6 +45,10 @@ const EditProfile: NextPage = () => {
     }
   };
 
+  const onNameGeneratorClick = () => {
+    setValue("name", getRandomName());
+  };
+
   useEffect(() => {
     if (user?.name) setValue("name", user?.name);
     if (user?.email) setValue("email", user.email);
@@ -60,7 +65,7 @@ const EditProfile: NextPage = () => {
 
   useEffect(() => {
     if (data && data.success) {
-      router.push("/users/profile");
+      router.push("/profile");
     }
   }, [data, router]);
 
@@ -84,7 +89,22 @@ const EditProfile: NextPage = () => {
               <input type="file" id="picture" className="a11y-hidden" name="" accept="image/*" />
             </label>
           </div>
-          <Input register={register("name", { required: true })} required label="name" name="name" type="text" />
+          <Input
+            register={register("name", { required: true })}
+            required
+            label="Name"
+            name="name"
+            type="text"
+            appendButton={
+              <div className="ml-2">
+                <button onClick={onNameGeneratorClick} type="button" className="flex items-center justify-center p-3 text-gray-400 rounded-md hover:bg-gray-100 hover:text-gray-500">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                  </svg>
+                </button>
+              </div>
+            }
+          />
           <Input register={register("email")} label="Email address" name="email" type="email" />
           <Input register={register("phone")} label="Phone number" name="phone" type="number" kind="phone" />
           {formState.errors ? <span className="block mt-2 text-sm font-bold text-red-500">{formState.errors.formError?.message}</span> : null}

@@ -1,3 +1,4 @@
+import React, { ReactNode } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
 interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
@@ -7,10 +8,11 @@ interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
   type: string;
   required?: boolean;
   register?: UseFormRegisterReturn;
+  appendButton?: ReactNode;
   [key: string]: any;
 }
 
-export default function Input({ label, name, kind = "text", type, required = false, register, ...rest }: InputProps) {
+export default function Input({ label, name, kind = "text", type, required = false, register, appendButton, ...rest }: InputProps) {
   return (
     <div className="space-y-1">
       <label className="block text-sm font-semibold text-gray-700" htmlFor={name}>
@@ -27,6 +29,7 @@ export default function Input({ label, name, kind = "text", type, required = fal
             className="w-full px-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
               focus:outline-none focus:ring-orange-500 focus:border-orange-500"
           />
+          {appendButton}
         </div>
       ) : null}
       {kind === "price" ? (
