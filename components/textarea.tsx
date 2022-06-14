@@ -3,11 +3,12 @@ import { UseFormRegisterReturn } from "react-hook-form";
 interface TextAreaProps {
   label?: string;
   name?: string;
+  required?: boolean;
   register?: UseFormRegisterReturn;
   [key: string]: any;
 }
 
-export default function TextArea({ label, name, register, ...rest }: TextAreaProps) {
+export default function TextArea({ label, name, required = false, register, ...rest }: TextAreaProps) {
   return (
     <div className="space-y-1">
       {label ? (
@@ -20,6 +21,7 @@ export default function TextArea({ label, name, register, ...rest }: TextAreaPro
         className="w-full border border-gray-300 rounded-md shadow-sm
           focus:outline-none focus:ring-orange-500 focus:border-orange-500"
         rows={4}
+        required={required}
         {...register}
         {...rest}
       />

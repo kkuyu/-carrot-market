@@ -5,12 +5,12 @@ interface InputProps {
   name: string;
   kind?: "text" | "phone" | "price";
   type: string;
-  required: boolean;
+  required?: boolean;
   register?: UseFormRegisterReturn;
   [key: string]: any;
 }
 
-export default function Input({ label, name, kind = "text", type, required, register, ...rest }: InputProps) {
+export default function Input({ label, name, kind = "text", type, required = false, register, ...rest }: InputProps) {
   return (
     <div className="space-y-1">
       <label className="block text-sm font-semibold text-gray-700" htmlFor={name}>
