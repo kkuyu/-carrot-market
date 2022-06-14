@@ -152,7 +152,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 13.3 Profile Page
 - [x] 13.4 Sales, Purchases, Favorites
 - [x] 13.5 Edit Profile part One
-- [ ] 13.6 Edit Profile part Two
+- [x] 13.6 Edit Profile part Two
 
 **#14 STREAMS**
 

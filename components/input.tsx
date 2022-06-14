@@ -1,6 +1,6 @@
 import type { UseFormRegisterReturn } from "react-hook-form";
 
-interface InputProps {
+interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
   label: string;
   name: string;
   kind?: "text" | "phone" | "price";
