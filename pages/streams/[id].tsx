@@ -1,8 +1,11 @@
 import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { Stream } from "@prisma/client";
 import useSWR from "swr";
+
+import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
 import Message from "@components/message";
@@ -12,9 +15,23 @@ interface StreamResponse {
   stream: Stream;
 }
 
+interface MessageForm {
+  message: string;
+}
+
 const StreamDetail: NextPage = () => {
   const router = useRouter();
+
+  const { register, handleSubmit, reset } = useForm<MessageForm>();
   const { data, error } = useSWR<StreamResponse>(router.query.id ? `/api/streams/${router.query.id}` : null);
+
+  const [sendMessage, { loading, data: sendMessageData }] = useMutation(`/api/streams/${router.query.id}/message`);
+
+  const onValid = (data: MessageForm) => {
+    if (loading) return;
+    reset();
+    sendMessage(data);
+  };
 
   useEffect(() => {
     if (data && !data.success) {
@@ -46,8 +63,13 @@ const StreamDetail: NextPage = () => {
           </div>
           <div className="fixed bottom-0 left-0 w-full">
             <div className="mx-auto w-full max-w-xl bg-white border-t">
-              <form className="relative px-2 py-2">
-                <input type="text" className="w-full pl-3.5 pr-10 py-1.5 border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500" />
+              <form onSubmit={handleSubmit(onValid)} noValidate className="relative px-2 py-2">
+                <input
+                  {...register("message", { required: true })}
+                  required
+                  type="text"
+                  className="w-full pl-3.5 pr-10 py-1.5 border-gray-300 rounded-full shadow-sm focus:outline-none focus:ring-orange-500 focus:border-orange-500"
+                />
                 <div className="absolute top-1/2 right-4 -translate-y-1/2">
                   <button
                     type="submit"
