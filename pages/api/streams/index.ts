@@ -6,27 +6,16 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
-    const products = await client.product.findMany({
-      include: {
-        records: {
-          where: {
-            kind: "Favorite",
-          },
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
-    if (!products) {
+    const streams = await client.stream.findMany();
+    if (!streams) {
       return res.status(200).json({
         success: true,
-        products: [],
+        streams: [],
       });
     }
     return res.status(200).json({
       success: true,
-      products,
+      streams,
     });
   }
   if (req.method === "POST") {
@@ -36,9 +25,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const error = new Error("Invalid request body");
       throw error;
     }
-    const newProduct = await client.product.create({
+    const newStream = await client.stream.create({
       data: {
-        imageUrl: "/favicon.ico",
         name,
         price,
         description,
@@ -51,7 +39,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
     return res.status(200).json({
       success: true,
-      product: newProduct,
+      stream: newStream,
     });
   }
 }

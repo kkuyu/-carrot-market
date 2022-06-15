@@ -51,17 +51,17 @@ const ProductDetail: NextPage = () => {
             <div className="flex items-center w-full space-x-3 py-3 text-left">
               <div className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
               <div>
-                <strong className="block text-sm font-semibold text-gray-700">{data?.product.user.name}</strong>
-                <Link href={`/users/profiles/${data?.product.user.id}`}>
+                <strong className="block text-sm font-semibold text-gray-700">{data.product.user.name}</strong>
+                <Link href={`/users/profiles/${data.product.user.id}`}>
                   <a className="block text-xs font-semibold text-gray-500">View profile &rarr;</a>
                 </Link>
               </div>
             </div>
           </div>
           <div className="mt-5">
-            <h1 className="text-3xl font-bold text-gray-900">{data?.product.name}</h1>
-            <span className="mt-3 block text-3xl text-gray-900">${data?.product.price}</span>
-            <p className="my-6 text-gray-700">{data?.product.description}</p>
+            <h1 className="text-3xl font-bold text-gray-900">{data.product.name}</h1>
+            <span className="mt-3 block text-xl text-gray-900">${data.product.price}</span>
+            <p className="my-6 text-gray-700">{data.product.description}</p>
             <div className="flex items-center justify-between space-x-2">
               <Button large text="Talk to seller" />
               <button

@@ -1,15 +1,39 @@
+import { useEffect } from "react";
 import type { NextPage } from "next";
+import { useRouter } from "next/router";
+import { Stream } from "@prisma/client";
+import useSWR from "swr";
 
 import Layout from "@components/layout";
 import Message from "@components/message";
 
+interface StreamResponse {
+  success: boolean;
+  stream: Stream;
+}
+
 const StreamDetail: NextPage = () => {
+  const router = useRouter();
+  const { data, error } = useSWR<StreamResponse>(router.query.id ? `/api/streams/${router.query.id}` : null);
+
+  useEffect(() => {
+    if (data && !data.success) {
+      router.push("/streams");
+    }
+  }, [data, router]);
+
+  if (!data || !data.success || error) {
+    return null;
+  }
+
   return (
     <Layout canGoBack>
       <div className="container pt-5 pb-16">
         <div>
           <div className="w-full aspect-video bg-slate-300 rounded-md shadow-md" />
-          <h3 className="mt-5 text-2xl font-semibold text-gray-800">Let&apos;s try carrot</h3>
+          <h3 className="mt-5 text-2xl font-semibold text-gray-800">{data.stream.name}</h3>
+          <span className="mt-3 block text-xl text-gray-900">${data.stream.price}</span>
+          <p className="my-6 text-gray-700">{data.stream.description}</p>
         </div>
         <div className="mt-4 pt-4 -mx-4 px-4 h-[50vh] border-t overflow-y-auto">
           <div className="space-y-4">

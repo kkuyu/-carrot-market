@@ -13,7 +13,7 @@ import TextArea from "@components/textarea";
 
 interface CreateForm {
   name: string;
-  price: string;
+  price: number;
   description: string;
 }
 
@@ -44,7 +44,7 @@ const Create: NextPage = () => {
       <div className="container pt-5 pb-5">
         <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
           <Input register={register("name", { required: true })} required label="Name" name="name" type="text" />
-          <Input register={register("price", { required: true })} required label="Price" placeholder="0.00" name="price" type="text" kind="price" />
+          <Input register={register("price", { required: true, valueAsNumber: true })} required label="Price" placeholder="0.00" name="price" type="text" kind="price" />
           <TextArea
             register={register("description", {
               required: true,
