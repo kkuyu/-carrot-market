@@ -11,6 +11,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     where: {
       id: cleanId,
     },
+    include: {
+      messages: {
+        select: {
+          id: true,
+          message: true,
+          user: {
+            select: {
+              id: true,
+              avatar: true,
+            },
+          },
+        },
+      },
+    },
   });
   if (!stream) {
     const error = new Error("Not found stream");

@@ -1,18 +1,21 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { Stream } from "@prisma/client";
+import { Message, Stream, User } from "@prisma/client";
 import useSWR from "swr";
 
+import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
-import Message from "@components/message";
+import { default as MessageItem } from "@components/message";
 
 interface StreamResponse {
   success: boolean;
-  stream: Stream;
+  stream: Stream & {
+    messages: (Pick<Message, "id" | "message"> & { user: Pick<User, "id" | "avatar"> })[];
+  };
 }
 
 interface MessageForm {
@@ -21,10 +24,12 @@ interface MessageForm {
 
 const StreamDetail: NextPage = () => {
   const router = useRouter();
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const { register, handleSubmit, reset } = useForm<MessageForm>();
-  const { data, error } = useSWR<StreamResponse>(router.query.id ? `/api/streams/${router.query.id}` : null);
+  const { data, error, mutate } = useSWR<StreamResponse>(router.query.id ? `/api/streams/${router.query.id}` : null);
 
+  const { user } = useUser();
   const [sendMessage, { loading, data: sendMessageData }] = useMutation(`/api/streams/${router.query.id}/message`);
 
   const onValid = (data: MessageForm) => {
@@ -38,6 +43,16 @@ const StreamDetail: NextPage = () => {
       router.push("/streams");
     }
   }, [data, router]);
+
+  useEffect(() => {
+    if (sendMessageData && sendMessageData.success) {
+      mutate();
+    }
+  }, [sendMessageData, mutate]);
+
+  useEffect(() => {
+    scrollRef?.current?.scrollIntoView();
+  });
 
   if (!data || !data.success || error) {
     return null;
@@ -54,12 +69,10 @@ const StreamDetail: NextPage = () => {
         </div>
         <div className="mt-4 pt-4 -mx-4 px-4 h-[50vh] border-t overflow-y-auto">
           <div className="space-y-4">
-            <Message message="Lorem ipsum dolor sit" />
-            <Message message="amet consectetur adipisicing elit." reversed />
-            <Message message="Odit neque fuga" />
-            <Message message="ex perspiciatis quibusdam totam molestiae ducimus dignissimos fugiat impedit id" />
-            <Message message="aspernatur consequuntur quas accusantium et dolore amet!" reversed />
-            <Message message="At, accusamus?" />
+            {data.stream.messages.map((message) => (
+              <MessageItem key={message.id} message={message.message} reversed={message.user.id === user?.id} />
+            ))}
+            <div ref={scrollRef} />
           </div>
           <div className="fixed bottom-0 left-0 w-full">
             <div className="mx-auto w-full max-w-xl bg-white border-t">
