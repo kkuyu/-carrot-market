@@ -6,12 +6,12 @@ import FloatingButton from "@components/floating-button";
 
 const Stream: NextPage = () => {
   return (
-    <Layout hasTabBar title="Stream">
+    <Layout hasTabBar title="Live Stream">
       <div className="container">
         <div className="-mx-4 divide-y">
           {[1, 1, 1, 1, 1].map((_, i) => {
             return (
-              <Link key={i} href={`/stream/${i}`}>
+              <Link key={i} href={`/streams/${i}`}>
                 <a className="block px-4 py-5">
                   <div className="w-full aspect-video bg-slate-300 rounded-md shadow-md" />
                   <h3 className="mt-2 text-base text-gray-800">Let&apos;s try carrot</h3>
@@ -20,7 +20,7 @@ const Stream: NextPage = () => {
             );
           })}
         </div>
-        <FloatingButton href="/stream/create">
+        <FloatingButton href="/streams/create">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path
               strokeLinecap="round"

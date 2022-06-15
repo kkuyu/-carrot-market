@@ -158,7 +158,6 @@ const CommunityDetail: NextPage = () => {
               register={register("comment", {
                 required: true,
                 minLength: 10,
-                validate: (value) => !!value.replace(/(\s*)$/g, "").length,
               })}
               required
               minLength="10"

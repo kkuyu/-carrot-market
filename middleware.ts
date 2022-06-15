@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 //   { path: "/product/upload", redirect: "/enter" },
 //   { path: "/inbox", redirect: "/enter" },
 //   { path: "/community/write", redirect: "/enter" },
-//   { path: "/stream/create", redirect: "/enter" },
+//   { path: "/streams/create", redirect: "/enter" },
 // ];
 
 export const middleware = (req: NextRequest) => {

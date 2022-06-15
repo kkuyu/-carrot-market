@@ -49,7 +49,6 @@ const Write: NextPage = () => {
             register={register("question", {
               required: true,
               minLength: 10,
-              validate: (value) => !!value.replace(/(\s*)$/g, "").length,
             })}
             required
             minLength="10"

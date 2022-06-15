@@ -156,7 +156,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 
 **#14 STREAMS**
 
-- [ ] 14.0 Upload Form
+- [x] 14.0 Upload Form
 - [ ] 14.1 Detail Page
 - [ ] 14.2 Send Message
 - [ ] 14.3 See Messages

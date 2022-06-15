@@ -62,7 +62,6 @@ const Upload: NextPage = () => {
             register={register("description", {
               required: true,
               minLength: 10,
-              validate: (value) => !!value.replace(/(\s*)$/g, "").length,
             })}
             required
             minLength="10"

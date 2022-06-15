@@ -77,7 +77,7 @@ export default function Layout({ title, canGoBack, hasTabBar, children }: Layout
                   <span className="text-xs">Inbox</span>
                 </a>
               </Link>
-              <Link href="/stream">
+              <Link href="/streams">
                 <a className={cls("flex flex-col items-center space-y-1", router.pathname === "/stream" ? "text-orange-500" : "hover:text-gray-500 transition-colors")}>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path
