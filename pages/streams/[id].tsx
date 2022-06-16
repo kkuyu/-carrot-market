@@ -27,7 +27,10 @@ const StreamDetail: NextPage = () => {
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const { register, handleSubmit, reset } = useForm<MessageForm>();
-  const { data, error, mutate } = useSWR<StreamResponse>(router.query.id ? `/api/streams/${router.query.id}` : null);
+  const { data, error, mutate } = useSWR<StreamResponse>(router.query.id ? `/api/streams/${router.query.id}` : null, {
+    refreshInterval: 1000,
+    revalidateOnFocus: false,
+  });
 
   const { user } = useUser();
   const [sendMessage, { loading, data: sendMessageData }] = useMutation(`/api/streams/${router.query.id}/message`);
@@ -35,6 +38,24 @@ const StreamDetail: NextPage = () => {
   const onValid = (data: MessageForm) => {
     if (loading) return;
     reset();
+    mutate(
+      (prev) =>
+        prev && {
+          ...prev,
+          stream: {
+            ...prev.stream,
+            messages: [
+              ...prev.stream.messages,
+              {
+                id: Date.now(),
+                message: data.message,
+                user: user as User,
+              },
+            ],
+          },
+        },
+      false
+    );
     sendMessage(data);
   };
 
@@ -43,12 +64,6 @@ const StreamDetail: NextPage = () => {
       router.push("/streams");
     }
   }, [data, router]);
-
-  useEffect(() => {
-    if (sendMessageData && sendMessageData.success) {
-      mutate();
-    }
-  }, [sendMessageData, mutate]);
 
   useEffect(() => {
     scrollRef?.current?.scrollIntoView();
