@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import type { NextPage } from "next";
 import Link from "next/link";
 import { Post, User } from "@prisma/client";
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
 
+import usePagination from "@libs/client/usePagination";
 import useCoords from "@libs/client/useCoords";
 
 import Layout from "@components/layout";
@@ -14,18 +16,36 @@ interface PostsResponse {
     user: Pick<User, "name">;
     _count: { curiosities: number; comments: number };
   })[];
+  pages: number;
 }
 
 const Community: NextPage = () => {
+  const { page } = usePagination({ isInfiniteScroll: true });
   const { latitude, longitude } = useCoords();
 
-  const { data } = useSWR<PostsResponse>(latitude && longitude ? `/api/posts?latitude=${latitude}&longitude=${longitude}` : null);
+  const getKey = (pageIndex: number, previousPageData: PostsResponse) => {
+    if (!latitude && !longitude) return null;
+    if (pageIndex === 0) return `/api/posts?page=1&latitude=${latitude}&longitude=${longitude}`;
+    if (previousPageData && !previousPageData.posts.length) return null;
+    if (pageIndex + 1 > previousPageData.pages) return null;
+    return `/api/posts?page=${pageIndex + 1}&latitude=${latitude}&longitude=${longitude}`;
+  };
+
+  const { data, setSize } = useSWRInfinite<PostsResponse>(getKey, (url: string) => fetch(url).then((response) => response.json()), {
+    initialSize: 1,
+    revalidateFirstPage: false,
+  });
+  const posts = data ? data.flatMap((item) => item.posts) : [];
+
+  useEffect(() => {
+    setSize(page);
+  }, [setSize, page]);
 
   return (
     <Layout hasTabBar title="Community">
       <div className="container">
         <div className="-mx-4 divide-y divide-gray-300">
-          {data?.posts.map((post) => (
+          {posts.map((post) => (
             <Link key={post.id} href={`/community/${post.id}`}>
               <a className="flex flex-col items-stretch w-full">
                 <div className="pt-5 px-4">

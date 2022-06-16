@@ -6,10 +6,16 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
-    const { latitude, longitude } = req.query;
-    const parsedLatitude = parseFloat((latitude || 0).toString());
-    const parsedLongitude = parseFloat((longitude || 0).toString());
+    const { page, latitude, longitude } = req.query;
+    const cleanPage = +page?.toString()!;
+    const cleanLatitude = parseFloat((latitude || 0).toString());
+    const cleanLongitude = parseFloat((longitude || 0).toString());
+
+    const displayRow = 10;
+    const totalPageCount = await client.post.count();
     const posts = await client.post.findMany({
+      take: displayRow,
+      skip: (cleanPage - 1) * displayRow,
       include: {
         user: {
           select: {
@@ -26,12 +32,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
       where: {
         latitude: {
-          gte: parsedLatitude - 0.01,
-          lte: parsedLatitude + 0.01,
+          gte: cleanLatitude - 0.01,
+          lte: cleanLatitude + 0.01,
         },
         longitude: {
-          gte: parsedLongitude - 0.01,
-          lte: parsedLongitude + 0.01,
+          gte: cleanLongitude - 0.01,
+          lte: cleanLongitude + 0.01,
         },
       },
     });
@@ -39,11 +45,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       return res.status(200).json({
         success: true,
         posts: [],
+        pages: 1,
       });
     }
     return res.status(200).json({
       success: true,
       posts,
+      pages: Math.ceil(totalPageCount / displayRow),
     });
   }
   if (req.method === "POST") {

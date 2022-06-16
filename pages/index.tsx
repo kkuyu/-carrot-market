@@ -1,6 +1,9 @@
+import { useEffect } from "react";
 import type { NextPage } from "next";
 import { Product, Record } from "@prisma/client";
-import useSWR from "swr";
+import useSWRInfinite from "swr/infinite";
+
+import usePagination from "@libs/client/usePagination";
 
 import Layout from "@components/layout";
 import Item from "@components/item";
@@ -9,16 +12,34 @@ import FloatingButton from "@components/floating-button";
 interface ProductResponse {
   success: boolean;
   products: (Product & { records: Pick<Record, "id">[] })[];
+  pages: number;
 }
 
 const Home: NextPage = () => {
-  const { data } = useSWR<ProductResponse>("/api/products");
+  const { page } = usePagination({ isInfiniteScroll: true });
+
+  const getKey = (pageIndex: number, previousPageData: ProductResponse) => {
+    if (pageIndex === 0) return `/api/products?page=1`;
+    if (previousPageData && !previousPageData.products.length) return null;
+    if (pageIndex + 1 > previousPageData.pages) return null;
+    return `/api/products?page=${pageIndex + 1}`;
+  };
+
+  const { data, setSize } = useSWRInfinite<ProductResponse>(getKey, (url: string) => fetch(url).then((response) => response.json()), {
+    initialSize: 1,
+    revalidateFirstPage: false,
+  });
+  const products = data ? data.flatMap((item) => item.products) : [];
+
+  useEffect(() => {
+    setSize(page);
+  }, [setSize, page]);
 
   return (
     <Layout hasTabBar title="Home">
       <div className="container">
         <div className="-mx-4 flex flex-col divide-y">
-          {data?.products.map((product) => (
+          {products.map((product) => (
             <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product.records.length} />
           ))}
           <FloatingButton href="/products/upload">

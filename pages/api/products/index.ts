@@ -6,7 +6,14 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
+    const { page } = req.query;
+    const cleanPage = +page?.toString()!;
+
+    const displayRow = 10;
+    const totalPageCount = await client.product.count();
     const products = await client.product.findMany({
+      take: displayRow,
+      skip: (cleanPage - 1) * displayRow,
       include: {
         records: {
           where: {
@@ -22,11 +29,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       return res.status(200).json({
         success: true,
         products: [],
+        pages: 1,
       });
     }
     return res.status(200).json({
       success: true,
       products,
+      pages: Math.ceil(totalPageCount / displayRow),
     });
   }
   if (req.method === "POST") {
