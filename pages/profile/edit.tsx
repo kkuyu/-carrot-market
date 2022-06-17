@@ -39,20 +39,22 @@ const EditProfile: NextPage = () => {
       return setError("formError", { message: "Email OR Phone number are required. You need to choose one." });
     }
 
-    let avatarUrl = "";
+    let avatarId = "";
     if (avatar && avatar.length > 0) {
-      const { id, uploadURL } = await (await fetch(`/api/files`)).json();
+      const { uploadURL } = await (await fetch(`/api/files`)).json();
       const form = new FormData();
       form.append("file", avatar[0], user?.id + "");
-      await fetch(uploadURL, {
-        method: "POST",
-        body: form,
-      });
-      return;
+      const { result } = await (
+        await fetch(uploadURL, {
+          method: "POST",
+          body: form,
+        })
+      ).json();
+      avatarId = result.id;
     }
     editProfile({
       ...restData,
-      ...(avatarUrl && { avatarUrl }),
+      ...(avatarId && { avatarId }),
     });
   };
 
@@ -79,6 +81,7 @@ const EditProfile: NextPage = () => {
     if (user?.name) setValue("name", user.name);
     if (user?.email) setValue("email", user.email);
     if (user?.phone) setValue("phone", user.phone);
+    if (user?.avatar) setAvatarPreview(`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${user?.avatar}/avatar`);
   }, [user, setValue]);
 
   useEffect(() => {

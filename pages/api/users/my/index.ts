@@ -23,7 +23,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     const { user } = req.session;
-    const { email, phone, name } = req.body;
+    const { email, phone, name, avatarId } = req.body;
     if (!phone && !email) {
       const error = new Error("Invalid request body");
       throw error;
@@ -93,6 +93,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
         data: {
           name,
+        },
+      });
+    }
+    if (avatarId && name !== currentProfile?.avatar) {
+      await client.user.update({
+        where: {
+          id: user?.id,
+        },
+        data: {
+          avatar: avatarId,
         },
       });
     }
