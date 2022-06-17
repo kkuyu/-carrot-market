@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
@@ -12,6 +12,7 @@ import Button from "@components/button";
 import Input from "@components/input";
 
 interface EditProfileForm {
+  avatar?: FileList;
   name: string;
   email?: string;
   phone?: string;
@@ -26,21 +27,22 @@ interface EditProfileResponse {
 const EditProfile: NextPage = () => {
   const router = useRouter();
 
-  const { register, setValue, setError, clearErrors, formState, handleSubmit } = useForm<EditProfileForm>();
+  const { register, setValue, setError, clearErrors, formState, handleSubmit, watch } = useForm<EditProfileForm>();
 
   const { user } = useUser();
   const [editProfile, { data, loading }] = useMutation<EditProfileResponse>("/api/users/my");
 
   const onValid = (data: EditProfileForm) => {
+    const { avatar, ...restData } = data;
     if (loading) return;
-    if (!data.email && !data.phone) {
+    if (!restData.email && !restData.phone) {
       return setError("formError", { message: "Email OR Phone number are required. You need to choose one." });
     }
-    editProfile(data);
+    editProfile(restData);
   };
 
   const onChange = () => {
-    if (formState.errors) {
+    if (formState.errors.formError?.message) {
       clearErrors("formError");
     }
   };
@@ -49,11 +51,20 @@ const EditProfile: NextPage = () => {
     setValue("name", getRandomName());
   };
 
+  const [avatarPreview, setAvatarPreview] = useState("");
+  const avatar = watch("avatar");
+  useEffect(() => {
+    if (avatar && avatar.length > 0) {
+      const file = avatar[0];
+      setAvatarPreview(URL.createObjectURL(file));
+    }
+  }, [avatar]);
+
   useEffect(() => {
     if (user?.name) setValue("name", user.name);
     if (user?.email) setValue("email", user.email);
     if (user?.phone) setValue("phone", user.phone);
-  }, [user, setValue]);
+  }, []);
 
   useEffect(() => {
     if (data && !data.success) {
@@ -72,21 +83,12 @@ const EditProfile: NextPage = () => {
   return (
     <Layout canGoBack title="Edit Profile">
       <div className="container pt-5 pb-5">
-        <form
-          onChange={onChange}
-          onSubmit={(e) => {
-            e.preventDefault();
-            clearErrors("formError");
-            handleSubmit(onValid)(e);
-          }}
-          noValidate
-          className="space-y-4"
-        >
+        <form onChange={onChange} onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
           <div className="flex items-center space-x-3">
-            <div className="flex-none w-14 h-14 bg-slate-500 rounded-full" />
+            {avatarPreview ? <img src={avatarPreview} className="flex-none w-14 h-14 rounded-full bg-slate-500" /> : <div className="flex-none w-14 h-14 rounded-full bg-slate-500" />}
             <label htmlFor="picture" className="px-3 py-2 border border-gray-300 rounded-md shadow-sm">
               <span className="text-sm font-semibold text-gray-700">Change photo</span>
-              <input type="file" id="picture" className="a11y-hidden" name="" accept="image/*" />
+              <input {...register("avatar")} type="file" id="picture" className="a11y-hidden" name="avatar" accept="image/*" />
             </label>
           </div>
           <Input
