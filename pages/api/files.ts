@@ -13,7 +13,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     })
   ).json();
-  console.log(response);
   return res.status(200).json({
     success: true,
     ...response.result,

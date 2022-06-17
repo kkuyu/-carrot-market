@@ -41,8 +41,13 @@ const EditProfile: NextPage = () => {
 
     let avatarUrl = "";
     if (avatar && avatar.length > 0) {
-      const cloudflareRequest = await (await await fetch("/api/files")).json();
-      console.log(cloudflareRequest);
+      const { id, uploadURL } = await (await fetch(`/api/files`)).json();
+      const form = new FormData();
+      form.append("file", avatar[0], user?.id + "");
+      await fetch(uploadURL, {
+        method: "POST",
+        body: form,
+      });
       return;
     }
     editProfile({
@@ -74,7 +79,7 @@ const EditProfile: NextPage = () => {
     if (user?.name) setValue("name", user.name);
     if (user?.email) setValue("email", user.email);
     if (user?.phone) setValue("phone", user.phone);
-  }, []);
+  }, [user, setValue]);
 
   useEffect(() => {
     if (data && !data.success) {
