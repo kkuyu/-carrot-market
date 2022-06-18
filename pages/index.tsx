@@ -9,6 +9,9 @@ import Layout from "@components/layout";
 import Item from "@components/item";
 import FloatingButton from "@components/floating-button";
 
+import Image from "next/image";
+import imgLocal from "../public/local.jpg";
+
 interface ProductResponse {
   success: boolean;
   products: (Product & { records: Pick<Record, "id">[] })[];
@@ -47,6 +50,16 @@ const Home: NextPage = () => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
           </FloatingButton>
+          <Image
+            src={imgLocal}
+            alt=""
+            placeholder="blur"
+            quality={5}
+            // width={number} (자동)
+            // height={number} (자동)
+            // blurDataURL="data:..." (자동)
+            // placeholder="blur" // 로딩 중 "blur-up"(선택)
+          />
         </div>
       </div>
     </Layout>
