@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import Image from "next/image";
 import { Product } from "@prisma/client";
 
 import useUser from "@libs/client/useUser";
@@ -88,7 +89,14 @@ const Upload: NextPage = () => {
           </div>
           <div className="space-y-1">
             <span className="block text-sm font-semibold text-gray-700">Photo Preview</span>
-            {photoPreview ? <img src={photoPreview} className="w-full h-96 object-cover rounded-md" /> : <p className="text-sm text-gray-400">No image selected</p>}
+            {photoPreview ? (
+              <div className="relative">
+                <span className="block pb-[80%]"></span>
+                <Image src={photoPreview} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-400">No image selected</p>
+            )}
           </div>
           <Input register={register("name", { required: true })} required label="Name" name="name" type="text" />
           <Input register={register("price", { required: true, valueAsNumber: true })} required label="Price" placeholder="0.00" name="price" type="text" kind="price" />

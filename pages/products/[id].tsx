@@ -47,7 +47,10 @@ const ProductDetail: NextPage = () => {
     <Layout canGoBack>
       <div className="container pt-5 pb-5">
         <div>
-          <img src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product.photo}/public`} className="w-full h-96 object-cover bg-slate-300" />
+          <div className="relative">
+            <span className="block pb-[80%]"></span>
+            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product.photo}/public`} alt="" layout="fill" objectFit="cover" className="bg-slate-300" />
+          </div>
           <div className="border-t border-b">
             <div className="flex items-center w-full space-x-3 py-3 text-left">
               <Image
