@@ -33,12 +33,12 @@ const EditProfile: NextPage = () => {
   const [editProfile, { data, loading }] = useMutation<EditProfileResponse>("/api/users/my");
 
   const onValid = async (data: EditProfileForm) => {
-    const { avatar, ...restData } = data;
     if (loading) return;
-    if (!restData.email && !restData.phone) {
+    if (!data.email && !data.phone) {
       return setError("formError", { message: "Email OR Phone number are required. You need to choose one." });
     }
 
+    const { avatar, ...restData } = data;
     let avatarId = "";
     if (avatar && avatar.length > 0) {
       const { uploadURL } = await (await fetch(`/api/files`)).json();

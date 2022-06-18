@@ -43,7 +43,7 @@ model Token {
 
 model Product {
   id          Int      @id @default(autoincrement())
-  imageUrl    String   @db.Text
+  photo       String   @default("") @db.Text
   name        String
   price       Int
   description String   @db.MediumText

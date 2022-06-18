@@ -1,9 +1,10 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { Product } from "@prisma/client";
 
+import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
@@ -12,6 +13,7 @@ import Input from "@components/input";
 import TextArea from "@components/textarea";
 
 interface UploadProductForm {
+  photo: FileList;
   name: string;
   price: number;
   description: string;
@@ -24,14 +26,42 @@ interface MutationResult {
 
 const Upload: NextPage = () => {
   const router = useRouter();
-  const { register, handleSubmit } = useForm<UploadProductForm>();
+  const { register, handleSubmit, watch } = useForm<UploadProductForm>();
 
+  const { user } = useUser();
   const [uploadProduct, { loading, data }] = useMutation<MutationResult>("/api/products");
 
-  const onValid = (data: UploadProductForm) => {
+  const onValid = async (data: UploadProductForm) => {
     if (loading) return;
-    uploadProduct(data);
+
+    const { photo, ...restData } = data;
+    let photoId = "";
+    if (photo && photo.length > 0) {
+      const { uploadURL } = await (await fetch(`/api/files`)).json();
+      const form = new FormData();
+      form.append("file", photo[0], user?.id + "");
+      const { result } = await (
+        await fetch(uploadURL, {
+          method: "POST",
+          body: form,
+        })
+      ).json();
+      photoId = result.id;
+    }
+    uploadProduct({
+      ...restData,
+      ...(photoId && { photoId }),
+    });
   };
+
+  const [photoPreview, setPhotoPreview] = useState("");
+  const photo = watch("photo");
+  useEffect(() => {
+    if (photo && photo.length > 0) {
+      const file = photo[0];
+      setPhotoPreview(URL.createObjectURL(file));
+    }
+  }, [photo]);
 
   useEffect(() => {
     if (data && data.success) {
@@ -53,8 +83,12 @@ const Upload: NextPage = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-              <input className="a11y-hidden" type="file" />
+              <input {...register("photo")} type="file" id="photo" className="a11y-hidden" name="photo" accept="image/*" />
             </label>
+          </div>
+          <div className="space-y-1">
+            <span className="block text-sm font-semibold text-gray-700">Photo Preview</span>
+            {photoPreview ? <img src={photoPreview} className="w-full h-96 object-cover rounded-md" /> : <p className="text-sm text-gray-400">No image selected</p>}
           </div>
           <Input register={register("name", { required: true })} required label="Name" name="name" type="text" />
           <Input register={register("price", { required: true, valueAsNumber: true })} required label="Price" placeholder="0.00" name="price" type="text" kind="price" />

@@ -174,7 +174,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 15.5 Cloudflare Upload
 - [x] 15.6 Serving Images
 - [x] 15.7 Resizing Images
-- [ ] 15.8 Product Images
+- [x] 15.8 Product Images
 
 **#16 NEXTJS IMAGES**
 

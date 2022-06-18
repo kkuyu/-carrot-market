@@ -46,10 +46,10 @@ const ProductDetail: NextPage = () => {
     <Layout canGoBack>
       <div className="container pt-5 pb-5">
         <div>
-          <div className="h-96 bg-slate-300" />
+          <img src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product.photo}/public`} className="w-full h-96 object-cover bg-slate-300" />
           <div className="border-t border-b">
             <div className="flex items-center w-full space-x-3 py-3 text-left">
-              <div className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
+              <img src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product?.user?.avatar}/avatar`} className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
               <div>
                 <strong className="block text-sm font-semibold text-gray-700">{data.product.user.name}</strong>
                 <Link href={`/users/profiles/${data.product.user.id}`}>

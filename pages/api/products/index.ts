@@ -39,7 +39,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
   }
   if (req.method === "POST") {
-    const { name, price, description } = req.body;
+    const { name, price, description, photoId } = req.body;
     const { user } = req.session;
     if (!name && !price && !description) {
       const error = new Error("Invalid request body");
@@ -47,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
     const newProduct = await client.product.create({
       data: {
-        imageUrl: "/favicon.ico",
+        photo: photoId,
         name,
         price,
         description,
