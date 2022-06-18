@@ -2,6 +2,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/router";
 import type { NextPage } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Product, User } from "@prisma/client";
 import useSWR from "swr";
 
@@ -49,7 +50,13 @@ const ProductDetail: NextPage = () => {
           <img src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product.photo}/public`} className="w-full h-96 object-cover bg-slate-300" />
           <div className="border-t border-b">
             <div className="flex items-center w-full space-x-3 py-3 text-left">
-              <img src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product?.user?.avatar}/avatar`} className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
+              <Image
+                src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product?.user?.avatar}/avatar`}
+                alt=""
+                width={48}
+                height={48}
+                className="flex-none w-12 h-12 bg-slate-300 rounded-full"
+              />
               <div>
                 <strong className="block text-sm font-semibold text-gray-700">{data.product.user.name}</strong>
                 <Link href={`/users/profiles/${data.product.user.id}`}>

@@ -2,6 +2,9 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
+  images: {
+    domains: ["imagedelivery.net"],
+  },
   env: {
     DATABASE_URL: process.env.DATABASE_URL,
     MY_PHONE: process.env.MY_PHONE,
