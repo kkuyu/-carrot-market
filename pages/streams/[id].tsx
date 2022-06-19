@@ -56,6 +56,7 @@ const StreamDetail: NextPage = () => {
         },
       false
     );
+    scrollRef?.current?.scrollIntoView();
     sendMessage(data);
   };
 
@@ -64,10 +65,6 @@ const StreamDetail: NextPage = () => {
       router.push("/streams");
     }
   }, [data, router]);
-
-  useEffect(() => {
-    scrollRef?.current?.scrollIntoView();
-  });
 
   if (!data || !data.success || error) {
     return null;
@@ -80,8 +77,19 @@ const StreamDetail: NextPage = () => {
           <div className="w-full aspect-video bg-slate-300 rounded-md shadow-md" />
           <h3 className="mt-5 text-2xl font-semibold text-gray-800">{data.stream.name}</h3>
           <span className="mt-3 block text-xl text-gray-900">${data.stream.price}</span>
-          <p className="my-6 text-gray-700">{data.stream.description}</p>
+          <p className="mt-6 text-gray-700">{data.stream.description}</p>
         </div>
+        {data.stream.cloudflareUrl && (
+          <div className="mt-4 flex flex-col p-5 bg-orange-400 rounded-md space-y-3">
+            <strong>Stream Keys (secret)</strong>
+            <p className="text-white">
+              <span className="font-medium text-gray-800">URL:</span> {data.stream.cloudflareUrl}
+            </p>
+            <p className="text-white">
+              <span className="font-medium text-gray-800">Key:</span> {data.stream.cloudflareKey}
+            </p>
+          </div>
+        )}
         <div className="mt-4 pt-4 -mx-4 px-4 h-[50vh] border-t overflow-y-auto">
           <div className="space-y-4">
             {data.stream.messages.map((message) => (

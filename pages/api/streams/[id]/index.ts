@@ -6,6 +6,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   const { id } = req.query;
+  const { user } = req.session;
   const cleanId = +id?.toString()!;
   const stream = await client.stream.findUnique({
     where: {
@@ -29,6 +30,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   if (!stream) {
     const error = new Error("Not found stream");
     throw error;
+  }
+  const isOwner = stream?.userId === user?.id;
+  if (stream && !isOwner) {
+    stream.cloudflareKey = "shh";
+    stream.cloudflareUrl = "shh";
   }
   return res.status(200).json({
     success: true,

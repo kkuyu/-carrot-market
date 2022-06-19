@@ -47,7 +47,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         }`,
       })
     ).json();
-    console.log(response);
     const newStream = await client.stream.create({
       data: {
         name,
