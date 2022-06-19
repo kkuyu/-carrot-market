@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import type { NextPage } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Stream } from "@prisma/client";
 import useSWRInfinite from "swr/infinite";
 
@@ -43,7 +44,9 @@ const Streams: NextPage = () => {
             return (
               <Link key={stream.id} href={`/streams/${stream.id}`}>
                 <a className="block px-4 py-5">
-                  <div className="w-full aspect-video bg-slate-300 rounded-md shadow-md" />
+                  <div className="relative w-full aspect-video bg-slate-300 rounded-md shadow-sm overflow-hidden">
+                    <Image src={`https://videodelivery.net/${stream.cloudflareId}/thumbnails/thumbnail.jpg?height=320`} layout="fill" alt="" />
+                  </div>
                   <h3 className="mt-2 text-base font-semibold">{stream.name}</h3>
                 </a>
               </Link>
