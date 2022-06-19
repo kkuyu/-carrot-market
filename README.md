@@ -182,13 +182,13 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 16.1 Local Images
 - [x] 16.2 Remote Images
 - [x] 16.3 Layout Fill
-- [ ] 16.4 Conclusions
+- [x] 16.4 Conclusions
 
 **#17 LIVE STREAMING**
 
-- [ ] 17.0 Introduction
-- [ ] 17.1 Streaming From Dashboard
-- [ ] 17.2 Streaming API
+- [x] 17.0 Introduction
+- [x] 17.1 Streaming From Dashboard
+- [x] 17.2 Streaming API
 - [ ] 17.3 Securing Stream
 - [ ] 17.4 Video and Thumbnails
 - [ ] 17.5 Conclusions

@@ -35,6 +35,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const error = new Error("Invalid request body");
       throw error;
     }
+    const response = await (
+      await fetch(`https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ID}/stream/live_inputs`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${process.env.CF_TOKEN_STREAM}`,
+        },
+        body: `{
+          "meta": {"name":"${name}"},
+          "recording": { "mode": "automatic", "timeoutSeconds": 10}
+        }`,
+      })
+    ).json();
+    console.log(response);
     const newStream = await client.stream.create({
       data: {
         name,
@@ -45,6 +58,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             id: user?.id,
           },
         },
+        cloudflareId: response.result.uid,
+        cloudflareKey: response.result.rtmps.streamKey,
+        cloudflareUrl: response.result.rtmps.url,
       },
     });
     return res.status(200).json({
