@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
@@ -12,6 +12,20 @@ import Button from "@components/button";
 import Input from "@components/input";
 
 const DynamicComponent = dynamic(() => import("@components/dynamicComponent"), { ssr: false });
+
+const DynamicComponent2 = dynamic(
+  () => {
+    return new Promise((resolve) => setTimeout(() => resolve(import("@components/dynamicComponent")), 5000));
+  },
+  { ssr: false, loading: () => <p>Loading</p> }
+);
+
+const DynamicComponent3 = dynamic(
+  () => {
+    return new Promise((resolve) => setTimeout(() => resolve(import("@components/dynamicComponent")), 5000));
+  },
+  { ssr: false, suspense: true }
+);
 
 interface EnterForm {
   email?: string;
@@ -125,7 +139,13 @@ const Enter: NextPage = () => {
           </button>
         </div>
 
-        {method === "phone" && <DynamicComponent text="Dynamic Component Test" />}
+        {method === "phone" && <DynamicComponent text="Dynamic Component Import Test" />}
+        {method === "phone" && <DynamicComponent2 />}
+        {method === "phone" && (
+          <Suspense fallback={<p>Loading</p>}>
+            <DynamicComponent3 />
+          </Suspense>
+        )}
       </div>
     </Layout>
   );

@@ -4,6 +4,6 @@ interface DynamicComponentProps {
 
 console.log("Dynamic Component Import");
 
-export default function DynamicComponent({ text }: DynamicComponentProps) {
+export default function DynamicComponent({ text = "Dynamic Component Import" }: DynamicComponentProps) {
   return <div>text: {text}</div>;
 }
