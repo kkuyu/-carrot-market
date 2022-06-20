@@ -14,6 +14,7 @@ import Input from "@components/input";
 const DynamicComponent = dynamic(() => import("@components/dynamicComponent"), { ssr: false });
 
 const DynamicComponent2 = dynamic(
+  //@ts-ignore
   () => {
     return new Promise((resolve) => setTimeout(() => resolve(import("@components/dynamicComponent")), 5000));
   },
@@ -21,6 +22,7 @@ const DynamicComponent2 = dynamic(
 );
 
 const DynamicComponent3 = dynamic(
+  //@ts-ignore
   () => {
     return new Promise((resolve) => setTimeout(() => resolve(import("@components/dynamicComponent")), 5000));
   },

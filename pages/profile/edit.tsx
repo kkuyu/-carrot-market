@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import Image from "next/image";
 
 import { getRandomName } from "@libs/utils";
 import useUser from "@libs/client/useUser";
@@ -103,7 +104,7 @@ const EditProfile: NextPage = () => {
       <div className="container pt-5 pb-5">
         <form onChange={onChange} onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
           <div className="flex items-center space-x-3">
-            {avatarPreview ? <img src={avatarPreview} className="flex-none w-14 h-14 rounded-full bg-slate-500" /> : <div className="flex-none w-14 h-14 rounded-full bg-slate-500" />}
+            {avatarPreview ? <Image src={avatarPreview} alt="" className="flex-none w-14 h-14 rounded-full bg-slate-500" /> : <div className="flex-none w-14 h-14 rounded-full bg-slate-500" />}
             <label htmlFor="picture" className="px-3 py-2 border border-gray-300 rounded-md shadow-sm">
               <span className="text-sm font-semibold text-gray-700">Change photo</span>
               <input {...register("avatar")} type="file" id="picture" className="a11y-hidden" name="avatar" accept="image/*" />

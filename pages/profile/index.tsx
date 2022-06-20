@@ -1,5 +1,6 @@
 import type { NextPage } from "next";
 import Link from "next/link";
+import Image from "next/image";
 import { Review, User } from "@prisma/client";
 import useSWR from "swr";
 
@@ -24,7 +25,7 @@ const Profile: NextPage = () => {
         <div>
           <button className="flex items-center w-full space-x-3 text-left">
             {user?.avatar ? (
-              <img src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${user?.avatar}/avatar`} className="flex-none w-16 h-16 bg-slate-500 rounded-full" />
+              <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${user?.avatar}/avatar`} alt="" className="flex-none w-16 h-16 bg-slate-500 rounded-full" />
             ) : (
               <div className="flex-none w-16 h-16 bg-slate-500 rounded-full" />
             )}
