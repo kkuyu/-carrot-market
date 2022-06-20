@@ -14,6 +14,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const streams = await client.stream.findMany({
       take: displayRow,
       skip: (cleanPage - 1) * displayRow,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        user: { select: { id: true, name: true } },
+      },
     });
     if (!streams) {
       return res.status(200).json({

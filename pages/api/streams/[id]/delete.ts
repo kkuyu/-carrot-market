@@ -5,39 +5,40 @@ import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+  const { id } = req.query;
   const { user } = req.session;
-  const reviews = await client.review.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
+  const cleanId = +id?.toString()!;
+
+  const stream = await client.stream.findFirst({
     where: {
-      createdForId: user?.id,
+      id: cleanId,
+      userId: user?.id,
     },
-    include: {
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
+    select: {
+      id: true,
+      name: true,
+      description: true,
+      price: true,
     },
   });
-  if (!reviews) {
-    res.status(200).json({
-      success: true,
-      reviews: [],
-    });
+  if (!stream) {
+    const error = new Error("Not found stream");
+    throw error;
   }
+  await client.stream.delete({
+    where: {
+      id: cleanId,
+    },
+  });
   return res.status(200).json({
     success: true,
-    reviews,
+    stream,
   });
 }
 
 export default withSessionRoute(
   withHandler({
-    methods: ["GET"],
+    methods: ["POST"],
     handler,
   })
 );

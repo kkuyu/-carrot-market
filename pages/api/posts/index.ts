@@ -16,6 +16,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const posts = await client.post.findMany({
       take: displayRow,
       skip: (cleanPage - 1) * displayRow,
+      orderBy: {
+        createdAt: "desc",
+      },
       include: {
         user: {
           select: {

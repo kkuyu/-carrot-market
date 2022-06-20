@@ -29,6 +29,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   const terms = product?.name.split(" ").map((word) => ({ name: { contains: word } }));
   const relatedProducts = await client.product.findMany({
     take: 4,
+    orderBy: {
+      createdAt: "desc",
+    },
     where: {
       OR: terms,
       AND: {

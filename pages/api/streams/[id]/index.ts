@@ -33,12 +33,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   const isOwner = stream?.userId === user?.id;
   if (stream && !isOwner) {
-    stream.cloudflareKey = "shh";
-    stream.cloudflareUrl = "shh";
+    stream.cloudflareKey = "";
+    stream.cloudflareUrl = "";
   }
+
+  let recordedVideos = undefined;
+  if (stream.cloudflareId) {
+    recordedVideos = await (
+      await fetch(`https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ID}/stream/live_inputs/${stream.cloudflareId}/videos`, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${process.env.CLOUDFLARE_STREAM_API_TOKEN}`,
+        },
+      })
+    ).json();
+  }
+
   return res.status(200).json({
     success: true,
     stream,
+    ...(recordedVideos && { recordedVideos }),
   });
 }
 

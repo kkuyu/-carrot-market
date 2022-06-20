@@ -10,12 +10,34 @@ import useMutation from "@libs/client/useMutation";
 
 import Layout from "@components/layout";
 import { default as MessageItem } from "@components/message";
+import Button from "@components/button";
 
 interface StreamResponse {
   success: boolean;
   stream: Stream & {
     messages: (Pick<Message, "id" | "message"> & { user: Pick<User, "id" | "avatar"> })[];
   };
+  recordedVideos?: {
+    success: boolean;
+    errors: any[];
+    messages: any[];
+    result: {
+      uid: string;
+      preview: string;
+      thumbnail: string;
+    }[];
+  };
+}
+
+interface ViewsResponse {
+  liveViewers: number;
+}
+
+interface LifecycleResponse {
+  isInput: boolean;
+  live: boolean;
+  status: string;
+  videoUID: string | null;
 }
 
 interface MessageForm {
@@ -31,9 +53,16 @@ const StreamDetail: NextPage = () => {
     refreshInterval: 1000,
     revalidateOnFocus: false,
   });
+  const { data: viewsData } = useSWR<ViewsResponse>(data?.stream?.cloudflareId ? `https://videodelivery.net/${data?.stream?.cloudflareId}/views` : null, {
+    refreshInterval: 1000,
+  });
+  const { data: lifecycleData } = useSWR<LifecycleResponse>(data?.stream?.cloudflareId ? `https://videodelivery.net/${data?.stream?.cloudflareId}/lifecycle` : null, {
+    refreshInterval: 1000,
+  });
 
   const { user } = useUser();
   const [sendMessage, { loading, data: sendMessageData }] = useMutation(`/api/streams/${router.query.id}/message`);
+  const [deleteStream, { loading: deleteStreamLoading, data: deleteStreamData }] = useMutation<StreamResponse>(`/api/streams/${router.query.id}/delete`);
 
   const onValid = (data: MessageForm) => {
     if (loading) return;
@@ -60,6 +89,17 @@ const StreamDetail: NextPage = () => {
     sendMessage(data);
   };
 
+  const deleteClick = () => {
+    if (deleteStreamLoading) return;
+    deleteStream({});
+  };
+
+  useEffect(() => {
+    if (deleteStreamData?.success) {
+      router.push("/streams");
+    }
+  }, [deleteStreamData, router]);
+
   useEffect(() => {
     if (data && !data.success) {
       router.push("/streams");
@@ -85,8 +125,9 @@ const StreamDetail: NextPage = () => {
           <h3 className="mt-5 text-2xl font-semibold text-gray-800">{data.stream.name}</h3>
           <span className="mt-3 block text-xl text-gray-900">${data.stream.price}</span>
           <p className="mt-6 text-gray-700">{data.stream.description}</p>
+          {lifecycleData?.live && <p className="text-[14px] text-gray-600 mt-1.5">현재 {viewsData?.liveViewers}명 시청 중</p>}
         </div>
-        {data.stream.cloudflareUrl !== "shh" && (
+        {data.stream.cloudflareUrl && (
           <div className="mt-4 flex flex-col p-5 bg-orange-400 rounded-md space-y-3">
             <strong>Stream Keys (secret)</strong>
             <p className="text-white">
@@ -95,6 +136,7 @@ const StreamDetail: NextPage = () => {
             <p className="text-white">
               <span className="font-medium text-gray-800">Key:</span> {data.stream.cloudflareKey}
             </p>
+            <Button text={deleteStreamLoading ? "Loading" : "Delete Stream"} disabled={deleteStreamLoading} onClick={deleteClick} />
           </div>
         )}
         <div className="mt-4 pt-4 -mx-4 px-4 h-[50vh] border-t overflow-y-auto">

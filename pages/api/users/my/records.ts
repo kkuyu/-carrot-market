@@ -14,6 +14,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   const kindValue = kind.toString() as Kind;
   const records = await client.record.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
     where: {
       userId: user?.id,
       kind: kindValue,

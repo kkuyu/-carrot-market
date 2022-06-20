@@ -14,6 +14,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const products = await client.product.findMany({
       take: displayRow,
       skip: (cleanPage - 1) * displayRow,
+      orderBy: {
+        createdAt: "desc",
+      },
       include: {
         records: {
           where: {
