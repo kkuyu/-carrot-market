@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import dynamic from "next/dynamic";
 
 import { cls } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
@@ -9,6 +10,8 @@ import useMutation from "@libs/client/useMutation";
 import Layout from "@components/layout";
 import Button from "@components/button";
 import Input from "@components/input";
+
+const DynamicComponent = dynamic(() => import("@components/dynamicComponent"), { ssr: false });
 
 interface EnterForm {
   email?: string;
@@ -121,6 +124,8 @@ const Enter: NextPage = () => {
             </svg>
           </button>
         </div>
+
+        {method === "phone" && <DynamicComponent text="Dynamic Component Test" />}
       </div>
     </Layout>
   );
