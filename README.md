@@ -199,8 +199,8 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 
 **#19 NEXTJS DEEP DIVE**
 
-- [ ] 19.0 Middlewares
-- [ ] 19.1 Responses and Redirections
+- [x] 19.0 Middlewares
+- [x] 19.1 Responses and Redirections
 - [ ] 19.2 Dynamic Imports
 - [ ] 19.3 Lazy-load Imports
 - [ ] 19.4 \_document and Fonts
@@ -266,7 +266,10 @@ npx prisma studio
 
 ### Code Challenges
 
-- [ ] Input geo range & search products
+- [ ] Welcome, Inbox, Reservation page
+- [ ] Input geo range, search products
+- [ ] Changes to members-only page
+- [ ] Skeleton, Empty list
 - [x] Separate schema record & enum
-- [x] Generate a random name when registering as a member
 - [x] Change sms, email services
+- [x] Generate a random name when registering as a member
