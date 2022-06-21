@@ -1,8 +1,20 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { Product, Record } from "@prisma/client";
 
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+
+export interface GetProductsResponse {
+  success: boolean;
+  products: (Product & { records: Pick<Record, "id">[] })[];
+  pages: number;
+}
+
+export interface PostProductsResponse {
+  success: boolean;
+  product: Product;
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {

@@ -3,10 +3,10 @@ import { useForm } from "react-hook-form";
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import { Product } from "@prisma/client";
 
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
+import { PostProductsResponse } from "@api/products";
 
 import Layout from "@components/layout";
 import Button from "@components/button";
@@ -20,17 +20,12 @@ interface UploadProductForm {
   description: string;
 }
 
-interface MutationResult {
-  success: boolean;
-  product: Product;
-}
-
 const Upload: NextPage = () => {
   const router = useRouter();
   const { register, handleSubmit, watch } = useForm<UploadProductForm>();
 
   const { user } = useUser();
-  const [uploadProduct, { loading, data }] = useMutation<MutationResult>("/api/products");
+  const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products");
 
   const onValid = async (data: UploadProductForm) => {
     if (loading) return;
