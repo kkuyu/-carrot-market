@@ -3,6 +3,7 @@ import type { NextPage } from "next";
 import { Product, Record } from "@prisma/client";
 import useSWRInfinite from "swr/infinite";
 
+import client from "@libs/client/client";
 import usePagination from "@libs/client/usePagination";
 
 import Layout from "@components/layout";
@@ -15,7 +16,7 @@ interface ProductResponse {
   pages: number;
 }
 
-const Home: NextPage = () => {
+const Home: NextPage<{ serverProducts: Product[] }> = ({ serverProducts }) => {
   const { page } = usePagination({ isInfiniteScroll: true });
 
   const getKey = (pageIndex: number, previousPageData: ProductResponse) => {
@@ -39,6 +40,11 @@ const Home: NextPage = () => {
     <Layout hasTabBar seoTitle="Home" title="Home">
       <div className="container">
         <div className="-mx-4 flex flex-col divide-y">
+          <p>server..</p>
+          {serverProducts.map((product) => (
+            <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={0} />
+          ))}
+          <p>client..</p>
           {products.map((product) => (
             <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product.records.length} />
           ))}
@@ -52,5 +58,14 @@ const Home: NextPage = () => {
     </Layout>
   );
 };
+
+export async function getServerSideProps() {
+  const products = await client.product.findMany({});
+  return {
+    props: {
+      serverProducts: JSON.parse(JSON.stringify(products)),
+    },
+  };
+}
 
 export default Home;
