@@ -204,7 +204,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 19.2 Dynamic Imports
 - [x] 19.3 Lazy-load Imports
 - [x] 19.4 \_document and Fonts
-- [ ] 19.5 Script Component
+- [x] 19.5 Script Component
 - [ ] 19.6 getServerSideProps
 - [ ] 19.7 SSR + SWR
 - [ ] 19.8 SSR + Authentication

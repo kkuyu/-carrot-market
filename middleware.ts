@@ -10,8 +10,8 @@ import { NextResponse } from "next/server";
 // ];
 
 export const middleware = (req: NextRequest) => {
-  if (req.url.includes("/api")) return;
-  if (req.url.includes("/_next")) return;
+  if (req.url.includes("/api")) return NextResponse.next();
+  if (req.url.includes("/_next")) return NextResponse.next();
 
   const ua = userAgent(req);
   if (ua.isBot) {
