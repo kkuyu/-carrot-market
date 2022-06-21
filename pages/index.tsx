@@ -3,7 +3,7 @@ import type { NextPage } from "next";
 import { Product, Record } from "@prisma/client";
 import useSWRInfinite from "swr/infinite";
 
-import client from "@libs/client/client";
+import client from "@libs/server/client";
 import usePagination from "@libs/client/usePagination";
 
 import Layout from "@components/layout";

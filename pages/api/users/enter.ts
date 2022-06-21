@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 import { getRandomName } from "@libs/utils";
-import client from "@libs/client/client";
+import client from "@libs/server/client";
 
 import sendEmail from "@libs/server/sendEmail";
 import sendMessage from "@libs/server/sendMessage";
