@@ -1,23 +1,22 @@
-import type { NextPage } from "next";
+import type { NextPage, NextPageContext } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { Review, User } from "@prisma/client";
-import useSWR from "swr";
+
+import useSWR, { SWRConfig } from "swr";
+
+import client from "@libs/server/client";
+import { withSsrSession } from "@libs/server/withSession";
+import useUser from "@libs/client/useUser";
+import { User } from "@prisma/client";
+import { GetReviewsResponse } from "@api/reviews";
 
 import { cls } from "@libs/utils";
-import useUser from "@libs/client/useUser";
-
 import Layout from "@components/layout";
-
-interface ReviewsResponse {
-  success: boolean;
-  reviews: (Review & { createdBy: Pick<User, "id" | "name" | "avatar"> })[];
-}
 
 const Profile: NextPage = () => {
   const { user } = useUser();
 
-  const { data } = useSWR<ReviewsResponse>("/api/reviews");
+  const { data } = useSWR<GetReviewsResponse>("/api/reviews");
 
   return (
     <Layout hasTabBar title="My carrot">
@@ -121,4 +120,34 @@ const Profile: NextPage = () => {
   );
 };
 
-export default Profile;
+const Page: NextPage<{ profile: User }> = ({ profile }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          "/api/users/my": {
+            success: true,
+            profile,
+          },
+        },
+      }}
+    >
+      <Profile />
+    </SWRConfig>
+  );
+};
+
+export const getServerSideProps = withSsrSession(async ({ req }: NextPageContext) => {
+  const profile = await client.user.findUnique({
+    where: {
+      id: req?.session.user?.id,
+    },
+  });
+  return {
+    props: {
+      profile: JSON.parse(JSON.stringify(profile)),
+    },
+  };
+});
+
+export default Page;

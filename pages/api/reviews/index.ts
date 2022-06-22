@@ -3,6 +3,12 @@ import { NextApiRequest, NextApiResponse } from "next";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { Review, User } from "@prisma/client";
+
+export interface GetReviewsResponse {
+  success: boolean;
+  reviews: (Review & { createdBy: Pick<User, "id" | "name" | "avatar"> })[];
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   const { user } = req.session;
