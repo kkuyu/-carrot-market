@@ -211,7 +211,7 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 19.9 Blog Section
 - [x] 19.10 getStaticProps
 - [x] 19.11 getStaticPaths part One
-- [ ] 19.12 getStaticPaths part Two
+- [x] 19.12 getStaticPaths part Two
 - [ ] 19.13 Dynamic getStaticProps
 - [ ] 19.14 Inner HTML
 - [ ] 19.15 Recap
