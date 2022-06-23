@@ -71,6 +71,7 @@ const Streams: NextPage<{ streams: Stream[] }> = ({ streams }) => {
 };
 
 export const getStaticProps: GetStaticProps = async () => {
+  console.log("BUILDING COMM. STATICALLY");
   const streams = await client.stream.findMany({
     orderBy: {
       createdAt: "desc",
