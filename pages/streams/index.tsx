@@ -1,11 +1,13 @@
-import { useEffect } from "react";
-import type { NextPage } from "next";
+// import { useEffect } from "react";
+import type { GetStaticProps, NextPage } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Stream } from "@prisma/client";
-import useSWRInfinite from "swr/infinite";
+// import useSWRInfinite from "swr/infinite";
 
-import usePagination from "@libs/client/usePagination";
+// import usePagination from "@libs/client/usePagination";
+
+import client from "@libs/server/client";
 
 import Layout from "@components/layout";
 import FloatingButton from "@components/floating-button";
@@ -16,25 +18,25 @@ interface StreamsResponse {
   pages: number;
 }
 
-const Streams: NextPage = () => {
-  const { page } = usePagination({ isInfiniteScroll: true });
+const Streams: NextPage<{ streams: Stream[] }> = ({ streams }) => {
+  // const { page } = usePagination({ isInfiniteScroll: true });
 
-  const getKey = (pageIndex: number, previousPageData: StreamsResponse) => {
-    if (pageIndex === 0) return `/api/streams?page=1`;
-    if (previousPageData && !previousPageData.streams.length) return null;
-    if (pageIndex + 1 > previousPageData.pages) return null;
-    return `/api/streams?page=${pageIndex + 1}`;
-  };
+  // const getKey = (pageIndex: number, previousPageData: StreamsResponse) => {
+  //   if (pageIndex === 0) return `/api/streams?page=1`;
+  //   if (previousPageData && !previousPageData.streams.length) return null;
+  //   if (pageIndex + 1 > previousPageData.pages) return null;
+  //   return `/api/streams?page=${pageIndex + 1}`;
+  // };
 
-  const { data, setSize } = useSWRInfinite<StreamsResponse>(getKey, (url: string) => fetch(url).then((response) => response.json()), {
-    initialSize: 1,
-    revalidateFirstPage: false,
-  });
-  const streams = data ? data.flatMap((item) => item.streams) : [];
+  // const { data, setSize } = useSWRInfinite<StreamsResponse>(getKey, (url: string) => fetch(url).then((response) => response.json()), {
+  //   initialSize: 1,
+  //   revalidateFirstPage: false,
+  // });
+  // const streams = data ? data.flatMap((item) => item.streams) : [];
 
-  useEffect(() => {
-    setSize(page);
-  }, [setSize, page]);
+  // useEffect(() => {
+  //   setSize(page);
+  // }, [setSize, page]);
 
   return (
     <Layout hasTabBar title="Live Stream">
@@ -66,6 +68,30 @@ const Streams: NextPage = () => {
       </div>
     </Layout>
   );
+};
+
+export const getStaticProps: GetStaticProps = async () => {
+  const streams = await client.stream.findMany({
+    orderBy: {
+      createdAt: "desc",
+    },
+    take: 10,
+    skip: 0,
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+  return {
+    props: {
+      streams: JSON.parse(JSON.stringify(streams)),
+    },
+    revalidate: 20,
+  };
 };
 
 export default Streams;
