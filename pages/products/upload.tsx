@@ -79,7 +79,7 @@ const Upload: NextPage = () => {
                   strokeLinejoin="round"
                 />
               </svg>
-              <input {...register("photo")} type="file" id="photo" className="a11y-hidden" name="photo" accept="image/*" />
+              <input {...register("photo")} type="file" id="photo" className="sr-only" name="photo" accept="image/*" />
             </label>
           </div>
           <div className="space-y-1">

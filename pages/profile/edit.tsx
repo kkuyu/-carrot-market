@@ -107,7 +107,7 @@ const EditProfile: NextPage = () => {
             {avatarPreview ? <Image src={avatarPreview} alt="" className="flex-none w-14 h-14 rounded-full bg-slate-500" /> : <div className="flex-none w-14 h-14 rounded-full bg-slate-500" />}
             <label htmlFor="picture" className="px-3 py-2 border border-gray-300 rounded-md shadow-sm">
               <span className="text-sm font-semibold text-gray-700">Change photo</span>
-              <input {...register("avatar")} type="file" id="picture" className="a11y-hidden" name="avatar" accept="image/*" />
+              <input {...register("avatar")} type="file" id="picture" className="sr-only" name="avatar" accept="image/*" />
             </label>
           </div>
           <Input

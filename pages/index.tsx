@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import type { NextPage } from "next";
+import type { GetServerSideProps, NextPage } from "next";
 
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
@@ -34,7 +34,7 @@ const Home: NextPage = () => {
     if (isVisible && !isReachingEnd) {
       setSize(size + 1);
     }
-  }, [isVisible, isReachingEnd]);
+  }, [isVisible, isReachingEnd, setSize, size]);
 
   return (
     <Layout hasTabBar seoTitle="Home" title="Home">
@@ -69,7 +69,7 @@ const Page: NextPage<GetProductsResponse> = (props) => {
   );
 };
 
-export const getServerSideProps = async () => {
+export const getServerSideProps: GetServerSideProps = async () => {
   const products = await client.product.findMany({
     orderBy: {
       createdAt: "desc",

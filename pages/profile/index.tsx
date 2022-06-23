@@ -1,4 +1,4 @@
-import type { NextPage, NextPageContext } from "next";
+import type { GetServerSideProps, NextPage, NextPageContext } from "next";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -91,7 +91,7 @@ const Profile: NextPage = () => {
                     <strong className="text-sm font-semibold text-gray-700">{review.createdBy.name}</strong>
                     <div className="flex items-center">
                       <div className="flex items-center">
-                        <span className="a11y-hidden">{`Star: ${review.score}`}</span>
+                        <span className="sr-only">{`Star: ${review.score}`}</span>
                         {[1, 2, 3, 4, 5].map((star) => (
                           <svg
                             key={star}
@@ -137,7 +137,7 @@ const Page: NextPage<{ profile: User }> = ({ profile }) => {
   );
 };
 
-export const getServerSideProps = withSsrSession(async ({ req }: NextPageContext) => {
+export const getServerSideProps = withSsrSession(async ({ req }) => {
   const profile = await client.user.findUnique({
     where: {
       id: req?.session.user?.id,

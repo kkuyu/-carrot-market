@@ -1,3 +1,4 @@
+import { GetServerSidePropsContext, GetServerSidePropsResult, NextApiHandler } from "next";
 import { withIronSessionApiRoute, withIronSessionSsr } from "iron-session/next";
 
 declare module "iron-session" {
@@ -17,10 +18,10 @@ const cookieOptions = {
   },
 };
 
-export function withSessionRoute(fn: any) {
+export function withSessionRoute(fn: NextApiHandler) {
   return withIronSessionApiRoute(fn, cookieOptions);
 }
 
-export function withSsrSession(handler: any) {
+export function withSsrSession(handler: (context: GetServerSidePropsContext) => GetServerSidePropsResult<any> | Promise<GetServerSidePropsResult<any>>) {
   return withIronSessionSsr(handler, cookieOptions);
 }

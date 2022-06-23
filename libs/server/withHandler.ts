@@ -1,4 +1,4 @@
-import { NextApiRequest, NextApiResponse } from "next";
+import { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
 
 export interface ResponseType {
   success: boolean;
@@ -9,12 +9,12 @@ type method = "GET" | "POST" | "DELETE";
 
 interface ConfigType {
   methods: method[];
-  handler: (req: NextApiRequest, res: NextApiResponse) => void;
+  handler: NextApiHandler<any>;
   isPrivate?: boolean;
 }
 
-function withHandler({ methods, handler, isPrivate = true }: ConfigType) {
-  return async function (req: NextApiRequest, res: NextApiResponse): Promise<any> {
+const withHandler: (config: ConfigType) => NextApiHandler<any> = ({ methods, handler, isPrivate = true }) => {
+  return async (req, res) => {
     if (req.method && !methods.includes(req.method as any)) {
       return res.status(405).end();
     }
@@ -39,6 +39,6 @@ function withHandler({ methods, handler, isPrivate = true }: ConfigType) {
       }
     }
   };
-}
+};
 
 export default withHandler;

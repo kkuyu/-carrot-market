@@ -9,32 +9,35 @@ body {
 
 button,
 label {
-  cursor: pointer;
+  @apply cursor-pointer;
 }
 
 input,
 textarea {
-  display: block;
+  @apply block;
 }
 
 .main {
-  min-height: 100vh;
+  @apply min-h-screen outline-1 outline-gray-200;
   max-height: -webkit-fill-available;
-  outline-style: solid;
-  outline-width: 1px;
-  outline-color: #e5e7eb;
 }
 
 .container {
-  padding-left: 1rem;
-  padding-right: 1rem;
+  @apply px-4;
 }
 
-.a11y-hidden {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(1px, 1px, 1px, 1px);
+.blog-post-content {
+  @apply py-4;
+}
+
+.blog-post-content h1 {
+  @apply text-red-500 mb-5;
+}
+
+.blog-post-content p {
+  @apply mb-1 text-gray-600;
+}
+
+.blog-post-content ul {
+  @apply pl-10 list-disc;
 }

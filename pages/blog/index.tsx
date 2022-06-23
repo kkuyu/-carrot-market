@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import { GetStaticProps, NextPage } from "next";
 import Link from "next/link";
 
 import { readdirSync, readFileSync } from "fs";
@@ -6,14 +6,13 @@ import matter from "gray-matter";
 
 import Layout from "@components/layout";
 
-interface Post {
+export interface PostData {
   title: string;
   date: string;
   category: string;
-  slug: string;
 }
 
-const Blog: NextPage<{ posts: Post[] }> = ({ posts }) => {
+const Blog: NextPage<{ posts: (PostData & { slug: string })[] }> = ({ posts }) => {
   return (
     <Layout title="Blog">
       <div className="container">
@@ -37,12 +36,15 @@ const Blog: NextPage<{ posts: Post[] }> = ({ posts }) => {
   );
 };
 
-export const getStaticProps = async () => {
+export const getStaticProps: GetStaticProps = async () => {
   const blogPosts = readdirSync("./posts").map((fileName) => {
     const content = readFileSync(`./posts/${fileName}`, "utf-8");
     const [slug] = fileName.split(".");
+    const { title, date, category } = matter(content).data;
     return {
-      ...matter(content).data,
+      title,
+      date,
+      category,
       slug,
     };
   });
