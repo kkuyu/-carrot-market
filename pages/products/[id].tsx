@@ -1,11 +1,12 @@
 import { useEffect } from "react";
+import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
-import type { NextPage } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { Product, User } from "@prisma/client";
 import useSWR from "swr";
 
+import client from "@libs/server/client";
 import { cls } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 
@@ -19,7 +20,7 @@ interface ProductDetailResponse {
   relatedProducts: Product[];
 }
 
-const ProductDetail: NextPage = () => {
+const ProductDetail: NextPage<{ product: ProductDetailResponse["product"] }> = ({ product }) => {
   const router = useRouter();
 
   const { data, error, mutate: boundMutate } = useSWR<ProductDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
@@ -39,8 +40,10 @@ const ProductDetail: NextPage = () => {
     }
   }, [data, router]);
 
-  if (!data || !data.success || error) {
-    return null;
+  if (!product) {
+    if (!data || !data.success || error) {
+      return null;
+    }
   }
 
   return (
@@ -49,29 +52,23 @@ const ProductDetail: NextPage = () => {
         <div>
           <div className="relative">
             <span className="block pb-[80%]"></span>
-            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product.photo}/public`} alt="" layout="fill" objectFit="cover" className="bg-slate-300" />
+            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${product.photo}/public`} alt="" layout="fill" objectFit="cover" className="bg-slate-300" />
           </div>
           <div className="border-t border-b">
             <div className="flex items-center w-full space-x-3 py-3 text-left">
-              <Image
-                src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${data?.product?.user?.avatar}/avatar`}
-                alt=""
-                width={48}
-                height={48}
-                className="flex-none w-12 h-12 bg-slate-300 rounded-full"
-              />
+              <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${product.user?.avatar}/avatar`} alt="" width={48} height={48} className="flex-none w-12 h-12 bg-slate-300 rounded-full" />
               <div>
-                <strong className="block text-sm font-semibold text-gray-700">{data.product.user.name}</strong>
-                <Link href={`/users/profiles/${data.product.user.id}`}>
+                <strong className="block text-sm font-semibold text-gray-700">{product.user?.name}</strong>
+                <Link href={`/users/profiles/${product.user.id}`}>
                   <a className="block text-xs font-semibold text-gray-500">View profile &rarr;</a>
                 </Link>
               </div>
             </div>
           </div>
           <div className="mt-5">
-            <h1 className="text-3xl font-bold text-gray-900">{data.product.name}</h1>
-            <span className="mt-3 block text-xl text-gray-900">${data.product.price}</span>
-            <p className="my-6 text-gray-700">{data.product.description}</p>
+            <h1 className="text-3xl font-bold text-gray-900">{product.name}</h1>
+            <span className="mt-3 block text-xl text-gray-900">${product.price}</span>
+            <p className="my-6 text-gray-700">{product.description}</p>
             <div className="flex items-center justify-between space-x-2">
               <Button large text="Talk to seller" />
               <button
@@ -116,6 +113,45 @@ const ProductDetail: NextPage = () => {
       </div>
     </Layout>
   );
+};
+
+export const getStaticPaths: GetStaticPaths = () => {
+  return {
+    paths: [],
+    fallback: "blocking",
+  };
+};
+
+export const getStaticProps: GetStaticProps = async (context) => {
+  if (!context?.params?.id) {
+    return {
+      props: {},
+    };
+  }
+  const product = await client.product.findUnique({
+    where: {
+      id: +context.params.id.toString(),
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+    },
+  });
+  if (!product) {
+    return {
+      props: {},
+    };
+  }
+  return {
+    props: {
+      product: JSON.parse(JSON.stringify(product)),
+    },
+  };
 };
 
 export default ProductDetail;

@@ -222,9 +222,9 @@ Serverless Carrot Market Clone using NextJS, Tailwind, Prisma, PlanetScale and C
 - [x] 20.1 ISR part One
 - [x] 20.2 ISR part Two
 - [x] 20.3 On Demand Revalidation
-- [ ] 20.4 Blocking SSG
-- [ ] 20.5 Fallback
-- [ ] 20.6 Recap
+- [x] 20.4 Blocking SSG
+- [x] 20.5 Fallback
+- [x] 20.6 Recap
 - [ ] 20.7 Code Challenge
 
 **#21 FUTURE: REACT 18**
