@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import sendMessage from "@libs/server/sendMessage";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 
-export interface PostLoginResponse {
+export interface PostUserUpdateResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -15,10 +15,10 @@ export interface PostLoginResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { phone } = req.body;
+    const { originData, updateData } = req.body;
 
     // request valid
-    if (!phone || phone.length < 8) {
+    if (!originData || !updateData) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -27,32 +27,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // user check
     const foundUser = await client.user.findUnique({
       where: {
-        phone,
+        ...(originData.phone ? { phone: originData.phone } : {}),
+        ...(originData.email ? { email: originData.email } : {}),
       },
       select: {
         id: true,
       },
     });
     if (!foundUser) {
-      const error = new Error("휴대폰 번호를 다시 확인해주세요.");
+      const error = new Error("기존 계정 정보를 다시 확인해주세요.");
       error.name = "NotFoundUser";
       throw error;
     }
 
-    // create token
-    const newToken = await client.token.create({
-      data: {
-        payload: Math.floor(100000 + Math.random() * 900000) + "",
-        user: {
-          connect: {
-            phone,
-          },
-        },
+    await client.user.update({
+      where: {
+        id: foundUser.id,
       },
-    });
-    sendMessage({
-      messageTo: phone,
-      messageContent: `[당근마켓] 인증번호 [${newToken.payload}] *타인에게 절대 알리지 마세요.(계정 도용 위험)`,
+      data: {
+        ...(updateData.avatarId ? { avatarId: updateData.avatarId } : {}),
+        ...(updateData.name ? { name: updateData.name } : {}),
+        ...(updateData.phone ? { phone: updateData.phone } : {}),
+        ...(updateData.email ? { email: updateData.email } : {}),
+      },
     });
 
     return res.status(200).json({

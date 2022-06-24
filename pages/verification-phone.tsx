@@ -2,36 +2,40 @@ import { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import useMutation from "@libs/client/useMutation";
-import { PostLoginResponse } from "@api/users/login";
+import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
 import { PostTokenResponse } from "@api/users/token";
+import { PostUserUpdateResponse } from "@api/users/my/update";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
 import Button from "@components/button";
 
-interface LoginForm {
+interface AccountForm {
   phone: string;
+  targetEmail: string;
 }
 
 interface TokenForm {
   token: string;
 }
 
-const Login: NextPage = () => {
+const AccountUpdatePhone: NextPage = () => {
   const router = useRouter();
+  const [isPassed, setIsPassed] = useState<boolean>(false);
 
-  const { register, handleSubmit, formState, setError, setFocus } = useForm<LoginForm>({ mode: "onChange" });
+  const { register, handleSubmit, formState, setError, setFocus, setValue, getValues } = useForm<AccountForm>({ mode: "onChange" });
   const { register: tokenRegister, formState: tokenState, handleSubmit: tokenSubmit, setError: tokenError, setFocus: tokenFocus } = useForm<TokenForm>();
 
-  const [login, { loading, data }] = useMutation<PostLoginResponse>("/api/users/login");
+  const [account, { loading, data }] = useMutation<PostVerificationPhoneResponse>("/api/users/verification-phone");
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostTokenResponse>("/api/users/token");
+  const [userUpdate, { loading: userLoading, data: userData }] = useMutation<PostUserUpdateResponse>("/api/users/my/update");
 
-  const onValid = (validForm: LoginForm) => {
+  const onValid = (validForm: AccountForm) => {
     if (loading) return;
-    login(validForm);
+    account(validForm);
   };
 
   const onValidToken = (validForm: TokenForm) => {
@@ -40,10 +44,20 @@ const Login: NextPage = () => {
   };
 
   useEffect(() => {
+    const targetEmail = decodeURIComponent(router.query.targetEmail?.toString() || "");
+    if (!targetEmail || !targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      router.replace("/verification-email");
+    } else {
+      setValue("targetEmail", targetEmail);
+    }
+  }, []);
+
+  useEffect(() => {
     if (!data) return;
     if (!data.success && data.error?.timestamp) {
       switch (data.error.name) {
-        case "NotFoundUser":
+        case "SameExistingAccount":
+        case "AlreadySubscribedAccount":
           setError("phone", { type: "validate", message: data.error.message });
           setFocus("phone");
           return;
@@ -55,7 +69,7 @@ const Login: NextPage = () => {
     if (data.success) {
       tokenFocus("token");
     }
-  }, [data, setError, setFocus, tokenFocus]);
+  }, [data]);
 
   useEffect(() => {
     if (!tokenData) return;
@@ -70,20 +84,34 @@ const Login: NextPage = () => {
           return;
       }
     }
-    if (tokenData.success) {
-      router.replace("/");
+    if (tokenData.success && !isPassed) {
+      setIsPassed(() => true);
+      userUpdate({
+        originData: { email: getValues("targetEmail") },
+        updateData: { phone: getValues("phone") },
+      });
     }
-  }, [tokenData, tokenError, tokenFocus, router]);
+  }, [tokenData]);
+
+  useEffect(() => {
+    if (!isPassed) return;
+    if (!userData) return;
+    if (!userData.success && userData.error?.timestamp) {
+      switch (userData.error.name) {
+        default:
+          console.error(userData.error);
+          return;
+      }
+    }
+    if (userData.success && isPassed) {
+      router.push("/");
+    }
+  }, [userData, isPassed]);
 
   return (
-    <Layout hasHeadBar hasBackBtn>
+    <Layout title="휴대폰 번호 변경" hasHeadBar hasBackBtn>
       <section className="container py-5">
-        <h1 className="text-2xl font-bold">
-          안녕하세요!
-          <br />
-          휴대폰 번호로 로그인해주세요.
-        </h1>
-        <p className="mt-2 text-sm">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
+        <p className="text-sm">변경된 휴대폰 번호를 입력해주세요. 번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
 
         {/* 전화번호 입력 */}
         <form onSubmit={handleSubmit(onValid)} noValidate className="mt-4 space-y-4">
@@ -110,52 +138,28 @@ const Login: NextPage = () => {
           <Button type="submit" text={!(data && data.success) ? "인증문자 받기" : loading ? "인증문자 받기" : "인증문자 다시 받기"} disabled={!formState.isValid || loading} theme="white" />
         </form>
 
-        <div className="empty:hidden mt-4 text-sm text-center space-y-2">
-          {formState.errors.phone?.type === "validate" && (
-            <p>
-              {/* todo: 시작하기 */}
-              <span>첫 방문이신가요?</span>
-              <Link href="/verification-email">
-                <a className="ml-1 font-semibold text-orange-500">당근마켓 시작하기</a>
-              </Link>
-            </p>
-          )}
-          {!(data && data.success) && (
-            <p>
-              {/* 이메일로 계정 찾기 */}
-              <span>전화번호가 변경되었나요?</span>
-              <Link href="/verification-email">
-                <a className="ml-1 underline">이메일로 계정 찾기</a>
-              </Link>
-            </p>
-          )}
-        </div>
-
         {/* 인증 결과 확인 */}
-        {data && data.success && (
-          <>
-            <form onSubmit={tokenSubmit(onValidToken)} noValidate className="mt-4 space-y-4">
-              <div>
-                <Input
-                  register={tokenRegister("token", {
-                    required: true,
-                  })}
-                  name="token"
-                  type="number"
-                  kind="text"
-                  required={true}
-                  placeholder="인증번호 입력"
-                />
-                <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
-                <span className="empty:hidden invalid">{tokenState.errors.token?.message}</span>
-              </div>
-              <Button type="submit" text="인증번호 확인" disabled={tokenLoading} />
-            </form>
-          </>
-        )}
+        <form onSubmit={tokenSubmit(onValidToken)} noValidate className="mt-4 space-y-4">
+          <div>
+            <Input
+              register={tokenRegister("token", {
+                required: true,
+              })}
+              name="token"
+              type="number"
+              kind="text"
+              required={true}
+              disabled={!data?.success}
+              placeholder="인증번호 입력"
+            />
+            <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
+            <span className="empty:hidden invalid">{tokenState.errors.token?.message}</span>
+          </div>
+          <Button type="submit" text="인증번호 확인" disabled={!data?.success || tokenLoading} />
+        </form>
       </section>
     </Layout>
   );
 };
 
-export default Login;
+export default AccountUpdatePhone;

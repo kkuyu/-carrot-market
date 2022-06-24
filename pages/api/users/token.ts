@@ -19,7 +19,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
     // request valid
     if (!token) {
-      const error = new Error("잘못된 요청 본문입니다");
+      const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
@@ -31,18 +31,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
     if (!foundToken) {
-      const error = new Error("유효하지 않은 인증번호입니다.");
+      const error = new Error("인증번호를 다시 확인해주세요.");
       error.name = "InvalidToken";
       throw error;
     }
 
-    // session save token
+    // session save, db delete
     req.session.user = {
       id: foundToken.userId,
     };
     await req.session.save();
-
-    // client delete token
     await client.token.deleteMany({
       where: {
         userId: foundToken.userId,

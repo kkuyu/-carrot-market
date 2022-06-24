@@ -35,7 +35,7 @@ export default function Input({ label, name, kind = "text", type, required = fal
             className={cls(
               "w-full px-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400",
               "focus:outline-none focus:ring-orange-500 focus:border-orange-500",
-              disabled ? "bg-gray-200" : ""
+              disabled ? "opacity-80" : ""
             )}
           />
           {appendButtons && <div className="ml-2 flex space-x-2">{appendButtons}</div>}
@@ -57,7 +57,7 @@ export default function Input({ label, name, kind = "text", type, required = fal
             className={cls(
               "w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400",
               "focus:outline-none focus:ring-orange-500 focus:border-orange-500",
-              disabled ? "bg-gray-200" : ""
+              disabled ? "opacity-80" : ""
             )}
           />
           <div className="absolute right-0 flex items-center pr-3 pointer-events-none">

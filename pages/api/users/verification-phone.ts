@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import sendMessage from "@libs/server/sendMessage";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 
-export interface PostLoginResponse {
+export interface PostVerificationPhoneResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -15,7 +15,7 @@ export interface PostLoginResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { phone } = req.body;
+    const { phone, targetEmail } = req.body;
 
     // request valid
     if (!phone || phone.length < 8) {
@@ -23,9 +23,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
+    if (!targetEmail || !targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
     // user check
-    const foundUser = await client.user.findUnique({
+    const foundUserByEmail = await client.user.findUnique({
+      where: {
+        email: targetEmail,
+      },
+      select: {
+        id: true,
+        phone: true,
+      },
+    });
+    if (foundUserByEmail) {
+      if (foundUserByEmail.phone === phone) {
+        const error = new Error("등록된 휴대폰 번호와 같은 번호예요. 변경하실 휴대폰 번호를 입력해주세요.");
+        error.name = "SameExistingAccount";
+        throw error;
+      }
+    }
+    const foundUserByPhone = await client.user.findUnique({
       where: {
         phone,
       },
@@ -33,9 +54,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: true,
       },
     });
-    if (!foundUser) {
-      const error = new Error("휴대폰 번호를 다시 확인해주세요.");
-      error.name = "NotFoundUser";
+    if (foundUserByPhone) {
+      const error = new Error("이미 가입한 휴대폰 번호예요. 휴대폰 번호를 다시 확인해주세요.");
+      error.name = "AlreadySubscribedAccount";
       throw error;
     }
 
@@ -45,7 +66,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         payload: Math.floor(100000 + Math.random() * 900000) + "",
         user: {
           connect: {
-            phone,
+            email: targetEmail,
           },
         },
       },

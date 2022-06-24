@@ -25,6 +25,8 @@ export const middleware = (req: NextRequest) => {
     switch (url.pathname) {
       case "/welcome":
       case "/login":
+      case "/verification-email":
+      case "/verification-phone":
         return NextResponse.next();
       default:
         url.pathname = "/welcome";

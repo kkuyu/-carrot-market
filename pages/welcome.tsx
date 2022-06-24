@@ -26,6 +26,7 @@ const Welcome: NextPage = () => {
             </h2>
           </div>
           <div className="flex-none w-full pb-6">
+            {/* todo: 시작하기 */}
             <Button text="시작하기" />
             <div className="mt-4 text-sm">
               <span className="text-gray-500">이미 계정이 있나요?</span>
