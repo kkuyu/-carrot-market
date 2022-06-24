@@ -1,10 +1,21 @@
+import { IncomingMessage } from "http";
 import { uniqueNamesGenerator, Config, adjectives, starWars } from "unique-names-generator";
 
-export function cls(...classnames: string[]) {
+export const cls: (...props: string[]) => string = (...classnames) => {
   return classnames.join(" ");
-}
+};
 
-export const getRandomName = () => {
+export const getAbsoluteUrl: (req?: IncomingMessage) => { protocol: string; host: string; origin: string } = (req) => {
+  const host = (req && req.headers ? req.headers["x-forwarded-host"] || req.headers.host : window.location.host)?.toString() || "";
+  const protocol = /^localhost(:\d+)?$/.test(host) ? "http:" : "https:";
+  return {
+    protocol: protocol,
+    host: host,
+    origin: protocol + "//" + host,
+  };
+};
+
+export const getRandomName: () => string = () => {
   const config: Config = {
     dictionaries: [adjectives, starWars],
     separator: "-",

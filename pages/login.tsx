@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useMutation from "@libs/client/useMutation";
 import { PostLoginResponse } from "@api/users/login";
-import { PostTokenResponse } from "@api/users/token";
+import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
@@ -27,7 +27,7 @@ const Login: NextPage = () => {
   const { register: tokenRegister, formState: tokenState, handleSubmit: tokenSubmit, setError: tokenError, setFocus: tokenFocus } = useForm<TokenForm>();
 
   const [login, { loading, data }] = useMutation<PostLoginResponse>("/api/users/login");
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostTokenResponse>("/api/users/token");
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token");
 
   const onValid = (validForm: LoginForm) => {
     if (loading) return;

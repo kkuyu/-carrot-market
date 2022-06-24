@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 import client from "@libs/server/client";
-import sendMessage from "@libs/server/sendMessage";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
+import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostUserUpdateResponse {
   success: boolean;
@@ -70,8 +70,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
 }
 
-export default withHandler({
-  methods: ["POST"],
-  handler,
-  isPrivate: false,
-});
+export default withSessionRoute(
+  withHandler({
+    methods: ["POST"],
+    handler,
+    isPrivate: false,
+  })
+);

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import useMutation from "@libs/client/useMutation";
 import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
-import { PostTokenResponse } from "@api/users/token";
+import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostUserUpdateResponse } from "@api/users/my/update";
 
 import Layout from "@components/layout";
@@ -30,7 +30,7 @@ const AccountUpdatePhone: NextPage = () => {
   const { register: tokenRegister, formState: tokenState, handleSubmit: tokenSubmit, setError: tokenError, setFocus: tokenFocus } = useForm<TokenForm>();
 
   const [account, { loading, data }] = useMutation<PostVerificationPhoneResponse>("/api/users/verification-phone");
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostTokenResponse>("/api/users/token");
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token");
   const [userUpdate, { loading: userLoading, data: userData }] = useMutation<PostUserUpdateResponse>("/api/users/my/update");
 
   const onValid = (validForm: AccountForm) => {

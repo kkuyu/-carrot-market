@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostTokenResponse {
+export interface PostConfirmTokenResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -36,20 +36,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // session save, db delete
+    // session token save
     req.session.user = {
       id: foundToken.userId,
     };
     await req.session.save();
+
+    // db token delete
     await client.token.deleteMany({
       where: {
         userId: foundToken.userId,
       },
     });
 
-    return res.status(200).json({
+    // result
+    const result: PostConfirmTokenResponse = {
       success: true,
-    });
+    };
+    return res.status(200).json(result);
   } catch (error: unknown) {
     if (error instanceof Error) {
       const date = Date.now().toString();

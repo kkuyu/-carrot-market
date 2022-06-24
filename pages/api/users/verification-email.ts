@@ -1,9 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 import client from "@libs/server/client";
-import { EmailTemplateKey } from "@libs/server/getNCPConfig";
-import sendEmail from "@libs/server/sendEmail";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
+import { withSessionRoute } from "@libs/server/withSession";
+
+import { EmailTemplateKey } from "@libs/server/getUtilsNcp";
+import sendEmail from "@libs/server/sendEmail";
 
 export interface PostVerificationEmailResponse {
   success: boolean;
@@ -25,7 +27,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // user check
+    // check user
     const foundUser = await client.user.findUnique({
       where: {
         email,
@@ -40,7 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // create token
+    // create new token
     const newToken = await client.token.create({
       data: {
         payload: Math.floor(100000 + Math.random() * 900000) + "",
@@ -59,10 +61,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
-    return res.status(200).json({
+    // result
+    const result: PostVerificationEmailResponse = {
       success: true,
-    });
+    };
+    return res.status(200).json(result);
   } catch (error: unknown) {
+    // error
     if (error instanceof Error) {
       const date = Date.now().toString();
       return res.status(422).json({
@@ -77,8 +82,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
 }
 
-export default withHandler({
-  methods: ["POST"],
-  handler,
-  isPrivate: false,
-});
+export default withSessionRoute(
+  withHandler({
+    methods: ["POST"],
+    handler,
+    isPrivate: false,
+  })
+);

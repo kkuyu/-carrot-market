@@ -13,7 +13,7 @@ export default function Header({ hasBackBtn, title }: HeaderProps) {
   };
 
   return (
-    <header className="fixed top-0 left-0 w-full">
+    <header className="fixed top-0 left-0 w-full z-100">
       <div className="mx-auto w-full max-w-xl bg-white border-b">
         <div className="relative flex items-center justify-center w-full h-12">
           {hasBackBtn ? (
