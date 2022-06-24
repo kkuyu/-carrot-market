@@ -68,6 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         cloudflareUrl: response.result.rtmps.url,
       },
     });
+    await res.revalidate("/streams");
     return res.status(200).json({
       success: true,
       stream: newStream,

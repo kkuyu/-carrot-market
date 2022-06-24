@@ -91,7 +91,7 @@ export const getStaticProps: GetStaticProps = async () => {
     props: {
       streams: JSON.parse(JSON.stringify(streams)),
     },
-    revalidate: 20,
+    // revalidate: 20,
   };
 };
 
