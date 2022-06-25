@@ -40,7 +40,7 @@ const Create: NextPage = () => {
   }, [data, router]);
 
   return (
-    <Layout canGoBack title="Go Live Stream">
+    <Layout hasBackBtn title="Go Live Stream">
       <div className="container pt-5 pb-5">
         <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
           <Input register={register("name", { required: true })} required label="Name" name="name" type="text" />

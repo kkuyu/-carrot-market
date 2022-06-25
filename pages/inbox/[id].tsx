@@ -5,7 +5,7 @@ import Message from "@components/message";
 
 const ChatDetail: NextPage = () => {
   return (
-    <Layout canGoBack title="Steve">
+    <Layout hasBackBtn title="Steve">
       <div className="container pt-5 pb-16">
         <div className="space-y-4">
           <Message message="Hi how much are you selling them for?" />

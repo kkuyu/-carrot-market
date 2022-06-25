@@ -5,7 +5,7 @@ interface SendMessageData {
   messageContent: string;
 }
 
-const send_message = ({ messageTo, messageContent }: SendMessageData) => {
+const sendMessage = ({ messageTo, messageContent }: SendMessageData) => {
   const method = "POST";
   const date = Date.now().toString();
   const apiUrl = `https://sens.apigw.ntruss.com`;
@@ -53,4 +53,4 @@ const send_message = ({ messageTo, messageContent }: SendMessageData) => {
     .catch((error) => console.log(error));
 };
 
-export default send_message;
+export default sendMessage;

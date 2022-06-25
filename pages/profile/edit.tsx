@@ -100,7 +100,7 @@ const EditProfile: NextPage = () => {
   }, [data, router]);
 
   return (
-    <Layout canGoBack title="Edit Profile">
+    <Layout hasBackBtn title="Edit Profile">
       <div className="container pt-5 pb-5">
         <form onChange={onChange} onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
           <div className="flex items-center space-x-3">

@@ -5,7 +5,7 @@ import ProductList from "@components/product-list";
 
 const Loved: NextPage = () => {
   return (
-    <Layout canGoBack title="Loved">
+    <Layout hasBackBtn title="Loved">
       <div className="container">
         <ProductList kindValue="Favorite" />
       </div>

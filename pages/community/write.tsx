@@ -39,7 +39,7 @@ const Write: NextPage = () => {
   }, [data, router]);
 
   return (
-    <Layout canGoBack title="Write Post">
+    <Layout hasBackBtn title="Write Post">
       <div className="container pt-5 pb-5">
         <div className="flex items-center justify-end w-full text-xs font-semibold text-gray-500">
           <span className="flex-none">Location permission: {state}</span>

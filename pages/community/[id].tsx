@@ -84,7 +84,7 @@ const CommunityDetail: NextPage = () => {
   }
 
   return (
-    <Layout canGoBack>
+    <Layout hasBackBtn>
       <div className="container pt-5 pb-5">
         <div>
           <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">Community</span>

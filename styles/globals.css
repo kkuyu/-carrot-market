@@ -18,16 +18,21 @@ textarea {
 }
 
 .main {
-  @apply min-h-screen outline-1 outline-gray-200;
+  @apply min-h-screen outline outline-1 outline-gray-200;
+  max-height: -webkit-fill-available;
+}
+
+.h-max-fullScreen {
+  @apply min-h-screen;
   max-height: -webkit-fill-available;
 }
 
 .container {
-  @apply px-4;
+  @apply px-5;
 }
 
 .blog-post-content {
-  @apply py-4;
+  @apply py-5;
 }
 
 .blog-post-content h1 {

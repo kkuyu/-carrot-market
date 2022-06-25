@@ -66,7 +66,7 @@ const Upload: NextPage = () => {
   }, [data, router]);
 
   return (
-    <Layout canGoBack title="Upload Product">
+    <Layout hasBackBtn title="Upload Product">
       <div className="container pt-5 pb-5">
         <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
           <div>

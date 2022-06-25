@@ -111,7 +111,7 @@ const StreamDetail: NextPage = () => {
   }
 
   return (
-    <Layout canGoBack>
+    <Layout hasBackBtn>
       <div className="container pt-5 pb-16">
         <div>
           {data.stream.cloudflareId && (

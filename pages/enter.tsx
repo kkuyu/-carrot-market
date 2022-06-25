@@ -77,7 +77,7 @@ const Enter: NextPage = () => {
   }, [tokenData, router]);
 
   return (
-    <Layout canGoBack hasTabBar seoTitle="Enter">
+    <Layout hasBackBtn hasTabBar seoTitle="Enter">
       <div className="container pt-5 pb-5">
         <h3 className="text-3xl font-bold text-center">Enter to Carrot</h3>
 

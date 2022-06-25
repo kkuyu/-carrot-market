@@ -11,7 +11,7 @@ import Layout from "@components/layout";
 
 const Post: NextPage<{ postHtml: string; postData: PostData }> = ({ postHtml, postData }) => {
   return (
-    <Layout canGoBack seoTitle={postData.title} title={postData.title}>
+    <Layout hasBackBtn seoTitle={postData.title} title={postData.title}>
       <div className="container">
         <div className="blog-post-content" dangerouslySetInnerHTML={{ __html: postHtml }} />
       </div>

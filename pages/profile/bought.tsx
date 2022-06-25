@@ -5,7 +5,7 @@ import ProductList from "@components/product-list";
 
 const Bought: NextPage = () => {
   return (
-    <Layout canGoBack title="Bought">
+    <Layout hasBackBtn title="Bought">
       <div className="container">
         <ProductList kindValue="Purchase" />
       </div>
