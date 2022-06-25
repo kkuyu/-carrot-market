@@ -1,52 +1,38 @@
-import { createHmac } from "crypto";
+import { getHeader, getSignature, getMessageTemplate, MessageTemplateKey } from "./getNCPConfig";
 
 interface SendMessageData {
-  messageTo: string;
-  messageContent: string;
+  templateId: MessageTemplateKey;
+  sendTo: string;
+  parameters: Record<string, string>;
 }
 
-const sendMessage = ({ messageTo, messageContent }: SendMessageData) => {
+const sendMessage = ({ templateId, sendTo, parameters }: SendMessageData) => {
   const method = "POST";
   const date = Date.now().toString();
   const apiUrl = `https://sens.apigw.ntruss.com`;
-  const smsUrl = `/sms/v2/services/${process.env.NCP_SMS_SERVICE_ID}/messages`;
+  const requestUrl = `/sms/v2/services/${process.env.NCP_SMS_SERVICE_ID}/messages`;
 
-  const makeSignature = () => {
-    const space = " ";
-    const newLine = "\n";
-    const hmac = createHmac("sha256", process.env.NCP_SECRET_KEY!);
-    hmac.update(method);
-    hmac.update(space);
-    hmac.update(smsUrl);
-    hmac.update(newLine);
-    hmac.update(date);
-    hmac.update(newLine);
-    hmac.update(process.env.NCP_ACCESS_ID!);
-    return hmac.digest("base64");
-  };
+  const headers = getHeader({
+    type: "email",
+    date,
+    signature: getSignature({ method, requestUrl, date }),
+  });
 
-  const makeHeaders = () => {
-    const headers: HeadersInit = new Headers();
-    headers.set("Content-Type", "application/json; charset=utf-8");
-    headers.set("x-ncp-apigw-timestamp", date);
-    headers.set("x-ncp-iam-access-key", process.env.NCP_ACCESS_ID!);
-    headers.set("x-ncp-apigw-signature-v2", makeSignature());
-    return headers;
-  };
+  const content = getMessageTemplate(templateId, parameters);
 
   const body = JSON.stringify({
     type: "SMS",
     contentType: "COMM",
     countryCode: "82",
     from: process.env.MY_PHONE,
-    content: messageContent,
-    messages: [{ to: messageTo, content: messageContent }],
+    content,
+    messages: [{ to: sendTo, content }],
   });
 
-  fetch(`${apiUrl}${smsUrl}`, {
+  fetch(`${apiUrl}${requestUrl}`, {
     method,
     body,
-    headers: makeHeaders(),
+    headers,
   })
     .then((response) => response.json().catch(() => {}))
     .then((json) => console.log(json))

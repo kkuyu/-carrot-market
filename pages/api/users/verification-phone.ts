@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 import client from "@libs/server/client";
+import { MessageTemplateKey } from "@libs/server/getNCPConfig";
 import sendMessage from "@libs/server/sendMessage";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 
@@ -72,8 +73,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
     sendMessage({
-      messageTo: phone,
-      messageContent: `[당근마켓] 인증번호 [${newToken.payload}] *타인에게 절대 알리지 마세요.(계정 도용 위험)`,
+      templateId: MessageTemplateKey.verificationPhone,
+      sendTo: phone,
+      parameters: {
+        token: newToken.payload,
+      },
     });
 
     return res.status(200).json({

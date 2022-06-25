@@ -1,42 +1,45 @@
-import nodemailer from "nodemailer";
+import { EmailTemplateKey, getHeader, getSignature } from "./getNCPConfig";
 
 interface SendEmailData {
-  emailTo: string;
-  emailSubject: string;
-  emailContent: string;
+  sendTo: string;
+  templateId: EmailTemplateKey;
+  parameters: Record<string, string>;
 }
 
-const sendEmail = ({ emailTo, emailSubject, emailContent }: SendEmailData) => {
-  const emailTransport = nodemailer.createTransport({
-    service: "gmail",
-    host: "smtp.gmail.com",
-    port: 587,
-    secure: false,
-    auth: {
-      user: process.env.MAIL_ID,
-      pass: process.env.MAIL_PASSWORD,
-    },
-    tls: {
-      rejectUnauthorized: false,
-    },
+const sendEmail = ({ templateId, sendTo, parameters }: SendEmailData) => {
+  const method = "POST";
+  const date = Date.now().toString();
+  const apiUrl = `https://mail.apigw.ntruss.com`;
+  const requestUrl = `/api/v1/mails`;
+
+  const headers = getHeader({
+    type: "email",
+    date,
+    signature: getSignature({ method, requestUrl, date }),
   });
 
-  const mailOptions = {
-    from: process.env.MAIL_ID,
-    to: emailTo,
-    subject: emailSubject,
-    html: emailContent,
-  };
-
-  emailTransport.sendMail(mailOptions, (error, responses) => {
-    if (error) {
-      console.log(error);
-    } else {
-      console.log(responses);
-    }
+  const body = JSON.stringify({
+    templateSid: templateId,
+    recipients: [
+      {
+        address: sendTo,
+        name: null,
+        type: "R",
+        parameters,
+      },
+    ],
+    individual: true,
+    advertising: false,
   });
 
-  emailTransport.close();
+  fetch(`${apiUrl}${requestUrl}`, {
+    method,
+    body,
+    headers,
+  })
+    .then((response) => response.json().catch(() => {}))
+    .then((json) => console.log(json))
+    .catch((error) => console.log(error));
 };
 
 export default sendEmail;
