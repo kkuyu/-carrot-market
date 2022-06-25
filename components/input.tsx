@@ -3,7 +3,7 @@ import React, { ReactNode } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
 interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
-  label: string;
+  label?: string;
   name: string;
   kind?: "text" | "price";
   type: string;
@@ -17,14 +17,17 @@ interface InputProps extends React.HTMLAttributes<HTMLInputElement> {
 export default function Input({ label, name, kind = "text", type, required = false, disabled, register, appendButtons, ...rest }: InputProps) {
   return (
     <div className="space-y-1">
-      <label className="block text-sm font-semibold text-gray-700" htmlFor={name}>
-        {label}
-      </label>
+      {label ? (
+        <label className="block text-sm font-semibold text-gray-700" htmlFor={name}>
+          {label}
+        </label>
+      ) : null}
       {kind === "text" ? (
         <div className="relative flex items-center rounded-md shadow-sm">
           <input
             id={name}
             type={type}
+            name={name}
             required={required}
             disabled={disabled}
             {...register}
@@ -46,6 +49,7 @@ export default function Input({ label, name, kind = "text", type, required = fal
           <input
             id={name}
             type={type}
+            name={name}
             required={required}
             disabled={disabled}
             {...register}

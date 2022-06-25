@@ -29,7 +29,7 @@ const Welcome: NextPage = () => {
             <Button text="시작하기" />
             <div className="mt-4 text-sm">
               <span className="text-gray-500">이미 계정이 있나요?</span>
-              <Link href="/enter">
+              <Link href="/login">
                 <a className="ml-1 font-semibold text-orange-500">로그인</a>
               </Link>
             </div>

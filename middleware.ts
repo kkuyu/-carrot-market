@@ -20,9 +20,16 @@ export const middleware = (req: NextRequest) => {
 
   const url = req.nextUrl.clone();
   const isLogin = Boolean(req.cookies.get("carrot-market-session"));
-  if (!isLogin && url.pathname !== "/enter") {
-    url.pathname = "/enter";
-    return NextResponse.redirect(url);
+
+  if (!isLogin) {
+    switch (url.pathname) {
+      case "/welcome":
+      case "/login":
+        return NextResponse.next();
+      default:
+        url.pathname = "/welcome";
+        return NextResponse.redirect(url);
+    }
   }
 
   return NextResponse.next();

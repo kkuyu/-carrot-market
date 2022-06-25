@@ -31,6 +31,14 @@ textarea {
   @apply px-5;
 }
 
+form .invalid {
+  @apply mt-1 block text-sm text-red-600;
+}
+
+form .notice {
+  @apply mt-1 block text-sm text-gray-600;
+}
+
 .blog-post-content {
   @apply py-5;
 }
