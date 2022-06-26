@@ -36,7 +36,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // session token save
+    // save data: session.user
     req.session.user = {
       id: foundToken.userId,
     };

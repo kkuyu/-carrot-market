@@ -1,4 +1,4 @@
-import { NextRequest, userAgent } from "next/server";
+import { NextMiddleware, userAgent } from "next/server";
 import { NextResponse } from "next/server";
 
 // const protectedRoutes = [
@@ -9,7 +9,7 @@ import { NextResponse } from "next/server";
 //   { path: "/streams/create", redirect: "/enter" },
 // ];
 
-export const middleware = (req: NextRequest) => {
+export const middleware: NextMiddleware = (req) => {
   if (req.url.includes("/api")) return NextResponse.next();
   if (req.url.includes("/_next")) return NextResponse.next();
 
@@ -27,6 +27,8 @@ export const middleware = (req: NextRequest) => {
       case "/login":
       case "/verification-email":
       case "/verification-phone":
+      case "/hometown/search":
+      case "/join":
         return NextResponse.next();
       default:
         url.pathname = "/welcome";

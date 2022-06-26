@@ -1,10 +1,21 @@
 import { GetServerSidePropsContext, GetServerSidePropsResult, NextApiHandler } from "next";
 import { withIronSessionApiRoute, withIronSessionSsr } from "iron-session/next";
+import { AdmType } from "@prisma/client";
 
 declare module "iron-session" {
   interface IronSessionData {
     user?: {
       id: number;
+    };
+    dummyUser: {
+      id: -1;
+      admType: AdmType;
+      admCdMain: Number;
+      admNmMain: String;
+    };
+    sgisApi?: {
+      accessTimeout: string;
+      accessToken: string;
     };
   }
 }
