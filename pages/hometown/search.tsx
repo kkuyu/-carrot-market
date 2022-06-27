@@ -9,7 +9,7 @@ import { GetWorldGeocodeResponse } from "@api/address/world-geocode";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
-import Button from "@components/button";
+import Buttons from "@components/buttons";
 import AddressList from "@components/addressList";
 import useMutation from "@libs/client/useMutation";
 import { useRouter } from "next/router";
@@ -46,7 +46,7 @@ const HometownSearch: NextPage = () => {
   useEffect(() => {
     if (!saveData) return;
     if (!saveData.success && saveData.error?.timestamp) {
-      // console.log(saveData.error);
+      console.log(saveData.error);
     }
     if (saveData.success) {
       router.push("/join");
@@ -67,19 +67,21 @@ const HometownSearch: NextPage = () => {
                 kind="text"
                 placeholder="동명(읍,면)으로 검색 (ex. 서초동)"
                 appendButtons={
-                  <button
+                  <Buttons
+                    tag="button"
                     type="submit"
-                    className="flex items-center justify-center p-2 text-gray-400 rounded-md outline-none hover:bg-gray-100 hover:text-gray-500 focus:bg-gray-100 focus:text-gray-500"
-                  >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                    </svg>
-                  </button>
+                    text="검색"
+                    icon={
+                      <svg role="img" aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                      </svg>
+                    }
+                  />
                 }
               />
               <span className="empty:hidden invalid">{formState.errors.keyword?.message}</span>
             </div>
-            <Button type="reset" text="현재위치로 찾기" onClick={resetForm} large={false} />
+            <Buttons tag="button" type="reset" text="현재위치로 찾기" onClick={resetForm} />
           </form>
           <div className="mt-5">
             <strong>{addressKeyword.length === 0 ? "근처 동네" : `'${addressKeyword}' 검색 결과`}</strong>

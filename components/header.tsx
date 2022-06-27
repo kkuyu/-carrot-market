@@ -5,7 +5,7 @@ interface HeaderProps {
   title?: string;
 }
 
-export default function Header({ hasBackBtn, title }: HeaderProps) {
+const Header = ({ hasBackBtn, title }: HeaderProps) => {
   const router = useRouter();
 
   const goBack = () => {
@@ -28,4 +28,6 @@ export default function Header({ hasBackBtn, title }: HeaderProps) {
       </div>
     </header>
   );
-}
+};
+
+export default Header;

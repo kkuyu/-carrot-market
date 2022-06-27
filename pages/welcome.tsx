@@ -1,8 +1,8 @@
 import { NextPage } from "next";
+import Link from "next/link";
 
 import Layout from "@components/layout";
-import Button from "@components/button";
-import Link from "next/link";
+import Buttons from "@components/buttons";
 
 const Welcome: NextPage = () => {
   return (
@@ -26,12 +26,13 @@ const Welcome: NextPage = () => {
             </h2>
           </div>
           <div className="flex-none w-full pb-6">
-            {/* todo: 시작하기 */}
-            <Button text="시작하기" />
+            <Link href="/hometown/search" passHref>
+              <Buttons tag="a" text="시작하기" />
+            </Link>
             <div className="mt-4 text-sm">
               <span className="text-gray-500">이미 계정이 있나요?</span>
-              <Link href="/login">
-                <a className="ml-1 font-semibold text-orange-500">로그인</a>
+              <Link href="/login" passHref>
+                <Buttons tag="a" sort="text-link" text="로그인" />
               </Link>
             </div>
           </div>

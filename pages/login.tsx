@@ -10,7 +10,7 @@ import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
-import Button from "@components/button";
+import Buttons from "@components/buttons";
 
 interface LoginForm {
   phone: string;
@@ -107,25 +107,31 @@ const Login: NextPage = () => {
             />
             <span className="empty:hidden invalid">{formState.errors.phone?.message}</span>
           </div>
-          <Button type="submit" text={!(data && data.success) ? "인증문자 받기" : loading ? "인증문자 받기" : "인증문자 다시 받기"} disabled={!formState.isValid || loading} theme="white" />
+          <Buttons
+            tag="button"
+            type="submit"
+            status="default"
+            text={!(data && data.success) ? "인증문자 받기" : loading ? "인증문자 받기" : "인증문자 다시 받기"}
+            disabled={!formState.isValid || loading}
+          />
         </form>
 
         <div className="empty:hidden mt-4 text-sm text-center space-y-2">
+          {/* 시작하기 */}
           {formState.errors.phone?.type === "validate" && (
             <p>
-              {/* todo: 시작하기 */}
               <span>첫 방문이신가요?</span>
-              <Link href="/verification-email">
-                <a className="ml-1 font-semibold text-orange-500">당근마켓 시작하기</a>
+              <Link href="/hometown/search" passHref>
+                <Buttons tag="a" sort="text-link" text="당근마켓 시작하기" />
               </Link>
             </p>
           )}
+          {/* 이메일로 계정 찾기 */}
           {!(data && data.success) && (
             <p>
-              {/* 이메일로 계정 찾기 */}
               <span>전화번호가 변경되었나요?</span>
-              <Link href="/verification-email">
-                <a className="ml-1 underline">이메일로 계정 찾기</a>
+              <Link href="/verification-email" passHref>
+                <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" className="underline" />
               </Link>
             </p>
           )}
@@ -149,7 +155,7 @@ const Login: NextPage = () => {
                 <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
                 <span className="empty:hidden invalid">{tokenState.errors.token?.message}</span>
               </div>
-              <Button type="submit" text="인증번호 확인" disabled={tokenLoading} />
+              <Buttons tag="button" type="submit" status="primary" text="인증번호 확인" disabled={tokenLoading} />
             </form>
           </>
         )}

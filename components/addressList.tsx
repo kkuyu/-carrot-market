@@ -1,3 +1,5 @@
+import Buttons from "@components/buttons";
+
 interface Item {
   id: string;
   addrName: string;
@@ -14,7 +16,7 @@ interface AddressListProps {
   resetForm: () => void;
 }
 
-export default function ProductList({ isLoading, list, selectItem, resetForm }: AddressListProps) {
+const AddressList = ({ isLoading, list, selectItem, resetForm }: AddressListProps) => {
   return (
     <div className="">
       {isLoading ? (
@@ -38,11 +40,11 @@ export default function ProductList({ isLoading, list, selectItem, resetForm }: 
             <br />
             동네 이름을 다시 확인해주세요!
           </p>
-          <button className="mt-2 font-semibold text-orange-500" onClick={resetForm}>
-            동네 이름 다시 검색하기
-          </button>
+          <Buttons tag="button" type="button" sort="text-link" size="base" text="동네 이름 다시 검색하기" onClick={resetForm} className="mt-2" />
         </div>
       )}
     </div>
   );
-}
+};
+
+export default AddressList;

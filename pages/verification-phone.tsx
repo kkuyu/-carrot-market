@@ -11,7 +11,7 @@ import { PostUserUpdateResponse } from "@api/users/my/update";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
-import Button from "@components/button";
+import Buttons from "@components/buttons";
 
 interface AccountForm {
   phone: string;
@@ -135,7 +135,13 @@ const AccountUpdatePhone: NextPage = () => {
             />
             <span className="empty:hidden invalid">{formState.errors.phone?.message}</span>
           </div>
-          <Button type="submit" text={!(data && data.success) ? "인증문자 받기" : loading ? "인증문자 받기" : "인증문자 다시 받기"} disabled={!formState.isValid || loading} theme="white" />
+          <Buttons
+            tag="button"
+            type="submit"
+            status="default"
+            text={!(data && data.success) ? "인증문자 받기" : loading ? "인증문자 받기" : "인증문자 다시 받기"}
+            disabled={!formState.isValid || loading}
+          />
         </form>
 
         {/* 인증 결과 확인 */}
@@ -155,7 +161,7 @@ const AccountUpdatePhone: NextPage = () => {
             <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
             <span className="empty:hidden invalid">{tokenState.errors.token?.message}</span>
           </div>
-          <Button type="submit" text="인증번호 확인" disabled={!data?.success || tokenLoading} />
+          <Buttons tag="button" type="submit" status="primary" text="인증번호 확인" disabled={!data?.success || tokenLoading} />
         </form>
       </section>
     </Layout>

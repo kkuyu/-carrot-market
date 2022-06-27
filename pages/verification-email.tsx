@@ -10,7 +10,7 @@ import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
-import Button from "@components/button";
+import Buttons from "@components/buttons";
 
 interface VerificationForm {
   email: string;
@@ -103,21 +103,27 @@ const VerificationEmail: NextPage = () => {
             />
             <span className="empty:hidden invalid">{formState.errors.email?.message}</span>
           </div>
-          <Button type="submit" text={!(data && data.success) ? "인증메일 받기" : loading ? "인증메일 받기" : "인증메일 다시 받기"} disabled={!formState.isValid || loading} theme="white" />
+          <Buttons
+            tag="button"
+            type="submit"
+            status="default"
+            text={!(data && data.success) ? "인증메일 받기" : loading ? "인증메일 받기" : "인증메일 다시 받기"}
+            disabled={!formState.isValid || loading}
+          />
         </form>
 
-        {/* 문의하기 */}
-        {!(data && data.success) && (
-          <>
-            <div className="mt-4 text-sm text-center">
-              이메일을 등록한 적이 없으세요?
-              {/* todo: 자주 묻는 질문 */}
-              <Link href="">
-                <a className="ml-1 underline">문의하기</a>
+        <div className="empty:hidden mt-4 text-sm text-center space-y-2">
+          {/* 문의하기 */}
+          {/* todo: 자주 묻는 질문 */}
+          {!(data && data.success) && (
+            <p>
+              <span>이메일을 등록한 적이 없으세요?</span>
+              <Link href="" passHref>
+                <Buttons tag="a" sort="text-link" status="default" text="문의하기" className="underline" />
               </Link>
-            </div>
-          </>
-        )}
+            </p>
+          )}
+        </div>
 
         {/* 인증 결과 확인 */}
         {data?.success && (
@@ -137,7 +143,7 @@ const VerificationEmail: NextPage = () => {
                 <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
                 <span className="empty:hidden invalid">{tokenState.errors.token?.message}</span>
               </div>
-              <Button type="submit" text="이메일로 시작하기" disabled={tokenLoading} />
+              <Buttons tag="button" type="submit" status="primary" text="이메일로 시작하기" disabled={tokenLoading} />
             </form>
           </>
         )}
