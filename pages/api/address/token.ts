@@ -48,11 +48,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
     // save data: session.sgisApi
     if (req.session.user) {
-    req.session.sgisApi = {
-      accessTimeout: response.result.accessTimeout,
-      accessToken: response.result.accessToken,
-    };
-    await req.session.save();
+      req.session.sgisApi = {
+        accessTimeout: response.result.accessTimeout,
+        accessToken: response.result.accessToken,
+      };
+      await req.session.save();
     }
 
     // result
@@ -79,8 +79,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
 export default withSessionRoute(
   withHandler({
-    methods: ["GET"],
+    methods: [{ type: "GET", isPrivate: false }],
     handler,
-    isPrivate: false,
   })
 );

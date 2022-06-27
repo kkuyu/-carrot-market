@@ -5,36 +5,37 @@ export interface ResponseType {
   [key: string]: any;
 }
 
-type method = "GET" | "POST" | "DELETE";
-
 interface ConfigType {
-  methods: method[];
+  methods: { type: "GET" | "POST" | "DELETE"; isPrivate?: boolean }[];
   handler: NextApiHandler<any>;
-  isPrivate?: boolean;
 }
 
-const withHandler: (config: ConfigType) => NextApiHandler<any> = ({ methods, handler, isPrivate = true }) => {
+const withHandler: (config: ConfigType) => NextApiHandler<any> = ({ methods, handler }) => {
   return async (req, res) => {
-    if (req.method && !methods.includes(req.method as any)) {
-      return res.status(405).end();
-    }
-    if (isPrivate && !req.session.user) {
-      return res.status(401).json({
-        success: false,
-        error: "Please login",
-      });
-    }
     try {
+      const method = methods.find((method) => method.type === req.method);
+      if (req.method && !method) {
+        const error = new Error("MethodTypeError");
+        error.name = "MethodTypeError";
+        throw error;
+      }
+      if (method?.isPrivate && !req.session.user) {
+        const error = new Error("NoUserData");
+        error.name = "NoUserData";
+        throw error;
+      }
       await handler(req, res);
     } catch (error) {
-      console.log(error);
+      // error
       if (error instanceof Error) {
-        res.status(500).json({
-          error: error.message,
-        });
-      } else {
-        res.status(500).json({
-          error: "Internal Server Error",
+        const date = Date.now().toString();
+        return res.status(500).json({
+          success: false,
+          error: {
+            timestamp: date,
+            name: error.name,
+            message: error.message,
+          },
         });
       }
     }

@@ -3,23 +3,52 @@ import { NextApiRequest, NextApiResponse } from "next";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { User } from "@prisma/client";
+
+interface GetUserResponse {
+  success: boolean;
+  profile: User | null;
+  error?: {
+    timestamp: Date;
+    name: string;
+    message: string;
+  };
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
-    const profile = await client.user.findUnique({
-      where: {
-        id: req.session.user?.id,
-      },
-    });
-    if (!profile) {
-      return res.status(200).json({
-        success: false,
-      });
+    try {
+      const { user } = req.session;
+
+      // check user
+      const foundUser = user?.id
+        ? await client.user.findUnique({
+            where: {
+              id: user.id,
+            },
+          })
+        : null;
+
+      // result
+      const result: GetUserResponse = {
+        success: true,
+        profile: foundUser,
+      };
+      return res.status(200).json(result);
+    } catch (error: unknown) {
+      // error
+      if (error instanceof Error) {
+        const date = Date.now().toString();
+        return res.status(422).json({
+          success: false,
+          error: {
+            timestamp: date,
+            name: error.name,
+            message: error.message,
+          },
+        });
+      }
     }
-    return res.status(200).json({
-      success: true,
-      profile,
-    });
   }
   if (req.method === "POST") {
     const { user } = req.session;
@@ -114,7 +143,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
 export default withSessionRoute(
   withHandler({
-    methods: ["GET", "POST"],
+    methods: [
+      { type: "GET", isPrivate: false },
+      { type: "POST", isPrivate: true },
+    ],
     handler,
   })
 );
