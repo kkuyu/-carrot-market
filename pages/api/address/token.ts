@@ -47,11 +47,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     ).json();
 
     // save data: session.sgisApi
+    if (req.session.user) {
     req.session.sgisApi = {
       accessTimeout: response.result.accessTimeout,
       accessToken: response.result.accessToken,
     };
     await req.session.save();
+    }
 
     // result
     const result: GetAddressTokenResponse = {

@@ -24,10 +24,10 @@ model User {
   email           String?     @unique
   avatar          String?
   admType         AdmType
-  admCdMain       Float
-  admNmMain       String
-  admCdSub        Float?
-  admNmSub        String?
+  admPosX_main    Float
+  admPosY_main    Float
+  admPosX_sub     Float?
+  admPosY_sub     Float?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   tokens          Token[]
@@ -57,8 +57,8 @@ model Product {
   name        String
   price       Int
   description String   @db.MediumText
-  admCd       Float
-  admNm       String
+  admPosX     Float
+  admPosY     Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -69,8 +69,8 @@ model Product {
 model Post {
   id          Int         @id @default(autoincrement())
   question    String      @db.MediumText
-  admCd       Float
-  admNm       String
+  admPosX     Float
+  admPosY     Float
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -82,8 +82,6 @@ model Post {
 model Comment {
   id        Int      @id @default(autoincrement())
   comment   String   @db.MediumText
-  admCd     Float
-  admNm     String
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -2,6 +2,7 @@ import { NextPage } from "next";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import useUser from "@libs/client/useUser";
 import useCoords from "@libs/client/useCoords";
 import useSWR from "swr";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
@@ -21,6 +22,9 @@ interface SearchForm {
 
 const HometownSearch: NextPage = () => {
   const router = useRouter();
+
+  const { user } = useUser();
+  // todo: 위치 수집 권한이 없는 경우 토스트
   const { state, latitude, longitude } = useCoords();
   const [addressKeyword, setAddressKeyword] = useState("");
   const { register, handleSubmit, formState } = useForm<SearchForm>();
@@ -46,10 +50,17 @@ const HometownSearch: NextPage = () => {
   useEffect(() => {
     if (!saveData) return;
     if (!saveData.success && saveData.error?.timestamp) {
-      console.log(saveData.error);
+      switch (saveData.error.name) {
+        default:
+          console.error(saveData.error);
+          break;
+      }
     }
     if (saveData.success) {
-      router.push("/join");
+      // todo: 법정동과 행정동이 다른 경우 토스트 노출
+      console.log("requestAmd", saveData.requestAmd);
+      console.log("responseAmd", saveData.responseAmd);
+      !user ? router.push("/join") : router.push("/");
     }
   }, [saveData]);
 

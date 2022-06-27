@@ -9,6 +9,14 @@ import { GetAddrGeocodeResponse } from "@api/address/addr-geocode";
 
 export interface PostHometownResponse {
   success: boolean;
+  requestAmd: {
+    admCd: string;
+    admNm: string;
+  };
+  responseAmd: {
+    admCd: string;
+    admNm: string;
+  };
   error?: {
     timestamp: Date;
     name: string;
@@ -21,7 +29,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     if (req.method === "GET") {
     }
     if (req.method === "POST") {
-      const { addrName, admCd: _admCd, admNm: _admNm, admType } = req.body;
+      const { addrName, admType } = req.body;
       const { user } = req.session;
 
       // request valid
@@ -35,16 +43,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       }
 
       // get data config
-      let admCd;
-      let admNm;
-      if (_admCd !== null) {
-        admCd = _admCd;
-        admNm = _admNm;
+      const admObj = { admCd: "", admNm: "", posX: 0, posY: 0 };
+      if (req.body.admCd !== null) {
+        admObj.admCd = req.body.admCd;
+        admObj.admNm = req.body.admNm;
+        admObj.posX = +req.body.posX;
+        admObj.posY = +req.body.posY;
       } else {
         const { origin: originUrl } = getAbsoluteUrl(req);
         const { emdong }: GetAddrGeocodeResponse = await (await fetch(`${originUrl}/api/address/addr-geocode?addrName=${addrName}`)).json();
-        admCd = emdong.admCd;
-        admNm = emdong.admNm;
+        admObj.admCd = emdong.admCd;
+        admObj.admNm = emdong.admNm;
+        admObj.posX = +emdong.posX;
+        admObj.posY = +emdong.posY;
       }
 
       // check user
@@ -61,13 +72,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
       // save data: session.dummyUser or client.user
       // todo: 로그인 유저 데이터 확인
-      // todo: 법정동과 행정동이 다른 경우 토스트 노출
       if (!foundUser) {
         req.session.dummyUser = {
           id: -1,
           admType: AdmType.MAIN,
-          admCdMain: admCd,
-          admNmMain: admNm,
+          admPosX_main: admObj.posX,
+          admPosY_main: admObj.posY,
         };
         await req.session.save();
       } else {
@@ -77,8 +87,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
           data: {
             admType: admType,
-            ...(admType === AdmType.MAIN ? { admCdMain: admCd, admNmMain: admNm } : {}),
-            ...(admType === AdmType.SUB ? { admCdSub: admCd, admNmSub: admNm } : {}),
+            ...(admType === AdmType.MAIN
+              ? {
+                  admPosX_main: admObj.posX,
+                  admPosY_main: admObj.posY,
+                }
+              : {}),
+            ...(admType === AdmType.SUB
+              ? {
+                  admPosX_sub: admObj.posX,
+                  admPosY_sub: admObj.posY,
+                }
+              : {}),
           },
         });
       }
@@ -86,6 +106,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // result
       const result: PostHometownResponse = {
         success: true,
+        requestAmd: {
+          admCd: req.body.admCd,
+          admNm: req.body.admNm,
+        },
+        responseAmd: {
+          admCd: admObj.admCd,
+          admNm: admObj.admNm,
+        },
       };
       return res.status(200).json(result);
     }

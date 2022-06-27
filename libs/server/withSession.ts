@@ -10,8 +10,8 @@ declare module "iron-session" {
     dummyUser: {
       id: -1;
       admType: AdmType;
-      admCdMain: Number;
-      admNmMain: String;
+      admPosX_main: number;
+      admPosY_main: number;
     };
     sgisApi?: {
       accessTimeout: string;
