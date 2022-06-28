@@ -3,8 +3,8 @@ import Head from "next/head";
 
 import { cls } from "@libs/utils";
 
-import Header from "./header";
-import TabNav from "./tabNav";
+import Header from "@components/header";
+import TabNav from "@components/tabNav";
 
 interface LayoutProps {
   seoTitle?: string;
@@ -19,7 +19,7 @@ export default function Layout({ seoTitle, title, hasBackBtn, hasHeadBar = true,
   return (
     <div>
       <Head>
-        <title>{seoTitle ? `${seoTitle}  | Carrot Market` : "Carrot Market"}</title>
+        <title>{seoTitle || title ? `${seoTitle || title}  | Carrot Market` : "Carrot Market"}</title>
       </Head>
       {hasHeadBar && <Header title={title} hasBackBtn={hasBackBtn} />}
       <div className={cls("main", hasHeadBar ? "pt-12" : "", hasTabBar ? "pb-16" : "")}>{children}</div>

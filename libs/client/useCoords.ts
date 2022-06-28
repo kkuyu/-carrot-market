@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 
 interface UseCoordsState {
-  state: "denied" | "granted" | "error";
+  state: "loading" | "denied" | "granted" | "error";
   latitude: number;
   longitude: number;
 }
 
 function useCoords() {
-  const [coords, setCoords] = useState<UseCoordsState>({ state: "denied", latitude: 0, longitude: 0 });
+  const [coords, setCoords] = useState<UseCoordsState>({ state: "loading", latitude: 0, longitude: 0 });
 
   const onSuccess = ({ coords: { latitude, longitude } }: GeolocationPosition) => {
     setCoords({ state: "granted", latitude, longitude });

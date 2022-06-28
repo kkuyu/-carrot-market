@@ -5,6 +5,10 @@ export const cls: (...props: string[]) => string = (...classnames) => {
   return classnames.join(" ");
 };
 
+export const objMap = (obj: object, fn: (value: [string, any]) => [string, any]) => {
+  return Object.fromEntries(Object.entries(obj).map(fn));
+};
+
 export const getAbsoluteUrl: (req?: IncomingMessage) => { protocol: string; host: string; origin: string } = (req) => {
   const host = (req && req.headers ? req.headers["x-forwarded-host"] || req.headers.host : window.location.host)?.toString() || "";
   const protocol = /^localhost(:\d+)?$/.test(host) ? "http:" : "https:";

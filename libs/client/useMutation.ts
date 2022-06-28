@@ -1,23 +1,38 @@
-import { useState } from "react";
-interface UseMutationState<T> {
-  loading: boolean;
-  data?: T;
-  error?: object;
+import { useEffect, useState } from "react";
+
+interface responseDataType {
+  success: boolean;
+  error?: {
+    timestamp: Date;
+    name: string;
+    message: string;
+  };
 }
 
-type UseMutationResult<T> = [(data: any) => void, UseMutationState<T>];
+interface UseMutationState<T> {
+  loading: boolean;
+  data?: T | undefined;
+  error?: Error | undefined;
+}
 
-const useMutation = <T = any>(url: string): UseMutationResult<T> => {
+const useMutation = <T extends responseDataType>(
+  url: string,
+  options?: {
+    onSuccess?: (data: T) => void;
+    onError?: (data: T) => void;
+  }
+): [(data: any) => void, UseMutationState<T>] => {
+  // state
   const [state, setState] = useState<UseMutationState<T>>({
     loading: false,
     data: undefined,
     error: undefined,
   });
-
   const fetchState = (name: keyof UseMutationState<T>, value: any) => {
     setState((state) => ({ ...state, [name]: value }));
   };
 
+  // data fetch
   const mutation = (data: any) => {
     fetchState("loading", true);
 
@@ -28,11 +43,26 @@ const useMutation = <T = any>(url: string): UseMutationResult<T> => {
         "Content-Type": "application/json",
       },
     })
-      .then((response) => response.json().catch(() => {}))
+      .then((response) => response.json().catch((error) => fetchState("error", error)))
       .then((json) => fetchState("data", json))
       .catch((error) => fetchState("error", error))
       .finally(() => fetchState("loading", false));
   };
+
+  // options callback
+  useEffect(() => {
+    if (!Boolean(options)) return;
+    if (!state || state.loading) return;
+    if (state.data?.error?.timestamp) {
+      options?.onError && options.onError(state.data);
+    }
+    if (state.data?.success) {
+      options?.onSuccess && options.onSuccess(state.data);
+    }
+    if (state.error) {
+      console.error(state.error);
+    }
+  }, [state]);
 
   return [mutation, { ...state }];
 };

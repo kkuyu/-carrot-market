@@ -1,22 +1,24 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { AdmType, Product, Record } from "@prisma/client";
 
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+
+import { AdmType } from "@prisma/client";
 import { getAbsoluteUrl } from "@libs/utils";
 import { GetAddrGeocodeResponse } from "@api/address/addr-geocode";
 
+interface AdmInfo {
+  admCd: string;
+  admNm: string;
+  posX: number;
+  posY: number;
+}
+
 export interface PostHometownResponse {
   success: boolean;
-  requestAmd: {
-    admCd: string;
-    admNm: string;
-  };
-  responseAmd: {
-    admCd: string;
-    admNm: string;
-  };
+  isSaved: boolean;
+  admInfo: AdmInfo;
   error?: {
     timestamp: Date;
     name: string;
@@ -25,10 +27,10 @@ export interface PostHometownResponse {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  try {
-    if (req.method === "GET") {
-    }
-    if (req.method === "POST") {
+  if (req.method === "GET") {
+  }
+  if (req.method === "POST") {
+    try {
       const { addrName, admType } = req.body;
       const { user } = req.session;
 
@@ -43,19 +45,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       }
 
       // get data config
-      const admObj = { admCd: "", admNm: "", posX: 0, posY: 0 };
+      const admInfo: AdmInfo = { admCd: "", admNm: "", posX: 0, posY: 0 };
       if (req.body.admCd !== null) {
-        admObj.admCd = req.body.admCd;
-        admObj.admNm = req.body.admNm;
-        admObj.posX = +req.body.posX;
-        admObj.posY = +req.body.posY;
+        admInfo.admCd = req.body.admCd;
+        admInfo.admNm = req.body.admNm;
+        admInfo.posX = +req.body.posX;
+        admInfo.posY = +req.body.posY;
       } else {
         const { origin: originUrl } = getAbsoluteUrl(req);
         const { emdong }: GetAddrGeocodeResponse = await (await fetch(`${originUrl}/api/address/addr-geocode?addrName=${addrName}`)).json();
-        admObj.admCd = emdong.admCd;
-        admObj.admNm = emdong.admNm;
-        admObj.posX = +emdong.posX;
-        admObj.posY = +emdong.posY;
+        admInfo.admCd = emdong.admCd;
+        admInfo.admNm = emdong.admNm;
+        admInfo.posX = +emdong.posX;
+        admInfo.posY = +emdong.posY;
       }
 
       // check user
@@ -70,17 +72,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           })
         : null;
 
-      // save data: session.dummyUser or client.user
+      // save data: client.user
       // todo: 로그인 유저 데이터 확인
-      if (!foundUser) {
-        req.session.dummyUser = {
-          id: -1,
-          admType: AdmType.MAIN,
-          admPosX_main: admObj.posX,
-          admPosY_main: admObj.posY,
-        };
-        await req.session.save();
-      } else {
+      if (foundUser) {
         await client.user.update({
           where: {
             id: foundUser.id,
@@ -89,14 +83,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             admType: admType,
             ...(admType === AdmType.MAIN
               ? {
-                  admPosX_main: admObj.posX,
-                  admPosY_main: admObj.posY,
+                  admPosX_main: admInfo.posX,
+                  admPosY_main: admInfo.posY,
                 }
               : {}),
             ...(admType === AdmType.SUB
               ? {
-                  admPosX_sub: admObj.posX,
-                  admPosY_sub: admObj.posY,
+                  admPosX_sub: admInfo.posX,
+                  admPosY_sub: admInfo.posY,
                 }
               : {}),
           },
@@ -106,29 +100,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // result
       const result: PostHometownResponse = {
         success: true,
-        requestAmd: {
-          admCd: req.body.admCd,
-          admNm: req.body.admNm,
-        },
-        responseAmd: {
-          admCd: admObj.admCd,
-          admNm: admObj.admNm,
-        },
+        isSaved: Boolean(foundUser),
+        admInfo,
       };
       return res.status(200).json(result);
-    }
-  } catch (error: unknown) {
-    // error
-    if (error instanceof Error) {
-      const date = Date.now().toString();
-      return res.status(422).json({
-        success: false,
-        error: {
-          timestamp: date,
-          name: error.name,
-          message: error.message,
-        },
-      });
+    } catch (error: unknown) {
+      // error
+      if (error instanceof Error) {
+        const date = Date.now().toString();
+        return res.status(422).json({
+          success: false,
+          error: {
+            timestamp: date,
+            name: error.name,
+            message: error.message,
+          },
+        });
+      }
     }
   }
 }

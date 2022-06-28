@@ -1,10 +1,12 @@
 import { NextPage } from "next";
+import { useRouter } from "next/router";
 
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import useUser from "@libs/client/useUser";
-import useCoords from "@libs/client/useCoords";
 import useSWR from "swr";
+import useMutation from "@libs/client/useMutation";
+import useCoords from "@libs/client/useCoords";
+import { PostHometownResponse } from "@api/users/hometown";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetWorldGeocodeResponse } from "@api/address/world-geocode";
 
@@ -12,9 +14,6 @@ import Layout from "@components/layout";
 import Input from "@components/input";
 import Buttons from "@components/buttons";
 import AddressList from "@components/addressList";
-import useMutation from "@libs/client/useMutation";
-import { useRouter } from "next/router";
-import { PostHometownResponse } from "@api/users/hometown";
 
 interface SearchForm {
   keyword: string;
@@ -23,18 +22,29 @@ interface SearchForm {
 const HometownSearch: NextPage = () => {
   const router = useRouter();
 
-  const { user } = useUser();
-  // todo: 위치 수집 권한이 없는 경우 토스트
-  const { state, latitude, longitude } = useCoords();
+  const { state: coordsState, latitude, longitude } = useCoords();
   const [addressKeyword, setAddressKeyword] = useState("");
   const { register, handleSubmit, formState } = useForm<SearchForm>();
 
   const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(`/api/address/boundary-search?distance=1000&latitude=${latitude}&longitude=${longitude}`);
   const { data: searchData, error: searchError } = useSWR<GetWorldGeocodeResponse>(addressKeyword ? `/api/address/world-geocode?address=${addressKeyword}` : null);
 
-  const [save, { loading: saveLoading, data: saveData }] = useMutation<PostHometownResponse>("/api/users/hometown");
+  const [save, { loading: saveLoading }] = useMutation<PostHometownResponse>("/api/users/hometown", {
+    onSuccess: (data) => {
+      // todo: 저장 토스트
+      console.log(data);
+      data.isSaved ? router.push("/") : router.push(`/join?posX=${data.admInfo.posX}&posY=${data.admInfo.posY}`);
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
 
-  const onValid = (data: SearchForm) => {
+  const validForm = (data: SearchForm) => {
     setAddressKeyword(data.keyword);
   };
 
@@ -48,28 +58,18 @@ const HometownSearch: NextPage = () => {
   };
 
   useEffect(() => {
-    if (!saveData) return;
-    if (!saveData.success && saveData.error?.timestamp) {
-      switch (saveData.error.name) {
-        default:
-          console.error(saveData.error);
-          break;
-      }
+    if (coordsState !== "granted") {
+      // todo: 위치 수집 권한이 없는 경우 토스트
+      console.log("coordsState", coordsState);
     }
-    if (saveData.success) {
-      // todo: 법정동과 행정동이 다른 경우 토스트 노출
-      console.log("requestAmd", saveData.requestAmd);
-      console.log("responseAmd", saveData.responseAmd);
-      !user ? router.push("/join") : router.push("/");
-    }
-  }, [saveData]);
+  }, [coordsState]);
 
   return (
     <Layout hasBackBtn title="내 동네 설정하기">
       <div className="container">
         {/* search form */}
         <div className="-mx-5 sticky top-[calc(3rem+1px)] left-0 px-5 pt-5 pb-2 bg-white">
-          <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
+          <form onSubmit={handleSubmit(validForm)} noValidate className="space-y-4">
             <div>
               <Input
                 register={register("keyword", {})}
