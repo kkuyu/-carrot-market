@@ -18,42 +18,85 @@ export interface PostProductsResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
-    const { page } = req.query;
-    const cleanPage = +page?.toString()!;
+    try {
+      const { page: _page, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
-    const displayRow = 10;
-    const totalPageCount = await client.product.count();
-    const products = await client.product.findMany({
-      take: displayRow,
-      skip: (cleanPage - 1) * displayRow,
-      orderBy: {
-        createdAt: "desc",
-      },
-      include: {
-        records: {
-          where: {
-            kind: "Favorite",
-          },
-          select: {
-            id: true,
+      // request valid
+      if (!_page) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+
+      // get data props
+      const displayRow = 10;
+      const page = +_page.toString();
+      const totalPageCount = await client.product.count();
+      const posX = _posX ? +_posX.toString() : null;
+      const posY = _posY ? +_posY.toString() : null;
+      const distance = _distance ? +_distance.toString() : null;
+
+      // fetch data: client.product
+      const products = await client.product.findMany({
+        take: displayRow,
+        skip: (page - 1) * displayRow,
+        orderBy: {
+          createdAt: "desc",
+        },
+        include: {
+          records: {
+            where: {
+              kind: "Favorite",
+            },
+            select: {
+              id: true,
+            },
           },
         },
-      },
-    });
-    if (!products) {
-      return res.status(200).json({
-        success: true,
-        products: [],
-        pages: 1,
+        where: {
+          ...(posX &&
+            distance && {
+              emdPosX: {
+                gte: posX - distance,
+                lte: posX + distance,
+              },
+            }),
+          ...(posY &&
+            distance && {
+              emdPosY: {
+                gte: posY - distance,
+                lte: posY + distance,
+              },
+            }),
+        },
       });
+
+      // result
+      const result: GetProductsResponse = {
+        success: true,
+        products,
+        pages: Math.ceil(totalPageCount / displayRow),
+      };
+      return res.status(200).json(result);
+    } catch (error: unknown) {
+      // error
+      if (error instanceof Error) {
+        const result = {
+          success: false,
+          error: {
+            timestamp: Date.now().toString(),
+            name: error.name,
+            message: error.message,
+          },
+        };
+        return res.status(422).json(result);
+      }
     }
-    return res.status(200).json({
-      success: true,
-      products,
-      pages: Math.ceil(totalPageCount / displayRow),
-    });
   }
   if (req.method === "POST") {
+    return res.status(200).json({
+      success: true,
+    });
     const { name, price, description, photoId } = req.body;
     const { user } = req.session;
     if (!name && !price && !description) {
@@ -82,7 +125,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
 export default withSessionRoute(
   withHandler({
-    methods: ["GET", "POST"],
+    methods: [
+      { type: "GET", isPrivate: false },
+      { type: "POST", isPrivate: true },
+    ],
     handler,
   })
 );

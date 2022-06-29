@@ -7,22 +7,22 @@ import { useForm } from "react-hook-form";
 import useSWR from "swr";
 import useQuery from "@libs/client/useQuery";
 import useMutation from "@libs/client/useMutation";
-import { GetAddrRegeocodeResponse } from "@api/address/addr-regeocode";
+import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
+import { PostDummyUserResponse } from "@api/users/dummy-user";
 
 import Layout from "@components/layout";
 import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
-import { PostDummyUserResponse } from "@api/users/dummy-user";
 
 const Join: NextPage = () => {
   const router = useRouter();
-  const { query } = useQuery();
+  const { hasQuery, query } = useQuery();
 
-  // check geo code
-  const { data: regeocodeData } = useSWR<GetAddrRegeocodeResponse>(query?.posX && query?.posY ? `/api/address/addr-regeocode?posX=${query.posX}&posY=${query.posY}` : null);
+  // check query data
+  const { data: addrData } = useSWR<GetGeocodeDistrictResponse>(query?.addrNm ? `api/address/geocode-district?addrNm=${query.addrNm}` : null);
 
   // join
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
@@ -62,25 +62,28 @@ const Join: NextPage = () => {
   // just looking
   const [makeDummy, { loading: dummyLoading }] = useMutation<PostDummyUserResponse>("/api/users/dummy-user", {
     onSuccess: () => {
-      console.log("success");
-      // router.replace("/");
+      // todo: 더미 유저 토스트
+      router.replace("/");
     },
   });
 
   useEffect(() => {
-    if (!query) return;
-    if (!query.posX || !query.posY) {
+    if (hasQuery && !query) {
       // todo: 내 동네 설정 확인 토스트
       router.replace("/hometown/search");
     }
-  }, [query]);
+    if (!query?.addrNm) {
+      // todo: 내 동네 설정 확인 토스트
+      router.replace("/hometown/search");
+    }
+  }, [hasQuery, query]);
 
   useEffect(() => {
-    if (regeocodeData && !regeocodeData.success) {
+    if (addrData && !addrData.success) {
       // todo: 내 동네 설정 확인 토스트
       router.replace("/hometown/search");
     }
-  }, [regeocodeData]);
+  }, [addrData]);
 
   return (
     <Layout title="회원가입" hasBackBtn>
@@ -97,7 +100,12 @@ const Join: NextPage = () => {
           formData={verifyPhoneForm}
           onValid={(data: VerifyPhoneTypes) => {
             if (joinLoading) return;
-            join({ ...data, ...regeocodeData?.emdong });
+            join({
+              ...data,
+              addrNm: query?.addrNm,
+              posX: addrData?.posX,
+              posY: addrData?.posY,
+            });
           }}
           isSuccess={joinData?.success}
           isLoading={joinLoading}
@@ -110,13 +118,20 @@ const Join: NextPage = () => {
               <span>첫 방문이신가요?</span>
               <Buttons
                 tag="button"
+                type="button"
                 sort="text-link"
                 status="default"
                 text="회원가입 없이 둘러보기"
                 className="underline"
                 onClick={() => {
                   if (dummyLoading) return;
-                  makeDummy({ ...regeocodeData?.emdong });
+                  makeDummy({
+                    emdType: "MAIN",
+                    distance: 0.2,
+                    addrNm: query?.addrNm,
+                    posX: addrData?.posX,
+                    posY: addrData?.posY,
+                  });
                 }}
               />
             </p>

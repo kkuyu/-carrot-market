@@ -40,6 +40,7 @@ const Login: NextPage = () => {
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
     onSuccess: () => {
+      // todo: 유저 토스트
       router.replace("/");
     },
     onError: (data) => {

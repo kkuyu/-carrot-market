@@ -1,19 +1,24 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
+import { isInstance } from "@libs/utils";
+import useUser from "@libs/client/useUser";
+import useQuery from "@libs/client/useQuery";
 import useMutation from "@libs/client/useMutation";
 import useCoords from "@libs/client/useCoords";
-import { PostHometownResponse } from "@api/users/hometown";
+import { EmdType } from "@prisma/client";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
-import { GetWorldGeocodeResponse } from "@api/address/world-geocode";
+import { GetKeywordSearchResponse } from "@api/address/keyword-search";
+import { PostUserResponse } from "@api/users/my";
+import { PostDummyUserResponse } from "@api/users/dummy-user";
 
 import Layout from "@components/layout";
 import Input from "@components/input";
 import Buttons from "@components/buttons";
-import AddressList from "@components/addressList";
+import AddressList, { AddressItem } from "@components/addressList";
 
 interface SearchForm {
   keyword: string;
@@ -21,19 +26,35 @@ interface SearchForm {
 
 const HometownSearch: NextPage = () => {
   const router = useRouter();
+  const { query } = useQuery();
 
-  const { state: coordsState, latitude, longitude } = useCoords();
+  const { user } = useUser();
+  const { latitude, longitude } = useCoords();
   const [addressKeyword, setAddressKeyword] = useState("");
-  const { register, handleSubmit, formState } = useForm<SearchForm>();
+  const { register, handleSubmit, formState, setValue, setFocus } = useForm<SearchForm>();
 
-  const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(`/api/address/boundary-search?distance=1000&latitude=${latitude}&longitude=${longitude}`);
-  const { data: searchData, error: searchError } = useSWR<GetWorldGeocodeResponse>(addressKeyword ? `/api/address/world-geocode?address=${addressKeyword}` : null);
+  const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
+    longitude && latitude ? `/api/address/boundary-search?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
+  );
+  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(addressKeyword ? `/api/address/keyword-search?keyword=${addressKeyword}` : null);
 
-  const [save, { loading: saveLoading }] = useMutation<PostHometownResponse>("/api/users/hometown", {
-    onSuccess: (data) => {
+  const [userAddrUpdate, { loading: userAddrLoading }] = useMutation<PostUserResponse>("/api/users/my", {
+    onSuccess: () => {
       // todo: 저장 토스트
-      console.log(data);
-      data.isSaved ? router.push("/") : router.push(`/join?posX=${data.admInfo.posX}&posY=${data.admInfo.posY}`);
+      router.push("/");
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+  const [dummyAddrUpdate, { loading: dummyAddrLoading }] = useMutation<PostDummyUserResponse>("/api/users/dummy-user", {
+    onSuccess: () => {
+      // todo: 저장 토스트
+      router.push("/");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -50,19 +71,21 @@ const HometownSearch: NextPage = () => {
 
   const resetForm = () => {
     setAddressKeyword("");
+    setValue("keyword", "");
+    setFocus("keyword");
   };
 
-  const selectItem = ({ ...itemData }) => {
-    if (saveLoading) return;
-    save(itemData);
-  };
+  const selectItem = (itemData: AddressItem) => {
+    if (userAddrLoading || dummyAddrLoading) return;
 
-  useEffect(() => {
-    if (coordsState !== "granted") {
-      // todo: 위치 수집 권한이 없는 경우 토스트
-      console.log("coordsState", coordsState);
+    if (!user) {
+      router.push(`/join?addrNm=${itemData.addrNm}`);
+    } else {
+      const emdType = query?.emdType && isInstance(query.emdType, EmdType) ? query.emdType : "MAIN";
+      if (user.id === -1) dummyAddrUpdate({ ...itemData, emdType, distance: 0.2 });
+      if (user.id !== -1) userAddrUpdate({ ...itemData, emdType, distance: 0.2 });
     }
-  }, [coordsState]);
+  };
 
   return (
     <Layout hasBackBtn title="내 동네 설정하기">
@@ -102,9 +125,38 @@ const HometownSearch: NextPage = () => {
         {/* search result */}
         <div className="mt-1 pb-3">
           {!addressKeyword.length ? (
-            <AddressList isLoading={!boundaryData && !boundaryError} list={boundaryData?.emdongs || []} selectItem={selectItem} resetForm={resetForm} />
+            <AddressList
+              isLoading={!boundaryData && !boundaryError}
+              list={boundaryData?.emdList || []}
+              selectItem={selectItem}
+              emptyGuide={
+                <div className="py-2 text-center">
+                  <p className="text-gray-500">
+                    위치 정보를 요청할 수 없어요.
+                    <br />
+                    내 위치를 확인하도록 허용하거나
+                    <br />
+                    동네 이름을 검색해 주세요!
+                  </p>
+                </div>
+              }
+            />
           ) : (
-            <AddressList isLoading={!searchData && !searchError} list={searchData?.emdongs || []} selectItem={selectItem} resetForm={resetForm} />
+            <AddressList
+              isLoading={!keywordData && !keywordError}
+              list={keywordData?.emdList || []}
+              selectItem={selectItem}
+              emptyGuide={
+                <div className="py-2 text-center">
+                  <p className="text-gray-500">
+                    검색 결과가 없어요.
+                    <br />
+                    동네 이름을 다시 확인해주세요!
+                  </p>
+                  <Buttons tag="button" type="button" sort="text-link" size="base" text="동네 이름 다시 검색하기" onClick={resetForm} className="mt-2" />
+                </div>
+              }
+            />
           )}
         </div>
       </div>

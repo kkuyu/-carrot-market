@@ -67,9 +67,8 @@ const VerificationPhone: NextPage = () => {
 
   // update user data
   const [updateUser] = useMutation<PostUserUpdateResponse>("/api/users/my/update", {
-    onSuccess: (data) => {
+    onSuccess: () => {
       // todo: 변경 완료 토스트
-      console.log(data);
       router.replace("/login");
     },
     onError: (data) => {
@@ -89,9 +88,9 @@ const VerificationPhone: NextPage = () => {
     if (!query?.targetEmail || !query.targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       // todo: 이메일 확인 토스트
       router.replace("/verification-email");
-      return;
+    } else {
+      verifyPhoneSetValue("targetEmail", query.targetEmail);
     }
-    verifyPhoneSetValue("targetEmail", query.targetEmail);
   }, [hasQuery, query]);
 
   return (

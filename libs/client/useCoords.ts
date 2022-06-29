@@ -6,7 +6,7 @@ interface UseCoordsState {
   longitude: number;
 }
 
-function useCoords() {
+const useCoords = (): UseCoordsState => {
   const [coords, setCoords] = useState<UseCoordsState>({ state: "loading", latitude: 0, longitude: 0 });
 
   const onSuccess = ({ coords: { latitude, longitude } }: GeolocationPosition) => {
@@ -24,6 +24,6 @@ function useCoords() {
   }, []);
 
   return coords;
-}
+};
 
 export default useCoords;

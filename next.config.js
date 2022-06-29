@@ -18,8 +18,6 @@ const nextConfig = {
     NCP_SECRET_KEY: process.env.NCP_SECRET_KEY,
     NCP_SMS_SERVICE_ID: process.env.NCP_SMS_SERVICE_ID,
 
-    SGIS_ID: process.env.SGIS_ID,
-    SGIS_KEY: process.env.SGIS_KEY,
     VWORLD_URL: process.env.VWORLD_URL,
     VWORLD_KEY: process.env.VWORLD_KEY,
   },

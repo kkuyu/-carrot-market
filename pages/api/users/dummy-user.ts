@@ -4,6 +4,9 @@ import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 
+import { getAbsoluteUrl, getRandomName } from "@libs/utils";
+import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
+
 export interface PostDummyUserResponse {
   success: boolean;
   error?: {
@@ -15,19 +18,39 @@ export interface PostDummyUserResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { posX, posY } = req.body;
+    const { name, addrNm, distance } = req.body;
 
-    // request valid
-    if (!posX || !posY) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
+    let dummyPayload = {
+      name: "",
+      MAIN_emdPosNm: "",
+      MAIN_emdPosDx: 0,
+      MAIN_emdPosX: 0,
+      MAIN_emdPosY: 0,
+      ...req.session.dummyUser,
+    };
+
+    // check data: name
+    if (name) {
+      dummyPayload.name = name;
+    } else if (dummyPayload.name === "") {
+      dummyPayload.name = getRandomName();
     }
 
-    // create dummy user
+    // check data: address
+    if (addrNm && distance) {
+      const { origin: originUrl } = getAbsoluteUrl(req);
+      const { posX, posY }: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${addrNm}`)).json();
+      dummyPayload.MAIN_emdPosNm = addrNm.match(/([가-힣]+|\w+)$/g)[0];
+      dummyPayload.MAIN_emdPosDx = distance;
+      dummyPayload.MAIN_emdPosX = posX;
+      dummyPayload.MAIN_emdPosY = posY;
+    }
+
+    // update data: session.dummyUser
     req.session.dummyUser = {
-      admPosX_main: +posX,
-      admPosY_main: +posY,
+      id: -1,
+      emdType: "MAIN",
+      ...dummyPayload,
     };
     delete req.session.user;
     await req.session.save();

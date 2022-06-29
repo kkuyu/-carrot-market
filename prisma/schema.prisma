@@ -12,7 +12,7 @@ datasource db {
   referentialIntegrity = "prisma"
 }
 
-enum AdmType {
+enum EmdType {
   MAIN
   SUB
 }
@@ -23,11 +23,15 @@ model User {
   phone           String      @unique
   email           String?     @unique
   avatar          String?
-  admType         AdmType
-  admPosX_main    Float
-  admPosY_main    Float
-  admPosX_sub     Float?
-  admPosY_sub     Float?
+  emdType         EmdType
+  MAIN_emdPosNm   String
+  MAIN_emdPosDx   Float       @default(0.2)
+  MAIN_emdPosX    Float
+  MAIN_emdPosY    Float
+  SUB_emdPosNm    String?
+  SUB_emdPosDx    Float?      @default(0.2)
+  SUB_emdPosX     Float?
+  SUB_emdPosY     Float?
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
   tokens          Token[]
@@ -57,8 +61,9 @@ model Product {
   name        String
   price       Int
   description String   @db.MediumText
-  admPosX     Float
-  admPosY     Float
+  emdPosName  String
+  emdPosX     Float
+  emdPosY     Float
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -69,8 +74,9 @@ model Product {
 model Post {
   id          Int         @id @default(autoincrement())
   question    String      @db.MediumText
-  admPosX     Float
-  admPosY     Float
+  emdPosName  String
+  emdPosX     Float
+  emdPosY     Float
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
   user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)

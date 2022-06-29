@@ -1,5 +1,6 @@
 import { GetServerSidePropsContext, GetServerSidePropsResult, NextApiHandler } from "next";
 import { withIronSessionApiRoute, withIronSessionSsr } from "iron-session/next";
+import { EmdType } from "@prisma/client";
 
 declare module "iron-session" {
   interface IronSessionData {
@@ -7,12 +8,13 @@ declare module "iron-session" {
       id: number;
     };
     dummyUser?: {
-      admPosX_main: number;
-      admPosY_main: number;
-    };
-    sgisApi?: {
-      accessTimeout: string;
-      accessToken: string;
+      id: -1;
+      name: string;
+      emdType: "MAIN";
+      MAIN_emdPosNm: string;
+      MAIN_emdPosDx: number;
+      MAIN_emdPosX: number;
+      MAIN_emdPosY: number;
     };
   }
 }

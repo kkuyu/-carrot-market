@@ -36,5 +36,16 @@ export const middleware: NextMiddleware = (req) => {
     }
   }
 
+  if (isLogin) {
+    switch (url.pathname) {
+      case "/welcome":
+      case "/login":
+        url.pathname = "/";
+        return NextResponse.redirect(url);
+      default:
+        return NextResponse.next();
+    }
+  }
+
   return NextResponse.next();
 };

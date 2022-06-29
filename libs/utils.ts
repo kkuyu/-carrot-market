@@ -5,6 +5,10 @@ export const cls: (...props: string[]) => string = (...classnames) => {
   return classnames.join(" ");
 };
 
+export const isInstance = <T extends object>(value: string | number, type: T): type is T => {
+  return Object.values(type).includes(value);
+};
+
 export const objMap = (obj: object, fn: (value: [string, any]) => [string, any]) => {
   return Object.fromEntries(Object.entries(obj).map(fn));
 };

@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 
-import { AdmType } from "@prisma/client";
+import { EmdType } from "@prisma/client";
 import { getRandomName } from "@libs/utils";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
@@ -20,7 +20,7 @@ export interface PostJoinResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { phone, posX, posY } = req.body;
+    const { phone, addrNm, distance, posX, posY } = req.body;
 
     // request valid
     if (!phone || phone.length < 8) {
@@ -28,11 +28,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!posX || !posY) {
+    if (!posX || !posY || !addrNm) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
+
+    // get data props
+    const userPayload = {
+      name: getRandomName(),
+      phone,
+      emdType: EmdType.MAIN,
+      MAIN_emdPosNm: addrNm.match(/([가-힣]+|\w+)$/g)[0],
+      MAIN_emdPosDx: distance,
+      MAIN_emdPosX: posX,
+      MAIN_emdPosY: posY,
+    };
 
     // create new token
     const newToken = await client.token.create({
@@ -43,13 +54,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             where: {
               phone,
             },
-            create: {
-              name: getRandomName(),
-              phone,
-              admType: AdmType.MAIN,
-              admPosX_main: +posX,
-              admPosY_main: +posY,
-            },
+            create: userPayload,
           },
         },
       },

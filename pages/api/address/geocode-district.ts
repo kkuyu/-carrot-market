@@ -1,44 +1,57 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
+import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 interface FetchResponse {
-  result: {
-    accessTimeout: string;
-    accessToken: string;
+  response: {
+    status: "OK" | "NOT_FOUND" | "ERROR";
+    result: {
+      items: {
+        id: string;
+        title: string;
+        point: {
+          x: string;
+          y: string;
+        };
+      }[];
+    };
   };
 }
 
-export interface GetAddressTokenResponse {
+export interface GetGeocodeDistrictResponse {
   success: boolean;
-  accessTimeout: string;
-  accessToken: string;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
+  posX: number;
+  posY: number;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    // already a valid token exists
-    if (req.session?.sgisApi && +req.session.sgisApi.accessTimeout - Date.now() > 300000) {
-      return res.status(200).json({
-        success: true,
-        accessTimeout: req.session.sgisApi.accessTimeout,
-        accessToken: req.session.sgisApi.accessToken,
-      });
+    const { addrNm: _addrNm } = req.query;
+
+    // request valid
+    if (!_addrNm) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
     }
 
-    // fetch data: new token
+    // get data props
+    const addrNm = _addrNm.toString();
     const params = new URLSearchParams({
-      consumer_key: process.env.SGIS_ID!,
-      consumer_secret: process.env.SGIS_KEY!,
+      query: addrNm,
+      service: "search",
+      request: "search",
+      key: process.env.VWORLD_KEY!,
+      type: "district",
+      category: "L4",
+      refine: "false",
     }).toString();
+
+    // fetch data: district(address) to point
     const response: FetchResponse = await (
-      await fetch(`https://sgisApi.kostat.go.kr/OpenAPI3/auth/authentication.json?${params}`, {
+      await fetch(`http://api.vworld.kr/req/search?${params}`, {
         method: "GET",
         headers: {
           "Content-Type": "application/json; charset=utf-8",
@@ -46,19 +59,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       })
     ).json();
 
-    // save data: session.sgisApi
-    if (req.session.user) {
-      req.session.sgisApi = {
-        accessTimeout: response.result.accessTimeout,
-        accessToken: response.result.accessToken,
-      };
-      await req.session.save();
-    }
-
     // result
-    const result: GetAddressTokenResponse = {
+    const result: GetGeocodeDistrictResponse = {
       success: true,
-      ...response.result,
+      posX: +response.response.result.items[0].point.x,
+      posY: +response.response.result.items[0].point.y,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

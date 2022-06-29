@@ -5,7 +5,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 interface FetchResponse {
   response: {
-    status: string;
+    status: "OK" | "NOT_FOUND" | "ERROR";
     result: {
       featureCollection: {
         type: string;
@@ -24,45 +24,42 @@ interface FetchResponse {
   };
 }
 
-export interface GetWorldGeocodeResponse {
+export interface GetKeywordSearchResponse {
   success: boolean;
-  emdongs: {
+  emdList: {
     id: string;
-    addrName: string;
-    admCd: null;
-    admNm: null;
-    posX: null;
-    posY: null;
+    addrNm: string;
+    emdNm: string;
+    emdCd: string;
   }[];
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { address } = req.query;
+    const { keyword: _keyword } = req.query;
 
     // request valid
-    if (!address) {
+    if (!_keyword) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // get data props
-    const addr = address.toString();
+    const keyword = _keyword.toString();
     const params = new URLSearchParams({
       service: "data",
       request: "GetFeature",
       key: process.env.VWORLD_KEY!,
+      domain: process.env.VWORLD_URL!,
       size: "20",
       page: "1",
       data: "LT_C_ADEMD_INFO",
       geometry: "false",
-      attrFilter: `emd_kor_nm:like:${addr}`,
-      crs: "EPSG:5179",
-      domain: process.env.VWORLD_URL!,
+      attrFilter: `emd_kor_nm:like:${keyword}`,
     }).toString();
 
-    // fetch data: geo code search
+    // fetch data: keyword to emdList
     const response: FetchResponse = await (
       await fetch(`http://api.vworld.kr/req/data?${params}`, {
         method: "GET",
@@ -71,22 +68,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       })
     ).json();
-    const emdongs =
-      response.response.status === "OK" && response.response.result.featureCollection.features.length
+    const emdList =
+      response.response.status === "OK"
         ? response.response.result.featureCollection.features.map((data) => ({
             id: data.properties.emd_cd,
-            addrName: data.properties.full_nm,
-            admCd: null,
-            admNm: null,
-            posX: null,
-            posY: null,
+            addrNm: data.properties.full_nm,
+            emdNm: data.properties.emd_kor_nm,
+            emdCd: data.properties.emd_cd,
           }))
         : [];
 
     // result
-    const result: GetWorldGeocodeResponse = {
+    const result: GetKeywordSearchResponse = {
       success: true,
-      emdongs,
+      emdList,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
