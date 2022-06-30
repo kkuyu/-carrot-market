@@ -24,11 +24,11 @@ export const middleware: NextMiddleware = (req) => {
   if (!isLogin) {
     switch (url.pathname) {
       case "/welcome":
+      case "/welcome/hometown":
+      case "/join":
       case "/login":
       case "/verification-email":
       case "/verification-phone":
-      case "/hometown/search":
-      case "/join":
         return NextResponse.next();
       default:
         url.pathname = "/welcome";
@@ -39,6 +39,8 @@ export const middleware: NextMiddleware = (req) => {
   if (isLogin) {
     switch (url.pathname) {
       case "/welcome":
+      case "/welcome/hometown":
+      case "/join":
       case "/login":
         url.pathname = "/";
         return NextResponse.redirect(url);

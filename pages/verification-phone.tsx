@@ -4,18 +4,21 @@ import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useQuery from "@libs/client/useQuery";
+import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostUserUpdateResponse } from "@api/users/my/update";
 
 import Layout from "@components/layout";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const VerificationPhone: NextPage = () => {
   const router = useRouter();
   const { hasQuery, query } = useQuery();
+  const { openToast } = useToast();
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
@@ -27,7 +30,10 @@ const VerificationPhone: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "NotFoundUser":
-          // todo: 이메일 확인 토스트
+          openToast<MessageToastProps>(MessageToast, "invalid-user", {
+            placement: "bottom",
+            message: "이메일 주소를 다시 확인해주세요",
+          });
           router.replace("/verification-email");
           return;
         case "SameExistingAccount":
@@ -68,7 +74,10 @@ const VerificationPhone: NextPage = () => {
   // update user data
   const [updateUser] = useMutation<PostUserUpdateResponse>("/api/users/my/update", {
     onSuccess: () => {
-      // todo: 변경 완료 토스트
+      openToast<MessageToastProps>(MessageToast, "update-user", {
+        placement: "bottom",
+        message: "휴대폰 번호가 변경되었어요",
+      });
       router.replace("/login");
     },
     onError: (data) => {
@@ -82,11 +91,16 @@ const VerificationPhone: NextPage = () => {
 
   useEffect(() => {
     if (hasQuery && !query) {
-      // todo: 이메일 확인 토스트
+      openToast<MessageToastProps>(MessageToast, "invalid-targetEmail", {
+        placement: "bottom",
+        message: "이메일 주소를 다시 확인해주세요",
+      });
       router.replace("/verification-email");
-    }
-    if (!query?.targetEmail || !query.targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
-      // todo: 이메일 확인 토스트
+    } else if (!query?.targetEmail || !query.targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      openToast<MessageToastProps>(MessageToast, "invalid-targetEmail", {
+        placement: "bottom",
+        message: "이메일 주소를 다시 확인해주세요",
+      });
       router.replace("/verification-email");
     } else {
       verifyPhoneSetValue("targetEmail", query.targetEmail);

@@ -12,11 +12,11 @@ export interface MessageToastProps {
 type ToastTimerRef = React.MutableRefObject<NodeJS.Timeout | null>;
 
 const MessageToast = (props: MessageToastProps & ToastComponentProps & ToastExtraProps) => {
-  const { name, type = "default", placement, message, isAutoHide = true, duration = 3000, delay = 0, order, onClose } = props;
+  const { name, type = "default", placement, message, isAutoHide = true, duration = 1800, delay = 0, order, onClose } = props;
 
   const [isShow, setIsShow] = useState<boolean | null>(null);
 
-  const transitionDuration = useRef(150);
+  const transitionDuration = useRef(120);
   const visibleTimer: ToastTimerRef = useRef(null);
   const invisibleTimer: ToastTimerRef = useRef(null);
   const destroyTimer: ToastTimerRef = useRef(null);
@@ -42,7 +42,7 @@ const MessageToast = (props: MessageToastProps & ToastComponentProps & ToastExtr
     setIsShow(true);
     // invisible
     if (isAutoHide && duration) {
-      await setTimer(invisibleTimer, delay + duration);
+      await setTimer(invisibleTimer, duration);
       setIsShow(false);
     }
   };

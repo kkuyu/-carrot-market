@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
 import useQuery from "@libs/client/useQuery";
+import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
@@ -14,12 +15,16 @@ import { PostDummyUserResponse } from "@api/users/dummy-user";
 
 import Layout from "@components/layout";
 import Buttons from "@components/buttons";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const Join: NextPage = () => {
   const router = useRouter();
   const { hasQuery, query } = useQuery();
+
+  // toast
+  const { openToast } = useToast();
 
   // check query data
   const { data: addrData } = useSWR<GetGeocodeDistrictResponse>(query?.addrNm ? `api/address/geocode-district?addrNm=${query.addrNm}` : null);
@@ -44,6 +49,10 @@ const Join: NextPage = () => {
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
     onSuccess: () => {
+      openToast<MessageToastProps>(MessageToast, "login-user", {
+        placement: "bottom",
+        message: "회원가입이 완료되었어요",
+      });
       router.replace("/");
     },
     onError: (data) => {
@@ -62,26 +71,37 @@ const Join: NextPage = () => {
   // just looking
   const [makeDummy, { loading: dummyLoading }] = useMutation<PostDummyUserResponse>("/api/users/dummy-user", {
     onSuccess: () => {
-      // todo: 더미 유저 토스트
+      openToast<MessageToastProps>(MessageToast, "login-dummy", {
+        placement: "bottom",
+        message: "비회원으로 인증되었어요",
+      });
       router.replace("/");
     },
   });
 
   useEffect(() => {
     if (hasQuery && !query) {
-      // todo: 내 동네 설정 확인 토스트
-      router.replace("/hometown/search");
-    }
-    if (!query?.addrNm) {
-      // todo: 내 동네 설정 확인 토스트
-      router.replace("/hometown/search");
+      openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
+        placement: "bottom",
+        message: "먼저 내 동네를 설정해주세요",
+      });
+      router.replace("/welcome/hometown");
+    } else if (!query?.addrNm) {
+      openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
+        placement: "bottom",
+        message: "먼저 내 동네를 설정해주세요",
+      });
+      router.replace("/welcome/hometown");
     }
   }, [hasQuery, query]);
 
   useEffect(() => {
     if (addrData && !addrData.success) {
-      // todo: 내 동네 설정 확인 토스트
-      router.replace("/hometown/search");
+      openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
+        placement: "bottom",
+        message: "먼저 내 동네를 설정해주세요",
+      });
+      router.replace("/welcome/hometown");
     }
   }, [addrData]);
 

@@ -17,7 +17,7 @@ const VerificationEmail: NextPage = () => {
 
   // Email
   const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
-  const { setError: verifyEmailError, setFocus: verifyEmailFocus, getValues: verifyEmailSetValue } = verifyEmailForm;
+  const { setError: verifyEmailError, setFocus: verifyEmailFocus, getValues: verifyEmailGetValue } = verifyEmailForm;
   const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostVerificationEmailResponse>("/api/users/verification-email", {
     onSuccess: () => {
       verifyTokenFocus("token");
@@ -42,7 +42,7 @@ const VerificationEmail: NextPage = () => {
     onSuccess: () => {
       router.push({
         pathname: "/verification-phone",
-        query: { targetEmail: verifyEmailSetValue("email") },
+        query: { targetEmail: verifyEmailGetValue("email") },
       });
     },
     onError: (data) => {

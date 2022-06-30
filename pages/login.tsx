@@ -3,17 +3,22 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 
 import { useForm } from "react-hook-form";
+import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { PostLoginResponse } from "@api/users/login";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
 import Layout from "@components/layout";
 import Buttons from "@components/buttons";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const Login: NextPage = () => {
   const router = useRouter();
+
+  // toast
+  const { openToast } = useToast();
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
@@ -40,7 +45,10 @@ const Login: NextPage = () => {
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
     onSuccess: () => {
-      // todo: 유저 토스트
+      openToast<MessageToastProps>(MessageToast, "login-user", {
+        placement: "bottom",
+        message: "로그인 되었어요",
+      });
       router.replace("/");
     },
     onError: (data) => {
@@ -82,7 +90,7 @@ const Login: NextPage = () => {
           {verifyPhoneControl.getFieldState("phone").error?.type === "validate" && (
             <p>
               <span>첫 방문이신가요?</span>
-              <Link href="/hometown/search" passHref>
+              <Link href="/welcome/hometown" passHref>
                 <Buttons tag="a" sort="text-link" text="당근마켓 시작하기" />
               </Link>
             </p>

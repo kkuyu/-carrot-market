@@ -17,7 +17,9 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
     setCurrentState((stated) => {
       return new Map(
         [...stated].map(([key, structure]) => {
-          return key === Type ? [key, [...structure, { Type, Component, name, props }]] : [key, structure];
+          if (key !== Type) return [key, structure];
+          if (structure.find((item) => item.name === name)) return [key, structure];
+          return [key, [...structure, { Type, Component, name, props }]];
         })
       );
     });
