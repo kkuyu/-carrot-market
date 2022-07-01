@@ -8,7 +8,7 @@ import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
-import { PostUserUpdateResponse } from "@api/users/my/update";
+import { PostVerificationUpdateResponse } from "@api/users/verification-update";
 
 import Layout from "@components/layouts/layout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -72,7 +72,7 @@ const VerificationPhone: NextPage = () => {
   });
 
   // update user data
-  const [updateUser] = useMutation<PostUserUpdateResponse>("/api/users/my/update", {
+  const [updateUser] = useMutation<PostVerificationUpdateResponse>("/api/users/verification-update", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "update-user", {
         placement: "bottom",

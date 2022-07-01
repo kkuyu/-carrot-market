@@ -24,12 +24,14 @@ model User {
   email           String?     @unique
   avatar          String?
   emdType         EmdType
+  MAIN_emdAddrNm  String
   MAIN_emdPosNm   String
-  MAIN_emdPosDx   Float       @default(0.2)
+  MAIN_emdPosDx   Float
   MAIN_emdPosX    Float
   MAIN_emdPosY    Float
+  SUB_emdAddrNm   String?
   SUB_emdPosNm    String?
-  SUB_emdPosDx    Float?      @default(0.2)
+  SUB_emdPosDx    Float?
   SUB_emdPosX     Float?
   SUB_emdPosY     Float?
   createdAt       DateTime    @default(now())
@@ -61,7 +63,8 @@ model Product {
   name        String
   price       Int
   description String   @db.MediumText
-  emdPosName  String
+  emdAddrNm   String
+  emdPosNm    String
   emdPosX     Float
   emdPosY     Float
   createdAt   DateTime @default(now())
@@ -74,7 +77,8 @@ model Product {
 model Post {
   id          Int         @id @default(autoincrement())
   question    String      @db.MediumText
-  emdPosName  String
+  emdAddrNm   String
+  emdPosNm    String
   emdPosX     Float
   emdPosY     Float
   createdAt   DateTime    @default(now())

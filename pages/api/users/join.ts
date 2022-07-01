@@ -20,7 +20,7 @@ export interface PostJoinResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { phone, addrNm, distance, posX, posY } = req.body;
+    const { phone, mainAddrNm, mainPosX, mainPosY, mainDistance } = req.body;
 
     // request valid
     if (!phone || phone.length < 8) {
@@ -28,7 +28,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!posX || !posY || !addrNm) {
+    if (!mainAddrNm || !mainPosX || !mainPosY || !mainDistance) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -39,10 +39,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       name: getRandomName(),
       phone,
       emdType: EmdType.MAIN,
-      MAIN_emdPosNm: addrNm.match(/([가-힣]+|\w+)$/g)[0],
-      MAIN_emdPosDx: distance,
-      MAIN_emdPosX: posX,
-      MAIN_emdPosY: posY,
+      MAIN_emdAddrNm: mainAddrNm,
+      MAIN_emdPosNm: mainAddrNm.match(/(\S+)$/g)?.[0],
+      MAIN_emdPosX: mainPosX,
+      MAIN_emdPosY: mainPosY,
+      MAIN_emdPosDx: mainDistance,
     };
 
     // create new token

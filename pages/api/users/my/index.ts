@@ -69,25 +69,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   if (req.method === "POST") {
     try {
       const { user } = req.session;
-      const { email, phone, name, avatarId, emdType, distance, addrNm } = req.body;
+      const { email, phone, name, avatarId, emdType, mainAddrNm, mainDistance, subAddrNm, subDistance } = req.body;
 
       // request valid
-      if (!email && !phone && !name && !avatarId && !emdType) {
+      if (JSON.stringify(req.body) === JSON.stringify({})) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (emdType) {
-        if (!isInstance(emdType, EmdType)) {
-          const error = new Error("InvalidRequestBody");
-          error.name = "InvalidRequestBody";
-          throw error;
-        }
-        if (!addrNm || !distance) {
-          const error = new Error("InvalidRequestBody");
-          error.name = "InvalidRequestBody";
-          throw error;
-        }
+      if (emdType && !isInstance(emdType, EmdType)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
       }
 
       // check user
@@ -148,16 +141,64 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       }
 
       // check data: address
-      if (emdType && addrNm) {
-        const { origin: originUrl } = getAbsoluteUrl(req);
-        const { posX, posY }: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${addrNm}`)).json();
+      if (emdType) {
         userPayload = {
           ...userPayload,
           emdType,
-          [`${emdType}_emdPosNm`]: addrNm.match(/([가-힣]+|\w+)$/g)[0],
-          [`${emdType}_emdPosDx`]: distance,
-          [`${emdType}_emdPosX`]: posX,
-          [`${emdType}_emdPosY`]: posY,
+        };
+      }
+      // check data: main address
+      if (mainDistance) {
+        userPayload = {
+          ...userPayload,
+          MAIN_emdPosDx: mainDistance,
+        };
+      }
+      if (mainAddrNm) {
+        const { origin: originUrl } = getAbsoluteUrl(req);
+        const mainResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${mainAddrNm}`)).json();
+        if (!mainResponse.success) {
+          const error = new Error("GeocodeDistrictError");
+          error.name = "GeocodeDistrictError";
+          throw error;
+        }
+        userPayload = {
+          ...userPayload,
+          MAIN_emdAddrNm: mainResponse.addrNm,
+          MAIN_emdPosNm: mainResponse.addrNm.match(/(\S+)$/g)?.[0],
+          MAIN_emdPosX: mainResponse.posX,
+          MAIN_emdPosY: mainResponse.posY,
+        };
+      }
+      // check data: sub address
+      if (subDistance) {
+        userPayload = {
+          ...userPayload,
+          SUB_emdPosDx: subDistance,
+        };
+      }
+      if (subAddrNm === null) {
+        userPayload = {
+          ...userPayload,
+          SUB_emdAddrNm: null,
+          SUB_emdPosNm: null,
+          SUB_emdPosX: null,
+          SUB_emdPosY: null,
+        };
+      } else if (subAddrNm) {
+        const { origin: originUrl } = getAbsoluteUrl(req);
+        const subResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${subAddrNm}`)).json();
+        if (!subResponse.success) {
+          const error = new Error("GeocodeDistrictError");
+          error.name = "GeocodeDistrictError";
+          throw error;
+        }
+        userPayload = {
+          ...userPayload,
+          SUB_emdAddrNm: subResponse.addrNm,
+          SUB_emdPosNm: subResponse.addrNm.match(/(\S+)$/g)?.[0],
+          SUB_emdPosX: subResponse.posX,
+          SUB_emdPosY: subResponse.posY,
         };
       }
 

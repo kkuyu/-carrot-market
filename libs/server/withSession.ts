@@ -1,6 +1,5 @@
 import { GetServerSidePropsContext, GetServerSidePropsResult, NextApiHandler } from "next";
 import { withIronSessionApiRoute, withIronSessionSsr } from "iron-session/next";
-import { EmdType } from "@prisma/client";
 
 declare module "iron-session" {
   interface IronSessionData {
@@ -11,6 +10,7 @@ declare module "iron-session" {
       id: number;
       name: string;
       emdType: "MAIN";
+      MAIN_emdAddrNm: string;
       MAIN_emdPosNm: string;
       MAIN_emdPosDx: number;
       MAIN_emdPosX: number;

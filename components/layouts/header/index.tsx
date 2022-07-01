@@ -1,8 +1,20 @@
 import { useRouter } from "next/router";
 
+import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
+import useModal from "@libs/client/useModal";
+import useToast from "@libs/client/useToast";
+import { PostUserResponse } from "@api/users/my";
+import { PostJoinDummyResponse } from "@api/users/join-dummy";
 
+import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
+import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import AddressButton from "@components/layouts/header/utils/addressButton";
+import AddressDropdown from "@components/layouts/header/utils/addressDropdown";
+import AddressUpdate from "@components/layouts/header/utils/addressUpdate";
+import AddressLocate from "@components/layouts/header/utils/addressLocate";
 
 const HeaderUtils = {
   Address: "address",
@@ -18,20 +30,178 @@ export interface HeaderProps {
   headerUtils?: HeaderUtils[];
 }
 
+export type ToastControl = (name: "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError", config: { open: boolean }) => void;
+export type ModalControl = (
+  name: "dropdownModal" | "updateModal" | "locateModal" | "oneOrMore" | "signUpNow",
+  config: { open: boolean; originalFocusTarget?: string; addrType?: "MAIN" | "SUB"; beforeClose?: () => void }
+) => void;
+export type UpdateHometown = (updateData: { emdType?: "MAIN" | "SUB"; mainAddrNm?: string; mainDistance?: number; subAddrNm?: string | null; subDistance?: number | null }) => void;
+
 const Header = ({ title, headerUtils = [] }: HeaderProps) => {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, mutate: mutateUser } = useUser();
+
+  const { openModal, closeModal } = useModal();
+  const { openToast, closeToast } = useToast();
+
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
+    onSuccess: () => {
+      console.log("updateUser success");
+      mutateUser();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        case "GeocodeDistrictError":
+          toastControl("updateUserError", { open: true });
+          break;
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostJoinDummyResponse>("/api/users/join-dummy", {
+    onSuccess: () => {
+      console.log("updateDummy success");
+      mutateUser();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        case "GeocodeDistrictError":
+          toastControl("updateDummyError", { open: true });
+          break;
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+
+  const updateHometown: UpdateHometown = (updateData) => {
+    // dummy user
+    if (user?.id === -1) {
+      if (updateDummyLoading) return;
+      updateDummy(updateData);
+      return;
+    }
+    // membership user
+    if (updateUserLoading) return;
+    updateUser(updateData);
+  };
+
+  const toastControl: ToastControl = (name, config) => {
+    switch (name) {
+      case "alreadyRegisteredAddress":
+        if (!config.open) {
+          closeToast(MessageToast, name);
+          break;
+        }
+        openToast<MessageToastProps>(MessageToast, name, {
+          placement: "bottom",
+          message: "이미 등록된 주소예요",
+        });
+        break;
+      case "updateUserError":
+      case "updateDummyError":
+        if (!config.open) {
+          closeToast(MessageToast, name);
+          break;
+        }
+        openToast<MessageToastProps>(MessageToast, name, {
+          placement: "bottom",
+          message: "서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.",
+        });
+        break;
+      default:
+        console.error("toastControl", name);
+        break;
+    }
+  };
+
+  const modalControl: ModalControl = (name, config) => {
+    switch (name) {
+      case "dropdownModal":
+        if (!config.open) {
+          if (config?.beforeClose) config.beforeClose();
+          closeModal(CustomModal, name);
+          break;
+        }
+        openModal<CustomModalProps>(CustomModal, name, {
+          hasBackdrop: true,
+          ...(config.originalFocusTarget ? { originalFocusTarget: config.originalFocusTarget } : {}),
+          contents: <AddressDropdown toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />,
+        });
+        break;
+      case "updateModal":
+        if (!config.open) {
+          if (config?.beforeClose) config.beforeClose();
+          closeModal(LayerModal, name);
+          break;
+        }
+        openModal<LayerModalProps>(LayerModal, name, {
+          headerType: "default",
+          title: "내 동네 설정하기",
+          ...(config.originalFocusTarget ? { originalFocusTarget: config.originalFocusTarget } : {}),
+          contents: <AddressUpdate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />,
+        });
+        break;
+      case "locateModal":
+        if (!config.open) {
+          if (config?.beforeClose) config.beforeClose();
+          closeModal(LayerModal, name);
+          break;
+        }
+        openModal<LayerModalProps>(LayerModal, name, {
+          headerType: "default",
+          title: "내 동네 추가하기",
+          ...(config.originalFocusTarget ? { originalFocusTarget: config.originalFocusTarget } : {}),
+          contents: <AddressLocate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} addrType={config?.addrType || "SUB"} />,
+        });
+        break;
+      case "oneOrMore":
+        if (!config.open) {
+          closeModal(MessageModal, name);
+          break;
+        }
+        openModal<MessageModalProps>(MessageModal, name, {
+          type: "confirm",
+          message: "동네가 1개만 선택된 상태에서는 삭제를 할 수 없어요. 현재 설정된 동네를 변경하시겠어요?",
+          cancelBtn: "취소",
+          confirmBtn: "변경",
+          hasBackdrop: true,
+          onConfirm: () => {
+            modalControl("locateModal", { open: true, addrType: "MAIN" });
+            modalControl("updateModal", { open: false });
+          },
+        });
+        break;
+      case "signUpNow":
+        if (!config.open) {
+          closeModal(MessageModal, name);
+          break;
+        }
+        openModal<MessageModalProps>(MessageModal, name, {
+          type: "confirm",
+          message: "동네를 추가하시려면 회원가입이 필요해요. 휴대폰 인증하고 회원가입하시겠어요?",
+          cancelBtn: "취소",
+          confirmBtn: "회원가입",
+          hasBackdrop: true,
+          onConfirm: () => {
+            // todo: 회원가입
+            console.log("onConfirm");
+          },
+        });
+        break;
+      default:
+        console.error("modalControl", name);
+        break;
+    }
+  };
 
   const getUtils = (name: HeaderUtils) => {
     switch (name) {
       case "address":
-        return (
-          <AddressButton
-            buttonClick={() => {
-              console.log("buttonClick");
-            }}
-          />
-        );
+        return <AddressButton toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />;
       case "back":
         return (
           <button className="p-3" onClick={() => router.back()}>

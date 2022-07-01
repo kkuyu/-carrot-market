@@ -17,8 +17,8 @@ const HometownSearch: NextPage = () => {
   const router = useRouter();
   const [keyword, setKeyword] = useState("");
 
-  const SearchAddressForm = useForm<SearchAddressTypes>();
-  const { setValue: SearchAddressValue, setFocus: SearchAddressFocus } = SearchAddressForm;
+  const searchAddressForm = useForm<SearchAddressTypes>();
+  const { setValue: SearchAddressValue, setFocus: SearchAddressFocus } = searchAddressForm;
 
   const { longitude, latitude } = useCoords();
   const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
@@ -41,11 +41,12 @@ const HometownSearch: NextPage = () => {
       <div className="container">
         {/* search form */}
         <SearchAddress
-          formData={SearchAddressForm}
+          formData={searchAddressForm}
           onValid={(data: SearchAddressTypes) => {
             setKeyword(data.keyword);
           }}
           onReset={resetForm}
+          stickyClass="top-[calc(3rem+1px)] left-0"
           keyword={keyword}
         />
 

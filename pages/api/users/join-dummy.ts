@@ -7,7 +7,7 @@ import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { getAbsoluteUrl, getRandomName } from "@libs/utils";
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 
-export interface PostDummyUserResponse {
+export interface PostJoinDummyResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -18,10 +18,11 @@ export interface PostDummyUserResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { name, addrNm, distance } = req.body;
+    const { name, mainAddrNm, mainPosX, mainPosY, mainDistance } = req.body;
 
     let dummyPayload = {
       name: "",
+      MAIN_emdAddrNm: "",
       MAIN_emdPosNm: "",
       MAIN_emdPosDx: 0,
       MAIN_emdPosX: 0,
@@ -36,14 +37,37 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       dummyPayload.name = getRandomName();
     }
 
-    // check data: address
-    if (addrNm && distance) {
+    // check data: main address
+    if (mainDistance) {
+      dummyPayload = {
+        ...dummyPayload,
+        MAIN_emdPosDx: mainDistance,
+      };
+    }
+
+    if (mainAddrNm && Boolean(!mainPosX && !mainPosY)) {
       const { origin: originUrl } = getAbsoluteUrl(req);
-      const { posX, posY }: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${addrNm}`)).json();
-      dummyPayload.MAIN_emdPosNm = addrNm.match(/([가-힣]+|\w+)$/g)[0];
-      dummyPayload.MAIN_emdPosDx = distance;
-      dummyPayload.MAIN_emdPosX = posX;
-      dummyPayload.MAIN_emdPosY = posY;
+      const mainResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${mainAddrNm}`)).json();
+      if (!mainResponse.success) {
+        const error = new Error("GeocodeDistrictError");
+        error.name = "GeocodeDistrictError";
+        throw error;
+      }
+      dummyPayload = {
+        ...dummyPayload,
+        MAIN_emdAddrNm: mainResponse.addrNm,
+        MAIN_emdPosNm: mainResponse.addrNm.match(/(\S+)$/g)?.[0] || "",
+        MAIN_emdPosX: mainResponse.posX,
+        MAIN_emdPosY: mainResponse.posY,
+      };
+    } else if (mainAddrNm && Boolean(mainPosX && mainPosY)) {
+      dummyPayload = {
+        ...dummyPayload,
+        MAIN_emdAddrNm: mainAddrNm,
+        MAIN_emdPosNm: mainAddrNm.match(/(\S+)$/g)?.[0],
+        MAIN_emdPosX: mainPosX,
+        MAIN_emdPosY: mainPosY,
+      };
     }
 
     // update data: session.dummyUser
@@ -56,7 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     await req.session.save();
 
     // result
-    const result: PostDummyUserResponse = {
+    const result: PostJoinDummyResponse = {
       success: true,
     };
     return res.status(200).json(result);

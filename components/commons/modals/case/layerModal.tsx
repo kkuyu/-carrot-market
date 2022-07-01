@@ -18,7 +18,7 @@ const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
   return (
     <div role="dialog" aria-modal="true" aria-labelledby={`${name}-TITLE`} tabIndex={0} className="absolute top-0 left-0 right-0 bottom-0 flex flex-col bg-white z-1">
       {headerType === "default" && (
-        <div className="w-full h-12 pl-5 pr-12 flex items-center border-b">
+        <div className="flex-none w-full h-12 pl-5 pr-12 flex items-center border-b">
           <strong id={`${name}-TITLE`} className="text-base font-semibold font-semibold truncate">
             {title}
           </strong>

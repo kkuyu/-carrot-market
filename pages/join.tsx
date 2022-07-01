@@ -11,7 +11,7 @@ import useMutation from "@libs/client/useMutation";
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
-import { PostDummyUserResponse } from "@api/users/dummy-user";
+import { PostJoinDummyResponse } from "@api/users/join-dummy";
 
 import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
@@ -29,9 +29,9 @@ const Join: NextPage = () => {
   // check query data
   const { data: addrData } = useSWR<GetGeocodeDistrictResponse>(query?.addrNm ? `api/address/geocode-district?addrNm=${query.addrNm}` : null);
 
-  // join
+  // join user
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [join, { loading: joinLoading, data: joinData }] = useMutation<PostJoinResponse>("/api/users/join", {
+  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostJoinResponse>("/api/users/join", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -68,8 +68,8 @@ const Join: NextPage = () => {
     },
   });
 
-  // just looking
-  const [makeDummy, { loading: dummyLoading }] = useMutation<PostDummyUserResponse>("/api/users/dummy-user", {
+  // join dummy
+  const [joinDummy, { loading: dummyLoading }] = useMutation<PostJoinDummyResponse>("/api/users/join-dummy", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-dummy", {
         placement: "bottom",
@@ -119,21 +119,23 @@ const Join: NextPage = () => {
         <VerifyPhone
           formData={verifyPhoneForm}
           onValid={(data: VerifyPhoneTypes) => {
-            if (joinLoading) return;
-            join({
+            if (userLoading) return;
+            joinUser({
               ...data,
-              addrNm: query?.addrNm,
-              posX: addrData?.posX,
-              posY: addrData?.posY,
+              emdType: "MAIN",
+              mainAddrNm: addrData?.addrNm,
+              mainPosX: addrData?.posX,
+              mainPosY: addrData?.posY,
+              mainDistance: 0.02,
             });
           }}
-          isSuccess={joinData?.success}
-          isLoading={joinLoading}
+          isSuccess={userData?.success}
+          isLoading={userLoading}
         />
 
         <div className="empty:hidden mt-4 text-sm text-center space-y-2">
           {/* 둘러보기 */}
-          {!joinData?.success && (
+          {!userData?.success && (
             <p>
               <span>첫 방문이신가요?</span>
               <Buttons
@@ -145,19 +147,18 @@ const Join: NextPage = () => {
                 className="underline"
                 onClick={() => {
                   if (dummyLoading) return;
-                  makeDummy({
-                    emdType: "MAIN",
-                    distance: 0.2,
-                    addrNm: query?.addrNm,
-                    posX: addrData?.posX,
-                    posY: addrData?.posY,
+                  joinDummy({
+                    mainAddrNm: addrData?.addrNm,
+                    mainPosX: addrData?.posX,
+                    mainPosY: addrData?.posY,
+                    mainDistance: 0.02,
                   });
                 }}
               />
             </p>
           )}
           {/* 이메일로 계정 찾기 */}
-          {!joinData?.success && (
+          {!userData?.success && (
             <p>
               <span>전화번호가 변경되었나요?</span>
               <Link href="/verification-email" passHref>
@@ -168,7 +169,7 @@ const Join: NextPage = () => {
         </div>
 
         {/* 인증 결과 확인 */}
-        {joinData?.success && (
+        {userData?.success && (
           <>
             <VerifyToken
               formData={verifyTokenForm}

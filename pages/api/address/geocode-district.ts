@@ -22,6 +22,7 @@ interface FetchResponse {
 
 export interface GetGeocodeDistrictResponse {
   success: boolean;
+  addrNm: string;
   posX: number;
   posY: number;
 }
@@ -38,9 +39,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // get data props
-    const addrNm = _addrNm.toString();
+    const query = _addrNm.toString();
     const params = new URLSearchParams({
-      query: addrNm,
+      query,
       service: "search",
       request: "search",
       key: process.env.VWORLD_KEY!,
@@ -62,6 +63,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // result
     const result: GetGeocodeDistrictResponse = {
       success: true,
+      addrNm: response.response.result.items[0].title,
       posX: +response.response.result.items[0].point.x,
       posY: +response.response.result.items[0].point.y,
     };

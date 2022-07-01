@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostUserUpdateResponse {
+export interface PostVerificationUpdateResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -40,22 +40,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
+    // update data: client.user
     await client.user.update({
       where: {
         id: foundUser.id,
       },
       data: {
-        ...(updateData.avatarId ? { avatarId: updateData.avatarId } : {}),
-        ...(updateData.name ? { name: updateData.name } : {}),
         ...(updateData.phone ? { phone: updateData.phone } : {}),
         ...(updateData.email ? { email: updateData.email } : {}),
       },
     });
 
-    return res.status(200).json({
+    // result
+    const result: PostVerificationUpdateResponse = {
       success: true,
-    });
+    };
+    return res.status(200).json(result);
   } catch (error: unknown) {
+    // error
     if (error instanceof Error) {
       const date = Date.now().toString();
       return res.status(422).json({

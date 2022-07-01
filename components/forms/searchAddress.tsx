@@ -11,14 +11,15 @@ interface SearchAddressProps {
   formData: UseFormReturn<SearchAddressTypes, object>;
   onValid: (validForm: SearchAddressTypes) => void;
   onReset: () => void;
+  stickyClass?: string;
   keyword: string;
 }
 
-const SearchAddress = ({ formData, onValid, onReset, keyword }: SearchAddressProps) => {
+const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }: SearchAddressProps) => {
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <div className="-mx-5 sticky top-[calc(3rem+1px)] left-0 px-5 pt-5 pb-2 bg-white">
+    <div className={`-mx-5 px-5 pt-5 pb-2 bg-white ${stickyClass ? "sticky " + stickyClass : ""}`}>
       <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
         <div>
           <Input

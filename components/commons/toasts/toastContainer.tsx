@@ -17,7 +17,7 @@ const ToastContainer = ({ children }: ToastContainerProps) => {
   });
 
   return (
-    <section className="fixed top-0 left-0 w-full z-300 pointer-events-none">
+    <section className="fixed top-0 left-0 w-full z-[300] pointer-events-none">
       <div className="relative mx-auto flex flex-col w-full max-w-xl h-max-fullScreen px-5 py-6">
         {childrenWithProps}
         <div className="grow" style={{ order: 50 }} />

@@ -55,7 +55,7 @@ const ModalContainer = ({ children, onClose }: ModalContainerProps) => {
   }, []);
 
   return (
-    <section ref={container} className="fixed top-0 left-0 w-full z-200">
+    <section ref={container} className="fixed top-0 left-0 w-full z-[200]">
       <div className="relative mx-auto w-full max-w-xl h-max-fullScreen">{children}</div>
     </section>
   );

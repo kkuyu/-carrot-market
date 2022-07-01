@@ -7,6 +7,10 @@ import { withSessionRoute } from "@libs/server/withSession";
 interface FetchResponse {
   response: {
     status: string;
+    record: {
+      total: number;
+      current: number;
+    };
     result: {
       featureCollection: {
         type: string;
@@ -33,6 +37,10 @@ export interface GetBoundarySearchResponse {
     emdNm: string;
     emdCd: string;
   }[];
+  record: {
+    total: number;
+    current: number;
+  };
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
@@ -89,6 +97,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const result: GetBoundarySearchResponse = {
       success: true,
       emdList,
+      record: response.response.record,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
