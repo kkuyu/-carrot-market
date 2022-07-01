@@ -8,7 +8,7 @@ import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
 import { GetProductsResponse } from "@api/products";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import Item from "@components/item";
 import FloatingButton from "@components/floating-button";
 
@@ -40,9 +40,9 @@ const Home: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   return (
-    <Layout hasTabBar seoTitle="Home" title="Home">
+    <Layout title="Home" headerUtils={["address", "title", "search"]} navBarUtils={["community", "home", "inbox", "profile", "streams"]}>
       <div className="container">
-        {/* 회원가입 안내 */}
+        {/* todo: 회원가입 안내 */}
         {user?.id === -1 && (
           <>
             더 많은 기능을 사용하시려면 회원가입이 필요해요

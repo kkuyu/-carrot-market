@@ -7,7 +7,7 @@ import useMutation from "@libs/client/useMutation";
 import { PostVerificationEmailResponse } from "@api/users/verification-email";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
@@ -59,7 +59,7 @@ const VerificationEmail: NextPage = () => {
   });
 
   return (
-    <Layout title="이메일로 계정 찾기" hasBackBtn>
+    <Layout title="이메일로 계정 찾기" headerUtils={["back", "title"]}>
       <section className="container py-5">
         {/* 이메일 입력 */}
         <VerifyEmail

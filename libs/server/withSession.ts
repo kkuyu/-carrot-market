@@ -8,7 +8,7 @@ declare module "iron-session" {
       id: number;
     };
     dummyUser?: {
-      id: -1;
+      id: number;
       name: string;
       emdType: "MAIN";
       MAIN_emdPosNm: string;

@@ -13,7 +13,7 @@ import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostDummyUserResponse } from "@api/users/dummy-user";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
@@ -106,7 +106,7 @@ const Join: NextPage = () => {
   }, [addrData]);
 
   return (
-    <Layout title="회원가입" hasBackBtn>
+    <Layout title="회원가입" headerUtils={["back", "title"]}>
       <section className="container py-5">
         <h1 className="text-2xl font-bold">
           안녕하세요!

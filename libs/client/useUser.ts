@@ -3,7 +3,7 @@ import { GetUserResponse } from "@api/users/my";
 
 export interface UserProfile {
   loading: boolean;
-  user: GetUserResponse["profile"] | GetUserResponse["dummyProfile"] | null;
+  user: Partial<GetUserResponse["profile"]> | null;
   currentAddr: {
     emdPosNm: string | null;
     emdPosDx: number | null;

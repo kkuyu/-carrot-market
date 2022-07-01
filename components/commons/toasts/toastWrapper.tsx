@@ -9,6 +9,10 @@ const ToastWrapper = () => {
 
   const currentToast = useMemo(() => currentState.get("Toast"), [currentState]);
 
+  if (!currentToast?.length) {
+    return null;
+  }
+
   return (
     <ToastContainer>
       {currentToast?.map(({ Type, Component, name, props }) => {

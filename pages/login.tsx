@@ -8,7 +8,7 @@ import useMutation from "@libs/client/useMutation";
 import { PostLoginResponse } from "@api/users/login";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
@@ -65,7 +65,7 @@ const Login: NextPage = () => {
   });
 
   return (
-    <Layout title="로그인" hasBackBtn>
+    <Layout title="로그인" headerUtils={["back", "title"]}>
       <section className="container py-5">
         <h1 className="text-2xl font-bold">
           안녕하세요!

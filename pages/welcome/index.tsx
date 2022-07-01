@@ -1,12 +1,12 @@
 import { NextPage } from "next";
 import Link from "next/link";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
 
 const Welcome: NextPage = () => {
   return (
-    <Layout hasHeadBar={false}>
+    <Layout>
       <section className="container">
         <div className="flex flex-col items-center w-full h-max-fullScreen text-center">
           <div className="grow flex flex-col justify-center">
@@ -18,8 +18,8 @@ const Welcome: NextPage = () => {
                 d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
               ></path>
             </svg>
-            <h1 className="mt-4 text-xl font-semibold">당근 근처의 당근마켓</h1>
-            <h2 className="mt-2">
+            <h1 className="mt-4 text-xl">당근 근처의 당근마켓</h1>
+            <h2 className="mt-2 font-normal">
               중고 거래부터 동네 정보까지,
               <br />
               지금 내 동네를 서낵하고 시작해보세요!

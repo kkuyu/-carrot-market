@@ -10,7 +10,7 @@ import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostUserUpdateResponse } from "@api/users/my/update";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
@@ -108,7 +108,7 @@ const VerificationPhone: NextPage = () => {
   }, [hasQuery, query]);
 
   return (
-    <Layout title="휴대폰 번호 변경" hasBackBtn>
+    <Layout title="휴대폰 번호 변경" headerUtils={["back", "title"]}>
       <section className="container py-5">
         <p className="text-sm">변경된 휴대폰 번호를 입력해주세요. 번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
 

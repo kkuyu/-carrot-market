@@ -8,7 +8,7 @@ import useCoords from "@libs/client/useCoords";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
 
-import Layout from "@components/layout";
+import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 import AddressList, { AddressItem } from "@components/addressList";
@@ -18,13 +18,13 @@ const HometownSearch: NextPage = () => {
   const [keyword, setKeyword] = useState("");
 
   const SearchAddressForm = useForm<SearchAddressTypes>();
-  const { setValue: SearchAddressValue, setFocus: SearchAddressFocus, getValues: SearchAddressGetValue } = SearchAddressForm;
+  const { setValue: SearchAddressValue, setFocus: SearchAddressFocus } = SearchAddressForm;
 
   const { longitude, latitude } = useCoords();
   const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
     longitude && latitude ? `/api/address/boundary-search?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
   );
-  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(Boolean(keyword.length) ? `/api/address/keyword-search?keyword=${keyword.length}` : null);
+  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(Boolean(keyword.length) ? `/api/address/keyword-search?keyword=${keyword}` : null);
 
   const resetForm = () => {
     setKeyword("");
@@ -37,7 +37,7 @@ const HometownSearch: NextPage = () => {
   };
 
   return (
-    <Layout hasBackBtn title="내 동네 설정하기">
+    <Layout title="내 동네 설정하기" headerUtils={["back", "title"]}>
       <div className="container">
         {/* search form */}
         <SearchAddress
