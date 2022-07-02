@@ -1,6 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 
-import Input from "@components/input";
+import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
 
 export interface VerifyEmailTypes {
@@ -18,9 +18,9 @@ const VerifyEmail = ({ formData, onValid, isSuccess, isLoading }: VerifyEmailPro
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
-      <div>
-        <Input
+    <form onSubmit={handleSubmit(onValid)} noValidate className="mt-4 space-y-4">
+      <div className="space-y-1">
+        <Inputs
           register={register("email", {
             required: {
               value: true,
@@ -35,7 +35,7 @@ const VerifyEmail = ({ formData, onValid, isSuccess, isLoading }: VerifyEmailPro
           type="email"
           kind="text"
           required={true}
-          placeholder="이메일 주소"
+          placeholder="username@example.com"
         />
         <span className="empty:hidden invalid">{formState.errors.email?.message}</span>
       </div>

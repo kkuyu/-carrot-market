@@ -4,16 +4,18 @@ import Link from "next/link";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
+
+import { PageLayout } from "@libs/states";
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostJoinDummyResponse } from "@api/users/join-dummy";
 
-import Layout from "@components/layouts/layout";
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
@@ -22,8 +24,9 @@ import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 const Join: NextPage = () => {
   const router = useRouter();
   const { hasQuery, query } = useQuery();
+  const setLayout = useSetRecoilState(PageLayout);
 
-  // toast
+  // common toast
   const { openToast } = useToast();
 
   // check query data
@@ -105,85 +108,95 @@ const Join: NextPage = () => {
     }
   }, [addrData]);
 
+  useEffect(() => {
+    setLayout(() => ({
+      title: "회원가입",
+      header: {
+        headerUtils: ["back", "title"],
+      },
+      navBar: {
+        navBarUtils: [],
+      },
+    }));
+  }, []);
+
   return (
-    <Layout title="회원가입" headerUtils={["back", "title"]}>
-      <section className="container py-5">
-        <h1 className="text-2xl font-bold">
-          안녕하세요!
-          <br />
-          휴대폰 번호로 가입해주세요.
-        </h1>
-        <p className="mt-2 text-sm">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
+    <section className="container py-5">
+      <h1 className="text-2xl font-bold">
+        안녕하세요!
+        <br />
+        휴대폰 번호로 가입해주세요.
+      </h1>
+      <p className="mt-2 text-sm">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
-        {/* 전화번호 입력 */}
-        <VerifyPhone
-          formData={verifyPhoneForm}
-          onValid={(data: VerifyPhoneTypes) => {
-            if (userLoading) return;
-            joinUser({
-              ...data,
-              emdType: "MAIN",
-              mainAddrNm: addrData?.addrNm,
-              mainPosX: addrData?.posX,
-              mainPosY: addrData?.posY,
-              mainDistance: 0.02,
-            });
-          }}
-          isSuccess={userData?.success}
-          isLoading={userLoading}
-        />
+      {/* 전화번호 입력 */}
+      <VerifyPhone
+        formData={verifyPhoneForm}
+        onValid={(data: VerifyPhoneTypes) => {
+          if (userLoading) return;
+          joinUser({
+            ...data,
+            emdType: "MAIN",
+            mainAddrNm: addrData?.addrNm,
+            mainPosX: addrData?.posX,
+            mainPosY: addrData?.posY,
+            mainDistance: 0.02,
+          });
+        }}
+        isSuccess={userData?.success}
+        isLoading={userLoading}
+      />
 
-        <div className="empty:hidden mt-4 text-sm text-center space-y-2">
-          {/* 둘러보기 */}
-          {!userData?.success && (
-            <p>
-              <span>첫 방문이신가요?</span>
-              <Buttons
-                tag="button"
-                type="button"
-                sort="text-link"
-                status="default"
-                text="회원가입 없이 둘러보기"
-                className="underline"
-                onClick={() => {
-                  if (dummyLoading) return;
-                  joinDummy({
-                    mainAddrNm: addrData?.addrNm,
-                    mainPosX: addrData?.posX,
-                    mainPosY: addrData?.posY,
-                    mainDistance: 0.02,
-                  });
-                }}
-              />
-            </p>
-          )}
-          {/* 이메일로 계정 찾기 */}
-          {!userData?.success && (
-            <p>
-              <span>전화번호가 변경되었나요?</span>
-              <Link href="/verification-email" passHref>
-                <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" className="underline" />
-              </Link>
-            </p>
-          )}
-        </div>
-
-        {/* 인증 결과 확인 */}
-        {userData?.success && (
-          <>
-            <VerifyToken
-              formData={verifyTokenForm}
-              onValid={(data: VerifyTokenTypes) => {
-                if (tokenLoading) return;
-                confirmToken(data);
+      <div className="empty:hidden mt-4 text-sm text-center space-y-2">
+        {/* 둘러보기 */}
+        {!userData?.success && (
+          <p>
+            <span>첫 방문이신가요?</span>
+            <Buttons
+              tag="button"
+              type="button"
+              sort="text-link"
+              status="default"
+              text="회원가입 없이 둘러보기"
+              className="underline"
+              onClick={() => {
+                if (dummyLoading) return;
+                joinDummy({
+                  mainAddrNm: addrData?.addrNm,
+                  mainPosX: addrData?.posX,
+                  mainPosY: addrData?.posY,
+                  mainDistance: 0.02,
+                });
               }}
-              isSuccess={tokenData?.success}
-              isLoading={tokenLoading}
             />
-          </>
+          </p>
         )}
-      </section>
-    </Layout>
+        {/* 이메일로 계정 찾기 */}
+        {!userData?.success && (
+          <p>
+            <span>전화번호가 변경되었나요?</span>
+            <Link href="/verification-email" passHref>
+              <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" className="underline" />
+            </Link>
+          </p>
+        )}
+      </div>
+
+      {/* 인증 결과 확인 */}
+      {userData?.success && (
+        <>
+          <VerifyToken
+            formData={verifyTokenForm}
+            onValid={(data: VerifyTokenTypes) => {
+              if (tokenLoading) return;
+              confirmToken(data);
+            }}
+            isSuccess={tokenData?.success}
+            isLoading={tokenLoading}
+          />
+        </>
+      )}
+    </section>
   );
 };
 

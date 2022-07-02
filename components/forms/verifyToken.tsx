@@ -1,6 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 
-import Input from "@components/input";
+import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
 
 export interface VerifyTokenTypes {
@@ -19,8 +19,8 @@ const VerifyToken = ({ formData, onValid, isSuccess, isLoading }: VerifyTokenPro
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className="mt-4 space-y-4">
-      <div>
-        <Input
+      <div className="space-y-1">
+        <Inputs
           register={register("token", {
             required: true,
           })}

@@ -3,14 +3,16 @@ import { useRouter } from "next/router";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useSetRecoilState } from "recoil";
 import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
+
+import { PageLayout } from "@libs/states";
 import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostVerificationUpdateResponse } from "@api/users/verification-update";
 
-import Layout from "@components/layouts/layout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
@@ -18,6 +20,8 @@ import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 const VerificationPhone: NextPage = () => {
   const router = useRouter();
   const { hasQuery, query } = useQuery();
+  const setLayout = useSetRecoilState(PageLayout);
+
   const { openToast } = useToast();
 
   // phone
@@ -107,38 +111,53 @@ const VerificationPhone: NextPage = () => {
     }
   }, [hasQuery, query]);
 
+  useEffect(() => {
+    setLayout(() => ({
+      title: "휴대폰 번호 변경",
+      header: {
+        headerUtils: ["back", "title"],
+      },
+      navBar: {
+        navBarUtils: [],
+      },
+    }));
+  }, []);
+
   return (
-    <Layout title="휴대폰 번호 변경" headerUtils={["back", "title"]}>
-      <section className="container py-5">
-        <p className="text-sm">변경된 휴대폰 번호를 입력해주세요. 번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
+    <section className="container py-5">
+      <h1 className="text-2xl font-bold">
+        변경된 휴대폰 번호를
+        <br />
+        입력해주세요
+      </h1>
+      <p className="mt-2 text-sm">번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
 
-        {/* 전화번호 입력 */}
-        <VerifyPhone
-          formData={verifyPhoneForm}
-          onValid={(data: VerifyPhoneTypes) => {
-            if (phoneLoading) return;
-            confirmPhone(data);
-          }}
-          isSuccess={phoneData?.success}
-          isLoading={phoneLoading}
-        />
+      {/* 전화번호 입력 */}
+      <VerifyPhone
+        formData={verifyPhoneForm}
+        onValid={(data: VerifyPhoneTypes) => {
+          if (phoneLoading) return;
+          confirmPhone(data);
+        }}
+        isSuccess={phoneData?.success}
+        isLoading={phoneLoading}
+      />
 
-        {/* 인증 결과 확인 */}
-        {phoneData?.success && (
-          <>
-            <VerifyToken
-              formData={verifyTokenForm}
-              onValid={(data: VerifyTokenTypes) => {
-                if (tokenLoading) return;
-                confirmToken(data);
-              }}
-              isSuccess={tokenData?.success}
-              isLoading={tokenLoading}
-            />
-          </>
-        )}
-      </section>
-    </Layout>
+      {/* 인증 결과 확인 */}
+      {phoneData?.success && (
+        <>
+          <VerifyToken
+            formData={verifyTokenForm}
+            onValid={(data: VerifyTokenTypes) => {
+              if (tokenLoading) return;
+              confirmToken(data);
+            }}
+            isSuccess={tokenData?.success}
+            isLoading={tokenLoading}
+          />
+        </>
+      )}
+    </section>
   );
 };
 

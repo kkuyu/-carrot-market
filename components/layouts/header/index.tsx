@@ -1,12 +1,18 @@
+import Head from "next/head";
 import { useRouter } from "next/router";
 
+import { useRecoilValue } from "recoil";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useToast from "@libs/client/useToast";
+
+import { HeaderUtils, PageLayout } from "@libs/states";
+import { EmdType } from "@prisma/client";
 import { PostUserResponse } from "@api/users/my";
 import { PostJoinDummyResponse } from "@api/users/join-dummy";
 
+import Buttons from "@components/buttons";
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -16,29 +22,23 @@ import AddressDropdown from "@components/layouts/header/utils/addressDropdown";
 import AddressUpdate from "@components/layouts/header/utils/addressUpdate";
 import AddressLocate from "@components/layouts/header/utils/addressLocate";
 
-const HeaderUtils = {
-  Address: "address",
-  Back: "back",
-  Home: "home",
-  Search: "search",
-  Title: "title",
-} as const;
-type HeaderUtils = typeof HeaderUtils[keyof typeof HeaderUtils];
+export interface HeaderProps {}
 
-export interface HeaderProps {
-  title?: string;
-  headerUtils?: HeaderUtils[];
-}
+type ToastNames = "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError";
+type ModalNames = "dropdownModal" | "updateModal" | "locateModal" | "oneOrMore" | "signUpNow";
 
-export type ToastControl = (name: "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError", config: { open: boolean }) => void;
-export type ModalControl = (
-  name: "dropdownModal" | "updateModal" | "locateModal" | "oneOrMore" | "signUpNow",
-  config: { open: boolean; originalFocusTarget?: string; addrType?: "MAIN" | "SUB"; beforeClose?: () => void }
-) => void;
-export type UpdateHometown = (updateData: { emdType?: "MAIN" | "SUB"; mainAddrNm?: string; mainDistance?: number; subAddrNm?: string | null; subDistance?: number | null }) => void;
+export type ToastControl = (name: ToastNames, config: { open: boolean }) => void;
+export type ModalControl = (name: ModalNames, config: { open: boolean; originalFocusTarget?: string; addrType?: EmdType; beforeClose?: () => void }) => void;
+export type UpdateHometown = (updateData: { emdType?: EmdType; mainAddrNm?: string; mainDistance?: number; subAddrNm?: string | null; subDistance?: number | null }) => void;
 
-const Header = ({ title, headerUtils = [] }: HeaderProps) => {
+const Header = ({}: HeaderProps) => {
   const router = useRouter();
+  const {
+    title,
+    seoTitle,
+    header: { headerUtils, submitId },
+  } = useRecoilValue(PageLayout);
+
   const { user, mutate: mutateUser } = useUser();
 
   const { openModal, closeModal } = useModal();
@@ -228,36 +228,40 @@ const Header = ({ title, headerUtils = [] }: HeaderProps) => {
         return <span>search</span>;
       case "title":
         return <strong className="text-base font-semibold font-semibold truncate">{`${title ? title : "title"}`}</strong>;
+      case "submit":
+        return <Buttons tag="button" sort="text-link" size="base" text="완료" form={submitId} className="h-12 px-5" />;
       default:
         return null;
     }
   };
 
-  if (!headerUtils.length) {
-    return null;
-  }
-
   return (
-    <header className="fixed top-0 left-0 w-full z-100">
-      <div className="mx-auto w-full max-w-xl bg-white border-b">
-        <div className="relative">
-          {/* left utils */}
-          <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
-            {headerUtils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
-            {headerUtils.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
-          </div>
+    <>
+      <Head>
+        <title>{seoTitle || title ? `${seoTitle || title}  | Carrot Market` : "Carrot Market"}</title>
+      </Head>
+      {Boolean(headerUtils.length) && (
+        <div id="layout-header" className="fixed top-0 left-0 w-full z-[100]">
+          <header className="relative mx-auto w-full max-w-xl bg-white border-b">
+            {/* left utils */}
+            <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
+              {headerUtils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
+              {headerUtils.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
+            </div>
 
-          {/* center utils */}
-          <div className="flex justify-center items-center w-full h-12 px-20">{headerUtils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
+            {/* center utils */}
+            <div className="flex justify-center items-center w-full h-12 px-20">{headerUtils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
 
-          {/* right utils */}
-          <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
-            {headerUtils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
-            {headerUtils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
-          </div>
+            {/* right utils */}
+            <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
+              {headerUtils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
+              {headerUtils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
+              {headerUtils.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
+            </div>
+          </header>
         </div>
-      </div>
-    </header>
+      )}
+    </>
   );
 };
 

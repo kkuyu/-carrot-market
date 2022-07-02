@@ -1,14 +1,16 @@
 import type { GetServerSideProps, NextPage } from "next";
 
 import { useEffect, useRef } from "react";
+import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
-import client from "@libs/server/client";
 import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
+import client from "@libs/server/client";
+
+import { PageLayout } from "@libs/states";
 import { GetProductsResponse } from "@api/products";
 
-import Layout from "@components/layouts/layout";
 import Item from "@components/item";
 import FloatingButton from "@components/floating-button";
 
@@ -20,6 +22,8 @@ const getKey = (pageIndex: number, previousPageData: GetProductsResponse, addr: 
 };
 
 const Home: NextPage = () => {
+  const setLayout = useSetRecoilState(PageLayout);
+
   const { user, currentAddr } = useUser();
   const infiniteRef = useRef<HTMLDivElement | null>(null);
 
@@ -39,44 +43,54 @@ const Home: NextPage = () => {
     }
   }, [isVisible, isReachingEnd]);
 
+  useEffect(() => {
+    setLayout(() => ({
+      title: "홈",
+      header: {
+        headerUtils: ["address", "title", "search"],
+      },
+      navBar: {
+        navBarUtils: ["community", "home", "inbox", "profile", "streams"],
+      },
+    }));
+  }, []);
+
   return (
-    <Layout title="Home" headerUtils={["address", "title", "search"]} navBarUtils={["community", "home", "inbox", "profile", "streams"]}>
-      <div className="container">
-        {/* todo: 회원가입 안내 */}
-        {user?.id === -1 && (
-          <>
-            더 많은 기능을 사용하시려면 회원가입이 필요해요
+    <div className="container">
+      {/* todo: 회원가입 안내 */}
+      {user?.id === -1 && (
+        <>
+          더 많은 기능을 사용하시려면 회원가입이 필요해요
+          <br />
+          회원 가입하기
+        </>
+      )}
+
+      {/* 리스트 */}
+      {products.length ? (
+        <div className="-mx-4 flex flex-col divide-y">
+          {products.map((product) => (
+            <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product?.records?.length || 0} />
+          ))}
+          <div ref={infiniteRef}>{isLoading ? "loading..." : isReachingEnd ? "no more products" : ""}</div>
+        </div>
+      ) : (
+        <div className="py-10 text-center">
+          <p className="text-gray-500">
+            앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
             <br />
-            회원 가입하기
-          </>
-        )}
+            거래할 수 있는 물건이 없어요.
+          </p>
+        </div>
+      )}
 
-        {/* 리스트 */}
-        {products.length ? (
-          <div className="-mx-4 flex flex-col divide-y">
-            {products.map((product) => (
-              <Item key={product.id} href={`/products/${product.id}`} title={product.name} price={product.price} hearts={product?.records?.length || 0} />
-            ))}
-            <div ref={infiniteRef}>{isLoading ? "loading..." : isReachingEnd ? "no more products" : ""}</div>
-          </div>
-        ) : (
-          <div className="py-10 text-center">
-            <p className="text-gray-500">
-              앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
-              <br />
-              거래할 수 있는 물건이 없어요.
-            </p>
-          </div>
-        )}
-
-        {/* 등록 */}
-        <FloatingButton href="/products/upload">
-          <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </FloatingButton>
-      </div>
-    </Layout>
+      {/* 등록 */}
+      <FloatingButton href="/products/upload">
+        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      </FloatingButton>
+    </div>
   );
 };
 

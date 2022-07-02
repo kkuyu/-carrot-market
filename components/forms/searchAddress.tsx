@@ -1,7 +1,7 @@
 import { UseFormReturn } from "react-hook-form";
 
 import Buttons from "@components/buttons";
-import Input from "@components/input";
+import Inputs from "@components/inputs";
 
 export interface SearchAddressTypes {
   keyword: string;
@@ -21,8 +21,8 @@ const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }
   return (
     <div className={`-mx-5 px-5 pt-5 pb-2 bg-white ${stickyClass ? "sticky " + stickyClass : ""}`}>
       <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
-        <div>
-          <Input
+        <div className="space-y-1">
+          <Inputs
             register={register("keyword", {})}
             name="keyword"
             type="text"

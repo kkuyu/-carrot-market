@@ -1,6 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 
-import Input from "@components/input";
+import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
 
 export interface VerifyPhoneTypes {
@@ -20,8 +20,8 @@ const VerifyPhone = ({ formData, onValid, isSuccess, isLoading }: VerifyPhonePro
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className="mt-4 space-y-4">
-      <div>
-        <Input
+      <div className="space-y-1">
+        <Inputs
           register={register("phone", {
             required: {
               value: true,
