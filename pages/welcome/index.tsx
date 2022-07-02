@@ -32,7 +32,7 @@ const Welcome: NextPage = () => {
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
-              d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
             ></path>
           </svg>
           <h1 className="mt-4 text-xl">당근 근처의 당근마켓</h1>
@@ -42,11 +42,12 @@ const Welcome: NextPage = () => {
             지금 내 동네를 서낵하고 시작해보세요!
           </h2>
         </div>
+
         <div className="flex-none w-full pb-6">
           <Link href="/welcome/hometown" passHref>
-            <Buttons tag="a" text="시작하기" />
+            <Buttons tag="a" sort="round-box" text="시작하기" />
           </Link>
-          <div className="mt-4 text-sm">
+          <div className="mt-4">
             <span className="text-gray-500">이미 계정이 있나요?</span>
             <Link href="/login" passHref>
               <Buttons tag="a" sort="text-link" text="로그인" />

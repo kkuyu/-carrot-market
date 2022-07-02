@@ -16,7 +16,7 @@ interface SearchAddressProps {
 }
 
 const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }: SearchAddressProps) => {
-  const { register, handleSubmit, formState } = formData;
+  const { register, handleSubmit } = formData;
 
   return (
     <div className={`-mx-5 px-5 pt-5 pb-2 bg-white ${stickyClass ? "sticky " + stickyClass : ""}`}>
@@ -33,7 +33,6 @@ const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }
                 tag="button"
                 type="submit"
                 sort="icon-block"
-                size="base"
                 status="default"
                 text={
                   <svg role="img" aria-hidden="true" className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -44,7 +43,6 @@ const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }
               />
             }
           />
-          <span className="empty:hidden invalid">{formState.errors.keyword?.message}</span>
         </div>
         <Buttons tag="button" type="reset" text="현재위치로 찾기" onClick={onReset} />
       </form>

@@ -14,7 +14,7 @@ type Props<T extends keyof JSX.IntrinsicElements> = {
 } & JSX.IntrinsicElements[T];
 
 const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRef<Element<Tag>>) => {
-  const { tag: TagName = "button", sort = "round-box", status = "primary", size = "sm", text, className, ...rest } = props;
+  const { tag: TagName = "button", sort = "round-box", status = "primary", size = "base", text, className, ...rest } = props;
   const { type, disabled, ...refineProps } = rest;
   const optionalProps = {
     ...(TagName === "a" && {}),
@@ -26,7 +26,7 @@ const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRe
     "round-box": {
       basic: "block w-full px-4 font-semibold border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2",
       sm: "py-2 text-sm",
-      base: "py-3 text-base",
+      base: "py-2 text-base",
       primary: "text-white bg-orange-500 border-transparent hover:bg-orange-600 focus:ring-orange-500",
       default: "text-black bg-white border border-gray-300 hover:border-gray-500 focus:ring-gray-300",
       danger: "text-red-600 bg-red-100 border border-red-300 hover:border-red-500 focus:ring-red-300",

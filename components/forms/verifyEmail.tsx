@@ -18,7 +18,7 @@ const VerifyEmail = ({ formData, onValid, isSuccess, isLoading }: VerifyEmailPro
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="mt-4 space-y-4">
+    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
       <div className="space-y-1">
         <Inputs
           register={register("email", {

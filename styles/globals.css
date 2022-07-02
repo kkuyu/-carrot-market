@@ -31,8 +31,14 @@ strong {
 }
 
 .main {
-  @apply min-h-screen outline outline-1 outline-gray-200;
+  @apply mx-auto w-full max-w-xl min-h-screen outline outline-1 outline-gray-200;
   max-height: -webkit-fill-available;
+}
+.main:not(:first-child) {
+  @apply pt-12;
+}
+.main:not(:last-child) {
+  @apply pb-16;
 }
 
 .h-max-fullScreen {
@@ -45,11 +51,11 @@ strong {
 }
 
 form .invalid {
-  @apply mt-1 block text-sm text-red-600;
+  @apply block text-sm text-red-600;
 }
 
 form .notice {
-  @apply mt-1 block text-sm text-gray-600;
+  @apply block text-sm text-gray-600;
 }
 
 .blog-post-content {

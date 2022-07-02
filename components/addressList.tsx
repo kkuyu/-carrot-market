@@ -8,23 +8,13 @@ export interface AddressItem {
 }
 
 interface AddressListProps {
-  isLoading: boolean;
   list: AddressItem[];
   selectItem: (item: AddressItem) => void;
-  emptyGuide: ReactNode;
 }
 
-const AddressList = ({ isLoading, list, selectItem, emptyGuide }: AddressListProps) => {
-  if (isLoading) {
-    return (
-      <div className="py-2 text-center">
-        <span className="text-gray-500">로딩중</span>
-      </div>
-    );
-  }
-
+const AddressList = ({ list, selectItem }: AddressListProps) => {
   if (!list.length) {
-    return <>{emptyGuide}</>;
+    return null;
   }
 
   return (

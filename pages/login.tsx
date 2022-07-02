@@ -86,33 +86,35 @@ const Login: NextPage = () => {
         <br />
         휴대폰 번호로 로그인해주세요.
       </h1>
-      <p className="mt-2 text-sm">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
+      <p className="mt-2">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
       {/* 전화번호 입력 */}
-      <VerifyPhone
-        formData={verifyPhoneForm}
-        onValid={(data: VerifyPhoneTypes) => {
-          if (loginLoading) return;
-          login(data);
-        }}
-        isSuccess={loginData?.success}
-        isLoading={loginLoading}
-      />
+      <div className="mt-6">
+        <VerifyPhone
+          formData={verifyPhoneForm}
+          onValid={(data: VerifyPhoneTypes) => {
+            if (loginLoading) return;
+            login(data);
+          }}
+          isSuccess={loginData?.success}
+          isLoading={loginLoading}
+        />
+      </div>
 
-      <div className="empty:hidden mt-4 text-sm text-center space-y-2">
+      <div className="empty:hidden mt-6 text-center space-y-1">
         {/* 시작하기 */}
         {verifyPhoneControl.getFieldState("phone").error?.type === "validate" && (
           <p>
-            <span>첫 방문이신가요?</span>
-            <Link href="/welcome/hometown" passHref>
-              <Buttons tag="a" sort="text-link" text="당근마켓 시작하기" />
+            <span className="text-gray-500">첫 방문이신가요?</span>
+            <Link href="/welcome/locate" passHref>
+              <Buttons tag="a" sort="text-link" status="primary" text="당근마켓 시작하기" />
             </Link>
           </p>
         )}
         {/* 이메일로 계정 찾기 */}
         {!loginData?.success && (
           <p>
-            <span>전화번호가 변경되었나요?</span>
+            <span className="text-gray-500">전화번호가 변경되었나요?</span>
             <Link href="/verification-email" passHref>
               <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" className="underline" />
             </Link>
@@ -122,7 +124,7 @@ const Login: NextPage = () => {
 
       {/* 인증 결과 확인 */}
       {loginData?.success && (
-        <>
+        <div className="mt-4">
           <VerifyToken
             formData={verifyTokenForm}
             onValid={(data: VerifyTokenTypes) => {
@@ -132,7 +134,7 @@ const Login: NextPage = () => {
             isSuccess={tokenData?.success}
             isLoading={tokenLoading}
           />
-        </>
+        </div>
       )}
     </section>
   );

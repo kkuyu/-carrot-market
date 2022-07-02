@@ -10,7 +10,7 @@ interface LabelsProps extends React.HTMLAttributes<HTMLLabelElement> {
 
 const Labels = ({ text, htmlFor, ...rest }: LabelsProps) => {
   return (
-    <label className="block text-sm font-semibold text-gray-700" htmlFor={htmlFor} {...rest}>
+    <label className="block text-base font-semibold text-gray-700" htmlFor={htmlFor} {...rest}>
       {text}
     </label>
   );

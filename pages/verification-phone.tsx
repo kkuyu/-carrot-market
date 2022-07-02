@@ -130,22 +130,24 @@ const VerificationPhone: NextPage = () => {
         <br />
         입력해주세요
       </h1>
-      <p className="mt-2 text-sm">번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
+      <p className="mt-2">번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
 
       {/* 전화번호 입력 */}
-      <VerifyPhone
-        formData={verifyPhoneForm}
-        onValid={(data: VerifyPhoneTypes) => {
-          if (phoneLoading) return;
-          confirmPhone(data);
-        }}
-        isSuccess={phoneData?.success}
-        isLoading={phoneLoading}
-      />
+      <div className="mt-6">
+        <VerifyPhone
+          formData={verifyPhoneForm}
+          onValid={(data: VerifyPhoneTypes) => {
+            if (phoneLoading) return;
+            confirmPhone(data);
+          }}
+          isSuccess={phoneData?.success}
+          isLoading={phoneLoading}
+        />
+      </div>
 
       {/* 인증 결과 확인 */}
       {phoneData?.success && (
-        <>
+        <div className="mt-4">
           <VerifyToken
             formData={verifyTokenForm}
             onValid={(data: VerifyTokenTypes) => {
@@ -155,7 +157,7 @@ const VerificationPhone: NextPage = () => {
             isSuccess={tokenData?.success}
             isLoading={tokenLoading}
           />
-        </>
+        </div>
       )}
     </section>
   );

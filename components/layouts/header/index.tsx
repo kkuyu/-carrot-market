@@ -33,13 +33,13 @@ export type UpdateHometown = (updateData: { emdType?: EmdType; mainAddrNm?: stri
 
 const Header = ({}: HeaderProps) => {
   const router = useRouter();
+  const { user, mutate: mutateUser } = useUser();
+
   const {
     title,
     seoTitle,
     header: { headerUtils, submitId },
   } = useRecoilValue(PageLayout);
-
-  const { user, mutate: mutateUser } = useUser();
 
   const { openModal, closeModal } = useModal();
   const { openToast, closeToast } = useToast();
@@ -187,8 +187,8 @@ const Header = ({}: HeaderProps) => {
           confirmBtn: "회원가입",
           hasBackdrop: true,
           onConfirm: () => {
-            // todo: 회원가입
-            console.log("onConfirm");
+            modalControl("updateModal", { open: false });
+            router.push(`/join?addrNm=${user?.MAIN_emdAddrNm}`);
           },
         });
         break;
@@ -229,7 +229,7 @@ const Header = ({}: HeaderProps) => {
       case "title":
         return <strong className="text-base font-semibold font-semibold truncate">{`${title ? title : "title"}`}</strong>;
       case "submit":
-        return <Buttons tag="button" sort="text-link" size="base" text="완료" form={submitId} className="h-12 px-5" />;
+        return <Buttons tag="button" sort="text-link" text="완료" form={submitId} className="h-12 px-5" />;
       default:
         return null;
     }
@@ -242,7 +242,7 @@ const Header = ({}: HeaderProps) => {
       </Head>
       {Boolean(headerUtils.length) && (
         <div id="layout-header" className="fixed top-0 left-0 w-full z-[100]">
-          <header className="relative mx-auto w-full max-w-xl bg-white border-b">
+          <header className="relative mx-auto w-full max-w-xl h-12 bg-white border-b">
             {/* left utils */}
             <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
               {headerUtils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
@@ -250,7 +250,7 @@ const Header = ({}: HeaderProps) => {
             </div>
 
             {/* center utils */}
-            <div className="flex justify-center items-center w-full h-12 px-20">{headerUtils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
+            <div className="flex justify-center items-center w-full h-full px-20">{headerUtils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
 
             {/* right utils */}
             <div className="absolute top-1/2 right-0 flex -translate-y-1/2">

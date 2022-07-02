@@ -83,22 +83,24 @@ const VerificationEmail: NextPage = () => {
       </h1>
 
       {/* 이메일 입력 */}
-      <VerifyEmail
-        formData={verifyEmailForm}
-        onValid={(data: VerifyEmailTypes) => {
-          if (emailLoading) return;
-          confirmEmail(data);
-        }}
-        isSuccess={tokenData?.success}
-        isLoading={tokenLoading}
-      />
+      <div className="mt-6">
+        <VerifyEmail
+          formData={verifyEmailForm}
+          onValid={(data: VerifyEmailTypes) => {
+            if (emailLoading) return;
+            confirmEmail(data);
+          }}
+          isSuccess={tokenData?.success}
+          isLoading={tokenLoading}
+        />
+      </div>
 
-      <div className="empty:hidden mt-4 text-sm text-center space-y-2">
+      <div className="empty:hidden mt-6 text-center space-y-1">
         {/* 문의하기 */}
         {/* todo: 문의하기(자주 묻는 질문) */}
         {!emailData?.success && (
           <p>
-            <span>이메일을 등록한 적이 없으세요?</span>
+            <span className="text-gray-500">이메일을 등록한 적이 없으세요?</span>
             <Link href="" passHref>
               <Buttons tag="a" sort="text-link" status="default" text="문의하기" className="underline" />
             </Link>
@@ -108,7 +110,7 @@ const VerificationEmail: NextPage = () => {
 
       {/* 인증 결과 확인 */}
       {emailData?.success && (
-        <>
+        <div className="mt-4">
           <VerifyToken
             formData={verifyTokenForm}
             onValid={(data: VerifyTokenTypes) => {
@@ -118,7 +120,7 @@ const VerificationEmail: NextPage = () => {
             isSuccess={tokenData?.success}
             isLoading={tokenLoading}
           />
-        </>
+        </div>
       )}
     </section>
   );

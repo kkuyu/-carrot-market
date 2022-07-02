@@ -22,19 +22,7 @@ interface DistanceForm {
 const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUpdateProps) => {
   const { user, currentAddr } = useUser();
 
-  const { register, handleSubmit, setValue } = useForm<DistanceForm>();
-
-  const { data: boundaryData } = useSWR<GetBoundarySearchResponse>(
-    currentAddr.emdPosX && currentAddr.emdPosY && currentAddr.emdPosDx ? `/api/address/boundary-search?distance=${currentAddr.emdPosDx}&posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}` : null
-  );
-
-  const distanceSubmit = (data: DistanceForm) => {
-    updateHometown({
-      ...(user?.emdType === "MAIN" ? { mainDistance: data.range } : {}),
-      ...(user?.emdType === "SUB" ? { subDistance: data.range } : {}),
-    });
-  };
-
+  // address
   const addressWrapper = useRef<HTMLDivElement>(null);
   const addressStructure = [
     {
@@ -77,21 +65,34 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
     },
   ];
 
-  useEffect(() => {
-    const focusTargetEl = addressWrapper.current?.querySelector(`.${user?.emdType}-select-button`) as HTMLElement | null;
-    focusTargetEl?.focus();
-  }, [user?.emdType]);
+  // distance
+  const { register, handleSubmit, setValue } = useForm<DistanceForm>();
+  const { data: boundaryData } = useSWR<GetBoundarySearchResponse>(
+    currentAddr.emdPosX && currentAddr.emdPosY && currentAddr.emdPosDx ? `/api/address/boundary-search?distance=${currentAddr.emdPosDx}&posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}` : null
+  );
+  const distanceSubmit = (data: DistanceForm) => {
+    updateHometown({
+      ...(user?.emdType === "MAIN" ? { mainDistance: data.range } : {}),
+      ...(user?.emdType === "SUB" ? { subDistance: data.range } : {}),
+    });
+  };
 
   useEffect(() => {
     setValue("range", currentAddr?.emdPosDx || 0.02);
   }, [currentAddr.emdPosDx]);
 
+  useEffect(() => {
+    const focusTargetEl = addressWrapper.current?.querySelector(`.${user?.emdType}-select-button`) as HTMLElement | null;
+    focusTargetEl?.focus();
+  }, [user?.emdType]);
+
   return (
     <section className="container space-y-6 divide-y">
+      {/* 주소 변경 */}
       <div ref={addressWrapper} className="pt-6 text-center">
         <h2 className="text-lg">동네 선택</h2>
-        <p className="mt-1 text-sm text-gray-500">지역은 최소 1개 이상 최대 2개까지 설정할 수 있어요.</p>
-        <div className="mt-5 flex space-x-2">
+        <p className="mt-1 text-gray-500">지역은 최소 1개 이상 최대 2개까지 설정할 수 있어요.</p>
+        <div className="mt-6 flex space-x-2">
           {addressStructure.map(({ key, text, selectItem, removeItem }) => {
             return (
               <div key={key} className={`relative grow ${key === "SUB" && !user?.SUB_emdPosNm ? "hidden" : ""} ${key === "ANOTHER" && user?.SUB_emdPosNm ? "hidden" : ""}`}>
@@ -100,7 +101,6 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
                     <Buttons
                       type="button"
                       sort="round-box"
-                      size="base"
                       status="default"
                       text={
                         <svg className="m-auto w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -118,7 +118,6 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
                     <Buttons
                       type="button"
                       sort="round-box"
-                      size="base"
                       status={user?.emdType === key ? "primary" : "default"}
                       text={text}
                       onClick={selectItem}
@@ -128,7 +127,6 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
                     <Buttons
                       type="button"
                       sort="icon-block"
-                      size="base"
                       status="transparent"
                       text={
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -147,16 +145,19 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
         </div>
       </div>
 
-      <form onChange={handleSubmit(distanceSubmit)} onSubmit={handleSubmit(distanceSubmit)} noValidate className="pt-6 text-center">
-        <h2 className="text-lg">
-          {currentAddr.emdPosNm} <span className="inline-block min-w-[6.8rem] text-left underline">근처 동네 {`${boundaryData?.record?.total ? boundaryData?.record?.total + "개" : ""}`}</span>
-        </h2>
-        <p className="mt-1 text-sm text-gray-500">선택한 범위의 게시글만 볼 수 있어요</p>
-        <div className="mt-5">
-          <input type="range" {...register("range", { required: true, min: 0.01, max: 0.05, valueAsNumber: true })} step={0.01} min={0.01} max={0.05} className="block w-full" />
-          <div className="mt-1 flex justify-between text-sm text-gray-500 before:content-['내_동네'] after:content-['근처_동네']" aria-hidden="true" />
-        </div>
-      </form>
+      {/* 검색범위 변경 */}
+      <div className="pt-6 text-center">
+        <form onChange={handleSubmit(distanceSubmit)} onSubmit={handleSubmit(distanceSubmit)} noValidate>
+          <h2 className="text-lg">
+            {currentAddr.emdPosNm} <span className="inline-block min-w-[6.8rem] text-left underline">근처 동네 {`${boundaryData?.record?.total ? boundaryData?.record?.total + "개" : ""}`}</span>
+          </h2>
+          <p className="mt-1 text-gray-500">선택한 범위의 게시글만 볼 수 있어요</p>
+          <div className="mt-6">
+            <input type="range" {...register("range", { required: true, min: 0.01, max: 0.05, valueAsNumber: true })} step={0.01} min={0.01} max={0.05} className="block w-full" />
+            <div className="mt-1 flex justify-between text-sm text-gray-500 before:content-['내_동네'] after:content-['근처_동네']" aria-hidden="true" />
+          </div>
+        </form>
+      </div>
     </section>
   );
 };

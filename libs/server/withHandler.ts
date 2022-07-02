@@ -20,8 +20,8 @@ const withHandler: (config: ConfigType) => NextApiHandler<any> = ({ methods, han
         throw error;
       }
       if (method?.isPrivate && !req.session.user) {
-        const error = new Error("NoUserData");
-        error.name = "NoUserData";
+        const error = new Error("InaccessibleError");
+        error.name = "InaccessibleError";
         throw error;
       }
       await handler(req, res);

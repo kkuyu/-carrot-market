@@ -1,14 +1,6 @@
 import { NextMiddleware, userAgent } from "next/server";
 import { NextResponse } from "next/server";
 
-// const protectedRoutes = [
-//   { path: "/profile", redirect: "/enter" },
-//   { path: "/product/upload", redirect: "/enter" },
-//   { path: "/inbox", redirect: "/enter" },
-//   { path: "/community/write", redirect: "/enter" },
-//   { path: "/streams/create", redirect: "/enter" },
-// ];
-
 export const middleware: NextMiddleware = (req) => {
   if (req.url.includes("/api")) return NextResponse.next();
   if (req.url.includes("/_next")) return NextResponse.next();
@@ -24,9 +16,9 @@ export const middleware: NextMiddleware = (req) => {
   if (!isLogin) {
     switch (url.pathname) {
       case "/welcome":
-      case "/welcome/hometown":
-      case "/join":
+      case "/welcome/locate":
       case "/login":
+      case "/join":
       case "/verification-email":
       case "/verification-phone":
         return NextResponse.next();
@@ -39,8 +31,7 @@ export const middleware: NextMiddleware = (req) => {
   if (isLogin) {
     switch (url.pathname) {
       case "/welcome":
-      case "/welcome/hometown":
-      case "/join":
+      case "/welcome/locate":
       case "/login":
         url.pathname = "/";
         return NextResponse.redirect(url);

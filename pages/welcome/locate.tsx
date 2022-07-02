@@ -1,26 +1,24 @@
-import { useState } from "react";
+import { NextPage } from "next";
+import { useRouter } from "next/router";
+
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
+import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
-import useUser from "@libs/client/useUser";
 import useCoords from "@libs/client/useCoords";
 
+import { PageLayout } from "@libs/states";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
 
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 import AddressList, { AddressItem } from "@components/addressList";
-import { ModalControl, ToastControl, UpdateHometown } from "@components/layouts/header";
 
-interface AddressLocateProps {
-  toastControl: ToastControl;
-  modalControl: ModalControl;
-  updateHometown: UpdateHometown;
-  addrType: "MAIN" | "SUB";
-}
+const WelcomeLocate: NextPage = () => {
+  const router = useRouter();
+  const setLayout = useSetRecoilState(PageLayout);
 
-const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }: AddressLocateProps) => {
-  const { user } = useUser();
   const [keyword, setKeyword] = useState("");
 
   const searchAddressForm = useForm<SearchAddressTypes>();
@@ -39,24 +37,23 @@ const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }:
   };
 
   const selectItem = (itemData: AddressItem) => {
-    if (user?.MAIN_emdPosNm === itemData.emdNm) {
-      toastControl("alreadyRegisteredAddress", { open: true });
-      modalControl("locateModal", { open: false });
-      return;
-    }
-    modalControl("locateModal", {
-      open: false,
-      beforeClose: () =>
-        updateHometown({
-          emdType: addrType,
-          ...(addrType === "MAIN" ? { mainAddrNm: itemData.addrNm, mainDistance: 0.02 } : {}),
-          ...(addrType === "SUB" ? { subAddrNm: itemData.addrNm, subDistance: 0.02 } : {}),
-        }),
-    });
+    router.replace(`/join?addrNm=${itemData.addrNm}`);
   };
 
+  useEffect(() => {
+    setLayout(() => ({
+      title: "내 동네 설정하기",
+      header: {
+        headerUtils: ["back", "title"],
+      },
+      navBar: {
+        navBarUtils: [],
+      },
+    }));
+  }, []);
+
   return (
-    <section className="container">
+    <div className="container">
       {/* 읍면동 검색 폼 */}
       <SearchAddress
         formData={searchAddressForm}
@@ -64,7 +61,7 @@ const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }:
           setKeyword(data.keyword);
         }}
         onReset={resetForm}
-        stickyClass="top-0 left-0"
+        stickyClass="top-[calc(3rem+1px)] left-0"
         keyword={keyword}
       />
 
@@ -127,8 +124,8 @@ const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }:
           )}
         </div>
       )}
-    </section>
+    </div>
   );
 };
 
-export default AddressLocate;
+export default WelcomeLocate;
