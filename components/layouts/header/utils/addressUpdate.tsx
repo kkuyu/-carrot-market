@@ -91,7 +91,7 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
       {/* 주소 변경 */}
       <div ref={addressWrapper} className="pt-6 text-center">
         <h2 className="text-lg">동네 선택</h2>
-        <p className="mt-1 text-gray-500">지역은 최소 1개 이상 최대 2개까지 설정할 수 있어요.</p>
+        <p className="mt-1 text-gray-500">최소 1개 이상 최대 2개까지 설정할 수 있어요.</p>
         <div className="mt-6 flex space-x-2">
           {addressStructure.map(({ key, text, selectItem, removeItem }) => {
             return (

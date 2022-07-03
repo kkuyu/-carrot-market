@@ -1,8 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Image from "next/image";
 
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useUser from "@libs/client/useUser";
@@ -13,13 +12,16 @@ import { PageLayout } from "@libs/states";
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 
+import useToast from "@libs/client/useToast";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import Labels from "@components/labels";
 import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
+import Files, { Thumbnail, UpdateFiles } from "@components/files";
 import Buttons from "@components/buttons";
 
-interface UploadForm {
-  photo: FileList;
+interface ProductUploadForm {
+  photos: FileList;
   name: string;
   price: number;
   description: string;
@@ -29,15 +31,21 @@ const Upload: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
+  const { openToast } = useToast();
   const { user, currentAddr } = useUser();
-  const [photoPreview, setPhotoPreview] = useState("");
 
-  const { register, handleSubmit, formState, getValues, resetField } = useForm<UploadForm>();
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [thumbnails, setThumbnails] = useState<Thumbnail[]>([]);
+  const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
+
+  const { register, handleSubmit, formState, getValues, setValue } = useForm<ProductUploadForm>();
   const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
+      setPhotoLoading(false);
       router.push(`/products/${data.product.id}`);
     },
     onError: (data) => {
+      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -46,23 +54,32 @@ const Upload: NextPage = () => {
     },
   });
 
-  const changePhoto = () => {
-    const photoValue = getValues("photo");
-    if (photoValue && photoValue.length > 0) {
-      const file = photoValue[0];
-      setPhotoPreview(URL.createObjectURL(file));
+  const validateFiles = (originalFiles: FileList, options: typeof photoOptions) => {
+    let validFiles = Array.from(originalFiles);
+    let errors: { [key in keyof typeof options]?: boolean } = {};
+
+    // acceptTypes
+    if (options?.acceptTypes) {
+      validFiles = validFiles.filter((file: File) => {
+        if (options.acceptTypes.includes(file.type)) return true;
+        errors.acceptTypes = true;
+        return false;
+      });
     }
+
+    // maxLength
+    if (options?.maxLength) {
+      if (originalFiles.length > options.maxLength) errors.maxLength = true;
+      if (validFiles.length > options.maxLength) validFiles = validFiles.slice(0, options.maxLength);
+    }
+
+    return { errors, validFiles };
   };
 
-  const resetPhoto = () => {
-    resetField("photo");
-    setPhotoPreview("");
-  };
+  const submitProductUpload = async ({ photos, ...data }: ProductUploadForm) => {
+    if (loading || photoLoading) return;
 
-  const submitUpload = async ({ photo, ...data }: UploadForm) => {
-    if (loading) return;
-
-    if (!photo || !photo.length) {
+    if (!photos || !photos.length) {
       uploadProduct({
         ...data,
         ...currentAddr,
@@ -70,33 +87,91 @@ const Upload: NextPage = () => {
       return;
     }
 
-    const form = new FormData();
-    form.append("file", photo[0], user?.id + "");
+    let photo = [];
+    setPhotoLoading(true);
 
-    // get cloudflare file data
-    const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
-    if (!fileResponse.success) {
-      const error = new Error("GetFileError");
-      error.name = "GetFileError";
-      console.error(error);
-      return;
-    }
+    for (let index = 0; index < photos.length; index++) {
+      const form = new FormData();
+      form.append("file", photos[index], `${user?.id}-${index}-${photos[index].name}`);
 
+      // get cloudflare file data
+      const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
+      if (!fileResponse.success) {
+        const error = new Error("GetFileError");
+        error.name = "GetFileError";
+        console.error(error);
+        return;
+      }
 
-    // upload image delivery
-    const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
-    if (!imageResponse.success) {
-      const error = new Error("UploadFileError");
-      error.name = "UploadFileError";
-      console.error(error);
-      return;
+      // upload image delivery
+      const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
+      if (!imageResponse.success) {
+        const error = new Error("UploadFileError");
+        error.name = "UploadFileError";
+        console.error(error);
+        return;
+      }
+
+      photo.push(imageResponse.result.id);
     }
 
     uploadProduct({
-      photo: imageResponse.result.id,
+      photo: photo.join(","),
       ...data,
       ...currentAddr,
     });
+  };
+
+  const changePhotos = () => {
+    const photos = getValues("photos");
+
+    // check empty
+    if (!photos?.length) {
+      setThumbnails([]);
+      return;
+    }
+
+    // check options
+    const { errors, validFiles } = validateFiles(photos, photoOptions);
+    if (errors?.acceptTypes) {
+      openToast<MessageToastProps>(MessageToast, "invalid-photos-acceptTypes", {
+        placement: "bottom",
+        message: "jpg, png, gif 형식의 파일만 등록할 수 있어요",
+      });
+    }
+    if (errors?.maxLength) {
+      openToast<MessageToastProps>(MessageToast, "invalid-photos-maxLength", {
+        placement: "bottom",
+        message: `최대 ${photoOptions.maxLength}개까지 등록할 수 있어요.`,
+      });
+    }
+
+    // set thumbnails
+    setThumbnails(
+      validFiles.map((file: File) => ({
+        preview: URL.createObjectURL(file),
+        raw: file,
+      }))
+    );
+  };
+
+  const updatePhotos: UpdateFiles = (type, thumb) => {
+    const transfer = new DataTransfer();
+    const originalFiles = getValues("photos");
+
+    switch (type) {
+      case "remove":
+        Array.from(originalFiles)
+          .filter((file) => file !== thumb?.raw)
+          .forEach((file) => transfer.items.add(file));
+        break;
+      default:
+        console.error("updatePhotos", type);
+        return;
+    }
+
+    setValue("photos", transfer.files);
+    changePhotos();
   };
 
   useEffect(() => {
@@ -114,35 +189,21 @@ const Upload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <form id="product-upload" onSubmit={handleSubmit(submitUpload)} noValidate className="space-y-5">
+      <form id="product-upload" onSubmit={handleSubmit(submitProductUpload)} noValidate className="space-y-5">
         {/* 이미지 업로드 */}
-        <div>
-          <label className="w-full flex items-center justify-center h-48 text-gray-600 border-2 border-dashed border-gray-300 rounded-md hover:text-orange-500 hover:border-orange-500">
-            <svg className="w-12 h-12" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"
-              ></path>
-            </svg>
-            <input {...register("photo", { onChange: changePhoto })} type="file" id="photo" className="sr-only" name="photo" accept="image/*" />
-          </label>
-        </div>
-        {/* 이미지 미리보기 */}
-        <div className="relative space-y-1">
-          <span className="block font-semibold text-gray-700">이미지 미리보기</span>
-          {photoPreview ? (
-            <>
-              <div className="relative border rounded-md">
-                <span className="block pb-[80%]"></span>
-                <Image src={photoPreview} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" />
-              </div>
-              <Buttons tag="button" type="button" sort="text-link" size="sm" status="default" text="미리보기 삭제" onClick={resetPhoto} className="absolute top-0 right-0" />
-            </>
-          ) : (
-            <p className="text-gray-400">선택해주세요</p>
-          )}
+        <div className="space-y-1">
+          <Files
+            register={register("photos", {
+              onChange: changePhotos,
+            })}
+            name="photos"
+            accept="image/*"
+            maxLength={photoOptions.maxLength}
+            multiple={true}
+            thumbnails={thumbnails}
+            updateFiles={updatePhotos}
+          />
+          <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
         </div>
         {/* 글 제목 */}
         <div className="space-y-1">
@@ -201,7 +262,7 @@ const Upload: NextPage = () => {
           <span className="empty:hidden invalid">{formState.errors.description?.message}</span>
         </div>
         {/* 완료 */}
-        <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={loading} />
+        <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={loading || photoLoading} />
       </form>
     </div>
   );
