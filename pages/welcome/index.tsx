@@ -44,7 +44,7 @@ const Welcome: NextPage = () => {
         </div>
 
         <div className="flex-none w-full pb-6">
-          <Link href="/welcome/hometown" passHref>
+          <Link href="/welcome/locate" passHref>
             <Buttons tag="a" sort="round-box" text="시작하기" />
           </Link>
           <div className="mt-4">

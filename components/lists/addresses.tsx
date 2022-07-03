@@ -1,5 +1,3 @@
-import { ReactNode } from "react";
-
 export interface AddressItem {
   id: string;
   addrNm: string;
@@ -7,12 +5,12 @@ export interface AddressItem {
   emdCd: string;
 }
 
-interface AddressListProps {
+interface AddressesProps {
   list: AddressItem[];
   selectItem: (item: AddressItem) => void;
 }
 
-const AddressList = ({ list, selectItem }: AddressListProps) => {
+const Addresses = ({ list, selectItem }: AddressesProps) => {
   if (!list.length) {
     return null;
   }
@@ -30,4 +28,4 @@ const AddressList = ({ list, selectItem }: AddressListProps) => {
   );
 };
 
-export default AddressList;
+export default Addresses;

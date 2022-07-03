@@ -14,6 +14,11 @@ export interface GetProductsResponse {
 export interface PostProductsResponse {
   success: boolean;
   product: Product;
+  error?: {
+    timestamp: Date;
+    name: string;
+    message: string;
+  };
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
@@ -28,15 +33,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
+      if (!_posX || !_posY || !_distance) {
+        const result: GetProductsResponse = {
+          success: true,
+          products: [],
+          pages: 1,
+        };
+        return res.status(200).json(result);
+      }
+
       // get data props
       const displayRow = 10;
       const page = +_page.toString();
-      const totalPageCount = await client.product.count();
-      const posX = _posX ? +_posX.toString() : null;
-      const posY = _posY ? +_posY.toString() : null;
-      const distance = _distance ? +_distance.toString() : null;
+      const posX = +_posX.toString();
+      const posY = +_posY.toString();
+      const distance = +_distance.toString();
+      const boundaryArea = {
+        emdPosX: { gte: posX - distance, lte: posX + distance },
+        emdPosY: { gte: posY - distance, lte: posY + distance },
+      };
 
       // fetch data: client.product
+      const totalProducts = await client.product.count({
+        where: boundaryArea,
+      });
       const products = await client.product.findMany({
         take: displayRow,
         skip: (page - 1) * displayRow,
@@ -53,29 +73,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
           },
         },
-        where: {
-          ...(posX &&
-            distance && {
-              emdPosX: {
-                gte: posX - distance,
-                lte: posX + distance,
-              },
-            }),
-          ...(posY &&
-            distance && {
-              emdPosY: {
-                gte: posY - distance,
-                lte: posY + distance,
-              },
-            }),
-        },
+        where: boundaryArea,
       });
 
       // result
       const result: GetProductsResponse = {
         success: true,
         products,
-        pages: Math.ceil(totalPageCount / displayRow),
+        pages: Math.ceil(totalProducts / displayRow),
       };
       return res.status(200).json(result);
     } catch (error: unknown) {

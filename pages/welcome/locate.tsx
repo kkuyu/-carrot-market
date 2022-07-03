@@ -13,7 +13,7 @@ import { GetKeywordSearchResponse } from "@api/address/keyword-search";
 
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
-import AddressList, { AddressItem } from "@components/addressList";
+import AddressList, { AddressItem } from "@components/lists/addresses";
 
 const WelcomeLocate: NextPage = () => {
   const router = useRouter();
