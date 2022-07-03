@@ -99,32 +99,61 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
   }
   if (req.method === "POST") {
-    return res.status(200).json({
-      success: true,
-    });
-    const { name, price, description, photoId } = req.body;
-    const { user } = req.session;
-    if (!name && !price && !description) {
-      const error = new Error("Invalid request body");
-      throw error;
-    }
-    const newProduct = await client.product.create({
-      data: {
-        photo: photoId,
-        name,
-        price,
-        description,
-        user: {
-          connect: {
-            id: user?.id,
+    try {
+      const { photo = "", name, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { user } = req.session;
+
+      // request valid
+      if (!name && !price && !description) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+      if (!emdAddrNm || !emdPosNm || !emdPosX || !emdPosY) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+
+      // create new product
+      const newProduct = await client.product.create({
+        data: {
+          photo,
+          name,
+          price,
+          description,
+          emdAddrNm,
+          emdPosNm,
+          emdPosX,
+          emdPosY,
+          user: {
+            connect: {
+              id: user?.id,
+            },
           },
         },
-      },
-    });
-    return res.status(200).json({
-      success: true,
-      product: newProduct,
-    });
+      });
+
+      // result
+      const result: PostProductsResponse = {
+        success: true,
+        product: newProduct,
+      };
+      return res.status(200).json(result);
+    } catch (error: unknown) {
+      // error
+      if (error instanceof Error) {
+        const result = {
+          success: false,
+          error: {
+            timestamp: Date.now().toString(),
+            name: error.name,
+            message: error.message,
+          },
+        };
+        return res.status(422).json(result);
+      }
+    }
   }
 }
 
