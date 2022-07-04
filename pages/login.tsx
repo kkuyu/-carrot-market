@@ -14,8 +14,7 @@ import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
-import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
+import { VerifyPhone, VerifyPhoneTypes, VerifyToken, VerifyTokenTypes } from "@components/forms";
 
 const Login: NextPage = () => {
   const router = useRouter();

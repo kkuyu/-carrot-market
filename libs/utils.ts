@@ -33,3 +33,26 @@ export const getRandomName: () => string = () => {
 
   return uniqueNamesGenerator(config).replace(/\s/g, "-");
 };
+
+export const getDiffTimeStr = (originTime: number, currentTime: number) => {
+  let resultStr = "";
+
+  const diffTime = currentTime - originTime;
+  const times = [
+    { ms: 1000 * 60, label: "분" },
+    { ms: 1000 * 60 * 60, label: "시간" },
+    { ms: 1000 * 60 * 60 * 24, label: "일" },
+    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" },
+    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" },
+  ].reverse();
+
+  for (let index = 0; index < times.length; index++) {
+    const diff = Math.floor(diffTime / times[index].ms);
+    if (diff > 0) {
+      resultStr = `${diff}${times[index].label} 전`;
+      break;
+    }
+  }
+
+  return resultStr || "방금 전";
+};

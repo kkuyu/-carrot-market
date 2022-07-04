@@ -13,7 +13,7 @@ import { PageLayout } from "@libs/states";
 import { GetProductsResponse } from "@api/products";
 import { GetUserResponse } from "@api/users/my";
 
-import ProductList from "@components/lists/products";
+import { ProductList } from "@components/lists";
 import FloatingButtons from "@components/floatingButtons";
 
 const getKey = (pageIndex: number, previousPageData: GetProductsResponse, query: string = "") => {
@@ -62,8 +62,8 @@ const Home: NextPage = () => {
         {products.length ? (
           <>
             <ProductList list={products || []} pathname="/products/[id]" />
-            <div ref={infiniteRef} className="py-10 text-center border-t">
-              <span className="text-gray-500">{isLoading ? "목록을 불러오고있어요" : isReachingEnd ? "목록을 모두 확인하였어요" : ""}</span>
+            <div ref={infiniteRef} className="py-6 text-center border-t">
+              <span className="text-sm text-gray-500">{isLoading ? "판매 상품을 불러오고있어요" : isReachingEnd ? "판매 상품을 모두 확인하였어요" : ""}</span>
             </div>
           </>
         ) : (
@@ -71,7 +71,7 @@ const Home: NextPage = () => {
             <p className="text-gray-500">
               앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
               <br />
-              거래 가능한 물건이 없어요.
+              등록된 판매 상품이 없어요.
             </p>
           </div>
         )}

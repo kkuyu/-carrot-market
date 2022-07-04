@@ -5,6 +5,7 @@ export const HeaderUtils = {
   Address: "address",
   Back: "back",
   Home: "home",
+  Share: "share",
   Search: "search",
   Title: "title",
   Submit: "submit",
@@ -25,6 +26,7 @@ interface PageLayoutTypes {
   seoTitle?: string;
   header: {
     submitId?: string;
+    headerColor?: string;
     headerUtils: HeaderUtils[];
   };
   navBar: {

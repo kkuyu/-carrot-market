@@ -38,7 +38,7 @@ const Header = ({}: HeaderProps) => {
   const {
     title,
     seoTitle,
-    header: { headerUtils, submitId },
+    header: { headerColor = "white", headerUtils, submitId },
   } = useRecoilValue(PageLayout);
 
   const { openModal, closeModal } = useModal();
@@ -223,6 +223,9 @@ const Header = ({}: HeaderProps) => {
             </svg>
           </button>
         );
+      case "share":
+        // todo: share
+        return <span>share</span>;
       case "search":
         // todo: search
         return <span>search</span>;
@@ -241,8 +244,8 @@ const Header = ({}: HeaderProps) => {
         <title>{seoTitle || title ? `${seoTitle || title}  | Carrot Market` : "Carrot Market"}</title>
       </Head>
       {Boolean(headerUtils.length) && (
-        <div id="layout-header" className="fixed top-0 left-0 w-full z-[100]">
-          <header className="relative mx-auto w-full max-w-xl h-12 bg-white border-b">
+        <div id="layout-header" className={`fixed top-0 left-0 w-full z-[100] ${headerColor !== "transparent" ? "" : "is-transparent"}`}>
+          <header className={`relative mx-auto w-full max-w-xl h-12 ${headerColor !== "transparent" ? `bg-${headerColor} border-b text-black` : "bg-gradient-to-b from-black/20  text-white"}`}>
             {/* left utils */}
             <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
               {headerUtils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
@@ -255,6 +258,7 @@ const Header = ({}: HeaderProps) => {
             {/* right utils */}
             <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
               {headerUtils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
+              {headerUtils.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
               {headerUtils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
               {headerUtils.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
             </div>

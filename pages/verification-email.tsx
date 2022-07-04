@@ -12,8 +12,7 @@ import { PostVerificationEmailResponse } from "@api/users/verification-email";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 
 import Buttons from "@components/buttons";
-import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
-import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
+import { VerifyEmail, VerifyEmailTypes, VerifyToken, VerifyTokenTypes } from "@components/forms";
 
 const VerificationEmail: NextPage = () => {
   const router = useRouter();
