@@ -40,6 +40,9 @@ strong {
 .main:not(:last-child) {
   @apply pb-16;
 }
+#layout-header.is-transparent ~ .main {
+  @apply pt-0;
+}
 
 .h-max-fullScreen {
   @apply min-h-screen;

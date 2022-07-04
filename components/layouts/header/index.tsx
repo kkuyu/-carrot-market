@@ -28,7 +28,7 @@ type ToastNames = "alreadyRegisteredAddress" | "updateUserError" | "updateDummyE
 type ModalNames = "dropdownModal" | "updateModal" | "locateModal" | "oneOrMore" | "signUpNow";
 
 export type ToastControl = (name: ToastNames, config: { open: boolean }) => void;
-export type ModalControl = (name: ModalNames, config: { open: boolean; originalFocusTarget?: string; addrType?: EmdType; beforeClose?: () => void }) => void;
+export type ModalControl = (name: ModalNames, config: { open: boolean; addrType?: EmdType; beforeClose?: () => void }) => void;
 export type UpdateHometown = (updateData: { emdType?: EmdType; mainAddrNm?: string; mainDistance?: number; subAddrNm?: string | null; subDistance?: number | null }) => void;
 
 const Header = ({}: HeaderProps) => {
@@ -128,7 +128,6 @@ const Header = ({}: HeaderProps) => {
         }
         openModal<CustomModalProps>(CustomModal, name, {
           hasBackdrop: true,
-          ...(config.originalFocusTarget ? { originalFocusTarget: config.originalFocusTarget } : {}),
           contents: <AddressDropdown toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />,
         });
         break;
@@ -141,7 +140,6 @@ const Header = ({}: HeaderProps) => {
         openModal<LayerModalProps>(LayerModal, name, {
           headerType: "default",
           title: "내 동네 설정하기",
-          ...(config.originalFocusTarget ? { originalFocusTarget: config.originalFocusTarget } : {}),
           contents: <AddressUpdate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />,
         });
         break;
@@ -154,7 +152,6 @@ const Header = ({}: HeaderProps) => {
         openModal<LayerModalProps>(LayerModal, name, {
           headerType: "default",
           title: "내 동네 추가하기",
-          ...(config.originalFocusTarget ? { originalFocusTarget: config.originalFocusTarget } : {}),
           contents: <AddressLocate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} addrType={config?.addrType || "SUB"} />,
         });
         break;

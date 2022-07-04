@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@egjs/react-flicking": "^4.8.1",
     "@prisma/client": "^4.1.0",
     "crypto": "^1.0.1",
     "gray-matter": "^4.0.3",
