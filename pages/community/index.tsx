@@ -1,98 +1,172 @@
-import { useEffect } from "react";
 import type { NextPage } from "next";
-import Link from "next/link";
-import { Post, User } from "@prisma/client";
-import useSWRInfinite from "swr/infinite";
 
-import usePagination from "@libs/client/usePagination";
-import useCoords from "@libs/client/useCoords";
+import { useEffect, useRef } from "react";
+import { useSetRecoilState } from "recoil";
+import { SWRConfig } from "swr";
+import useSWRInfinite, { unstable_serialize } from "swr/infinite";
+import useUser from "@libs/client/useUser";
+import useOnScreen from "@libs/client/useOnScreen";
+import client from "@libs/server/client";
+import { withSsrSession } from "@libs/server/withSession";
 
-import Layout from "@components/layout";
-import FloatingButton from "@components/floating-button";
+import { PageLayout } from "@libs/states";
+import { GetPostsResponse } from "@api/posts";
+import { GetUserResponse } from "@api/users/my";
 
-interface PostsResponse {
-  success: boolean;
-  posts: (Post & {
-    user: Pick<User, "name">;
-    _count: { curiosities: number; comments: number };
-  })[];
-  pages: number;
-}
+import FloatingButtons from "@components/floatingButtons";
+import { PostList, PostItem } from "@components/lists";
+
+const getKey = (pageIndex: number, previousPageData: GetPostsResponse, query: string = "") => {
+  if (pageIndex === 0) return `/api/posts?page=1&${query}`;
+  if (previousPageData && !previousPageData.posts.length) return null;
+  if (pageIndex + 1 > previousPageData.pages) return null;
+  return `/api/posts?page=${pageIndex + 1}&${query}`;
+};
 
 const Community: NextPage = () => {
-  const { page } = usePagination({ isInfiniteScroll: true });
-  const { latitude, longitude } = useCoords();
+  const { currentAddr } = useUser();
+  const setLayout = useSetRecoilState(PageLayout);
 
-  const getKey = (pageIndex: number, previousPageData: PostsResponse) => {
-    if (!latitude && !longitude) return null;
-    if (pageIndex === 0) return `/api/posts?page=1&latitude=${latitude}&longitude=${longitude}`;
-    if (previousPageData && !previousPageData.posts.length) return null;
-    if (pageIndex + 1 > previousPageData.pages) return null;
-    return `/api/posts?page=${pageIndex + 1}&latitude=${latitude}&longitude=${longitude}`;
-  };
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { data, size, setSize } = useSWRInfinite<GetPostsResponse>((...arg: [index: number, previousPageData: GetPostsResponse]) =>
+    getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
+  );
 
-  const { data, setSize } = useSWRInfinite<PostsResponse>(getKey, (url: string) => fetch(url).then((response) => response.json()), {
-    initialSize: 1,
-    revalidateFirstPage: false,
-  });
+  const isReachingEnd = data && size === data[data.length - 1].pages;
+  const isLoading = data && typeof data[data.length - 1] === "undefined";
   const posts = data ? data.flatMap((item) => item.posts) : [];
 
+  // todo: 궁금해요
+  const curiosityItem = (item: PostItem) => {
+    console.log("curiosityItem", item);
+  };
+
   useEffect(() => {
-    setSize(page);
-  }, [setSize, page]);
+    if (isVisible && !isReachingEnd) {
+      setSize(size + 1);
+    }
+  }, [isVisible, isReachingEnd]);
+
+  useEffect(() => {
+    setLayout(() => ({
+      seoTitle: "동네생활",
+      header: {
+        headerUtils: ["address", "search"],
+      },
+      navBar: {
+        navBarUtils: ["community", "home", "inbox", "profile", "streams"],
+      },
+    }));
+  }, []);
 
   return (
-    <Layout hasTabBar title="Community">
-      <div className="container">
-        <div className="-mx-4 divide-y divide-gray-300">
-          {posts.map((post) => (
-            <Link key={post.id} href={`/community/${post.id}`}>
-              <a className="flex flex-col items-stretch w-full">
-                <div className="pt-5 px-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-full">Community</span>
-                  <div className="mt-2 text-gray-700">
-                    <span className="font-semibold text-orange-500">Q.</span> {post.question}
-                  </div>
-                </div>
-                <div className="mt-5 px-4">
-                  <div className="flex items-center justify-between w-full text-xs font-semibold text-gray-500">
-                    <span>{post.user.name}</span>
-                    <span className="flex-none">{String(post.createdAt)}</span>
-                  </div>
-                </div>
-                <div className="mt-3 px-4 border-t">
-                  <div className="flex w-full py-2.5 space-x-5 text-gray-700">
-                    <span className="flex items-center space-x-1 text-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                      </svg>
-                      <span>Curiosities {post._count.curiosities}</span>
-                    </span>
-                    <span className="flex items-center space-x-1 text-sm">
-                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-                        ></path>
-                      </svg>
-                      <span>Comments {post._count.comments}</span>
-                    </span>
-                  </div>
-                </div>
-              </a>
-            </Link>
-          ))}
-        </div>
-        <FloatingButton href="/community/write">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path>
-          </svg>
-        </FloatingButton>
+    <div className="container">
+      {/* 동네생활 목록 */}
+      <div className="-mx-5">
+        {posts.length ? (
+          <>
+            <PostList list={posts || []} pathname="/posts/[id]" curiosityItem={curiosityItem} />
+            <div ref={infiniteRef} className="py-6 text-center border-t">
+              <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
+            </div>
+          </>
+        ) : (
+          <div className="py-10 text-center">
+            <p className="text-gray-500">
+              앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
+              <br />
+              등록된 게시글이 없어요.
+            </p>
+          </div>
+        )}
       </div>
-    </Layout>
+
+      {/* 동네생활 글쓰기 */}
+      <FloatingButtons href="/community/write">
+        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+        </svg>
+      </FloatingButtons>
+    </div>
   );
 };
 
-export default Community;
+const Page: NextPage<{
+  getUser: { response: GetUserResponse };
+  getPost: { query: string; response: GetPostsResponse };
+}> = ({ getUser, getPost }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          "/api/users/my": getUser.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetPostsResponse]) => getKey(arg[0], arg[1], getPost.query))]: [getPost.response],
+        },
+      }}
+    >
+      <Community />
+    </SWRConfig>
+  );
+};
+
+export const getServerSideProps = withSsrSession(async ({ req }) => {
+  // getUser
+  const profile = req?.session?.user?.id
+    ? await client.user.findUnique({
+        where: { id: req?.session?.user?.id },
+      })
+    : null;
+  const dummyProfile = !profile ? req?.session?.dummyUser : null;
+
+  // getPost
+  const posX = profile?.[`${profile.emdType}_emdPosX`] || dummyProfile?.MAIN_emdPosX || null;
+  const posY = profile?.[`${profile.emdType}_emdPosY`] || dummyProfile?.MAIN_emdPosY || null;
+  const distance = profile?.[`${profile.emdType}_emdPosDx`] || dummyProfile?.MAIN_emdPosDx || null;
+  const query = `posX=${posX}&posY=${posY}&distance=${distance}`;
+
+  const posts =
+    !posX || !posY || !distance
+      ? []
+      : await client.post.findMany({
+          take: 10,
+          skip: 0,
+          orderBy: {
+            createdAt: "desc",
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+          },
+          where: {
+            emdPosX: { gte: posX - distance, lte: posX + distance },
+            emdPosY: { gte: posY - distance, lte: posY + distance },
+          },
+        });
+
+  return {
+    props: {
+      getUser: {
+        response: {
+          success: true,
+          profile: JSON.parse(JSON.stringify(profile)),
+          dummyProfile: JSON.parse(JSON.stringify(dummyProfile)),
+        },
+      },
+      getPost: {
+        query,
+        response: {
+          success: true,
+          posts: JSON.parse(JSON.stringify(posts)),
+          pages: 0,
+        },
+      },
+    },
+  };
+});
+
+export default Page;

@@ -9,6 +9,11 @@ export interface GetProductsResponse {
   success: boolean;
   products: (Product & { records: Pick<Record, "id">[] })[];
   pages: number;
+  error?: {
+    timestamp: Date;
+    name: string;
+    message: string;
+  };
 }
 
 export interface PostProductsResponse {
@@ -32,7 +37,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         error.name = "InvalidRequestBody";
         throw error;
       }
-
       if (!_posX || !_posY || !_distance) {
         const result: GetProductsResponse = {
           success: true,

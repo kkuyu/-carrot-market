@@ -45,9 +45,9 @@ const Home: NextPage = () => {
 
   useEffect(() => {
     setLayout(() => ({
-      title: "홈",
+      seoTitle: "홈",
       header: {
-        headerUtils: ["address", "title", "search"],
+        headerUtils: ["address", "search"],
       },
       navBar: {
         navBarUtils: ["community", "home", "inbox", "profile", "streams"],
