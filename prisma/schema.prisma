@@ -76,6 +76,7 @@ model Product {
 
 model Post {
   id          Int         @id @default(autoincrement())
+  photo       String      @default("") @db.Text
   question    String      @db.MediumText
   emdAddrNm   String
   emdPosNm    String

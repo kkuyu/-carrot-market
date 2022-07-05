@@ -24,7 +24,7 @@ const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
           </strong>
         </div>
       )}
-      <div className="grow overflow-auto">{contents}</div>
+      <div className="relative grow overflow-auto">{contents}</div>
       {headerType === "default" && (
         <button type="button" className="absolute top-0 right-0 p-3" onClick={clickClose}>
           <svg className="block mx-auto w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

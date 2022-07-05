@@ -54,7 +54,7 @@ const ProductDetail: NextPage<{
     index,
     key: `thumbnails-slider-${index + 1}`,
     label: `${index + 1}/${array.length}`,
-    name: `${staticProps?.product?.name} | 상품 이미지 ${array.length > 1 ? index + 1 : ""}`,
+    name: `상품 이미지 ${index + 1}/${array.length} (${staticProps?.product?.name.length > 10 ? staticProps?.product?.name?.substring(0, 10) + "..." : staticProps?.product?.name})`,
   }));
 
   // fetch data: product detail
@@ -116,7 +116,7 @@ const ProductDetail: NextPage<{
 
     setLayout(() => ({
       title: product?.name || "",
-      seoTitle: `${product?.name || ""} | 상품 상세`,
+      seoTitle: `${product?.name || ""} | 판매 상품 상세`,
       header: {
         headerColor: Boolean(thumbnails.length) ? "transparent" : "white",
         headerUtils: ["back", "share", "home"],
@@ -136,7 +136,13 @@ const ProductDetail: NextPage<{
       {/* 썸네일 */}
       {Boolean(thumbnails.length) && (
         <div className="-mx-5">
-          <ThumbnailSlider list={thumbnails} defaultIndex={0} />
+          <ThumbnailSlider
+            list={thumbnails}
+            defaultIndex={0}
+            modal={{
+              title: `판매 상품 이미지 (${product?.name?.length > 15 ? product?.name?.substring(0, 15) + "..." : product?.name})`,
+            }}
+          />
         </div>
       )}
 

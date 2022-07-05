@@ -3,6 +3,7 @@ import Link from "next/link";
 import { getDiffTimeStr } from "@libs/utils";
 
 import { GetPostsResponse } from "@api/posts";
+import { ThumbnailList, ThumbnailItem } from "@components/lists";
 
 export type PostItem = GetPostsResponse["posts"][0];
 
@@ -23,24 +24,40 @@ const Posts = ({ list, pathname, curiosityItem }: PostsProps) => {
     <ul className="divide-y">
       {list.map((item) => {
         const diffTime = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
+        const thumbnails: ThumbnailItem[] = (item?.photo ? item.photo.split(",") : []).map((src, index, array) => ({
+          src,
+          index,
+          key: `thumbnails-slider-${index + 1}`,
+          label: `${index + 1}/${array.length}`,
+          name: `게시글 이미지 ${index + 1}/${array.length} (${item?.question?.length > 10 ? item?.question?.substring(0, 15) + "..." : item?.question})`,
+        }));
+
         return (
           <li key={item?.id}>
             <Link href={{ pathname, query: { id: item?.id } }}>
-              <a className="relative block w-full pt-5 pb-3">
-                <div className="px-5">
-                  {/* todo: 카테고리 */}
-                  <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">동네생활</em>
-                  <strong className="mt-2 block font-normal">{item?.question}</strong>
-                </div>
-                <div className="mt-5 flex justify-between px-5">
-                  <span className="text-sm text-gray-500">
-                    {item?.user?.name} · {item?.emdPosNm}
-                  </span>
-                  <span className="text-sm text-gray-500">{diffTime}</span>
-                </div>
+              <a className="relative block w-full pt-5 pb-3 px-5">
+                {/* todo: 카테고리 */}
+                <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">동네생활</em>
+                <strong className="mt-2 block font-normal">{item?.question}</strong>
               </a>
             </Link>
-            <div className="px-3 border-t">
+            {Boolean(thumbnails.length) && (
+              <div className="px-5 pb-3">
+                <ThumbnailList
+                  list={thumbnails || []}
+                  modal={{
+                    title: `게시글 이미지 (${item?.question?.length > 15 ? item?.question?.substring(0, 15) + "..." : item?.question})`,
+                  }}
+                />
+              </div>
+            )}
+            <div className="flex justify-between px-5">
+              <span className="text-sm text-gray-500">
+                {item?.user?.name} · {item?.emdPosNm}
+              </span>
+              <span className="text-sm text-gray-500">{diffTime}</span>
+            </div>
+            <div className="mt-3 px-3 border-t">
               <button type="button" className="px-2 py-2" onClick={() => curiosityItem(item)}>
                 <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>

@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useUser from "@libs/client/useUser";
+import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 
@@ -12,12 +13,11 @@ import { PageLayout } from "@libs/states";
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 
-import useToast from "@libs/client/useToast";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import Labels from "@components/labels";
 import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
-import Files, { Thumbnail, UpdateFiles } from "@components/files";
+import Files, { Thumbnail, UpdateFiles, validateFiles } from "@components/files";
 import Buttons from "@components/buttons";
 
 interface ProductUploadForm {
@@ -53,28 +53,6 @@ const Upload: NextPage = () => {
       }
     },
   });
-
-  const validateFiles = (originalFiles: FileList, options: typeof photoOptions) => {
-    let validFiles = Array.from(originalFiles);
-    let errors: { [key in keyof typeof options]?: boolean } = {};
-
-    // acceptTypes
-    if (options?.acceptTypes) {
-      validFiles = validFiles.filter((file: File) => {
-        if (options.acceptTypes.includes(file.type)) return true;
-        errors.acceptTypes = true;
-        return false;
-      });
-    }
-
-    // maxLength
-    if (options?.maxLength) {
-      if (originalFiles.length > options.maxLength) errors.maxLength = true;
-      if (validFiles.length > options.maxLength) validFiles = validFiles.slice(0, options.maxLength);
-    }
-
-    return { errors, validFiles };
-  };
 
   const submitProductUpload = async ({ photos, ...data }: ProductUploadForm) => {
     if (loading || photoLoading) return;

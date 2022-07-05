@@ -23,6 +23,28 @@ interface FilesProps extends React.HTMLAttributes<HTMLInputElement> {
   [key: string]: any;
 }
 
+export const validateFiles = (originalFiles: FileList, options: typeof photoOptions) => {
+  let validFiles = Array.from(originalFiles);
+  let errors: { [key in keyof typeof options]?: boolean } = {};
+
+  // acceptTypes
+  if (options?.acceptTypes) {
+    validFiles = validFiles.filter((file: File) => {
+      if (options.acceptTypes.includes(file.type)) return true;
+      errors.acceptTypes = true;
+      return false;
+    });
+  }
+
+  // maxLength
+  if (options?.maxLength) {
+    if (originalFiles.length > options.maxLength) errors.maxLength = true;
+    if (validFiles.length > options.maxLength) validFiles = validFiles.slice(0, options.maxLength);
+  }
+
+  return { errors, validFiles };
+};
+
 const Files = ({ name, required = false, disabled, accept, maxLength, multiple = false, register, thumbnails, updateFiles, ...rest }: FilesProps) => {
   return (
     <div className="relative">

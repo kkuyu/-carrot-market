@@ -107,29 +107,58 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
   }
   if (req.method === "POST") {
-    return res.status(200);
-    const { question, latitude, longitude } = req.body;
-    const { user } = req.session;
-    if (!question) {
-      const error = new Error("Invalid request body");
-      throw error;
-    }
-    const newPost = await client.post.create({
-      data: {
-        question,
-        latitude,
-        longitude,
-        user: {
-          connect: {
-            id: user?.id,
+    try {
+      const { photo = "", question, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { user } = req.session;
+
+      // request valid
+      if (!question) {
+        const error = new Error("Invalid request body");
+        throw error;
+      }
+      if (!emdAddrNm || !emdPosNm || !emdPosX || !emdPosY) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+
+      // create new post
+      const newPost = await client.post.create({
+        data: {
+          photo,
+          question,
+          emdAddrNm,
+          emdPosNm,
+          emdPosX,
+          emdPosY,
+          user: {
+            connect: {
+              id: user?.id,
+            },
           },
         },
-      },
-    });
-    return res.status(200).json({
-      success: true,
-      post: newPost,
-    });
+      });
+
+      // result
+      const result: PostPostsResponse = {
+        success: true,
+        post: newPost,
+      };
+      return res.status(200).json(result);
+    } catch (error: unknown) {
+      // error
+      if (error instanceof Error) {
+        const result = {
+          success: false,
+          error: {
+            timestamp: Date.now().toString(),
+            name: error.name,
+            message: error.message,
+          },
+        };
+        return res.status(422).json(result);
+      }
+    }
   }
 }
 
