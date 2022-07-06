@@ -31,14 +31,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         id,
       },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
+      select: {
+        id: true,
       },
     });
     if (!product) {
@@ -51,7 +45,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const exists = await client.record.findFirst({
       where: {
         userId: user?.id,
-        productId: id,
+        productId: product.id,
         kind: "Favorite",
       },
       select: {
@@ -77,7 +71,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
           product: {
             connect: {
-              id,
+              id: product.id,
             },
           },
           kind: "Favorite",

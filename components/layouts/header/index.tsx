@@ -33,7 +33,7 @@ export type UpdateHometown = (updateData: { emdType?: EmdType; mainAddrNm?: stri
 
 const Header = ({}: HeaderProps) => {
   const router = useRouter();
-  const { user, mutate: mutateUser } = useUser();
+  const { user, currentAddr, mutate: mutateUser } = useUser();
 
   const {
     title,
@@ -185,7 +185,7 @@ const Header = ({}: HeaderProps) => {
           hasBackdrop: true,
           onConfirm: () => {
             modalControl("updateModal", { open: false });
-            router.push(`/join?addrNm=${user?.MAIN_emdAddrNm}`);
+            router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
           },
         });
         break;

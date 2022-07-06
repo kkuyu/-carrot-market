@@ -15,18 +15,11 @@ import { getDiffTimeStr } from "@libs/utils";
 import { PageLayout } from "@libs/states";
 import { GetProductDetailResponse } from "@api/products/[id]";
 
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
 import { ThumbnailSlider, ThumbnailItem } from "@components/sliders";
 import { RelateList } from "@components/lists";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-
-interface ProductExtraInfo {
-  relate: {
-    name: string;
-    products: GetProductDetailResponse["otherProducts"] | GetProductDetailResponse["similarProducts"] | GetProductDetailResponse["latestProducts"];
-  };
-  diffTime: string;
-}
 
 const ProductDetail: NextPage<{
   staticProps: {
@@ -36,26 +29,24 @@ const ProductDetail: NextPage<{
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const { user } = useUser();
+  const { user, currentAddr } = useUser();
   const { openModal } = useModal();
 
   // static data: product detail
   const today = new Date();
-  const [product, setProduct] = useState<(GetProductDetailResponse["product"] & ProductExtraInfo) | null>(() => {
-    if (!staticProps?.product) return null;
-    return {
-      ...staticProps?.product,
-      relate: { name: "", products: [] },
-      diffTime: getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime()),
-    };
-  });
   const thumbnails: ThumbnailItem[] = (staticProps?.product?.photo ? staticProps.product.photo.split(",") : []).map((src, index, array) => ({
     src,
     index,
     key: `thumbnails-slider-${index + 1}`,
     label: `${index + 1}/${array.length}`,
-    name: `상품 이미지 ${index + 1}/${array.length} (${staticProps?.product?.name.length > 10 ? staticProps?.product?.name?.substring(0, 10) + "..." : staticProps?.product?.name})`,
+    name: `상품 이미지 ${index + 1}/${array.length} (${staticProps?.product?.name.length > 15 ? staticProps?.product?.name?.substring(0, 15) + "..." : staticProps?.product?.name})`,
   }));
+  const [product, setProduct] = useState<GetProductDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
+  const [diffTime, setDiffTime] = useState(getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime()));
+  const [relate, setRelate] = useState({
+    name: "",
+    products: [] as GetProductDetailResponse["otherProducts"] | GetProductDetailResponse["similarProducts"] | GetProductDetailResponse["latestProducts"],
+  });
 
   // fetch data: product detail
   const { data, error, mutate: boundMutate } = useSWR<GetProductDetailResponse>(router.query.id && product ? `/api/products/${router.query.id}` : null);
@@ -86,7 +77,7 @@ const ProductDetail: NextPage<{
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.replace(`/join?addrNm=${user?.MAIN_emdAddrNm}`);
+        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
       },
     });
   };
@@ -98,13 +89,28 @@ const ProductDetail: NextPage<{
     setProduct((prev) => ({
       ...prev,
       ...data.product,
-      relate: data.otherProducts.length
-        ? { name: `${data?.product.user.name}님의 판매 상품`, products: data.otherProducts }
-        : data.similarProducts.length
-        ? { name: `이 글과 함께 봤어요`, products: data.similarProducts }
-        : { name: `최근 등록된 판매 상품`, products: data.latestProducts },
-      diffTime: getDiffTimeStr(new Date(data?.product.updatedAt).getTime(), today.getTime()),
     }));
+    setDiffTime(() => {
+      return getDiffTimeStr(new Date(data?.product.updatedAt).getTime(), today.getTime());
+    });
+    setRelate(() => {
+      if (data.otherProducts.length) {
+        return {
+          name: `${data?.product.user.name}님의 판매 상품`,
+          products: data.otherProducts,
+        };
+      }
+      if (data.similarProducts.length) {
+        return {
+          name: `이 글과 함께 봤어요`,
+          products: data.similarProducts,
+        };
+      }
+      return {
+        name: `최근 등록된 판매 상품`,
+        products: data.latestProducts,
+      };
+    });
   }, [data]);
 
   // setting layout
@@ -146,40 +152,15 @@ const ProductDetail: NextPage<{
         </div>
       )}
 
-      {/* 상품 정보 */}
+      {/* 판매 상품 정보 */}
       <section className="block">
         {/* 판매자 */}
-        <Link href={`/users/profiles/${product.user.id}`}>
-          <a className="flex items-center py-3 border-b">
-            <div className="relative flex-none w-14 h-14 bg-slate-300 rounded-full">
-              {product.user?.avatar ? (
-                <>
-                  <span className="block pb-[100%]"></span>
-                  <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${product.user?.avatar}/avatar`} alt="" layout="fill" objectFit="cover" />
-                </>
-              ) : (
-                <svg className="mx-auto my-4 w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth="2"
-                    d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-                  ></path>
-                </svg>
-              )}
-            </div>
-            <div className="grow pl-3">
-              <strong className="block text-base font-semibold text-gray-700">{product.user?.name}</strong>
-              <span className="block text-sm font-semibold text-gray-500">{product.emdPosNm}</span>
-            </div>
-            {/* <div>todo: 매너온도</div> */}
-          </a>
-        </Link>
+        <Profiles user={product?.user} emdPosNm={product?.emdPosNm} />
 
         {/* 설명 */}
         <div className="mt-5">
           <h1 className="text-2xl font-bold">{product.name}</h1>
-          <span className="mt-2 block text-sm text-gray-500">{product.diffTime}</span>
+          <span className="mt-2 block text-sm text-gray-500">{diffTime}</span>
           {/* todo: 카테고리 */}
           {/* todo: 끌어올리기 */}
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
@@ -191,7 +172,7 @@ const ProductDetail: NextPage<{
             <div className="relative flex-none mx-1.5 after:absolute after:top-1/2 after:-right-1.5 after:-mt-4 after:w-[1px] after:h-8 after:bg-gray-300">
               <button
                 className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
-                onClick={() => (user?.id === -1 ? openSignUpModal() : toggleFavorite())}
+                onClick={user?.id === -1 ? openSignUpModal : toggleFavorite}
                 disabled={favoriteLoading}
               >
                 {data?.isFavorite ? (
@@ -230,11 +211,11 @@ const ProductDetail: NextPage<{
       {/* <div>todo: 신고하기</div> */}
 
       {/* 관련 상품목록 */}
-      {Boolean(product.relate.products.length) && (
+      {Boolean(relate.products.length) && (
         <section className="mt-5 pt-5 border-t">
-          <h2 className="text-xl">{product.relate.name}</h2>
+          <h2 className="text-xl">{relate.name}</h2>
           <div className="mt-4">
-            <RelateList list={product.relate.products || []} pathname="/products/[id]" />
+            <RelateList list={relate.products || []} pathname="/products/[id]" />
           </div>
         </section>
       )}

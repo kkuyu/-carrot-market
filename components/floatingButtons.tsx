@@ -14,7 +14,7 @@ interface FloatingButtonsProps {
 
 const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, currentAddr } = useUser();
 
   const { openModal } = useModal();
 
@@ -26,7 +26,7 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.replace(`/join?addrNm=${user?.MAIN_emdAddrNm}`);
+        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
       },
     });
   };
