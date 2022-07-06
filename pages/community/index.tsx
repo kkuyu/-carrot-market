@@ -1,10 +1,12 @@
 import type { NextPage } from "next";
+import { useRouter } from "next/router";
 
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import useUser from "@libs/client/useUser";
+import useModal from "@libs/client/useModal";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -13,8 +15,10 @@ import { PageLayout } from "@libs/states";
 import { GetPostsResponse } from "@api/posts";
 import { GetUserResponse } from "@api/users/my";
 
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import FloatingButtons from "@components/floatingButtons";
 import { PostList, PostItem } from "@components/lists";
+import { PostPostsCuriosityResponse } from "@api/posts/[id]/curiosity";
 
 const getKey = (pageIndex: number, previousPageData: GetPostsResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/posts?page=1&${query}`;
@@ -24,12 +28,15 @@ const getKey = (pageIndex: number, previousPageData: GetPostsResponse, query: st
 };
 
 const Community: NextPage = () => {
-  const { currentAddr } = useUser();
+  const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
+
+  const { user, currentAddr } = useUser();
+  const { openModal } = useModal();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
-  const { data, size, setSize } = useSWRInfinite<GetPostsResponse>((...arg: [index: number, previousPageData: GetPostsResponse]) =>
+  const { data, size, setSize, mutate } = useSWRInfinite<GetPostsResponse>((...arg: [index: number, previousPageData: GetPostsResponse]) =>
     getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
   );
 
@@ -37,9 +44,40 @@ const Community: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const posts = data ? data.flatMap((item) => item.posts) : [];
 
-  // todo: 궁금해요
-  const curiosityItem = (item: PostItem) => {
-    console.log("curiosityItem", item);
+  const curiosityItem = async (item: PostItem) => {
+    if (!data) return;
+    const mutateData = data.map((dataRow) => {
+      const posts = dataRow.posts.map((post) => {
+        if (post.id !== item.id) return post;
+        return {
+          ...post,
+          isCuriosity: !post.isCuriosity,
+          _count: {
+            ...post._count,
+            curiosities: post.isCuriosity ? post._count.curiosities - 1 : post._count.curiosities + 1,
+          },
+        };
+      });
+      return { ...dataRow, posts };
+    });
+    mutate(mutateData, false);
+    const updateCuriosity: PostPostsCuriosityResponse = await (await fetch(`/api/posts/${item.id}/curiosity`, { method: "POST" })).json();
+    if (updateCuriosity.error) console.error(updateCuriosity.error);
+    mutate();
+  };
+
+  // modal: sign up
+  const openSignUpModal = () => {
+    openModal<MessageModalProps>(MessageModal, "signUpNow", {
+      type: "confirm",
+      message: "휴대폰 인증하고 회원가입하시겠어요?",
+      cancelBtn: "취소",
+      confirmBtn: "회원가입",
+      hasBackdrop: true,
+      onConfirm: () => {
+        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+      },
+    });
   };
 
   useEffect(() => {
@@ -66,7 +104,7 @@ const Community: NextPage = () => {
       <div className="-mx-5">
         {posts.length ? (
           <>
-            <PostList list={posts || []} pathname="/posts/[id]" curiosityItem={curiosityItem} />
+            <PostList list={posts || []} pathname="/community/[id]" curiosityItem={user.id === -1 ? openSignUpModal : curiosityItem} />
             <div ref={infiniteRef} className="py-6 text-center border-t">
               <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
             </div>

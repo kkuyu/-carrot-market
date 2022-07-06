@@ -7,7 +7,7 @@ import { Post, User } from "@prisma/client";
 
 export interface GetPostsResponse {
   success: boolean;
-  posts: (Post & { user: Pick<User, "id" | "name">; _count: { curiosities: number; comments: number } })[];
+  posts: (Post & { isCuriosity: boolean; user: Pick<User, "id" | "name">; _count: { curiosities: number; comments: number } })[];
   pages: number;
   error?: {
     timestamp: Date;
@@ -30,6 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   if (req.method === "GET") {
     try {
       const { page: _page, posX: _posX, posY: _posY, distance: _distance } = req.query;
+      const { user } = req.session;
 
       // request valid
       if (!_page) {
@@ -61,7 +62,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const totalPosts = await client.post.count({
         where: boundaryArea,
       });
-      const posts = await client.post.findMany({
+      const posts = [];
+      const _posts = await client.post.findMany({
         take: displayRow,
         skip: (page - 1) * displayRow,
         orderBy: {
@@ -83,6 +85,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
         where: boundaryArea,
       });
+
+      for (let index = 0; index < _posts.length; index++) {
+        const isCuriosity = user?.id
+          ? Boolean(
+              await client.curiosity.findFirst({
+                where: {
+                  postId: _posts[index].id,
+                  userId: user.id,
+                },
+                select: {
+                  id: true,
+                },
+              })
+            )
+          : false;
+        posts.push({ ..._posts[index], isCuriosity });
+      }
 
       // result
       const result: GetPostsResponse = {

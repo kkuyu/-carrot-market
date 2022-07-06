@@ -3,69 +3,117 @@ import { NextApiRequest, NextApiResponse } from "next";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { Comment, Post, User } from "@prisma/client";
+
+export interface GetPostDetailResponse {
+  success: boolean;
+  post: Post & {
+    user: Pick<User, "id" | "name" | "avatar">;
+    comments: (Pick<Comment, "id" | "comment" | "emdPosNm" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
+    _count: { curiosities: number };
+  };
+  isCuriosity: boolean;
+  error?: {
+    timestamp: Date;
+    name: string;
+    message: string;
+  };
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  const { id } = req.query;
-  const { user } = req.session;
-  const cleanId = +id?.toString()!;
-  const post = await client.post.findUnique({
-    where: {
-      id: cleanId,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
+  try {
+    const { id: _id } = req.query;
+    const { user } = req.session;
+
+    // request valid
+    if (!_id) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // find post detail
+    const id = +_id.toString();
+    const post = await client.post.findUnique({
+      where: {
+        id,
       },
-      comments: {
-        select: {
-          id: true,
-          comment: true,
-          createdAt: true,
-          user: {
-            select: {
-              id: true,
-              name: true,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        comments: {
+          select: {
+            id: true,
+            comment: true,
+            updatedAt: true,
+            emdPosNm: true,
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
             },
           },
         },
-      },
-      _count: {
-        select: {
-          comments: true,
-          curiosities: true,
+        _count: {
+          select: {
+            curiosities: true,
+          },
         },
       },
-    },
-  });
-  if (!post) {
-    const error = new Error("Not found post");
-    throw error;
+    });
+    if (!post) {
+      const error = new Error("NotFoundPost");
+      error.name = "NotFoundPost";
+      throw error;
+    }
+
+    const isCuriosity = user?.id
+      ? Boolean(
+          await client.curiosity.findFirst({
+            where: {
+              postId: post.id,
+              userId: user.id,
+            },
+            select: {
+              id: true,
+            },
+          })
+        )
+      : false;
+
+    // result
+    const result: GetPostDetailResponse = {
+      success: true,
+      post,
+      isCuriosity,
+    };
+    return res.status(200).json(result);
+  } catch (error: unknown) {
+    // error
+    if (error instanceof Error) {
+      const date = Date.now().toString();
+      return res.status(422).json({
+        success: false,
+        error: {
+          timestamp: date,
+          name: error.name,
+          message: error.message,
+        },
+      });
+    }
   }
-  const isCuriosity = Boolean(
-    await client.curiosity.findFirst({
-      where: {
-        postId: cleanId,
-        userId: user?.id,
-      },
-      select: {
-        id: true,
-      },
-    })
-  );
-  return res.status(200).json({
-    success: true,
-    post,
-    isCuriosity,
-  });
 }
 
 export default withSessionRoute(
   withHandler({
-    methods: ["GET"],
+    methods: [{ type: "GET", isPrivate: false }],
     handler,
   })
 );

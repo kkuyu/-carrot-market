@@ -38,8 +38,7 @@ const Write: NextPage = () => {
   const { register, handleSubmit, formState, getValues, setValue } = useForm<PostWriteForm>();
   const [postWrite, { loading, data }] = useMutation<PostPostsResponse>("/api/posts", {
     onSuccess: (data) => {
-      console.log(`router.push(/community/${data.post.id})`);
-      // router.push(`/community/${data.post.id}`);
+      router.push(`/community/${data.post.id}`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
