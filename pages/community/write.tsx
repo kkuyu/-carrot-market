@@ -7,6 +7,7 @@ import { useSetRecoilState } from "recoil";
 import useUser from "@libs/client/useUser";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
+import { PostCategoryEnum, PostCategory } from "@api/posts/types";
 import { withSsrSession } from "@libs/server/withSession";
 
 import { PageLayout } from "@libs/states";
@@ -18,10 +19,12 @@ import Labels from "@components/labels";
 import TextAreas from "@components/textareas";
 import Files, { Thumbnail, UpdateFiles, validateFiles } from "@components/files";
 import Buttons from "@components/buttons";
+import Selects from "@components/selects";
 
 interface PostWriteForm {
   photos: FileList;
-  question: string;
+  category: PostCategoryEnum;
+  content: string;
 }
 
 const Write: NextPage = () => {
@@ -35,7 +38,7 @@ const Write: NextPage = () => {
   const [thumbnails, setThumbnails] = useState<Thumbnail[]>([]);
   const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
 
-  const { register, handleSubmit, formState, getValues, setValue } = useForm<PostWriteForm>();
+  const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = useForm<PostWriteForm>();
   const [postWrite, { loading, data }] = useMutation<PostPostsResponse>("/api/posts", {
     onSuccess: (data) => {
       router.push(`/community/${data.post.id}`);
@@ -48,6 +51,12 @@ const Write: NextPage = () => {
       }
     },
   });
+
+  const updateValue = (name: string, value: any) => {
+    const registerName = name as keyof PostWriteForm;
+    resetField(registerName);
+    setValue(registerName, value);
+  };
 
   const submitPostWrite = async ({ photos, ...data }: PostWriteForm) => {
     if (loading || photoLoading) return;
@@ -178,11 +187,29 @@ const Write: NextPage = () => {
           />
           <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
         </div>
+        {/* 카테고리 */}
+        <div className="space-y-1">
+          <Labels tag="span" text="카테고리" htmlFor="category" />
+          <Selects
+            register={register("category", {
+              required: {
+                value: true,
+                message: "카테고리를 선택해주세요",
+              },
+            })}
+            options={[{ value: "", text: "카테고리 선택" }, ...PostCategory]}
+            currentValue={watch("category")}
+            updateValue={updateValue}
+            required
+            name="category"
+          />
+          <span className="empty:hidden invalid">{formState.errors.category?.message}</span>
+        </div>
         {/* 게시글 내용 */}
         <div className="space-y-1">
           <Labels text="게시글 내용" htmlFor="description" />
           <TextAreas
-            register={register("question", {
+            register={register("content", {
               required: {
                 value: true,
                 message: "게시글 내용을 입력해주세요",
@@ -197,7 +224,7 @@ const Write: NextPage = () => {
             name="description"
             placeholder={`${currentAddr.emdPosNm} 우리동네 관련된 질문이나 이야기를 해보세요.`}
           />
-          <span className="empty:hidden invalid">{formState.errors.question?.message}</span>
+          <span className="empty:hidden invalid">{formState.errors.content?.message}</span>
         </div>
         {/* 완료 */}
         <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={loading} />

@@ -3,11 +3,20 @@ import { NextApiRequest, NextApiResponse } from "next";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { Post, User } from "@prisma/client";
+import { Curiosity, Feeling, Post, User } from "@prisma/client";
+
+import { getCategory } from "@libs/utils";
 
 export interface GetPostsResponse {
   success: boolean;
-  posts: (Post & { isCuriosity: boolean; user: Pick<User, "id" | "name">; _count: { curiosities: number; comments: number } })[];
+  posts: (Post & {
+    user: Pick<User, "id" | "name">;
+    curiosity: boolean;
+    curiosities: { count: number };
+    emotion: Feeling | null;
+    emotions: { count: number; feelings: Feeling[] };
+    _count: { comments: number };
+  })[];
   pages: number;
   error?: {
     timestamp: Date;
@@ -62,46 +71,51 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const totalPosts = await client.post.count({
         where: boundaryArea,
       });
-      const posts = [];
-      const _posts = await client.post.findMany({
-        take: displayRow,
-        skip: (page - 1) * displayRow,
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
+      const posts = await (
+        await client.post.findMany({
+          take: displayRow,
+          skip: (page - 1) * displayRow,
+          orderBy: {
+            createdAt: "desc",
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
+            curiosities: {
+              select: {
+                id: true,
+                userId: true,
+              },
+            },
+            emotions: {
+              select: {
+                id: true,
+                userId: true,
+                feeling: true,
+              },
+            },
+            _count: {
+              select: {
+                curiosities: true,
+                comments: true,
+              },
             },
           },
-          _count: {
-            select: {
-              curiosities: true,
-              comments: true,
-            },
-          },
-        },
-        where: boundaryArea,
+          where: boundaryArea,
+        })
+      ).map((post) => {
+        return {
+          ...post,
+          curiosity: !user?.id ? false : Boolean(post.curiosities.find((v) => v.userId === user.id)),
+          curiosities: { count: post.curiosities.length },
+          emotion: !user?.id ? null : post.emotions.find((v) => v.userId === user.id)?.feeling || null,
+          emotions: { count: post.emotions.length, feelings: [...new Set(post.emotions.map((v) => v.feeling))] },
+        };
       });
-
-      for (let index = 0; index < _posts.length; index++) {
-        const isCuriosity = user?.id
-          ? Boolean(
-              await client.curiosity.findFirst({
-                where: {
-                  postId: _posts[index].id,
-                  userId: user.id,
-                },
-                select: {
-                  id: true,
-                },
-              })
-            )
-          : false;
-        posts.push({ ..._posts[index], isCuriosity });
-      }
 
       // result
       const result: GetPostsResponse = {
@@ -127,12 +141,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     try {
-      const { photo = "", question, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { photo = "", category, content, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
       // request valid
-      if (!question) {
+      if (!content && !category) {
         const error = new Error("Invalid request body");
+        throw error;
+      }
+      if (!getCategory("post", category)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
         throw error;
       }
       if (!emdAddrNm || !emdPosNm || !emdPosX || !emdPosY) {
@@ -145,7 +164,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const newPost = await client.post.create({
         data: {
           photo,
-          question,
+          content,
+          category,
           emdAddrNm,
           emdPosNm,
           emdPosX,

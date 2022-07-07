@@ -5,6 +5,8 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
+import { getCategory } from "@libs/utils";
+
 export interface GetProductsResponse {
   success: boolean;
   products: (Product & { records: Pick<Record, "id">[] })[];
@@ -104,11 +106,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     try {
-      const { photo = "", name, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { photo = "", name, category, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
       // request valid
-      if (!name && !price && !description) {
+      if (!name && !category && !price && !description) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+      if (!getCategory("product", category)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -124,6 +131,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         data: {
           photo,
           name,
+          category,
           price,
           description,
           emdAddrNm,

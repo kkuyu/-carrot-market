@@ -9,8 +9,8 @@ import useSWR from "swr";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
+import { getCategory, getDiffTimeStr } from "@libs/utils";
 import client from "@libs/server/client";
-import { getDiffTimeStr } from "@libs/utils";
 
 import { PageLayout } from "@libs/states";
 import { GetProductDetailResponse } from "@api/products/[id]";
@@ -34,18 +34,25 @@ const ProductDetail: NextPage<{
 
   // static data: product detail
   const today = new Date();
-  const thumbnails: ThumbnailItem[] = (staticProps?.product?.photo ? staticProps.product.photo.split(",") : []).map((src, index, array) => ({
-    src,
-    index,
-    key: `thumbnails-slider-${index + 1}`,
-    label: `${index + 1}/${array.length}`,
-    name: `상품 이미지 ${index + 1}/${array.length} (${staticProps?.product?.name.length > 15 ? staticProps?.product?.name?.substring(0, 15) + "..." : staticProps?.product?.name})`,
-  }));
   const [product, setProduct] = useState<GetProductDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
-  const [diffTime, setDiffTime] = useState(getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime()));
-  const [relate, setRelate] = useState({
+  const diffTime = getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime());
+  const category = getCategory("product", staticProps?.product?.category);
+  const cutDownName = !staticProps?.product?.name ? "" : staticProps.product.name.length <= 15 ? staticProps.product.name : staticProps.product.name.substring(0, 15) + "...";
+  const thumbnails: ThumbnailItem[] = !staticProps?.product?.photo
+    ? []
+    : staticProps.product.photo.split(",").map((src, index, array) => ({
+        src,
+        index,
+        key: `thumbnails-slider-${index + 1}`,
+        label: `${index + 1}/${array.length}`,
+        name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownName})`,
+      }));
+  const [relate, setRelate] = useState<{
+    name: string;
+    products: GetProductDetailResponse["otherProducts"] | GetProductDetailResponse["similarProducts"] | GetProductDetailResponse["latestProducts"];
+  }>({
     name: "",
-    products: [] as GetProductDetailResponse["otherProducts"] | GetProductDetailResponse["similarProducts"] | GetProductDetailResponse["latestProducts"],
+    products: [],
   });
 
   // fetch data: product detail
@@ -90,9 +97,6 @@ const ProductDetail: NextPage<{
       ...prev,
       ...data.product,
     }));
-    setDiffTime(() => {
-      return getDiffTimeStr(new Date(data?.product.updatedAt).getTime(), today.getTime());
-    });
     setRelate(() => {
       if (data.otherProducts.length) {
         return {
@@ -146,7 +150,7 @@ const ProductDetail: NextPage<{
             list={thumbnails}
             defaultIndex={0}
             modal={{
-              title: `판매 상품 이미지 (${product?.name?.length > 15 ? product?.name?.substring(0, 15) + "..." : product?.name})`,
+              title: `판매 상품 이미지 (${cutDownName})`,
             }}
           />
         </div>
@@ -160,8 +164,9 @@ const ProductDetail: NextPage<{
         {/* 설명 */}
         <div className="mt-5">
           <h1 className="text-2xl font-bold">{product.name}</h1>
-          <span className="mt-2 block text-sm text-gray-500">{diffTime}</span>
-          {/* todo: 카테고리 */}
+          <span className="mt-1 block text-sm text-gray-500">
+            {category?.text} · {diffTime}
+          </span>
           {/* todo: 끌어올리기 */}
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
         </div>

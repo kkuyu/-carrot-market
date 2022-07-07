@@ -7,6 +7,7 @@ import { useSetRecoilState } from "recoil";
 import useUser from "@libs/client/useUser";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
+import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
 import { withSsrSession } from "@libs/server/withSession";
 
 import { PageLayout } from "@libs/states";
@@ -19,9 +20,11 @@ import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
 import Files, { Thumbnail, UpdateFiles, validateFiles } from "@components/files";
 import Buttons from "@components/buttons";
+import Selects from "@components/selects";
 
 interface ProductUploadForm {
   photos: FileList;
+  category: ProductCategoryEnum;
   name: string;
   price: number;
   description: string;
@@ -38,7 +41,7 @@ const Upload: NextPage = () => {
   const [thumbnails, setThumbnails] = useState<Thumbnail[]>([]);
   const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
 
-  const { register, handleSubmit, formState, getValues, setValue } = useForm<ProductUploadForm>();
+  const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = useForm<ProductUploadForm>();
   const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
       setPhotoLoading(false);
@@ -53,6 +56,12 @@ const Upload: NextPage = () => {
       }
     },
   });
+
+  const updateValue = (name: string, value: any) => {
+    const registerName = name as keyof ProductUploadForm;
+    resetField(registerName);
+    setValue(registerName, value);
+  };
 
   const submitProductUpload = async ({ photos, ...data }: ProductUploadForm) => {
     if (loading || photoLoading) return;
@@ -199,6 +208,24 @@ const Upload: NextPage = () => {
           />
           <span className="empty:hidden invalid">{formState.errors.name?.message}</span>
         </div>
+        {/* 카테고리 */}
+        <div className="space-y-1">
+          <Labels tag="span" text="카테고리" htmlFor="category" />
+          <Selects
+            register={register("category", {
+              required: {
+                value: true,
+                message: "카테고리를 선택해주세요",
+              },
+            })}
+            options={[{ value: "", text: "카테고리 선택" }, ...ProductCategory]}
+            currentValue={watch("category")}
+            updateValue={updateValue}
+            required
+            name="category"
+          />
+          <span className="empty:hidden invalid">{formState.errors.category?.message}</span>
+        </div>
         {/* 가격 */}
         <div className="space-y-1">
           <Labels text="가격" htmlFor="price" />
@@ -213,7 +240,7 @@ const Upload: NextPage = () => {
             required
             placeholder=""
             name="price"
-            type="text"
+            type="number"
             kind="price"
           />
           <span className="empty:hidden invalid">{formState.errors.price?.message}</span>

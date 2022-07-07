@@ -3,8 +3,9 @@ import { NextApiRequest, NextApiResponse } from "next";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { Feeling } from "@prisma/client";
 
-export interface PostPostsCuriosityResponse {
+export interface PostPostsEmotionResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -15,7 +16,7 @@ export interface PostPostsCuriosityResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { id: _id } = req.query;
+    const { id: _id, feeling: _feeling } = req.query;
     const { user } = req.session;
 
     // request valid
@@ -42,20 +43,48 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // check current curiosity status
-    const exists = await client.curiosity.findFirst({
+    const exists = await client.emotion.findFirst({
       where: {
         userId: user?.id,
         postId: post.id,
       },
       select: {
         id: true,
+        feeling: true,
       },
     });
 
+    const feeling = _feeling?.toString() as Feeling | null;
     if (!exists) {
       // create
-      await client.curiosity.create({
+      if (!feeling) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+      await client.emotion.create({
         data: {
+          feeling: feeling,
+          user: {
+            connect: {
+              id: user?.id,
+            },
+          },
+          post: {
+            connect: {
+              id: post.id,
+            },
+          },
+        },
+      });
+    } else if (feeling && exists.feeling !== feeling) {
+      // update
+      await client.emotion.update({
+        where: {
+          id: exists.id,
+        },
+        data: {
+          feeling: feeling,
           user: {
             connect: {
               id: user?.id,
@@ -70,7 +99,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
     } else {
       // delete
-      await client.curiosity.delete({
+      await client.emotion.delete({
         where: {
           id: exists.id,
         },
@@ -78,7 +107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // result
-    const result: PostPostsCuriosityResponse = {
+    const result: PostPostsEmotionResponse = {
       success: true,
     };
     return res.status(200).json(result);

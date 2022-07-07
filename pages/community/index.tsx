@@ -19,6 +19,8 @@ import MessageModal, { MessageModalProps } from "@components/commons/modals/case
 import FloatingButtons from "@components/floatingButtons";
 import { PostList, PostItem } from "@components/lists";
 import { PostPostsCuriosityResponse } from "@api/posts/[id]/curiosity";
+import { PostPostsEmotionResponse } from "@api/posts/[id]/emotion";
+import { FeelingKeys } from "@api/posts/types";
 
 const getKey = (pageIndex: number, previousPageData: GetPostsResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/posts?page=1&${query}`;
@@ -51,10 +53,10 @@ const Community: NextPage = () => {
         if (post.id !== item.id) return post;
         return {
           ...post,
-          isCuriosity: !post.isCuriosity,
-          _count: {
-            ...post._count,
-            curiosities: post.isCuriosity ? post._count.curiosities - 1 : post._count.curiosities + 1,
+          curiosity: !post.curiosity,
+          curiosities: {
+            ...post.curiosities,
+            count: post.curiosity ? post.curiosities.count - 1 : post.curiosities.count + 1,
           },
         };
       });
@@ -63,6 +65,42 @@ const Community: NextPage = () => {
     mutate(mutateData, false);
     const updateCuriosity: PostPostsCuriosityResponse = await (await fetch(`/api/posts/${item.id}/curiosity`, { method: "POST" })).json();
     if (updateCuriosity.error) console.error(updateCuriosity.error);
+    mutate();
+  };
+
+  const emotionItem = async (item: PostItem, feeling: FeelingKeys) => {
+    if (!data) return;
+    const mutateData = data.map((dataRow) => {
+      const posts = dataRow.posts.map((post) => {
+        if (post.id !== item.id) return post;
+        const actionType = !post.emotion ? "create" : post.emotion !== feeling ? "update" : "delete";
+        return {
+          ...post,
+          emotion: (() => {
+            if (actionType === "create") return feeling;
+            if (actionType === "update") return feeling;
+            return null;
+          })(),
+          emotions: {
+            ...post.emotions,
+            count: (() => {
+              if (actionType === "create") return post.emotions.count + 1;
+              if (actionType === "update") return post.emotions.count;
+              return post.emotions.count - 1;
+            })(),
+            feelings: (() => {
+              if (actionType === "create") return post.emotions.feelings.includes(feeling) ? post.emotions.feelings : [...post.emotions.feelings, feeling];
+              if (actionType === "update") return post.emotions.feelings.includes(feeling) ? post.emotions.feelings : [...post.emotions.feelings, feeling];
+              return post.emotions.feelings;
+            })(),
+          },
+        };
+      });
+      return { ...dataRow, posts };
+    });
+    mutate(mutateData, false);
+    const updateEmotion: PostPostsEmotionResponse = await (await fetch(`/api/posts/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
+    if (updateEmotion.error) console.error(updateEmotion.error);
     mutate();
   };
 
@@ -104,7 +142,7 @@ const Community: NextPage = () => {
       <div className="-mx-5">
         {posts.length ? (
           <>
-            <PostList list={posts || []} pathname="/community/[id]" curiosityItem={user.id === -1 ? openSignUpModal : curiosityItem} />
+            <PostList list={posts || []} pathname="/community/[id]" curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} />
             <div ref={infiniteRef} className="py-6 text-center border-t">
               <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
             </div>
