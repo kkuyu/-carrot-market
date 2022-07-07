@@ -16,7 +16,7 @@ const NavBar = ({}: NavBarProps) => {
   } = useRecoilValue(PageLayout);
 
   const classNames = {
-    default: "flex flex-col items-center space-y-1",
+    default: `basis-full h-full pt-2 space-y-1`,
     active: "text-orange-500",
     inactive: "hover:text-gray-500 transition-colors",
   };
@@ -110,7 +110,7 @@ const NavBar = ({}: NavBarProps) => {
   return (
     <div id="layout-nav-bar" className="fixed bottom-0 left-0 w-full z-[100]">
       <nav className="mx-auto w-full h-16 max-w-xl border-t bg-white">
-        <div className="-mb-1 flex items-center justify-around w-full h-full">
+        <div className="-mb-1 flex w-full h-full">
           {navBarUtils.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
           {navBarUtils.includes(NavBarUtils["Community"]) && <>{getUtils(NavBarUtils["Community"])}</>}
           {navBarUtils.includes(NavBarUtils["Inbox"]) && <>{getUtils(NavBarUtils["Inbox"])}</>}

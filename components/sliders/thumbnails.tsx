@@ -33,6 +33,34 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
 
+  const makeSliderItem = (item: ThumbnailItem, index: number, array: ThumbnailItem[]) => {
+    if (!modal) {
+      return (
+        <span className="relative block w-full bg-slate-300">
+          <span className="block pb-[80%]"></span>
+          <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${item.src}/public`} alt={item.name} layout="fill" objectFit="cover" />
+        </span>
+      );
+    }
+    return (
+      <button
+        type="button"
+        className="relative block w-full bg-slate-300"
+        onClick={() => {
+          openThumbnailModal(list, index);
+        }}
+        onFocus={() => {
+          if (!flickingRef.current) return;
+          flickingRef.current.viewport.element.scrollLeft = 0;
+          flickingRef.current.moveTo(index, 0);
+        }}
+      >
+        <span className="block pb-[80%]"></span>
+        <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${item.src}/public`} alt={item.name} layout="fill" objectFit="cover" />
+      </button>
+    );
+  };
+
   const updateSlider = () => {
     if (list.length <= 1) return;
 
@@ -77,21 +105,7 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
   }
 
   if (list.length === 1) {
-    return (
-      <div className="relative block w-full">
-        {modal ? (
-          <button type="button" className="relative block w-full bg-slate-300" onClick={() => openThumbnailModal(list, 0)}>
-            <span className="block pb-[80%]"></span>
-            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${list[0].src}/public`} alt={list[0].name} layout="fill" objectFit="cover" />
-          </button>
-        ) : (
-          <span className="relative block w-full bg-slate-300">
-            <span className="block pb-[80%]"></span>
-            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${list[0].src}/public`} alt={list[0].name} layout="fill" objectFit="cover" />
-          </span>
-        )}
-      </div>
-    );
+    return <div className="relative block w-full">{makeSliderItem(list[0], 0, list)}</div>;
   }
 
   return (
@@ -112,19 +126,9 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
       }}
       style={{ width: "100%" }}
     >
-      {list.map((item, index) => (
-        <li key={item.key} id={item.key} role="tabpanel" className="relative block w-full panel" aria-roledescription="slide" aria-label={item.label} aria-hidden={item.index === flickingIndex}>
-          {modal ? (
-            <button type="button" className="relative block w-full bg-slate-300" onClick={() => openThumbnailModal(list, index)}>
-              <span className="block pb-[80%]"></span>
-              <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${item.src}/public`} alt={item.name} layout="fill" objectFit="cover" />
-            </button>
-          ) : (
-            <span className="relative block w-full bg-slate-300">
-              <span className="block pb-[80%]"></span>
-              <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${item.src}/public`} alt={item.name} layout="fill" objectFit="cover" />
-            </span>
-          )}
+      {list.map((item, index, array) => (
+        <li key={item.key} id={item.key} role="tabpanel" className="relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
+          {makeSliderItem(item, index, array)}
         </li>
       ))}
       <ViewportSlot>
@@ -135,9 +139,7 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
               type="button"
               role="tab"
               className="w-4 h-4 p-1"
-              onClick={() => {
-                flickingRef.current?.moveTo(item.index);
-              }}
+              onClick={() => flickingRef.current?.moveTo(item.index)}
               aria-label={item.label}
               aria-controls={item.key}
               aria-selected={item.index === flickingIndex}
