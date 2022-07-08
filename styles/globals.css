@@ -7,10 +7,6 @@ body {
   font-family: Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
 }
 
-*:focus:not([class*="focus:"]) {
-  @apply outline-none focus:ring;
-}
-
 button,
 label {
   @apply cursor-pointer;
@@ -19,6 +15,14 @@ label {
 input,
 textarea {
   @apply block;
+}
+input {
+  box-shadow: none;
+}
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 h1,
@@ -31,8 +35,8 @@ strong {
 }
 
 .main {
-  @apply mx-auto w-full max-w-xl min-h-screen outline outline-1 outline-gray-200;
-  max-height: -webkit-fill-available;
+  @apply relative mx-auto w-full max-w-xl;
+  box-shadow: -1px 0px 0px 0px #e5e7eb, 1px 0px 0px 0px #e5e7eb;
 }
 .main:not(:first-child) {
   @apply pt-12;
@@ -44,9 +48,13 @@ strong {
   @apply pt-0;
 }
 
-.h-max-fullScreen {
+.h-min-full-screen {
   @apply min-h-screen;
-  max-height: -webkit-fill-available;
+}
+@supports (-webkit-touch-callout: none) {
+  .h-min-full-screen {
+    min-height: -webkit-fill-available;
+  }
 }
 
 .container {

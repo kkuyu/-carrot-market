@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useEffect, useMemo } from "react";
 
 import { CommonDispatchContext, CommonStateContext } from "@components/commons/commonContext";
 import ModalContainer from "@components/commons/modals/modalContainer";
@@ -8,6 +8,14 @@ const ModalWrapper = () => {
   const { open, close } = useContext(CommonDispatchContext);
 
   const currentModal = useMemo(() => currentState.get("Modal"), [currentState]);
+
+  useEffect(() => {
+    if (currentModal?.length) {
+      document.body.setAttribute("style", "overflow: hidden");
+    } else {
+      document.body.removeAttribute("style");
+    }
+  }, [currentModal]);
 
   return (
     <>

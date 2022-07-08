@@ -13,8 +13,9 @@ import { PageLayout } from "@libs/states";
 import { GetProductsResponse } from "@api/products";
 import { GetUserResponse } from "@api/users/my";
 
-import { ProductList } from "@components/lists";
 import FloatingButtons from "@components/floatingButtons";
+import Product from "@components/cards/product";
+import Link from "next/link";
 
 const getKey = (pageIndex: number, previousPageData: GetProductsResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/products?page=1&${query}`;
@@ -57,27 +58,38 @@ const Home: NextPage = () => {
 
   return (
     <div className="container">
-      {/* 중고거래 목록 */}
-      <div className="-mx-5">
-        {products.length ? (
-          <>
-            <ProductList list={products || []} pathname="/products/[id]" />
-            <div ref={infiniteRef} className="py-6 text-center border-t">
-              <span className="text-sm text-gray-500">{isLoading ? "판매 상품을 불러오고있어요" : isReachingEnd ? "판매 상품을 모두 확인하였어요" : ""}</span>
-            </div>
-          </>
-        ) : (
-          <div className="py-10 text-center">
-            <p className="text-gray-500">
-              앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
-              <br />
-              등록된 판매 상품이 없어요.
-            </p>
+      {/* 판매상품: List */}
+      {Boolean(products.length) && (
+        <div className="-mx-5">
+          <ul className="divide-y">
+            {products.map((item) => (
+              <li key={item?.id}>
+                <Link href={`/products/${item?.id}`}>
+                  <a className="block p-5">
+                    <Product item={item} />
+                  </a>
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <div ref={infiniteRef} className="px-5 py-6 text-center border-t">
+            <span className="text-sm text-gray-500">{isLoading ? "판매 상품을 불러오고있어요" : isReachingEnd ? "판매 상품을 모두 확인하였어요" : ""}</span>
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
-      {/* 중고거래 글쓰기 */}
+      {/* 판매상품: Empty */}
+      {!Boolean(products.length) && (
+        <div className="py-10 text-center">
+          <p className="text-gray-500">
+            앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
+            <br />
+            등록된 판매 상품이 없어요.
+          </p>
+        </div>
+      )}
+
+      {/* 글쓰기 */}
       <FloatingButtons href="/products/upload">
         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -140,15 +152,15 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       getUser: {
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(profile)),
-          dummyProfile: JSON.parse(JSON.stringify(dummyProfile)),
+          profile: JSON.parse(JSON.stringify(profile || {})),
+          dummyProfile: JSON.parse(JSON.stringify(dummyProfile || {})),
         },
       },
       getProduct: {
         query,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(products)),
+          products: JSON.parse(JSON.stringify(products || [])),
           pages: 0,
         },
       },

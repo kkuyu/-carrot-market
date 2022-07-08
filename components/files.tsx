@@ -1,56 +1,98 @@
 import Image from "next/image";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
+import useToast from "@libs/client/useToast";
+import { FileOptions, validateFiles } from "@libs/utils";
 
-export interface Thumbnail {
-  preview: string;
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
+
+interface PreviewItem {
+  src: string;
   raw: File;
 }
-
-export type UpdateFiles = (type: "remove", thumb?: Thumbnail) => void;
 
 interface FilesProps extends React.HTMLAttributes<HTMLInputElement> {
   name: string;
   required?: boolean;
   disabled?: boolean;
+  photoOptions?: FileOptions;
+  currentValue?: FileList;
+  changeValue?: (value: FileList) => void;
   accept?: string;
-  maxLength?: number;
   multiple?: boolean;
   register?: UseFormRegisterReturn;
-  thumbnails: Thumbnail[];
-  updateFiles: UpdateFiles;
   [key: string]: any;
 }
 
-export const validateFiles = (originalFiles: FileList, options: typeof photoOptions) => {
-  let validFiles = Array.from(originalFiles);
-  let errors: { [key in keyof typeof options]?: boolean } = {};
+const Files = ({ name, required = false, disabled, photoOptions, currentValue, changeValue, accept, multiple = false, register, ...rest }: FilesProps) => {
+  const [preview, setPreview] = useState<PreviewItem[]>([]);
 
-  // acceptTypes
-  if (options?.acceptTypes) {
-    validFiles = validFiles.filter((file: File) => {
-      if (options.acceptTypes.includes(file.type)) return true;
-      errors.acceptTypes = true;
-      return false;
-    });
-  }
+  const { openToast } = useToast();
 
-  // maxLength
-  if (options?.maxLength) {
-    if (originalFiles.length > options.maxLength) errors.maxLength = true;
-    if (validFiles.length > options.maxLength) validFiles = validFiles.slice(0, options.maxLength);
-  }
+  const changeFiles = () => {
+    // check empty
+    if (!currentValue?.length) {
+      setPreview([]);
+      return;
+    }
 
-  return { errors, validFiles };
-};
+    // check options
+    const { errors, validFiles } = validateFiles(currentValue, photoOptions);
+    if (errors?.acceptTypes) {
+      openToast<MessageToastProps>(MessageToast, "invalid-photos-acceptTypes", {
+        placement: "bottom",
+        message: "jpg, png, gif 형식의 파일만 등록할 수 있어요",
+      });
+    }
+    if (errors?.maxLength) {
+      openToast<MessageToastProps>(MessageToast, "invalid-photos-maxLength", {
+        placement: "bottom",
+        message: `최대 ${photoOptions?.maxLength}개까지 등록할 수 있어요.`,
+      });
+    }
 
-const Files = ({ name, required = false, disabled, accept, maxLength, multiple = false, register, thumbnails, updateFiles, ...rest }: FilesProps) => {
+    // set thumbnails
+    setPreview(
+      validFiles.map((file: File) => ({
+        src: URL.createObjectURL(file),
+        raw: file,
+      }))
+    );
+  };
+
+  const updateFiles = (type: "remove", preview: PreviewItem) => {
+    const transfer = new DataTransfer();
+
+    switch (type) {
+      case "remove":
+        if (!currentValue?.length) break;
+        Array.from(currentValue)
+          .filter((file) => file !== preview?.raw)
+          .forEach((file) => transfer.items.add(file));
+        break;
+      default:
+        console.error("updatePhotos", type);
+        return;
+    }
+
+    if (changeValue) changeValue(transfer.files);
+    if (currentValue) changeFiles();
+  };
+
+  useEffect(() => {
+    changeFiles();
+  }, [currentValue]);
+
   return (
     <div className="relative">
       <div className="absolute top-2 left-0">
         <input {...register} id={name} type="file" name={name} required={required} disabled={disabled} accept={accept} multiple={multiple} className="peer sr-only" {...rest} />
-        <label htmlFor={name} className="relative flex flex-col items-center justify-center w-20 h-20 bg-white border border-gray-300 rounded-md hover:border-orange-500 peer-focus:border-orange-500">
+        <label
+          htmlFor={name}
+          className="relative flex flex-col items-center justify-center w-20 h-20 bg-white border border-gray-300 rounded-md
+            peer-focus:outline-none peer-focus:border-orange-500 peer-focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]"
+        >
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path
               strokeLinecap="round"
@@ -61,32 +103,26 @@ const Files = ({ name, required = false, disabled, accept, maxLength, multiple =
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path>
           </svg>
           <span className="mt-1 text-sm">
-            <em className={`not-italic ${thumbnails.length > 0 ? "text-orange-500" : ""}`}>{thumbnails.length}</em>
-            {maxLength ? `/${maxLength}` : ""}
+            <em className={`not-italic ${preview.length > 0 ? "text-orange-500" : ""}`}>{preview.length}</em>
+            {photoOptions?.maxLength ? `/${photoOptions?.maxLength}` : ""}
           </span>
         </label>
       </div>
-      <div className="pl-20 pt-2 overflow-x-scroll">
-        {Boolean(thumbnails.length) ? (
-          <div className="flex">
-            {thumbnails.map((thumb, index) => (
-              <div key={thumb.preview} className="relative ml-3 w-20 shrink-0">
-                <div className="relative border border-gray-300 rounded-md overflow-hidden">
-                  <span className="block pb-[100%]"></span>
-                  <Image src={thumb.preview} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" />
-                  {index === 0 && <span className="absolute bottom-0 left-0 w-full text-sm text-center text-white bg-black">대표 사진</span>}
-                </div>
-                <button type="button" className="absolute -top-2 -right-2 w-5 h-5 bg-gray-600 rounded-full outline-none hover:bg-black focus:bg-black" onClick={() => updateFiles("remove", thumb)}>
-                  <svg className="m-auto w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-                  </svg>
-                </button>
-              </div>
-            ))}
+      <div className="flex pl-20 pt-2 overflow-x-scroll before:block before:h-20">
+        {preview?.map((item, index) => (
+          <div key={item.src} className="relative ml-3 w-20 shrink-0">
+            <div className="relative border border-gray-300 rounded-md overflow-hidden">
+              <span className="block pb-[100%]"></span>
+              <Image src={item.src} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" />
+              {index === 0 && <span className="absolute bottom-0 left-0 w-full text-sm text-center text-white bg-black">대표 사진</span>}
+            </div>
+            <button type="button" className="absolute -top-2 -right-2 w-5 h-5 bg-gray-600 rounded-full outline-none hover:bg-black focus:bg-black" onClick={() => updateFiles("remove", item)}>
+              <svg className="m-auto w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+              </svg>
+            </button>
           </div>
-        ) : (
-          <div className="h-20"></div>
-        )}
+        ))}
       </div>
     </div>
   );

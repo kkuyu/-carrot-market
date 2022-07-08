@@ -19,7 +19,7 @@ const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }
   const { register, handleSubmit } = formData;
 
   return (
-    <div className={`-mx-5 px-5 pt-5 pb-2 bg-white ${stickyClass ? "sticky " + stickyClass : ""}`}>
+    <div className={`-mx-5 px-5 pt-5 pb-3 bg-white ${stickyClass ? "sticky " + stickyClass : ""}`}>
       <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
         <div className="space-y-1">
           <Inputs

@@ -12,8 +12,7 @@ import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
 
 import Buttons from "@components/buttons";
-import { SearchAddress, SearchAddressTypes } from "@components/forms";
-import { AddressList, AddressItem } from "@components/lists";
+import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 
 const WelcomeLocate: NextPage = () => {
   const router = useRouter();
@@ -36,8 +35,8 @@ const WelcomeLocate: NextPage = () => {
     SearchAddressFocus("keyword");
   };
 
-  const selectItem = (itemData: AddressItem) => {
-    router.replace(`/join?addrNm=${itemData.addrNm}`);
+  const selectItem = (itemData: GetBoundarySearchResponse["emdList"][0] | GetKeywordSearchResponse["emdList"][0]) => {
+    router.push(`/join?addrNm=${itemData.addrNm}`);
   };
 
   useEffect(() => {
@@ -53,7 +52,7 @@ const WelcomeLocate: NextPage = () => {
   }, []);
 
   return (
-    <div className="container">
+    <div className="container pb-5">
       {/* 읍면동 검색 폼 */}
       <SearchAddress
         formData={searchAddressForm}
@@ -67,7 +66,7 @@ const WelcomeLocate: NextPage = () => {
 
       {/* 키워드 검색 결과 */}
       {Boolean(keyword.length) && (
-        <div className="mt-1 pb-3">
+        <>
           {!keywordData && !keywordError ? (
             // 로딩중
             <div className="py-2 text-center">
@@ -75,7 +74,15 @@ const WelcomeLocate: NextPage = () => {
             </div>
           ) : keywordData?.emdList.length ? (
             // 검색결과 목록
-            <AddressList list={keywordData?.emdList || []} selectItem={selectItem} />
+            <ul className="-mt-2 divide-y">
+              {keywordData.emdList.map((item) => (
+                <li key={item.id}>
+                  <button type="button" onClick={() => selectItem(item)} className="block w-full py-2 text-left">
+                    {item.addrNm}
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : (
             // 검색결과 없음
             <div className="py-2 text-center">
@@ -87,12 +94,12 @@ const WelcomeLocate: NextPage = () => {
               <Buttons tag="button" type="button" sort="text-link" text="동네 이름 다시 검색하기" onClick={resetForm} className="mt-2" />
             </div>
           )}
-        </div>
+        </>
       )}
 
       {/* 위치 검색 결과 */}
       {!Boolean(keyword.length) && (
-        <div className="mt-1 pb-3">
+        <>
           {state === "denied" || state === "error" ? (
             // 위치 정보 수집 불가
             <div className="py-2 text-center">
@@ -111,7 +118,15 @@ const WelcomeLocate: NextPage = () => {
             </div>
           ) : boundaryData?.emdList.length ? (
             // 검색결과 목록
-            <AddressList list={boundaryData?.emdList || []} selectItem={selectItem} />
+            <ul className="-mt-2 divide-y">
+              {boundaryData.emdList.map((item) => (
+                <li key={item.id}>
+                  <button type="button" onClick={() => selectItem(item)} className="block w-full py-2 text-left">
+                    {item.addrNm}
+                  </button>
+                </li>
+              ))}
+            </ul>
           ) : (
             // 검색결과 없음
             <div className="py-2 text-center">
@@ -122,7 +137,7 @@ const WelcomeLocate: NextPage = () => {
               </p>
             </div>
           )}
-        </div>
+        </>
       )}
     </div>
   );

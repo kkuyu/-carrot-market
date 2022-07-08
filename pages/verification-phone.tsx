@@ -14,7 +14,8 @@ import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostVerificationUpdateResponse } from "@api/users/verification-update";
 
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import { VerifyPhone, VerifyPhoneTypes, VerifyToken, VerifyTokenTypes } from "@components/forms";
+import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
+import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const VerificationPhone: NextPage = () => {
   const router = useRouter();
@@ -81,7 +82,7 @@ const VerificationPhone: NextPage = () => {
         placement: "bottom",
         message: "휴대폰 번호가 변경되었어요",
       });
-      router.replace("/login");
+      router.push("/login");
     },
     onError: (data) => {
       switch (data?.error?.name) {

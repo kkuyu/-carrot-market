@@ -25,7 +25,7 @@ const Welcome: NextPage = () => {
 
   return (
     <section className="container">
-      <div className="flex flex-col items-center w-full h-max-fullScreen text-center">
+      <div className="flex flex-col items-center w-full h-min-full-screen text-center">
         <div className="grow flex flex-col justify-center">
           <svg className="mx-auto w-16 h-16" role="img" aria-hidden fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path

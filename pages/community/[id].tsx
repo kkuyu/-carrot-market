@@ -9,17 +9,22 @@ import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
-import { getDiffTimeStr } from "@libs/utils";
+import { getCategory, getDiffTimeStr } from "@libs/utils";
 
 import { PageLayout } from "@libs/states";
 import { GetPostDetailResponse } from "@api/posts/[id]";
+import { PostPostsCommentResponse } from "@api/posts/[id]/comment";
 
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import Buttons from "@components/buttons";
-import { ThumbnailList, ThumbnailItem, CommentList } from "@components/lists";
 import Profiles from "@components/profiles";
-import { PostPostsCommentResponse } from "@api/posts/[id]/comment";
+import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
+import Comment from "@components/cards/comment";
+import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
+import PostFeedback, { PostFeedbackItem } from "@components/groups/postFeedback";
+import { FeelingKeys } from "@api/posts/types";
+import { PostPostsCuriosityResponse } from "@api/posts/[id]/curiosity";
+import { PostPostsEmotionResponse } from "@api/posts/[id]/emotion";
 
 interface CommentForm {
   comment: string;
@@ -38,15 +43,19 @@ const CommunityDetail: NextPage<{
 
   // static data: post detail
   const today = new Date();
-  const thumbnails: ThumbnailItem[] = (staticProps?.post?.photo ? staticProps?.post.photo.split(",") : []).map((src, index, array) => ({
-    src,
-    index,
-    key: `thumbnails-list-${index + 1}`,
-    label: `${index + 1}/${array.length}`,
-    name: `게시글 이미지 ${index + 1}/${array.length} (${staticProps?.post?.question?.length > 15 ? staticProps?.post?.question?.substring(0, 15) + "..." : staticProps?.post?.question})`,
-  }));
   const [post, setPost] = useState<GetPostDetailResponse["post"] | null>(staticProps?.post ? staticProps.post : null);
-  const [diffTime, setDiffTime] = useState(getDiffTimeStr(new Date(staticProps?.post.updatedAt).getTime(), today.getTime()));
+  const diffTime = getDiffTimeStr(new Date(staticProps?.post.updatedAt).getTime(), today.getTime());
+  const category = getCategory("post", staticProps?.post?.category);
+  const cutDownContent = !staticProps?.post?.content ? "" : staticProps.post.content.length <= 15 ? staticProps.post.content : staticProps.post.content.substring(0, 15) + "...";
+  const thumbnails: ThumbnailListItem[] = !staticProps?.post?.photo
+    ? []
+    : staticProps.post.photo.split(",").map((src, index, array) => ({
+        src,
+        index,
+        key: `thumbnails-slider-${index + 1}`,
+        label: `${index + 1}/${array.length}`,
+        name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownContent})`,
+      }));
 
   // fetch data: post detail
   const { data, error, mutate: boundMutate } = useSWR<GetPostDetailResponse>(router.query.id ? `/api/posts/${router.query.id}` : null);
@@ -76,20 +85,65 @@ const CommunityDetail: NextPage<{
     },
   });
 
-  // click favorite
-  const toggleCuriosity = () => {
-    if (!post) return;
-    if (curiosityLoading) return;
-    boundMutate(
-      (prev) =>
-        prev && {
-          ...prev,
-          post: { ...prev.post, _count: { ...prev.post._count, curiosities: !prev.isCuriosity ? prev.post._count.curiosities + 1 : prev.post._count.curiosities - 1 } },
-          isCuriosity: !prev.isCuriosity,
+  const curiosityItem = async (item: PostFeedbackItem) => {
+    if (!data) return;
+    const mutateData = {
+      ...data,
+      post: {
+        ...data.post,
+        curiosity: !data.post.curiosity,
+        curiosities: {
+          ...data.post.curiosities,
+          count: data.post.curiosity ? data.post.curiosities.count - 1 : data.post.curiosities.count + 1,
         },
-      false
-    );
-    updateCuriosity({});
+      },
+    };
+    boundMutate(mutateData, false);
+    const updateCuriosity: PostPostsCuriosityResponse = await (await fetch(`/api/posts/${item.id}/curiosity`, { method: "POST" })).json();
+    if (updateCuriosity.error) console.error(updateCuriosity.error);
+    boundMutate();
+  };
+
+  const emotionItem = async (item: PostFeedbackItem, feeling: FeelingKeys) => {
+    if (!data) return;
+    const actionType = !data.post.emotion ? "create" : data.post.emotion !== feeling ? "update" : "delete";
+    const mutateData = {
+      ...data,
+      post: {
+        ...data.post,
+        emotion: (() => {
+          if (actionType === "create") return feeling;
+          if (actionType === "update") return feeling;
+          return null;
+        })(),
+        emotions: {
+          ...data.post.emotions,
+          count: (() => {
+            if (actionType === "create") return data.post.emotions.count + 1;
+            if (actionType === "update") return data.post.emotions.count;
+            return data.post.emotions.count - 1;
+          })(),
+          feelings: (() => {
+            if (data.post.emotions.count === 1) {
+              if (actionType === "create") return [feeling];
+              if (actionType === "update") return [feeling];
+              return [];
+            }
+            if (actionType === "create") return data.post.emotions.feelings.includes(feeling) ? data.post.emotions.feelings : [...data.post.emotions.feelings, feeling];
+            if (actionType === "update") return data.post.emotions.feelings.includes(feeling) ? data.post.emotions.feelings : [...data.post.emotions.feelings, feeling];
+            return data.post.emotions.feelings;
+          })(),
+        },
+      },
+    };
+    boundMutate(mutateData, false);
+    const updateEmotion: PostPostsEmotionResponse = await (await fetch(`/api/posts/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
+    if (updateEmotion.error) console.error(updateEmotion.error);
+    boundMutate();
+  };
+
+  const commentItem = (item: PostFeedbackItem) => {
+    setFocus("comment");
   };
 
   const submitComment = (data: CommentForm) => {
@@ -110,7 +164,7 @@ const CommunityDetail: NextPage<{
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
       },
     });
   };
@@ -123,21 +177,18 @@ const CommunityDetail: NextPage<{
       ...prev,
       ...data.post,
     }));
-    setDiffTime(() => {
-      return getDiffTimeStr(new Date(data?.post.updatedAt).getTime(), today.getTime());
-    });
   }, [data]);
 
   // setting layout
   useEffect(() => {
     if (!post) {
-      router.push("/");
+      router.replace("/");
       return;
     }
 
     setLayout(() => ({
-      title: post?.question || "",
-      seoTitle: `${post?.question || ""} | 게시글 상세`,
+      title: post?.content || "",
+      seoTitle: `${post?.content || ""} | 게시글 상세`,
       header: {
         headerUtils: ["back", "share", "home"],
       },
@@ -153,57 +204,60 @@ const CommunityDetail: NextPage<{
 
   return (
     <article className="container pb-20">
-      <h1 className="sr-only">{(post?.question || "")?.length > 15 ? post?.question?.substring(0, 15) + "..." : post?.question}</h1>
-
       {/* 게시글 정보 */}
-      <section className="pt-5 block">
-        {/* todo: 카테고리 */}
-        <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">동네생활</em>
-
-        {/* 판매자 */}
-        <Profiles user={post?.user} emdPosNm={post?.emdPosNm} diffTime={diffTime} />
-
-        {/* 설명 */}
-        <p className="mt-5 block font-normal">{post?.question}</p>
-
+      <section className="-mx-5 border-b">
+        {/* 제목 */}
+        <h1 className="sr-only">{cutDownContent}</h1>
+        {/* 내용 */}
+        <div className="pt-5 pb-4 px-5">
+          {/* 카테고리 */}
+          <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
+          {/* 판매자 */}
+          <Profiles user={post?.user} emdPosNm={post?.emdPosNm} diffTime={diffTime} />
+          {/* 게시글 내용 */}
+          <p className="mt-5 block whitespace-pre-wrap">{post?.content}</p>
+        </div>
         {/* 썸네일 */}
         {Boolean(thumbnails.length) && (
-          <div className="mt-5">
+          <div className="pb-5 px-5">
             <ThumbnailList
               list={thumbnails || []}
               modal={{
-                title: `게시글 이미지 (${post?.question?.length > 15 ? post?.question?.substring(0, 15) + "..." : post?.question})`,
+                title: `게시글 이미지 (${cutDownContent})`,
               }}
             />
           </div>
         )}
-
         {/* 피드백 */}
-        <div className="mt-5 border-t">
-          <button type="button" className="py-2" onClick={user?.id === -1 ? openSignUpModal : toggleCuriosity}>
-            <svg className={`inline-block w-5 h-5 ${data?.isCuriosity ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span className={`ml-1 text-sm ${data?.isCuriosity ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {post?._count?.curiosities || null}</span>
-          </button>
-          <button type="button" className="ml-4 py-2" onClick={() => setFocus("comment")}>
-            <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              ></path>
-            </svg>
-            <span className="ml-1 text-sm text-gray-500">댓글 {post?.comments?.length || null}</span>
-          </button>
-        </div>
+        <PostFeedback item={post} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
       </section>
 
-      {/* 댓글 입력 */}
-      <div className="fixed bottom-0 left-0 w-full z-[50]">
-        <div className="relative mx-auto flex items-center w-full h-16 max-w-xl px-5 border-t bg-white">
-          <form onSubmit={handleSubmit(user?.id === -1 ? openSignUpModal : submitComment)} noValidate className="w-full space-y-4">
+      {/* 댓글 목록 */}
+      {Boolean(post?.comments) && (
+        <>
+          {/* 댓글 목록: list */}
+          {Boolean(post?.comments?.length) && (
+            <ul className="mt-5 space-y-3">
+              {post.comments.map((item) => (
+                <li key={item.id}>
+                  <Comment item={item} />
+                </li>
+              ))}
+            </ul>
+          )}
+          {/* 댓글 목록: empty */}
+          {!Boolean(post?.comments?.length) && (
+            <div className="py-10 text-center">
+              <p className="text-gray-500">
+                아직 댓글이 없어요.
+                <br />
+                가장 먼저 댓글을 남겨보세요.
+              </p>
+            </div>
+          )}
+
+          {/* 댓글 입력 */}
+          <form onSubmit={handleSubmit(user?.id === -1 ? openSignUpModal : submitComment)} noValidate className="mt-5 space-y-4">
             <div className="space-y-1">
               <Inputs
                 register={register("comment", {
@@ -230,14 +284,7 @@ const CommunityDetail: NextPage<{
               />
             </div>
           </form>
-        </div>
-      </div>
-
-      {/* 댓글 목록 */}
-      {Boolean(post?.comments?.length) && (
-        <div className="border-t">
-          <CommentList list={post.comments || []} />
-        </div>
+        </>
       )}
     </article>
   );
@@ -273,6 +320,13 @@ export const getStaticProps: GetStaticProps = async (context) => {
           avatar: true,
         },
       },
+      _count: {
+        select: {
+          curiosities: true,
+          emotions: true,
+          comments: true,
+        },
+      },
     },
   });
 
@@ -287,7 +341,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   return {
     props: {
       staticProps: {
-        post: JSON.parse(JSON.stringify(post)),
+        post: JSON.parse(JSON.stringify(post || {})),
       },
     },
   };

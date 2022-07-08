@@ -18,7 +18,8 @@ import { PostJoinDummyResponse } from "@api/users/join-dummy";
 
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import { VerifyPhone, VerifyPhoneTypes, VerifyToken, VerifyTokenTypes } from "@components/forms";
+import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
+import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const Join: NextPage = () => {
   const router = useRouter();

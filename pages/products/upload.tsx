@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useUser from "@libs/client/useUser";
-import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
 import { withSsrSession } from "@libs/server/withSession";
@@ -14,11 +13,10 @@ import { PageLayout } from "@libs/states";
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 
-import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import Labels from "@components/labels";
 import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
-import Files, { Thumbnail, UpdateFiles, validateFiles } from "@components/files";
+import Files from "@components/files";
 import Buttons from "@components/buttons";
 import Selects from "@components/selects";
 
@@ -34,18 +32,16 @@ const Upload: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const { openToast } = useToast();
   const { user, currentAddr } = useUser();
 
   const [photoLoading, setPhotoLoading] = useState(false);
-  const [thumbnails, setThumbnails] = useState<Thumbnail[]>([]);
   const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
 
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = useForm<ProductUploadForm>();
   const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
       setPhotoLoading(false);
-      router.push(`/products/${data.product.id}`);
+      router.replace(`/products/${data.product.id}`);
     },
     onError: (data) => {
       setPhotoLoading(false);
@@ -109,58 +105,6 @@ const Upload: NextPage = () => {
     });
   };
 
-  const changePhotos = () => {
-    const photos = getValues("photos");
-
-    // check empty
-    if (!photos?.length) {
-      setThumbnails([]);
-      return;
-    }
-
-    // check options
-    const { errors, validFiles } = validateFiles(photos, photoOptions);
-    if (errors?.acceptTypes) {
-      openToast<MessageToastProps>(MessageToast, "invalid-photos-acceptTypes", {
-        placement: "bottom",
-        message: "jpg, png, gif 형식의 파일만 등록할 수 있어요",
-      });
-    }
-    if (errors?.maxLength) {
-      openToast<MessageToastProps>(MessageToast, "invalid-photos-maxLength", {
-        placement: "bottom",
-        message: `최대 ${photoOptions.maxLength}개까지 등록할 수 있어요.`,
-      });
-    }
-
-    // set thumbnails
-    setThumbnails(
-      validFiles.map((file: File) => ({
-        preview: URL.createObjectURL(file),
-        raw: file,
-      }))
-    );
-  };
-
-  const updatePhotos: UpdateFiles = (type, thumb) => {
-    const transfer = new DataTransfer();
-    const originalFiles = getValues("photos");
-
-    switch (type) {
-      case "remove":
-        Array.from(originalFiles)
-          .filter((file) => file !== thumb?.raw)
-          .forEach((file) => transfer.items.add(file));
-        break;
-      default:
-        console.error("updatePhotos", type);
-        return;
-    }
-
-    setValue("photos", transfer.files);
-    changePhotos();
-  };
-
   useEffect(() => {
     setLayout(() => ({
       title: "중고거래 글쓰기",
@@ -180,15 +124,13 @@ const Upload: NextPage = () => {
         {/* 이미지 업로드 */}
         <div className="space-y-1">
           <Files
-            register={register("photos", {
-              onChange: changePhotos,
-            })}
+            register={register("photos")}
             name="photos"
+            photoOptions={photoOptions}
+            currentValue={watch("photos")}
+            changeValue={(value) => setValue("photos", value)}
             accept="image/*"
-            maxLength={photoOptions.maxLength}
             multiple={true}
-            thumbnails={thumbnails}
-            updateFiles={updatePhotos}
           />
           <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
         </div>

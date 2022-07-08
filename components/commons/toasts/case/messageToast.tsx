@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from "react";
-import { cls } from "@libs/utils";
 
 import { ToastComponentProps } from "@components/commons";
 import { ToastExtraProps } from "@components/commons/toasts/toastContainer";
@@ -75,11 +74,8 @@ const MessageToast = (props: MessageToastProps & ToastComponentProps & ToastExtr
 
   return (
     <div
-      className={cls(
-        `max-h-0 opacity-0 transition-all duration-${transitionDuration.current} pointer-events-auto`,
-        placement === "top" ? "mb-2 ease-out" : "mt-2 ease-in",
-        isShow ? "max-h-60 opacity-100" : ""
-      )}
+      className={`max-h-0 opacity-0 transition-all duration-${transitionDuration.current} pointer-events-auto
+        ${placement === "top" ? "mb-2 ease-out" : "mt-2 ease-in"} ${isShow ? "!max-h-60 !opacity-100" : ""}`}
       style={{ order }}
     >
       {type === "default" ? (

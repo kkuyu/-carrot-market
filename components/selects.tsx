@@ -52,10 +52,10 @@ const Selects = ({ name, options, currentValue = "", updateValue, required = fal
         type="button"
         id={name}
         onClick={() => setOpen((prev) => !prev)}
-        className={`relative w-full px-3 py-2 text-left border border-gray-300 outline-1 rounded-md ${
+        className={`relative w-full px-3 py-2 text-left border border-gray-300 rounded-md outline-none ${
           open
-            ? "outline border-orange-500 outline-orange-500 focus:border-orange-800 focus:outline-orange-800"
-            : "focus:ring-orange-500 focus:border-orange-500 focus:outline focus:outline-orange-500"
+            ? "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)] focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]"
+            : "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]"
         }`}
         aria-expanded={open ? "true" : "false"}
         aria-haspopup="listbox"

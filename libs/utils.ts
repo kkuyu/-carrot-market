@@ -4,10 +4,6 @@ import { uniqueNamesGenerator, Config, adjectives, starWars } from "unique-names
 import { PostCategory } from "@api/posts/types";
 import { ProductCategory } from "@api/products/types";
 
-export const cls: (...props: string[]) => string = (...classnames) => {
-  return classnames.join(" ");
-};
-
 export const isInstance = <T extends object>(value: string | number, type: T): type is T => {
   return Object.values(type).includes(value);
 };
@@ -64,4 +60,35 @@ export const getDiffTimeStr = (originTime: number, currentTime: number) => {
   }
 
   return resultStr || "방금 전";
+};
+
+export type FileOptions = {
+  maxLength?: number;
+  acceptTypes?: string[];
+};
+
+export const validateFiles = (originalFiles: FileList, options: FileOptions = {}) => {
+  let validFiles = Array.from(originalFiles);
+  let errors: { [key in keyof typeof options]?: boolean } = {};
+
+  // acceptTypes
+  if (options?.acceptTypes) {
+    validFiles = validFiles.filter((file: File) => {
+      if (options?.acceptTypes?.includes(file.type)) return true;
+      errors.acceptTypes = true;
+      return false;
+    });
+  }
+
+  // maxLength
+  if (options?.maxLength) {
+    if (originalFiles.length > options.maxLength) {
+      errors.maxLength = true;
+    }
+    if (validFiles.length > options.maxLength) {
+      validFiles = validFiles.slice(0, options.maxLength);
+    }
+  }
+
+  return { errors, validFiles };
 };

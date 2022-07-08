@@ -1,5 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import Link from "next/link";
 
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
@@ -13,14 +14,16 @@ import { withSsrSession } from "@libs/server/withSession";
 
 import { PageLayout } from "@libs/states";
 import { GetPostsResponse } from "@api/posts";
+import { FeelingKeys } from "@api/posts/types";
 import { GetUserResponse } from "@api/users/my";
-
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import FloatingButtons from "@components/floatingButtons";
-import { PostList, PostItem } from "@components/lists";
 import { PostPostsCuriosityResponse } from "@api/posts/[id]/curiosity";
 import { PostPostsEmotionResponse } from "@api/posts/[id]/emotion";
-import { FeelingKeys } from "@api/posts/types";
+
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
+import FloatingButtons from "@components/floatingButtons";
+import Post from "@components/cards/post";
+import PostFeedback, { PostFeedbackItem } from "@components/groups/postFeedback";
 
 const getKey = (pageIndex: number, previousPageData: GetPostsResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/posts?page=1&${query}`;
@@ -46,7 +49,7 @@ const Community: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const posts = data ? data.flatMap((item) => item.posts) : [];
 
-  const curiosityItem = async (item: PostItem) => {
+  const curiosityItem = async (item: PostFeedbackItem) => {
     if (!data) return;
     const mutateData = data.map((dataRow) => {
       const posts = dataRow.posts.map((post) => {
@@ -68,7 +71,7 @@ const Community: NextPage = () => {
     mutate();
   };
 
-  const emotionItem = async (item: PostItem, feeling: FeelingKeys) => {
+  const emotionItem = async (item: PostFeedbackItem, feeling: FeelingKeys) => {
     if (!data) return;
     const mutateData = data.map((dataRow) => {
       const posts = dataRow.posts.map((post) => {
@@ -89,6 +92,11 @@ const Community: NextPage = () => {
               return post.emotions.count - 1;
             })(),
             feelings: (() => {
+              if (post.emotions.count === 1) {
+                if (actionType === "create") return [feeling];
+                if (actionType === "update") return [feeling];
+                return [];
+              }
               if (actionType === "create") return post.emotions.feelings.includes(feeling) ? post.emotions.feelings : [...post.emotions.feelings, feeling];
               if (actionType === "update") return post.emotions.feelings.includes(feeling) ? post.emotions.feelings : [...post.emotions.feelings, feeling];
               return post.emotions.feelings;
@@ -104,6 +112,10 @@ const Community: NextPage = () => {
     mutate();
   };
 
+  const commentItem = (item: PostFeedbackItem) => {
+    router.push(`/community/${item?.id}`);
+  };
+
   // modal: sign up
   const openSignUpModal = () => {
     openModal<MessageModalProps>(MessageModal, "signUpNow", {
@@ -113,7 +125,7 @@ const Community: NextPage = () => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
       },
     });
   };
@@ -138,27 +150,62 @@ const Community: NextPage = () => {
 
   return (
     <div className="container">
-      {/* 동네생활 목록 */}
-      <div className="-mx-5">
-        {posts.length ? (
-          <>
-            <PostList list={posts || []} pathname="/community/[id]" curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} />
-            <div ref={infiniteRef} className="py-6 text-center border-t">
-              <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
-            </div>
-          </>
-        ) : (
-          <div className="py-10 text-center">
-            <p className="text-gray-500">
-              앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
-              <br />
-              등록된 게시글이 없어요.
-            </p>
-          </div>
-        )}
-      </div>
+      {/* 동네생활: List */}
+      {Boolean(posts.length) && (
+        <div className="-mx-5">
+          <ul className="divide-y">
+            {posts.map((item) => {
+              const cutDownContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
+              const thumbnails: ThumbnailListItem[] = !item?.photo
+                ? []
+                : item.photo.split(",").map((src, index, array) => ({
+                    src,
+                    index,
+                    key: `thumbnails-list-${index + 1}`,
+                    label: `${index + 1}/${array.length}`,
+                    name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownContent})`,
+                  }));
 
-      {/* 동네생활 글쓰기 */}
+              return (
+                <li key={item?.id}>
+                  <Link href={`/community/${item?.id}`}>
+                    <a className="block pt-5 pb-4 px-5">
+                      <Post item={item} />
+                    </a>
+                  </Link>
+                  {Boolean(thumbnails.length) && (
+                    <div className="pb-5 px-5">
+                      <ThumbnailList
+                        list={thumbnails || []}
+                        modal={{
+                          title: `게시글 이미지 (${cutDownContent})`,
+                        }}
+                      />
+                    </div>
+                  )}
+                  <PostFeedback item={item} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
+                </li>
+              );
+            })}
+          </ul>
+          <div ref={infiniteRef} className="py-6 text-center border-t">
+            <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
+          </div>
+        </div>
+      )}
+
+      {/* 동네생활: Empty */}
+      {!Boolean(posts.length) && (
+        <div className="py-10 text-center">
+          <p className="text-gray-500">
+            앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
+            <br />
+            등록된 게시글이 없어요.
+          </p>
+        </div>
+      )}
+
+      {/* 글쓰기 */}
       <FloatingButtons href="/community/write">
         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -217,6 +264,13 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
                 name: true,
               },
             },
+            _count: {
+              select: {
+                curiosities: true,
+                emotions: true,
+                comments: true,
+              },
+            },
           },
           where: {
             emdPosX: { gte: posX - distance, lte: posX + distance },
@@ -229,15 +283,15 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       getUser: {
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(profile)),
-          dummyProfile: JSON.parse(JSON.stringify(dummyProfile)),
+          profile: JSON.parse(JSON.stringify(profile || {})),
+          dummyProfile: JSON.parse(JSON.stringify(dummyProfile || {})),
         },
       },
       getPost: {
         query,
         response: {
           success: true,
-          posts: JSON.parse(JSON.stringify(posts)),
+          posts: JSON.parse(JSON.stringify(posts || [])),
           pages: 0,
         },
       },

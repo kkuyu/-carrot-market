@@ -1,15 +1,14 @@
 import Image from "next/image";
 
 import { useEffect, useRef, useState } from "react";
-
 import Flicking, { ViewportSlot } from "@egjs/react-flicking";
-import "@egjs/react-flicking/dist/flicking.min.css";
 import useModal from "@libs/client/useModal";
 
-import { ThumbnailSlider } from "@components/sliders";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 
-export interface ThumbnailItem {
+import "@egjs/react-flicking/dist/flicking.min.css";
+
+export interface ThumbnailSliderItem {
   src: string;
   index: number;
   key: string;
@@ -17,15 +16,15 @@ export interface ThumbnailItem {
   name: string;
 }
 
-interface ThumbnailsProps {
-  list: ThumbnailItem[];
+interface ThumbnailSliderProps {
+  list: ThumbnailSliderItem[];
   defaultIndex: number;
   modal: null | {
     title: string;
   };
 }
 
-const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
+const ThumbnailSlider = ({ list, defaultIndex, modal }: ThumbnailSliderProps) => {
   const { openModal } = useModal();
   const [mounted, setMounted] = useState(false);
 
@@ -33,7 +32,7 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
 
-  const makeSliderItem = (item: ThumbnailItem, index: number, array: ThumbnailItem[]) => {
+  const makeSliderItem = (item: ThumbnailSliderItem, index: number, array: ThumbnailSliderItem[]) => {
     if (!modal) {
       return (
         <span className="relative block w-full bg-slate-300">
@@ -74,7 +73,7 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
     flickingRef.current.camera.element.setAttribute("aria-live", 'polite"');
   };
 
-  const openThumbnailModal = (list: ThumbnailItem[], index: number) => {
+  const openThumbnailModal = (list: ThumbnailSliderItem[], index: number) => {
     if (!modal) return;
 
     openModal<LayerModalProps>(LayerModal, "thumbnailModal", {
@@ -153,4 +152,4 @@ const Thumbnails = ({ list, defaultIndex, modal }: ThumbnailsProps) => {
   );
 };
 
-export default Thumbnails;
+export default ThumbnailSlider;

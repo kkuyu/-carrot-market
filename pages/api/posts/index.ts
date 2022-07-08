@@ -15,7 +15,7 @@ export interface GetPostsResponse {
     curiosities: { count: number };
     emotion: Feeling | null;
     emotions: { count: number; feelings: Feeling[] };
-    _count: { comments: number };
+    _count: { curiosities: number; emotions: number; comments: number };
   })[];
   pages: number;
   error?: {
@@ -101,6 +101,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             _count: {
               select: {
                 curiosities: true,
+                emotions: true,
                 comments: true,
               },
             },

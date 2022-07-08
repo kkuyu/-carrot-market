@@ -179,7 +179,7 @@ const Header = ({}: HeaderProps) => {
         }
         openModal<MessageModalProps>(MessageModal, name, {
           type: "confirm",
-          message: "동네를 추가하시려면 회원가입이 필요해요. 휴대폰 인증하고 회원가입하시겠어요?",
+          message: "휴대폰 인증하고 회원가입하시겠어요?",
           cancelBtn: "취소",
           confirmBtn: "회원가입",
           hasBackdrop: true,
@@ -229,7 +229,7 @@ const Header = ({}: HeaderProps) => {
       case "title":
         return <strong className="text-base font-semibold font-semibold truncate">{`${title ? title : "title"}`}</strong>;
       case "submit":
-        return <Buttons tag="button" sort="text-link" text="완료" form={submitId} className="h-12 px-5" />;
+        return <Buttons tag="button" sort="text-link" text="완료" form={submitId} className="h-12 !px-5" />;
       default:
         return null;
     }

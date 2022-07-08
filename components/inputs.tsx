@@ -1,4 +1,3 @@
-import { cls } from "@libs/utils";
 import React, { ReactNode } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
@@ -27,11 +26,8 @@ const Inputs = ({ name, kind = "text", type, required = false, disabled, registe
           name={name}
           required={required}
           disabled={disabled}
-          className={cls(
-            "w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400",
-            "focus:outline-none focus:ring-orange-500 focus:border-orange-500",
-            disabled ? "opacity-80" : ""
-          )}
+          className={`w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
+            focus:outline-none focus:ring-orange-500 focus:border-orange-500 ${disabled ? "opacity-80" : ""}`}
           {...rest}
         />
         {appendButtons && <div className="ml-2 flex space-x-2">{appendButtons}</div>}
@@ -40,7 +36,7 @@ const Inputs = ({ name, kind = "text", type, required = false, disabled, registe
   }
 
   return (
-    <div className="relative flex items-center rounded-md shadow-sm">
+    <div className="relative flex items-center rounded-md">
       <input
         {...register}
         id={name}
@@ -48,11 +44,8 @@ const Inputs = ({ name, kind = "text", type, required = false, disabled, registe
         name={name}
         required={required}
         disabled={disabled}
-        className={cls(
-          "w-full px-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400",
-          "focus:outline-none focus:ring-orange-500 focus:border-orange-500",
-          disabled ? "opacity-80" : ""
-        )}
+        className={`w-full px-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
+          focus:ring-orange-500 focus:border-orange-500 ${disabled ? "opacity-80" : ""}`}
         {...rest}
       />
       {appendButtons && <div className="ml-2 flex space-x-2">{appendButtons}</div>}

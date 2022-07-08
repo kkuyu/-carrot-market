@@ -16,7 +16,7 @@ function MyApp({ Component, pageProps }: AppProps) {
         <RecoilRoot>
           <CommonProvider>
             <Header />
-            <div className="main">
+            <div className="main h-min-full-screen">
               <Component {...pageProps} />
             </div>
             <NavBar />

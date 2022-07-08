@@ -18,8 +18,8 @@ import { GetProductDetailResponse } from "@api/products/[id]";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
-import { ThumbnailSlider, ThumbnailItem } from "@components/sliders";
-import { RelateList } from "@components/lists";
+import Relate from "@components/cards/relate";
+import ThumbnailSlider, { ThumbnailSliderItem } from "@components/groups/thumbnailSlider";
 
 const ProductDetail: NextPage<{
   staticProps: {
@@ -38,7 +38,7 @@ const ProductDetail: NextPage<{
   const diffTime = getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime());
   const category = getCategory("product", staticProps?.product?.category);
   const cutDownName = !staticProps?.product?.name ? "" : staticProps.product.name.length <= 15 ? staticProps.product.name : staticProps.product.name.substring(0, 15) + "...";
-  const thumbnails: ThumbnailItem[] = !staticProps?.product?.photo
+  const thumbnails: ThumbnailSliderItem[] = !staticProps?.product?.photo
     ? []
     : staticProps.product.photo.split(",").map((src, index, array) => ({
         src,
@@ -84,7 +84,7 @@ const ProductDetail: NextPage<{
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
       },
     });
   };
@@ -120,7 +120,7 @@ const ProductDetail: NextPage<{
   // setting layout
   useEffect(() => {
     if (!product) {
-      router.push("/");
+      router.replace("/");
       return;
     }
 
@@ -219,9 +219,19 @@ const ProductDetail: NextPage<{
       {Boolean(relate.products.length) && (
         <section className="mt-5 pt-5 border-t">
           <h2 className="text-xl">{relate.name}</h2>
-          <div className="mt-4">
-            <RelateList list={relate.products || []} pathname="/products/[id]" />
-          </div>
+          <ul className="-m-2 mt-4 block after:block after:clear-both">
+            {relate.products.map((item) => {
+              return (
+                <li key={item?.id} className="float-left w-1/2 p-2">
+                  <Link href={`/products/${item.id}`}>
+                    <a className="block">
+                      <Relate item={item} />
+                    </a>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
         </section>
       )}
     </article>
@@ -272,7 +282,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   return {
     props: {
       staticProps: {
-        product: JSON.parse(JSON.stringify(product)),
+        product: JSON.parse(JSON.stringify(product || {})),
       },
     },
   };

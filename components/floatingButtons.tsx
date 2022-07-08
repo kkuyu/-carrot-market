@@ -21,12 +21,12 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
   const openSignUpModal = () => {
     openModal<MessageModalProps>(MessageModal, "signUpNow", {
       type: "confirm",
-      message: "게시글을 업로드하려면 회원가입이 필요해요. 휴대폰 인증하고 회원가입하시겠어요?",
+      message: "휴대폰 인증하고 회원가입하시겠어요?",
       cancelBtn: "취소",
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.replace(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
       },
     });
   };
