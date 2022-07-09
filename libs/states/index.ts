@@ -5,10 +5,11 @@ export const HeaderUtils = {
   Address: "address",
   Back: "back",
   Home: "home",
+  Kebab: "kebab",
   Share: "share",
   Search: "search",
-  Title: "title",
   Submit: "submit",
+  Title: "title",
 } as const;
 export type HeaderUtils = typeof HeaderUtils[keyof typeof HeaderUtils];
 
@@ -21,13 +22,23 @@ export const NavBarUtils = {
 } as const;
 export type NavBarUtils = typeof NavBarUtils[keyof typeof NavBarUtils];
 
-interface PageLayoutTypes {
+export const KebabActions = {
+  Report: "report",
+  Block: "block",
+  Edit: "edit",
+  Pull: "pull",
+  Hide: "hide",
+  Delete: "delete",
+} as const;
+export type KebabActions = typeof KebabActions[keyof typeof KebabActions];
+export interface PageLayoutTypes {
   title?: string;
   seoTitle?: string;
   header: {
-    submitId?: string;
-    headerColor?: string;
     headerUtils: HeaderUtils[];
+    headerColor?: string;
+    kebabActions?: { key: KebabActions; text: string; onClick?: () => void }[];
+    submitId?: string;
   };
   navBar: {
     navBarUtils: NavBarUtils[];

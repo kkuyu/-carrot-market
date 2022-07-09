@@ -92,3 +92,20 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
 
   return { errors, validFiles };
 };
+
+export type TimerRef = React.MutableRefObject<NodeJS.Timeout | null>;
+
+export const setTimer = (ref: TimerRef, timeToDelay: number) =>
+  new Promise((resolve) => {
+    ref.current = setTimeout(() => {
+      clearTimer(ref);
+      resolve(null);
+    }, timeToDelay);
+  });
+
+export const clearTimer = (ref: TimerRef) => {
+  if (ref.current) {
+    clearTimeout(ref.current);
+    ref.current = null;
+  }
+};

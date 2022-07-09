@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { clearTimer, setTimer, TimerRef } from "@libs/utils";
 
 import { ToastComponentProps } from "@components/commons";
 import { ToastExtraProps } from "@components/commons/toasts/toastContainer";
@@ -8,32 +9,15 @@ export interface MessageToastProps {
   message: string;
 }
 
-type ToastTimerRef = React.MutableRefObject<NodeJS.Timeout | null>;
-
 const MessageToast = (props: MessageToastProps & ToastComponentProps & ToastExtraProps) => {
   const { name, type = "default", placement, message, isAutoHide = true, duration = 1800, delay = 0, order, onClose } = props;
 
   const [isShow, setIsShow] = useState<boolean | null>(null);
 
   const transitionDuration = useRef(120);
-  const visibleTimer: ToastTimerRef = useRef(null);
-  const invisibleTimer: ToastTimerRef = useRef(null);
-  const destroyTimer: ToastTimerRef = useRef(null);
-
-  const setTimer = (ref: ToastTimerRef, timeToDelay: number) =>
-    new Promise((resolve) => {
-      ref.current = setTimeout(() => {
-        clearTimer(ref);
-        resolve(null);
-      }, timeToDelay);
-    });
-
-  const clearTimer = (ref: ToastTimerRef) => {
-    if (ref.current) {
-      clearTimeout(ref.current);
-      ref.current = null;
-    }
-  };
+  const visibleTimer: TimerRef = useRef(null);
+  const invisibleTimer: TimerRef = useRef(null);
+  const destroyTimer: TimerRef = useRef(null);
 
   const initToast = async () => {
     // visible
@@ -74,16 +58,14 @@ const MessageToast = (props: MessageToastProps & ToastComponentProps & ToastExtr
 
   return (
     <div
-      className={`max-h-0 opacity-0 transition-all duration-${transitionDuration.current} pointer-events-auto
-        ${placement === "top" ? "mb-2 ease-out" : "mt-2 ease-in"} ${isShow ? "!max-h-60 !opacity-100" : ""}`}
+      className={`max-h-0 opacity-0 pointer-events-auto ${placement === "top" ? "mb-2 ease-out" : "mt-2 ease-in"}
+        transition-all duration-${transitionDuration.current} ${isShow ? "!max-h-60 !opacity-100" : ""}`}
       style={{ order }}
     >
       {type === "default" ? (
-        <>
-          <div className="flex px-4 py-2 text-white bg-black bg-opacity-70 rounded-md">
-            <span className="grow text-sm font-semibold">{message}</span>
-          </div>
-        </>
+        <div className="flex px-4 py-2 text-white bg-black bg-opacity-70 rounded-md">
+          <span className="grow text-sm font-semibold">{message}</span>
+        </div>
       ) : (
         <>
           <button type="button" className="" onClick={clickClose}>

@@ -5,6 +5,7 @@ import { useRecoilValue } from "recoil";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
+import usePanel from "@libs/client/usePanel";
 import useToast from "@libs/client/useToast";
 
 import { HeaderUtils, PageLayout } from "@libs/states";
@@ -12,10 +13,10 @@ import { EmdType } from "@prisma/client";
 import { PostUserResponse } from "@api/users/my";
 import { PostJoinDummyResponse } from "@api/users/join-dummy";
 
-import Buttons from "@components/buttons";
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import AddressButton from "@components/layouts/header/utils/addressButton";
 import AddressDropdown from "@components/layouts/header/utils/addressDropdown";
@@ -24,11 +25,13 @@ import AddressLocate from "@components/layouts/header/utils/addressLocate";
 
 export interface HeaderProps {}
 
-type ToastNames = "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError";
 type ModalNames = "dropdownModal" | "updateModal" | "locateModal" | "oneOrMore" | "signUpNow";
+type PanelNames = "kebabPanel";
+type ToastNames = "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError";
 
-export type ToastControl = (name: ToastNames, config: { open: boolean }) => void;
 export type ModalControl = (name: ModalNames, config: { open: boolean; addrType?: EmdType; beforeClose?: () => void }) => void;
+export type PanelControl = (name: PanelNames, config: { open: boolean }) => void;
+export type ToastControl = (name: ToastNames, config: { open: boolean }) => void;
 export type UpdateHometown = (updateData: { emdType?: EmdType; mainAddrNm?: string; mainDistance?: number; subAddrNm?: string | null; subDistance?: number | null }) => void;
 
 const Header = ({}: HeaderProps) => {
@@ -38,10 +41,11 @@ const Header = ({}: HeaderProps) => {
   const {
     title,
     seoTitle,
-    header: { headerColor = "white", headerUtils, submitId },
+    header: { headerColor = "white", headerUtils, kebabActions, submitId },
   } = useRecoilValue(PageLayout);
 
   const { openModal, closeModal } = useModal();
+  const { openPanel, closePanel } = usePanel();
   const { openToast, closeToast } = useToast();
 
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
@@ -87,35 +91,6 @@ const Header = ({}: HeaderProps) => {
     // membership user
     if (updateUserLoading) return;
     updateUser(updateData);
-  };
-
-  const toastControl: ToastControl = (name, config) => {
-    switch (name) {
-      case "alreadyRegisteredAddress":
-        if (!config.open) {
-          closeToast(MessageToast, name);
-          break;
-        }
-        openToast<MessageToastProps>(MessageToast, name, {
-          placement: "bottom",
-          message: "이미 등록된 주소예요",
-        });
-        break;
-      case "updateUserError":
-      case "updateDummyError":
-        if (!config.open) {
-          closeToast(MessageToast, name);
-          break;
-        }
-        openToast<MessageToastProps>(MessageToast, name, {
-          placement: "bottom",
-          message: "서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.",
-        });
-        break;
-      default:
-        console.error("toastControl", name);
-        break;
-    }
   };
 
   const modalControl: ModalControl = (name, config) => {
@@ -195,10 +170,75 @@ const Header = ({}: HeaderProps) => {
     }
   };
 
+  const panelControl: PanelControl = (name, config) => {
+    switch (name) {
+      case "kebabPanel":
+        if (!config.open) {
+          closePanel(ActionPanel, name);
+          break;
+        }
+        openPanel<ActionPanelProps>(ActionPanel, name, {
+          hasBackdrop: true,
+          actions:
+            kebabActions?.map((item) => {
+              return { ...item, onClick: item?.onClick ? item.onClick : () => console.log(item.key) };
+            }) || [],
+          cancelBtn: "취소",
+        });
+        break;
+      default:
+        console.error("panelControl", name);
+        break;
+    }
+  };
+
+  const toastControl: ToastControl = (name, config) => {
+    switch (name) {
+      case "alreadyRegisteredAddress":
+        if (!config.open) {
+          closeToast(MessageToast, name);
+          break;
+        }
+        openToast<MessageToastProps>(MessageToast, name, {
+          placement: "bottom",
+          message: "이미 등록된 주소예요",
+        });
+        break;
+      case "updateUserError":
+      case "updateDummyError":
+        if (!config.open) {
+          closeToast(MessageToast, name);
+          break;
+        }
+        openToast<MessageToastProps>(MessageToast, name, {
+          placement: "bottom",
+          message: "서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.",
+        });
+        break;
+      default:
+        console.error("toastControl", name);
+        break;
+    }
+  };
+
   const getUtils = (name: HeaderUtils) => {
     switch (name) {
       case "address":
-        return <AddressButton toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />;
+        return (
+          <AddressButton
+            text={currentAddr.emdPosNm || ""}
+            onClick={() => {
+              // dummy user
+              if (user?.id === -1) {
+                modalControl("updateModal", { open: true });
+                return;
+              }
+              // membership user
+              if (user?.SUB_emdPosNm) modalControl("dropdownModal", { open: true });
+              if (!user?.SUB_emdPosNm) modalControl("updateModal", { open: true });
+            }}
+          />
+        );
       case "back":
         return (
           <button className="p-3" onClick={() => router.back()}>
@@ -220,16 +260,33 @@ const Header = ({}: HeaderProps) => {
             </svg>
           </button>
         );
+      case "kebab":
+        return (
+          <button className="p-3" onClick={() => panelControl("kebabPanel", { open: true })}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
+              />
+            </svg>
+          </button>
+        );
       case "share":
         // todo: share
         return <span>share</span>;
       case "search":
         // todo: search
         return <span>search</span>;
-      case "title":
-        return <strong className="text-base font-semibold font-semibold truncate">{`${title ? title : "title"}`}</strong>;
       case "submit":
-        return <Buttons tag="button" sort="text-link" text="완료" form={submitId} className="h-12 !px-5" />;
+        return (
+          <button type="submit" form={submitId} className="h-12 px-5 font-semibold text-base text-orange-500">
+            완료
+          </button>
+        );
+      case "title":
+        return <strong className="text-base font-semibold truncate">{`${title ? title : "title"}`}</strong>;
       default:
         return null;
     }
@@ -257,6 +314,7 @@ const Header = ({}: HeaderProps) => {
               {headerUtils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
               {headerUtils.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
               {headerUtils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
+              {headerUtils.includes(HeaderUtils["Kebab"]) && <>{getUtils(HeaderUtils["Kebab"])}</>}
               {headerUtils.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
             </div>
           </header>

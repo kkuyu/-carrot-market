@@ -10,6 +10,7 @@ export const CommonDispatchContext = createContext<CommonDispatch>({
 export const CommonStateContext = createContext<CommonState>(
   new Map([
     ["Modal", []],
+    ["Panel", []],
     ["Toast", []],
   ])
 );

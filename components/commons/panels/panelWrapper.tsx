@@ -1,36 +1,36 @@
 import React, { useContext, useEffect, useMemo } from "react";
 
 import { CommonDispatchContext, CommonStateContext } from "@components/commons/commonContext";
-import ModalContainer from "@components/commons/modals/modalContainer";
+import PanelContainer from "@components/commons/panels/panelContainer";
 
-const ModalWrapper = () => {
+const PanelWrapper = () => {
   const currentState = useContext(CommonStateContext);
   const { open, close } = useContext(CommonDispatchContext);
 
-  const currentModal = useMemo(() => currentState.get("Modal"), [currentState]);
+  const currentPanel = useMemo(() => currentState.get("Panel"), [currentState]);
 
   useEffect(() => {
-    if (currentModal?.length) {
-      document.body.classList.add("modal-open");
+    if (currentPanel?.length) {
+      document.body.classList.add("panel-open");
     } else {
-      document.body.classList.remove("modal-open");
+      document.body.classList.remove("panel-open");
     }
-  }, [currentModal]);
+  }, [currentPanel]);
 
   return (
     <>
-      {currentModal?.map(({ Type, Component, name, props }) => {
+      {currentPanel?.map(({ Type, Component, name, props }) => {
         const onOpen = () => open(Type, Component, name, props);
         const onClose = () => close(Type, Component, name);
 
         return (
-          <ModalContainer key={name} onClose={onClose}>
+          <PanelContainer key={name} onClose={onClose}>
             <Component {...props} {...{ name, onOpen, onClose }} />
-          </ModalContainer>
+          </PanelContainer>
         );
       })}
     </>
   );
 };
 
-export default ModalWrapper;
+export default PanelWrapper;

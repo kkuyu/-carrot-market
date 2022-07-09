@@ -1,6 +1,7 @@
 // common
 const CommonType = {
   Modal: "Modal",
+  Panel: "Panel",
   Toast: "Toast",
 } as const;
 type CommonType = typeof CommonType[keyof typeof CommonType];
@@ -26,6 +27,18 @@ export interface ModalStructure extends CommonStructure {
   props: ModalInitialProps;
 }
 export interface ModalComponentProps extends ModalInitialProps {
+  name: string;
+  onOpen: () => void;
+  onClose: () => void;
+}
+
+// panel
+export interface PanelInitialProps {}
+export interface PanelStructure extends CommonStructure {
+  Type: "Panel";
+  props: PanelInitialProps;
+}
+export interface PanelComponentProps extends PanelInitialProps {
   name: string;
   onOpen: () => void;
   onClose: () => void;

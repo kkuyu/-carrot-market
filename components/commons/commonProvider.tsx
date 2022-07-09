@@ -3,12 +3,14 @@ import React, { useState, useMemo } from "react";
 import { CommonDispatch, CommonState } from "@components/commons";
 import { CommonDispatchContext, CommonStateContext } from "@components/commons/commonContext";
 import ModalWrapper from "@components/commons/modals/modalWrapper";
+import PanelWrapper from "@components/commons/panels/panelWrapper";
 import ToastWrapper from "@components/commons/toasts/toastWrapper";
 
 const CommonProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentState, setCurrentState] = useState<CommonState>(
     new Map([
       ["Modal", []],
+      ["Panel", []],
       ["Toast", []],
     ])
   );
@@ -42,6 +44,7 @@ const CommonProvider = ({ children }: { children: React.ReactNode }) => {
       <CommonDispatchContext.Provider value={dispatch}>
         {children}
         <ModalWrapper />
+        <PanelWrapper />
         <ToastWrapper />
       </CommonDispatchContext.Provider>
     </CommonStateContext.Provider>
