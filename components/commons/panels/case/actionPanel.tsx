@@ -61,7 +61,15 @@ const ActionPanel = (props: ActionPanelProps & PanelComponentProps) => {
       >
         <div className="bg-white rounded-lg divide-y">
           {actions.map((item) => (
-            <button key={item.key} type="button" onClick={item.onClick} className={`block w-full px-2 py-3 text-center ${item.key === "delete" ? "text-red-500" : ""}`}>
+            <button
+              key={item.key}
+              type="button"
+              onClick={() => {
+                item.onClick();
+                clickClose();
+              }}
+              className={`block w-full px-2 py-3 text-center ${item.key === "delete" ? "text-red-500" : ""}`}
+            >
               {item.text}
             </button>
           ))}
@@ -72,7 +80,6 @@ const ActionPanel = (props: ActionPanelProps & PanelComponentProps) => {
           </button>
         </div>
       </div>
-      <div>{cancelBtn}</div>
     </>
   );
 };

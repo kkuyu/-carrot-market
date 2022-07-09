@@ -1,5 +1,6 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
+import Error from "next/error";
 
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
@@ -75,6 +76,20 @@ const CommunityDetail: NextPage<{
     onSuccess: () => {
       setValue("comment", "");
       boundMutate();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
+  // kebab action: delete
+  const [deletePost, { loading: deleteLoading }] = useMutation(`/api/posts/${router.query.id}/delete`, {
+    onSuccess: () => {
+      router.replace("/community");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -181,16 +196,23 @@ const CommunityDetail: NextPage<{
 
   // setting layout
   useEffect(() => {
-    if (!post) {
-      router.replace("/");
-      return;
-    }
+    if (!post) return;
 
     setLayout(() => ({
       title: post?.content || "",
       seoTitle: `${post?.content || ""} | 게시글 상세`,
       header: {
-        headerUtils: ["back", "share", "home"],
+        headerUtils: ["back", "home", "share", "kebab"],
+        kebabActions:
+          user?.id === post?.userId
+            ? [
+                { key: "edit", text: "수정" },
+                { key: "delete", text: "삭제", onClick: () => !deleteLoading && deletePost({}) },
+              ]
+            : [
+                { key: "report", text: "신고" },
+                { key: "block", text: "이 사용자의 글 보지 않기" },
+              ],
       },
       navBar: {
         navBarUtils: [],
@@ -199,7 +221,7 @@ const CommunityDetail: NextPage<{
   }, []);
 
   if (!post) {
-    return null;
+    return <Error statusCode={404} />;
   }
 
   return (
@@ -303,7 +325,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   // invalid params: postId
   if (!postId || isNaN(+postId)) {
     return {
-      props: {},
+      notFound: true,
     };
   }
 
@@ -333,7 +355,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   // not found post
   if (!post) {
     return {
-      props: {},
+      notFound: true,
     };
   }
 

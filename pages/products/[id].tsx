@@ -1,7 +1,7 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Image from "next/image";
+import Error from "next/error";
 
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
@@ -67,6 +67,20 @@ const ProductDetail: NextPage<{
     },
   });
 
+  // kebab action: delete
+  const [deleteProduct, { loading: deleteLoading }] = useMutation(`/api/products/${router.query.id}/delete`, {
+    onSuccess: () => {
+      router.replace("/");
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
   // click favorite
   const toggleFavorite = () => {
     if (!product) return;
@@ -119,17 +133,26 @@ const ProductDetail: NextPage<{
 
   // setting layout
   useEffect(() => {
-    if (!product) {
-      router.replace("/");
-      return;
-    }
+    if (!product) return;
 
     setLayout(() => ({
       title: product?.name || "",
       seoTitle: `${product?.name || ""} | 판매 상품 상세`,
       header: {
+        headerUtils: ["back", "home", "share", "kebab"],
         headerColor: Boolean(thumbnails.length) ? "transparent" : "white",
-        headerUtils: ["back", "share", "home"],
+        kebabActions:
+          user?.id === product?.userId
+            ? [
+                { key: "edit", text: "게시글 수정" },
+                { key: "pull", text: "끌어올리기" },
+                { key: "hide", text: "숨기기" },
+                { key: "delete", text: "삭제", onClick: () => !deleteLoading && deleteProduct({}) },
+              ]
+            : [
+                { key: "report", text: "신고" },
+                { key: "block", text: "이 사용자의 글 보지 않기" },
+              ],
       },
       navBar: {
         navBarUtils: [],
@@ -138,7 +161,7 @@ const ProductDetail: NextPage<{
   }, []);
 
   if (!product) {
-    return null;
+    return <Error statusCode={404} />;
   }
 
   return (
@@ -251,7 +274,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   // invalid params: productId
   if (!productId || isNaN(+productId)) {
     return {
-      props: {},
+      notFound: true,
     };
   }
 
@@ -274,7 +297,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   // not found product
   if (!product) {
     return {
-      props: {},
+      notFound: true,
     };
   }
 
