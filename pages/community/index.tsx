@@ -9,8 +9,9 @@ import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useOnScreen from "@libs/client/useOnScreen";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
+import client from "@libs/server/client";
+import getSsrUser from "@libs/server/getUser";
 
 import { PageLayout } from "@libs/states";
 import { GetPostsResponse } from "@api/posts";
@@ -235,18 +236,22 @@ const Page: NextPage<{
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const profile = req?.session?.user?.id
-    ? await client.user.findUnique({
-        where: { id: req?.session?.user?.id },
-      })
-    : null;
-  const dummyProfile = !profile ? req?.session?.dummyUser : null;
+  const ssrUser = await getSsrUser(req);
+
+  // redirect: welcome
+  if (!ssrUser.profile && !ssrUser.dummyProfile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/welcome`,
+      },
+    };
+  }
 
   // getPost
-  const posX = profile?.[`${profile.emdType}_emdPosX`] || dummyProfile?.MAIN_emdPosX || null;
-  const posY = profile?.[`${profile.emdType}_emdPosY`] || dummyProfile?.MAIN_emdPosY || null;
-  const distance = profile?.[`${profile.emdType}_emdPosDx`] || dummyProfile?.MAIN_emdPosDx || null;
-  const query = `posX=${posX}&posY=${posY}&distance=${distance}`;
+  const posX = ssrUser?.currentAddr?.emdPosX;
+  const posY = ssrUser?.currentAddr?.emdPosY;
+  const distance = ssrUser?.currentAddr?.emdPosDx;
 
   const posts =
     !posX || !posY || !distance
@@ -283,12 +288,13 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       getUser: {
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(dummyProfile || {})),
+          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
+          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
+          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
         },
       },
       getPost: {
-        query,
+        query: `posX=${posX}&posY=${posY}&distance=${distance}`,
         response: {
           success: true,
           posts: JSON.parse(JSON.stringify(posts || [])),

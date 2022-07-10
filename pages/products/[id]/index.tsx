@@ -6,10 +6,10 @@ import Error from "next/error";
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
+import { getCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
-import { getCategory, getDiffTimeStr } from "@libs/utils";
 import client from "@libs/server/client";
 
 import { PageLayout } from "@libs/states";
@@ -31,6 +31,11 @@ const ProductDetail: NextPage<{
 
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
+
+  // view model
+  const [viewModel, setViewModel] = useState({
+    mode: Boolean(user?.id) ? "normal" : "preview",
+  });
 
   // static data: product detail
   const today = new Date();
@@ -103,6 +108,21 @@ const ProductDetail: NextPage<{
     });
   };
 
+  // modal: delete
+  const openDeleteModal = () => {
+    openModal<MessageModalProps>(MessageModal, "confirmDeleteProduct", {
+      type: "confirm",
+      message: "게시글을 정말 삭제하시겠어요?",
+      cancelBtn: "취소",
+      confirmBtn: "삭제",
+      hasBackdrop: true,
+      onConfirm: () => {
+        if (deleteLoading) return;
+        deleteProduct({});
+      },
+    });
+  };
+
   // merge data
   useEffect(() => {
     if (!data) return;
@@ -135,52 +155,35 @@ const ProductDetail: NextPage<{
   useEffect(() => {
     if (!product) return;
 
+    setViewModel({
+      mode: Boolean(user?.id) ? "normal" : "preview",
+    });
+
     setLayout(() => ({
       title: product?.name || "",
       seoTitle: `${product?.name || ""} | 판매 상품 상세`,
       header: {
         headerUtils: ["back", "home", "share", "kebab"],
         headerColor: Boolean(thumbnails.length) ? "transparent" : "white",
-        kebabActions:
-          user?.id === product?.userId
-            ? [
-                {
-                  key: "edit",
-                  text: "게시글 수정",
-                  onClick: () => {
-                    router.push(`/products/${product.id}/edit`);
-                  },
-                },
-                { key: "pull", text: "끌어올리기" },
-                { key: "hide", text: "숨기기" },
-                {
-                  key: "delete",
-                  text: "삭제",
-                  onClick: () => {
-                    openModal<MessageModalProps>(MessageModal, "confirmDeleteProduct", {
-                      type: "confirm",
-                      message: "게시글을 정말 삭제하시겠어요?",
-                      cancelBtn: "취소",
-                      confirmBtn: "삭제",
-                      hasBackdrop: true,
-                      onConfirm: () => {
-                        if (deleteLoading) return;
-                        deleteProduct({});
-                      },
-                    });
-                  },
-                },
-              ]
-            : [
-                { key: "report", text: "신고" },
-                { key: "block", text: "이 사용자의 글 보지 않기" },
-              ],
+        kebabActions: !user?.id
+          ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
+          : user?.id === product?.userId
+          ? [
+              { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
+              { key: "pull", text: "끌어올리기" },
+              { key: "hide", text: "숨기기" },
+              { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+            ]
+          : [
+              { key: "report", text: "신고" },
+              { key: "block", text: "이 사용자의 글 보지 않기" },
+            ],
       },
       navBar: {
         navBarUtils: [],
       },
     }));
-  }, []);
+  }, [user?.id]);
 
   if (!product) {
     return <Error statusCode={404} />;
@@ -219,41 +222,53 @@ const ProductDetail: NextPage<{
         {/* 가격, 채팅 */}
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
-            <div className="relative flex-none mx-1.5 after:absolute after:top-1/2 after:-right-1.5 after:-mt-4 after:w-[1px] after:h-8 after:bg-gray-300">
-              <button
-                className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
-                onClick={user?.id === -1 ? openSignUpModal : toggleFavorite}
-                disabled={favoriteLoading}
-              >
-                {data?.isFavorite ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
-                  </svg>
-                ) : (
-                  <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                )}
-              </button>
-            </div>
-            <div className="grow pl-4">
+            <div className={`grow ${viewModel.mode === "normal" ? "pl-16" : "pl-5"}`}>
               {/* todo: 가격 제안 가능 여부 */}
               <strong>₩{product.price}</strong>
             </div>
-            <div className="flex-none px-4">
-              {user?.id === -1 ? (
-                <Buttons tag="button" text="채팅하기" size="sm" onClick={openSignUpModal} />
-              ) : (
-                <Link href={`/inbox/${product.user.id}`} passHref>
-                  <Buttons tag="a" text="채팅하기" size="sm" />
+            {viewModel.mode === "normal" && (
+              <div className="absolute top-1/2 left-3 -translate-y-1/2">
+                {/*  */}
+                <button
+                  className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
+                  onClick={user?.id === -1 ? openSignUpModal : toggleFavorite}
+                  disabled={favoriteLoading}
+                >
+                  {data?.isFavorite ? (
+                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
+                    </svg>
+                  ) : (
+                    <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                  )}
+                </button>
+              </div>
+            )}
+            {viewModel.mode === "normal" && (
+              <div className="flex-none px-5">
+                {user?.id === -1 ? (
+                  <Buttons tag="button" text="채팅하기" size="sm" onClick={openSignUpModal} />
+                ) : (
+                  <Link href={`/inbox/${product.user.id}`} passHref>
+                    <Buttons tag="a" text="채팅하기" size="sm" />
+                  </Link>
+                )}
+              </div>
+            )}
+            {viewModel.mode === "preview" && (
+              <div className="flex-none px-5">
+                <Link href="/welcome" passHref>
+                  <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
                 </Link>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -294,9 +309,13 @@ export const getStaticProps: GetStaticProps = async (context) => {
   const productId = context?.params?.id?.toString();
 
   // invalid params: productId
+  // redirect: /
   if (!productId || isNaN(+productId)) {
     return {
-      notFound: true,
+      redirect: {
+        permanent: false,
+        destination: `/`,
+      },
     };
   }
 
@@ -317,6 +336,7 @@ export const getStaticProps: GetStaticProps = async (context) => {
   });
 
   // not found product
+  // 404
   if (!product) {
     return {
       notFound: true,

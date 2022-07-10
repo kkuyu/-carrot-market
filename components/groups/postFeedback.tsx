@@ -90,7 +90,7 @@ const PostFeedback = ({ item, curiosityItem, emotionItem, commentItem }: PostFee
         </div>
       )}
       {/* 공감하기: result */}
-      {category?.feedback.includes("emotion") && (
+      {category?.feedback.includes("emotion") && Boolean(item?.emotions?.count || item?._count?.emotions) && (
         <div className="absolute bottom-0 right-0 flex items-center h-10 pr-5">
           <span className="text-xs">
             {!item.emotion ? (

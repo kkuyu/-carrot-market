@@ -23,6 +23,7 @@ export const NavBarUtils = {
 export type NavBarUtils = typeof NavBarUtils[keyof typeof NavBarUtils];
 
 export const KebabActions = {
+  Welcome: "welcome",
   Report: "report",
   Block: "block",
   Edit: "edit",

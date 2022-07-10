@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
+import getSsrUser from "@libs/server/getUser";
 
 import { PageLayout } from "@libs/states";
 import { PostProductsResponse } from "@api/products";
@@ -107,18 +107,24 @@ const Upload: NextPage = () => {
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const profile = req?.session?.user?.id
-    ? await client.user.findUnique({
-        where: { id: req?.session?.user?.id },
-      })
-    : null;
-  const dummyProfile = !profile ? req?.session?.dummyUser : null;
+  const ssrUser = await getSsrUser(req);
 
-  if (dummyProfile) {
+  // redirect: welcome
+  if (!ssrUser.profile && !ssrUser.dummyProfile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/join?addrNm=${req?.session?.dummyUser?.MAIN_emdAddrNm}`,
+        destination: `/welcome`,
+      },
+    };
+  }
+
+  // redirect: join
+  if (ssrUser.dummyProfile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/join?addrNm=${ssrUser?.currentAddr?.emdAddrNm}`,
       },
     };
   }

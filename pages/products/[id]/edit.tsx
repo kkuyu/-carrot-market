@@ -7,8 +7,9 @@ import { useSetRecoilState } from "recoil";
 import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
+import client from "@libs/server/client";
+import getSsrUser from "@libs/server/getUser";
 
 import { PageLayout } from "@libs/states";
 import { ProductCategoryEnum } from "@api/products/types";
@@ -132,18 +133,24 @@ const Upload: NextPage<{
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const profile = req?.session?.user?.id
-    ? await client.user.findUnique({
-        where: { id: req?.session?.user?.id },
-      })
-    : null;
-  const dummyProfile = !profile ? req?.session?.dummyUser : null;
+  const ssrUser = await getSsrUser(req);
 
-  if (!profile || dummyProfile) {
+  // redirect: welcome
+  if (!ssrUser.profile && !ssrUser.dummyProfile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/join?addrNm=${req?.session?.dummyUser?.MAIN_emdAddrNm}`,
+        destination: `/welcome`,
+      },
+    };
+  }
+
+  // redirect: join
+  if (ssrUser.dummyProfile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/join?addrNm=${ssrUser?.currentAddr?.emdAddrNm}`,
       },
     };
   }
@@ -178,7 +185,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // invalid product: not my product
-  if (product.userId !== profile.id) {
+  if (product.userId !== ssrUser?.profile?.id) {
     return {
       redirect: {
         permanent: false,

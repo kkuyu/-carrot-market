@@ -209,7 +209,7 @@ const Header = ({}: HeaderProps) => {
       case "address":
         return (
           <AddressButton
-            text={currentAddr.emdPosNm || ""}
+            text={currentAddr?.emdPosNm || ""}
             onClick={() => {
               // dummy user
               if (user?.id === -1) {

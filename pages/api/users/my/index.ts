@@ -13,6 +13,13 @@ export interface GetUserResponse {
   success: boolean;
   profile: User | null;
   dummyProfile: IronSessionData["dummyUser"] | null;
+  currentAddr: {
+    emdAddrNm: string | null;
+    emdPosNm: string | null;
+    emdPosDx: number | null;
+    emdPosX: number | null;
+    emdPosY: number | null;
+  };
   error?: {
     timestamp: Date;
     name: string;
@@ -49,6 +56,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         success: true,
         profile: foundUser,
         dummyProfile: dummyUser,
+        currentAddr: {
+          emdAddrNm: foundUser?.[`${foundUser.emdType}_emdAddrNm`] || dummyUser?.MAIN_emdAddrNm || null,
+          emdPosNm: foundUser?.[`${foundUser.emdType}_emdPosNm`] || dummyUser?.MAIN_emdPosNm || null,
+          emdPosDx: foundUser?.[`${foundUser.emdType}_emdPosDx`] || dummyUser?.MAIN_emdPosDx || null,
+          emdPosX: foundUser?.[`${foundUser.emdType}_emdPosX`] || dummyUser?.MAIN_emdPosX || null,
+          emdPosY: foundUser?.[`${foundUser.emdType}_emdPosY`] || dummyUser?.MAIN_emdPosY || null,
+        },
       };
       return res.status(200).json(result);
     } catch (error: unknown) {

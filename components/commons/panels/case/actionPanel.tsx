@@ -52,9 +52,6 @@ const ActionPanel = (props: ActionPanelProps & PanelComponentProps) => {
     <>
       {hasBackdrop ? <div className="absolute top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50 pointer-events-auto" onClick={clickClose} /> : <></>}
       <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={`${name}-TITLE`}
         tabIndex={0}
         className={`absolute -bottom-5 left-5 right-5 z-1 opacity-0
           transition-all duration-${transitionDuration.current} ${isShow ? "!bottom-5 !opacity-100" : ""}`}
@@ -68,7 +65,7 @@ const ActionPanel = (props: ActionPanelProps & PanelComponentProps) => {
                 item.onClick();
                 clickClose();
               }}
-              className={`block w-full px-2 py-3 text-center ${item.key === "delete" ? "text-red-500" : ""}`}
+              className={`block w-full px-2 py-3 text-center ${item.key === "delete" ? "text-red-500" : ""} ${item.key === "welcome" ? "text-orange-500" : ""}`}
             >
               {item.text}
             </button>
