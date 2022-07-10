@@ -144,7 +144,13 @@ const ProductDetail: NextPage<{
         kebabActions:
           user?.id === product?.userId
             ? [
-                { key: "edit", text: "게시글 수정" },
+                {
+                  key: "edit",
+                  text: "게시글 수정",
+                  onClick: () => {
+                    router.push(`/products/${product.id}/edit`);
+                  },
+                },
                 { key: "pull", text: "끌어올리기" },
                 { key: "hide", text: "숨기기" },
                 {

@@ -93,6 +93,13 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
   return { errors, validFiles };
 };
 
+export const convertPhotoToFile = async (photoId: string, variant: string = "public") => {
+  const response = await fetch(`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${photoId}/${variant}`);
+  const data = await response.blob();
+  const metadata = { type: data.type };
+  return new File([data], photoId!, metadata);
+};
+
 export type TimerRef = React.MutableRefObject<NodeJS.Timeout | null>;
 
 export const setTimer = (ref: TimerRef, timeToDelay: number) =>

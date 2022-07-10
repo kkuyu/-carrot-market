@@ -10,10 +10,10 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 
 import { PageLayout } from "@libs/states";
-import { PostProductsResponse } from "@api/products";
+import { PostPostsResponse } from "@api/posts";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 
-import ProductEdit, { ProductEditTypes } from "@components/forms/productEdit";
+import CommunityEdit, { CommunityEditTypes } from "@components/forms/communityEdit";
 
 const Upload: NextPage = () => {
   const router = useRouter();
@@ -23,14 +23,12 @@ const Upload: NextPage = () => {
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<ProductEditTypes>();
-  const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
+  const formData = useForm<CommunityEditTypes>();
+  const [uploadPost, { loading, data }] = useMutation<PostPostsResponse>("/api/posts", {
     onSuccess: (data) => {
-      setPhotoLoading(false);
-      router.replace(`/products/${data.product.id}`);
+      router.replace(`/community/${data.post.id}`);
     },
     onError: (data) => {
-      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -39,11 +37,11 @@ const Upload: NextPage = () => {
     },
   });
 
-  const submitProductUpload = async ({ photos, ...data }: ProductEditTypes) => {
+  const submitPostUpload = async ({ photos, ...data }: CommunityEditTypes) => {
     if (loading || photoLoading) return;
 
     if (!photos || !photos.length) {
-      uploadProduct({
+      uploadPost({
         ...data,
         ...currentAddr,
       });
@@ -78,7 +76,7 @@ const Upload: NextPage = () => {
       photo.push(imageResponse.result.id);
     }
 
-    uploadProduct({
+    uploadPost({
       photo: photo.join(","),
       ...data,
       ...currentAddr,
@@ -87,10 +85,10 @@ const Upload: NextPage = () => {
 
   useEffect(() => {
     setLayout(() => ({
-      title: "중고거래 글쓰기",
+      title: "동네생활 글쓰기",
       header: {
         headerUtils: ["back", "title", "submit"],
-        submitId: "product-upload",
+        submitId: "post-upload",
       },
       navBar: {
         navBarUtils: [],
@@ -100,7 +98,7 @@ const Upload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <ProductEdit formId="product-upload" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <CommunityEdit formId="post-upload" formData={formData} onValid={submitPostUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };

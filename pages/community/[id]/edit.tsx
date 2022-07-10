@@ -4,33 +4,38 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 
 import { PageLayout } from "@libs/states";
-import { PostProductsResponse } from "@api/products";
+import { PostCategoryEnum } from "@api/posts/types";
+import { GetPostDetailResponse } from "@api/posts/[id]";
+import { PostPostUpdateResponse } from "@api/posts/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 
-import ProductEdit, { ProductEditTypes } from "@components/forms/productEdit";
+import CommunityEdit, { CommunityEditTypes } from "@components/forms/communityEdit";
 
-const Upload: NextPage = () => {
+const Upload: NextPage<{
+  staticProps: {
+    post: GetPostDetailResponse["post"];
+  };
+}> = ({ staticProps }) => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const { user, currentAddr } = useUser();
+  const { user } = useUser();
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<ProductEditTypes>();
-  const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
+  const formData = useForm<CommunityEditTypes>();
+  const [uploadPost, { loading, data }] = useMutation<PostPostUpdateResponse>(`/api/posts/${router.query.id}/update`, {
     onSuccess: (data) => {
-      setPhotoLoading(false);
-      router.replace(`/products/${data.product.id}`);
+      router.replace(`/community/${data.post.id}`);
     },
     onError: (data) => {
-      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -39,13 +44,29 @@ const Upload: NextPage = () => {
     },
   });
 
-  const submitProductUpload = async ({ photos, ...data }: ProductEditTypes) => {
+  const setDefaultValue = async () => {
+    if (!staticProps?.post) return;
+
+    const transfer = new DataTransfer();
+    const photos = staticProps?.post?.photo ? staticProps.post.photo.split(",") : [];
+    console.log(photos);
+    for (let index = 0; index < photos.length; index++) {
+      const file = await convertPhotoToFile(photos[index]);
+      transfer.items.add(file);
+    }
+
+    const { setValue } = formData;
+    setValue("category", staticProps.post.category as PostCategoryEnum);
+    setValue("photos", transfer.files);
+    setValue("content", staticProps.post.content);
+  };
+
+  const submitPostUpload = async ({ photos, ...data }: CommunityEditTypes) => {
     if (loading || photoLoading) return;
 
     if (!photos || !photos.length) {
-      uploadProduct({
+      uploadPost({
         ...data,
-        ...currentAddr,
       });
       return;
     }
@@ -78,19 +99,20 @@ const Upload: NextPage = () => {
       photo.push(imageResponse.result.id);
     }
 
-    uploadProduct({
+    uploadPost({
       photo: photo.join(","),
       ...data,
-      ...currentAddr,
     });
   };
 
   useEffect(() => {
+    setDefaultValue();
+
     setLayout(() => ({
-      title: "중고거래 글쓰기",
+      title: "동네생활 글 수정하기",
       header: {
         headerUtils: ["back", "title", "submit"],
-        submitId: "product-upload",
+        submitId: "post-upload",
       },
       navBar: {
         navBarUtils: [],
@@ -100,12 +122,12 @@ const Upload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <ProductEdit formId="product-upload" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <CommunityEdit formId="post-upload" formData={formData} onValid={submitPostUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };
 
-export const getServerSideProps = withSsrSession(async ({ req }) => {
+export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const profile = req?.session?.user?.id
     ? await client.user.findUnique({
@@ -114,7 +136,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     : null;
   const dummyProfile = !profile ? req?.session?.dummyUser : null;
 
-  if (dummyProfile) {
+  if (!profile || dummyProfile) {
     return {
       redirect: {
         permanent: false,
@@ -123,8 +145,51 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
+  const postId = params?.id?.toString();
+
+  // invalid params: postId
+  if (!postId || isNaN(+postId)) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/`,
+      },
+    };
+  }
+
+  // find post
+  const post = await client.post.findUnique({
+    where: {
+      id: +postId,
+    },
+  });
+
+  // invalid post: not found
+  if (!post) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/`,
+      },
+    };
+  }
+
+  // invalid post: not my post
+  if (post.userId !== profile.id) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/community/${postId}`,
+      },
+    };
+  }
+
   return {
-    props: {},
+    props: {
+      staticProps: {
+        post: JSON.parse(JSON.stringify(post || {})),
+      },
+    },
   };
 });
 

@@ -206,7 +206,13 @@ const CommunityDetail: NextPage<{
         kebabActions:
           user?.id === post?.userId
             ? [
-                { key: "edit", text: "수정" },
+                {
+                  key: "edit",
+                  text: "수정",
+                  onClick: () => {
+                    router.push(`/community/${post.id}/edit`);
+                  },
+                },
                 {
                   key: "delete",
                   text: "삭제",
@@ -335,8 +341,8 @@ export const getStaticPaths: GetStaticPaths = () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async (context) => {
-  const postId = context?.params?.id?.toString();
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const postId = params?.id?.toString();
 
   // invalid params: postId
   if (!postId || isNaN(+postId)) {

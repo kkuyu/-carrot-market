@@ -1,11 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { Post } from "@prisma/client";
 
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostPostDeleteResponse {
+export interface PostPostUpdateResponse {
   success: boolean;
+  post: Post;
   error?: {
     timestamp: Date;
     name: string;
@@ -16,6 +18,7 @@ export interface PostPostDeleteResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
+    const { photo = "", category, content } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -43,15 +46,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    await client.post.delete({
+    const updatePost = await client.post.update({
       where: {
         id: post.id,
+      },
+      data: {
+        photo,
+        category,
+        content,
       },
     });
 
     // result
-    const result: PostPostDeleteResponse = {
+    const result: PostPostUpdateResponse = {
       success: true,
+      post: updatePost,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

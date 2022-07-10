@@ -1,11 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { Product } from "@prisma/client";
 
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostPostDeleteResponse {
+export interface PostProductUpdateResponse {
   success: boolean;
+  product: Product;
   error?: {
     timestamp: Date;
     name: string;
@@ -16,6 +18,7 @@ export interface PostPostDeleteResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
+    const { photo = "", name, category, price, description } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -25,33 +28,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find product detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const product = await client.product.findUnique({
       where: {
         id,
       },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!product) {
+      const error = new Error("NotFoundProduct");
+      error.name = "NotFoundProduct";
       throw error;
     }
-    if (post.userId !== user?.id) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (product.userId !== user?.id) {
+      const error = new Error("NotFoundProduct");
+      error.name = "NotFoundProduct";
       throw error;
     }
 
-    await client.post.delete({
+    const updateProduct = await client.product.update({
       where: {
-        id: post.id,
+        id: product.id,
+      },
+      data: {
+        photo,
+        name,
+        category,
+        price,
+        description,
       },
     });
 
     // result
-    const result: PostPostDeleteResponse = {
+    const result: PostProductUpdateResponse = {
       success: true,
+      product: updateProduct,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
