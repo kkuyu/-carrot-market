@@ -3,11 +3,12 @@ import { useForm } from "react-hook-form";
 
 import useSWR from "swr";
 import useUser from "@libs/client/useUser";
-
+import useModal from "@libs/client/useModal";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 
-import Buttons from "@components/buttons";
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import { ModalControl, ToastControl, UpdateHometown } from "@components/layouts/header";
+import Buttons from "@components/buttons";
 
 interface AddressUpdateProps {
   toastControl: ToastControl;
@@ -22,6 +23,8 @@ interface DistanceForm {
 const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUpdateProps) => {
   const { user, currentAddr } = useUser();
 
+  const { openModal, closeModal } = useModal();
+
   // address
   const addressWrapper = useRef<HTMLDivElement>(null);
   const addressStructure = [
@@ -33,10 +36,29 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
       },
       removeItem: () => {
         if (!user?.SUB_emdAddrNm) {
-          modalControl("oneOrMore", { open: true });
+          openModal<MessageModalProps>(MessageModal, "oneOrMore", {
+            type: "confirm",
+            message: "동네가 1개만 선택된 상태에서는 삭제를 할 수 없어요. 현재 설정된 동네를 변경하시겠어요?",
+            cancelBtn: "취소",
+            confirmBtn: "변경",
+            hasBackdrop: true,
+            onConfirm: () => {
+              modalControl("locateModal", { open: true, addrType: "MAIN" });
+              modalControl("updateModal", { open: false });
+            },
+          });
           return;
         }
-        updateHometown({ emdType: "MAIN", mainAddrNm: user.SUB_emdAddrNm, mainDistance: user?.SUB_emdPosDx || 0.02, subAddrNm: null, subDistance: null });
+        openModal<MessageModalProps>(MessageModal, "confirmDeleteMainAddress", {
+          type: "confirm",
+          message: "선택한 지역을 삭제하시겠습니까?",
+          cancelBtn: "취소",
+          confirmBtn: "삭제",
+          hasBackdrop: true,
+          onConfirm: () => {
+            updateHometown({ emdType: "MAIN", mainAddrNm: user.SUB_emdAddrNm!, mainDistance: user?.SUB_emdPosDx || 0.02, subAddrNm: null, subDistance: null });
+          },
+        });
       },
     },
     {
@@ -46,7 +68,16 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
         updateHometown({ emdType: "SUB" });
       },
       removeItem: () => {
-        updateHometown({ emdType: "MAIN", subAddrNm: null, subDistance: null });
+        openModal<MessageModalProps>(MessageModal, "confirmDeleteSubAddress", {
+          type: "confirm",
+          message: "게시글을 정말 삭제하시겠어요?",
+          cancelBtn: "취소",
+          confirmBtn: "삭제",
+          hasBackdrop: true,
+          onConfirm: () => {
+            updateHometown({ emdType: "MAIN", subAddrNm: null, subDistance: null });
+          },
+        });
       },
     },
     {

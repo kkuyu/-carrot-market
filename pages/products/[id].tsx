@@ -147,7 +147,23 @@ const ProductDetail: NextPage<{
                 { key: "edit", text: "게시글 수정" },
                 { key: "pull", text: "끌어올리기" },
                 { key: "hide", text: "숨기기" },
-                { key: "delete", text: "삭제", onClick: () => !deleteLoading && deleteProduct({}) },
+                {
+                  key: "delete",
+                  text: "삭제",
+                  onClick: () => {
+                    openModal<MessageModalProps>(MessageModal, "confirmDeleteProduct", {
+                      type: "confirm",
+                      message: "게시글을 정말 삭제하시겠어요?",
+                      cancelBtn: "취소",
+                      confirmBtn: "삭제",
+                      hasBackdrop: true,
+                      onConfirm: () => {
+                        if (deleteLoading) return;
+                        deleteProduct({});
+                      },
+                    });
+                  },
+                },
               ]
             : [
                 { key: "report", text: "신고" },

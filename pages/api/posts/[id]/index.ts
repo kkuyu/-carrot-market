@@ -14,6 +14,7 @@ export interface GetPostDetailResponse {
     emotion: Feeling | null;
     emotions: { count: number; feelings: Feeling[] };
     comments: (Pick<Comment, "id" | "comment" | "emdPosNm" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
+    _count: { curiosities: number; emotions: number; comments: number };
   };
   error?: {
     timestamp: Date;

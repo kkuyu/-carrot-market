@@ -92,7 +92,15 @@ const PostFeedback = ({ item, curiosityItem, emotionItem, commentItem }: PostFee
       {/* 공감하기: result */}
       {category?.feedback.includes("emotion") && (
         <div className="absolute bottom-0 right-0 flex items-center h-10 pr-5">
-          <span className="text-xs">{item?.emotions?.feelings.map((feeling) => FeelingIcon[feeling])}</span>
+          <span className="text-xs">
+            {!item.emotion ? (
+              <svg className="inline-block w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            ) : (
+              item?.emotions?.feelings.map((feeling) => FeelingIcon[feeling])
+            )}
+          </span>
           <span className="ml-1 block text-sm text-gray-500">{item?.emotions?.count || item?._count?.emotions || null}</span>
         </div>
       )}

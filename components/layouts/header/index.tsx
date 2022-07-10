@@ -25,7 +25,7 @@ import AddressLocate from "@components/layouts/header/utils/addressLocate";
 
 export interface HeaderProps {}
 
-type ModalNames = "dropdownModal" | "updateModal" | "locateModal" | "oneOrMore" | "signUpNow";
+type ModalNames = "dropdownModal" | "updateModal" | "locateModal" | "signUpNow";
 type PanelNames = "kebabPanel";
 type ToastNames = "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError";
 
@@ -128,23 +128,6 @@ const Header = ({}: HeaderProps) => {
           headerType: "default",
           title: "내 동네 추가하기",
           contents: <AddressLocate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} addrType={config?.addrType || "SUB"} />,
-        });
-        break;
-      case "oneOrMore":
-        if (!config.open) {
-          closeModal(MessageModal, name);
-          break;
-        }
-        openModal<MessageModalProps>(MessageModal, name, {
-          type: "confirm",
-          message: "동네가 1개만 선택된 상태에서는 삭제를 할 수 없어요. 현재 설정된 동네를 변경하시겠어요?",
-          cancelBtn: "취소",
-          confirmBtn: "변경",
-          hasBackdrop: true,
-          onConfirm: () => {
-            modalControl("locateModal", { open: true, addrType: "MAIN" });
-            modalControl("updateModal", { open: false });
-          },
         });
         break;
       case "signUpNow":

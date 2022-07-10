@@ -153,7 +153,7 @@ const Community: NextPage = () => {
       {/* 동네생활: List */}
       {Boolean(posts.length) && (
         <div className="-mx-5">
-          <ul className="divide-y">
+          <ul className="divide-y-8">
             {posts.map((item) => {
               const cutDownContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
               const thumbnails: ThumbnailListItem[] = !item?.photo

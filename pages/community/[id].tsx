@@ -207,7 +207,23 @@ const CommunityDetail: NextPage<{
           user?.id === post?.userId
             ? [
                 { key: "edit", text: "수정" },
-                { key: "delete", text: "삭제", onClick: () => !deleteLoading && deletePost({}) },
+                {
+                  key: "delete",
+                  text: "삭제",
+                  onClick: () => {
+                    openModal<MessageModalProps>(MessageModal, "confirmDeletePost", {
+                      type: "confirm",
+                      message: "게시글을 정말 삭제하시겠어요?",
+                      cancelBtn: "취소",
+                      confirmBtn: "삭제",
+                      hasBackdrop: true,
+                      onConfirm: () => {
+                        if (deleteLoading) return;
+                        deletePost({});
+                      },
+                    });
+                  },
+                },
               ]
             : [
                 { key: "report", text: "신고" },
