@@ -1,13 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Post } from "@prisma/client";
-
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostPostUpdateResponse {
+export interface PostStoriesCuriosityResponse {
   success: boolean;
-  post: Post;
   error?: {
     timestamp: Date;
     name: string;
@@ -18,7 +16,6 @@ export interface PostPostUpdateResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { photo = "", category, content } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -28,39 +25,61 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find story detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const story = await client.story.findUnique({
       where: {
         id,
       },
+      select: {
+        id: true,
+      },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
-      throw error;
-    }
-    if (post.userId !== user?.id) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!story) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
 
-    const updatePost = await client.post.update({
+    // check current curiosity status
+    const exists = await client.curiosity.findFirst({
       where: {
-        id: post.id,
+        userId: user?.id,
+        storyId: story.id,
       },
-      data: {
-        photo,
-        category,
-        content,
+      select: {
+        id: true,
       },
     });
+
+    if (!exists) {
+      // create
+      await client.curiosity.create({
+        data: {
+          user: {
+            connect: {
+              id: user?.id,
+            },
+          },
+          story: {
+            connect: {
+              id: story.id,
+            },
+          },
+        },
+      });
+    } else {
+      // delete
+      await client.curiosity.delete({
+        where: {
+          id: exists.id,
+        },
+      });
+    }
 
     // result
-    const result: PostPostUpdateResponse = {
+    const result: PostStoriesCuriosityResponse = {
       success: true,
-      post: updatePost,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

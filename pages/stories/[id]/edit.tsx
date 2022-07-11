@@ -1,27 +1,27 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+// @libs
+import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
-
-import { PageLayout } from "@libs/states";
-import { PostCategoryEnum } from "@api/posts/types";
-import { GetPostDetailResponse } from "@api/posts/[id]";
-import { PostPostUpdateResponse } from "@api/posts/[id]/update";
+// @api
+import { StoryCategoryEnum } from "@api/stories/types";
+import { GetStoriesDetailResponse } from "@api/stories/[id]";
+import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @components
+import StoryEdit, { StoryEditTypes } from "@components/forms/storyEdit";
 
-import CommunityEdit, { CommunityEditTypes } from "@components/forms/communityEdit";
-
-const Upload: NextPage<{
+const StoryUpload: NextPage<{
   staticProps: {
-    post: GetPostDetailResponse["post"];
+    story: GetStoriesDetailResponse["story"];
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
@@ -31,10 +31,10 @@ const Upload: NextPage<{
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<CommunityEditTypes>();
-  const [uploadPost, { loading, data }] = useMutation<PostPostUpdateResponse>(`/api/posts/${router.query.id}/update`, {
+  const formData = useForm<StoryEditTypes>();
+  const [uploadStory, { loading, data }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: (data) => {
-      router.replace(`/community/${data.post.id}`);
+      router.replace(`/stories/${data.story.id}`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -46,10 +46,10 @@ const Upload: NextPage<{
   });
 
   const setDefaultValue = async () => {
-    if (!staticProps?.post) return;
+    if (!staticProps?.story) return;
 
     const transfer = new DataTransfer();
-    const photos = staticProps?.post?.photo ? staticProps.post.photo.split(",") : [];
+    const photos = staticProps?.story?.photo ? staticProps.story.photo.split(",") : [];
     console.log(photos);
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
@@ -57,16 +57,16 @@ const Upload: NextPage<{
     }
 
     const { setValue } = formData;
-    setValue("category", staticProps.post.category as PostCategoryEnum);
+    setValue("category", staticProps.story.category as StoryCategoryEnum);
     setValue("photos", transfer.files);
-    setValue("content", staticProps.post.content);
+    setValue("content", staticProps.story.content);
   };
 
-  const submitPostUpload = async ({ photos, ...data }: CommunityEditTypes) => {
+  const submitStoryUpload = async ({ photos, ...data }: StoryEditTypes) => {
     if (loading || photoLoading) return;
 
     if (!photos || !photos.length) {
-      uploadPost({
+      uploadStory({
         ...data,
       });
       return;
@@ -100,7 +100,7 @@ const Upload: NextPage<{
       photo.push(imageResponse.result.id);
     }
 
-    uploadPost({
+    uploadStory({
       photo: photo.join(","),
       ...data,
     });
@@ -113,7 +113,7 @@ const Upload: NextPage<{
       title: "동네생활 글 수정하기",
       header: {
         headerUtils: ["back", "title", "submit"],
-        submitId: "post-upload",
+        submitId: "edit-story",
       },
       navBar: {
         navBarUtils: [],
@@ -123,7 +123,7 @@ const Upload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <CommunityEdit formId="post-upload" formData={formData} onValid={submitPostUpload} isLoading={loading || photoLoading} />
+      <StoryEdit formId="edit-story" formData={formData} onValid={submitStoryUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };
@@ -152,44 +152,44 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const postId = params?.id?.toString();
+  const storyId = params?.id?.toString();
 
-  // invalid params: postId
-  // redirect: community
-  if (!postId || isNaN(+postId)) {
+  // invalid params: storyId
+  // redirect: stories
+  if (!storyId || isNaN(+storyId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/community`,
+        destination: `/stories`,
       },
     };
   }
 
-  // find post
-  const post = await client.post.findUnique({
+  // find story
+  const story = await client.story.findUnique({
     where: {
-      id: +postId,
+      id: +storyId,
     },
   });
 
-  // invalid post: not found
-  // redirect: community/[id]
-  if (!post) {
+  // invalid story: not found
+  // redirect: stories/[id]
+  if (!story) {
     return {
       redirect: {
         permanent: false,
-        destination: `/community/${postId}`,
+        destination: `/stories/${storyId}`,
       },
     };
   }
 
-  // invalid post: not my post
-  // redirect: community/[id]
-  if (post.userId !== ssrUser?.profile?.id) {
+  // invalid story: not my story
+  // redirect: stories/[id]
+  if (story.userId !== ssrUser?.profile?.id) {
     return {
       redirect: {
         permanent: false,
-        destination: `/community/${postId}`,
+        destination: `/stories/${storyId}`,
       },
     };
   }
@@ -197,10 +197,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       staticProps: {
-        post: JSON.parse(JSON.stringify(post || {})),
+        story: JSON.parse(JSON.stringify(story || {})),
       },
     },
   };
 });
 
-export default Upload;
+export default StoryUpload;

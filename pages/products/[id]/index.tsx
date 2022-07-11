@@ -2,19 +2,19 @@ import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Error from "next/error";
-
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
+// @libs
+import { PageLayout } from "@libs/states";
 import { getCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
-
-import { PageLayout } from "@libs/states";
-import { GetProductDetailResponse } from "@api/products/[id]";
-
+// @api
+import { GetProductsDetailResponse } from "@api/products/[id]";
+// @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
@@ -23,7 +23,7 @@ import ThumbnailSlider, { ThumbnailSliderItem } from "@components/groups/thumbna
 
 const ProductDetail: NextPage<{
   staticProps: {
-    product: GetProductDetailResponse["product"];
+    product: GetProductsDetailResponse["product"];
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
@@ -39,7 +39,7 @@ const ProductDetail: NextPage<{
 
   // static data: product detail
   const today = new Date();
-  const [product, setProduct] = useState<GetProductDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
+  const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
   const diffTime = getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime());
   const category = getCategory("product", staticProps?.product?.category);
   const cutDownName = !staticProps?.product?.name ? "" : staticProps.product.name.length <= 15 ? staticProps.product.name : staticProps.product.name.substring(0, 15) + "...";
@@ -54,14 +54,14 @@ const ProductDetail: NextPage<{
       }));
   const [relate, setRelate] = useState<{
     name: string;
-    products: GetProductDetailResponse["otherProducts"] | GetProductDetailResponse["similarProducts"] | GetProductDetailResponse["latestProducts"];
+    products: GetProductsDetailResponse["otherProducts"] | GetProductsDetailResponse["similarProducts"] | GetProductsDetailResponse["latestProducts"];
   }>({
     name: "",
     products: [],
   });
 
   // fetch data: product detail
-  const { data, error, mutate: boundMutate } = useSWR<GetProductDetailResponse>(router.query.id && product ? `/api/products/${router.query.id}` : null);
+  const { data, error, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(router.query.id && product ? `/api/products/${router.query.id}` : null);
   const [updateFavorite, { loading: favoriteLoading }] = useMutation(`/api/products/${router.query.id}/favorite`, {
     onError: (data) => {
       switch (data?.error?.name) {

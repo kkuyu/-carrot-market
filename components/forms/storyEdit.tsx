@@ -1,35 +1,37 @@
 import { UseFormReturn } from "react-hook-form";
+// @libs
 import useUser from "@libs/client/useUser";
-import { PostCategoryEnum, PostCategory } from "@api/posts/types";
-
+// @api
+import { StoryCategoryEnum, StoryCategory } from "@api/stories/types";
+// @components
 import Labels from "@components/labels";
 import TextAreas from "@components/textareas";
 import Files from "@components/files";
 import Buttons from "@components/buttons";
 import Selects from "@components/selects";
 
-export interface CommunityEditTypes {
+export interface StoryEditTypes {
   photos: FileList;
-  category: PostCategoryEnum;
+  category: StoryCategoryEnum;
   content: string;
 }
 
-interface CommunityEditProps {
+interface StoryEditProps {
   formId: string;
-  formData: UseFormReturn<CommunityEditTypes, object>;
-  onValid: (validForm: CommunityEditTypes) => void;
+  formData: UseFormReturn<StoryEditTypes, object>;
+  onValid: (validForm: StoryEditTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const CommunityEdit = ({ formId, formData, onValid, isSuccess, isLoading }: CommunityEditProps) => {
+const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEditProps) => {
   const { currentAddr } = useUser();
 
   const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
 
   const updateValue = (name: string, value: any) => {
-    const registerName = name as keyof CommunityEditTypes;
+    const registerName = name as keyof StoryEditTypes;
     resetField(registerName);
     setValue(registerName, value);
   };
@@ -59,7 +61,7 @@ const CommunityEdit = ({ formId, formData, onValid, isSuccess, isLoading }: Comm
               message: "카테고리를 선택해주세요",
             },
           })}
-          options={[{ value: "", text: "카테고리 선택" }, ...PostCategory]}
+          options={[{ value: "", text: "카테고리 선택" }, ...StoryCategory]}
           currentValue={watch("category")}
           updateValue={updateValue}
           required
@@ -94,4 +96,4 @@ const CommunityEdit = ({ formId, formData, onValid, isSuccess, isLoading }: Comm
   );
 };
 
-export default CommunityEdit;
+export default StoryEdit;

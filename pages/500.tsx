@@ -1,9 +1,8 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
-
+// @libs
 import { PageLayout } from "@libs/states";
 
 const Error500: NextPage = () => {
@@ -13,7 +12,10 @@ const Error500: NextPage = () => {
   const [message, setMessage] = useState("");
 
   const makeMessage = () => {
-    if (router.asPath.includes("/products/") || router.asPath.includes("/community/")) {
+    if (/^\/products\/[0-9]*$/.test(router.asPath)) {
+      return "게시글을 불러올 수 없습니다.";
+    }
+    if (/^\/stories\/[0-9]*$/.test(router.asPath)) {
       return "게시글을 불러올 수 없습니다.";
     }
     return "500";

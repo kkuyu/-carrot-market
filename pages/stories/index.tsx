@@ -1,39 +1,39 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
+// @libs
+import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
-
-import { PageLayout } from "@libs/states";
-import { GetPostsResponse } from "@api/posts";
-import { FeelingKeys } from "@api/posts/types";
+// @api
 import { GetUserResponse } from "@api/users/my";
-import { PostPostsCuriosityResponse } from "@api/posts/[id]/curiosity";
-import { PostPostsEmotionResponse } from "@api/posts/[id]/emotion";
-
+import { GetStoriesResponse } from "@api/stories";
+import { FeelingKeys } from "@api/stories/types";
+import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
+import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
+// @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
 import FloatingButtons from "@components/floatingButtons";
-import Post from "@components/cards/post";
-import PostFeedback, { PostFeedbackItem } from "@components/groups/postFeedback";
+import Story from "@components/cards/story";
+import StoryFeedback, { StoryFeedbackItem } from "@components/groups/storyFeedback";
 
-const getKey = (pageIndex: number, previousPageData: GetPostsResponse, query: string = "") => {
-  if (pageIndex === 0) return `/api/posts?page=1&${query}`;
-  if (previousPageData && !previousPageData.posts.length) return null;
+const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: string = "") => {
+  if (pageIndex === 0) return `/api/stories?page=1&${query}`;
+  if (previousPageData && !previousPageData.stories.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/posts?page=${pageIndex + 1}&${query}`;
+  return `/api/stories?page=${pageIndex + 1}&${query}`;
 };
 
-const Community: NextPage = () => {
+const StoryHome: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
@@ -42,79 +42,79 @@ const Community: NextPage = () => {
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
-  const { data, size, setSize, mutate } = useSWRInfinite<GetPostsResponse>((...arg: [index: number, previousPageData: GetPostsResponse]) =>
+  const { data, size, setSize, mutate } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) =>
     getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
   );
 
   const isReachingEnd = data && size === data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const posts = data ? data.flatMap((item) => item.posts) : [];
+  const stories = data ? data.flatMap((item) => item.stories) : [];
 
-  const curiosityItem = async (item: PostFeedbackItem) => {
+  const curiosityItem = async (item: StoryFeedbackItem) => {
     if (!data) return;
     const mutateData = data.map((dataRow) => {
-      const posts = dataRow.posts.map((post) => {
-        if (post.id !== item.id) return post;
+      const stories = dataRow.stories.map((story) => {
+        if (story.id !== item.id) return story;
         return {
-          ...post,
-          curiosity: !post.curiosity,
+          ...story,
+          curiosity: !story.curiosity,
           curiosities: {
-            ...post.curiosities,
-            count: post.curiosity ? post.curiosities.count - 1 : post.curiosities.count + 1,
+            ...story.curiosities,
+            count: story.curiosity ? story.curiosities.count - 1 : story.curiosities.count + 1,
           },
         };
       });
-      return { ...dataRow, posts };
+      return { ...dataRow, stories };
     });
     mutate(mutateData, false);
-    const updateCuriosity: PostPostsCuriosityResponse = await (await fetch(`/api/posts/${item.id}/curiosity`, { method: "POST" })).json();
+    const updateCuriosity: PostStoriesCuriosityResponse = await (await fetch(`/api/stories/${item.id}/curiosity`, { method: "POST" })).json();
     if (updateCuriosity.error) console.error(updateCuriosity.error);
     mutate();
   };
 
-  const emotionItem = async (item: PostFeedbackItem, feeling: FeelingKeys) => {
+  const emotionItem = async (item: StoryFeedbackItem, feeling: FeelingKeys) => {
     if (!data) return;
     const mutateData = data.map((dataRow) => {
-      const posts = dataRow.posts.map((post) => {
-        if (post.id !== item.id) return post;
-        const actionType = !post.emotion ? "create" : post.emotion !== feeling ? "update" : "delete";
+      const stories = dataRow.stories.map((story) => {
+        if (story.id !== item.id) return story;
+        const actionType = !story.emotion ? "create" : story.emotion !== feeling ? "update" : "delete";
         return {
-          ...post,
+          ...story,
           emotion: (() => {
             if (actionType === "create") return feeling;
             if (actionType === "update") return feeling;
             return null;
           })(),
           emotions: {
-            ...post.emotions,
+            ...story.emotions,
             count: (() => {
-              if (actionType === "create") return post.emotions.count + 1;
-              if (actionType === "update") return post.emotions.count;
-              return post.emotions.count - 1;
+              if (actionType === "create") return story.emotions.count + 1;
+              if (actionType === "update") return story.emotions.count;
+              return story.emotions.count - 1;
             })(),
             feelings: (() => {
-              if (post.emotions.count === 1) {
+              if (story.emotions.count === 1) {
                 if (actionType === "create") return [feeling];
                 if (actionType === "update") return [feeling];
                 return [];
               }
-              if (actionType === "create") return post.emotions.feelings.includes(feeling) ? post.emotions.feelings : [...post.emotions.feelings, feeling];
-              if (actionType === "update") return post.emotions.feelings.includes(feeling) ? post.emotions.feelings : [...post.emotions.feelings, feeling];
-              return post.emotions.feelings;
+              if (actionType === "create") return story.emotions.feelings.includes(feeling) ? story.emotions.feelings : [...story.emotions.feelings, feeling];
+              if (actionType === "update") return story.emotions.feelings.includes(feeling) ? story.emotions.feelings : [...story.emotions.feelings, feeling];
+              return story.emotions.feelings;
             })(),
           },
         };
       });
-      return { ...dataRow, posts };
+      return { ...dataRow, stories };
     });
     mutate(mutateData, false);
-    const updateEmotion: PostPostsEmotionResponse = await (await fetch(`/api/posts/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
+    const updateEmotion: PostStoriesEmotionResponse = await (await fetch(`/api/stories/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
     if (updateEmotion.error) console.error(updateEmotion.error);
     mutate();
   };
 
-  const commentItem = (item: PostFeedbackItem) => {
-    router.push(`/community/${item?.id}`);
+  const commentItem = (item: StoryFeedbackItem) => {
+    router.push(`/stories/${item?.id}`);
   };
 
   // modal: sign up
@@ -144,7 +144,7 @@ const Community: NextPage = () => {
         headerUtils: ["address", "search"],
       },
       navBar: {
-        navBarUtils: ["community", "home", "inbox", "profile", "streams"],
+        navBarUtils: ["home", "inbox", "profile", "story", "streams"],
       },
     }));
   }, []);
@@ -152,10 +152,10 @@ const Community: NextPage = () => {
   return (
     <div className="container">
       {/* 동네생활: List */}
-      {Boolean(posts.length) && (
+      {Boolean(stories.length) && (
         <div className="-mx-5">
           <ul className="divide-y-8">
-            {posts.map((item) => {
+            {stories.map((item) => {
               const cutDownContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
               const thumbnails: ThumbnailListItem[] = !item?.photo
                 ? []
@@ -169,9 +169,9 @@ const Community: NextPage = () => {
 
               return (
                 <li key={item?.id}>
-                  <Link href={`/community/${item?.id}`}>
+                  <Link href={`/stories/${item?.id}`}>
                     <a className="block pt-5 pb-4 px-5">
-                      <Post item={item} />
+                      <Story item={item} />
                     </a>
                   </Link>
                   {Boolean(thumbnails.length) && (
@@ -184,7 +184,12 @@ const Community: NextPage = () => {
                       />
                     </div>
                   )}
-                  <PostFeedback item={item} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
+                  <StoryFeedback
+                    item={item}
+                    curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem}
+                    emotionItem={user?.id === -1 ? openSignUpModal : emotionItem}
+                    commentItem={commentItem}
+                  />
                 </li>
               );
             })}
@@ -196,7 +201,7 @@ const Community: NextPage = () => {
       )}
 
       {/* 동네생활: Empty */}
-      {!Boolean(posts.length) && (
+      {!Boolean(stories.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
@@ -207,7 +212,7 @@ const Community: NextPage = () => {
       )}
 
       {/* 글쓰기 */}
-      <FloatingButtons href="/community/upload">
+      <FloatingButtons href="/stories/upload">
         <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
         </svg>
@@ -218,18 +223,18 @@ const Community: NextPage = () => {
 
 const Page: NextPage<{
   getUser: { response: GetUserResponse };
-  getPost: { query: string; response: GetPostsResponse };
-}> = ({ getUser, getPost }) => {
+  getStories: { query: string; response: GetStoriesResponse };
+}> = ({ getUser, getStories }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users/my": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetPostsResponse]) => getKey(arg[0], arg[1], getPost.query))]: [getPost.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetStoriesResponse]) => getKey(arg[0], arg[1], getStories.query))]: [getStories.response],
         },
       }}
     >
-      <Community />
+      <StoryHome />
     </SWRConfig>
   );
 };
@@ -248,15 +253,15 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
-  // getPost
+  // getStories
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
 
-  const posts =
+  const stories =
     !posX || !posY || !distance
       ? []
-      : await client.post.findMany({
+      : await client.story.findMany({
           take: 10,
           skip: 0,
           orderBy: {
@@ -293,11 +298,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
         },
       },
-      getPost: {
+      getStories: {
         query: `posX=${posX}&posY=${posY}&distance=${distance}`,
         response: {
           success: true,
-          posts: JSON.parse(JSON.stringify(posts || [])),
+          stories: JSON.parse(JSON.stringify(stories || [])),
           pages: 0,
         },
       },

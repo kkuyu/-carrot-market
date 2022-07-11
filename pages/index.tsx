@@ -1,19 +1,19 @@
 import type { NextPage } from "next";
-
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
+// @lib
+import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
-import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
+import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
-
-import { PageLayout } from "@libs/states";
+// @api
 import { GetProductsResponse } from "@api/products";
 import { GetUserResponse } from "@api/users/my";
-
+// @components
 import FloatingButtons from "@components/floatingButtons";
 import Product from "@components/cards/product";
 import Link from "next/link";
@@ -25,7 +25,7 @@ const getKey = (pageIndex: number, previousPageData: GetProductsResponse, query:
   return `/api/products?page=${pageIndex + 1}&${query}`;
 };
 
-const Home: NextPage = () => {
+const ProductHome: NextPage = () => {
   const { currentAddr } = useUser();
   const setLayout = useSetRecoilState(PageLayout);
 
@@ -52,7 +52,7 @@ const Home: NextPage = () => {
         headerUtils: ["address", "search"],
       },
       navBar: {
-        navBarUtils: ["community", "home", "inbox", "profile", "streams"],
+        navBarUtils: ["home", "inbox", "profile", "story", "streams"],
       },
     }));
   }, []);
@@ -113,7 +113,7 @@ const Page: NextPage<{
         },
       }}
     >
-      <Home />
+      <ProductHome />
     </SWRConfig>
   );
 };

@@ -1,21 +1,21 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+// @libs
+import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
-import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
-
-import { PageLayout } from "@libs/states";
-import { PostPostsResponse } from "@api/posts";
+import useMutation from "@libs/client/useMutation";
+// @api
+import { PostStoriesResponse } from "@api/stories";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @components
+import StoryEdit, { StoryEditTypes } from "@components/forms/storyEdit";
 
-import CommunityEdit, { CommunityEditTypes } from "@components/forms/communityEdit";
-
-const Upload: NextPage = () => {
+const StoryUpload: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
@@ -23,10 +23,10 @@ const Upload: NextPage = () => {
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<CommunityEditTypes>();
-  const [uploadPost, { loading, data }] = useMutation<PostPostsResponse>("/api/posts", {
+  const formData = useForm<StoryEditTypes>();
+  const [uploadStory, { loading, data }] = useMutation<PostStoriesResponse>("/api/stories", {
     onSuccess: (data) => {
-      router.replace(`/community/${data.post.id}`);
+      router.replace(`/stories/${data.story.id}`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -37,11 +37,11 @@ const Upload: NextPage = () => {
     },
   });
 
-  const submitPostUpload = async ({ photos, ...data }: CommunityEditTypes) => {
+  const submitStoryUpload = async ({ photos, ...data }: StoryEditTypes) => {
     if (loading || photoLoading) return;
 
     if (!photos || !photos.length) {
-      uploadPost({
+      uploadStory({
         ...data,
         ...currentAddr,
       });
@@ -76,7 +76,7 @@ const Upload: NextPage = () => {
       photo.push(imageResponse.result.id);
     }
 
-    uploadPost({
+    uploadStory({
       photo: photo.join(","),
       ...data,
       ...currentAddr,
@@ -88,7 +88,7 @@ const Upload: NextPage = () => {
       title: "동네생활 글쓰기",
       header: {
         headerUtils: ["back", "title", "submit"],
-        submitId: "post-upload",
+        submitId: "upload-story",
       },
       navBar: {
         navBarUtils: [],
@@ -98,7 +98,7 @@ const Upload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <CommunityEdit formId="post-upload" formData={formData} onValid={submitPostUpload} isLoading={loading || photoLoading} />
+      <StoryEdit formId="upload-story" formData={formData} onValid={submitStoryUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };
@@ -132,4 +132,4 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   };
 });
 
-export default Upload;
+export default StoryUpload;

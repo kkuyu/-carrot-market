@@ -1,27 +1,27 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+// @libs
+import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
-
-import { PageLayout } from "@libs/states";
+// @api
 import { ProductCategoryEnum } from "@api/products/types";
-import { GetProductDetailResponse } from "@api/products/[id]";
-import { PostProductUpdateResponse } from "@api/products/[id]/update";
+import { GetProductsDetailResponse } from "@api/products/[id]";
+import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-
+// @components
 import ProductEdit, { ProductEditTypes } from "@components/forms/productEdit";
 
-const Upload: NextPage<{
+const ProductUpload: NextPage<{
   staticProps: {
-    product: GetProductDetailResponse["product"];
+    product: GetProductsDetailResponse["product"];
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
@@ -32,7 +32,7 @@ const Upload: NextPage<{
   const [photoLoading, setPhotoLoading] = useState(false);
 
   const formData = useForm<ProductEditTypes>();
-  const [updateProduct, { loading, data }] = useMutation<PostProductUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [updateProduct, { loading, data }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
       setPhotoLoading(false);
       router.replace(`/products/${data.product.id}`);
@@ -116,7 +116,7 @@ const Upload: NextPage<{
       title: "중고거래 글 수정하기",
       header: {
         headerUtils: ["back", "title", "submit"],
-        submitId: "product-upload",
+        submitId: "edit-product",
       },
       navBar: {
         navBarUtils: [],
@@ -126,7 +126,7 @@ const Upload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <ProductEdit formId="product-upload" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <ProductEdit formId="edit-product" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };
@@ -203,4 +203,4 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   };
 });
 
-export default Upload;
+export default ProductUpload;

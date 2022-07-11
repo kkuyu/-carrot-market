@@ -1,8 +1,8 @@
 import Image from "next/image";
+// @api
+import { GetProductsDetailResponse } from "@api/products/[id]";
 
-import { GetProductDetailResponse } from "@api/products/[id]";
-
-export type RelateItem = GetProductDetailResponse["otherProducts"][0] | GetProductDetailResponse["similarProducts"][0] | GetProductDetailResponse["latestProducts"][0];
+export type RelateItem = GetProductsDetailResponse["otherProducts"][0] | GetProductsDetailResponse["similarProducts"][0] | GetProductsDetailResponse["latestProducts"][0];
 
 interface RelateProps {
   item: RelateItem;

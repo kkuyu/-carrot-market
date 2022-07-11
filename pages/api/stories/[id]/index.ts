@@ -1,13 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { Comment, Feeling, Story, User } from "@prisma/client";
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { Comment, Feeling, Post, User } from "@prisma/client";
 
-export interface GetPostDetailResponse {
+export interface GetStoriesDetailResponse {
   success: boolean;
-  post: Post & {
+  story: Story & {
     user: Pick<User, "id" | "name" | "avatar">;
     curiosity: boolean;
     curiosities: { count: number };
@@ -35,9 +35,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find story detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const story = await client.story.findUnique({
       where: {
         id,
       },
@@ -86,21 +86,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!story) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
 
     // result
-    const result: GetPostDetailResponse = {
+    const result: GetStoriesDetailResponse = {
       success: true,
-      post: {
-        ...post,
-        curiosity: !user?.id ? false : Boolean(post.curiosities.find((v) => v.userId === user.id)),
-        curiosities: { count: post.curiosities.length },
-        emotion: !user?.id ? null : post.emotions.find((v) => v.userId === user.id)?.feeling || null,
-        emotions: { count: post.emotions.length, feelings: [...new Set(post.emotions.map((v) => v.feeling))] },
+      story: {
+        ...story,
+        curiosity: !user?.id ? false : Boolean(story.curiosities.find((v) => v.userId === user.id)),
+        curiosities: { count: story.curiosities.length },
+        emotion: !user?.id ? null : story.emotions.find((v) => v.userId === user.id)?.feeling || null,
+        emotions: { count: story.emotions.length, feelings: [...new Set(story.emotions.map((v) => v.feeling))] },
       },
     };
     return res.status(200).json(result);

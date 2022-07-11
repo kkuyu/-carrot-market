@@ -1,21 +1,21 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+// @libs
+import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
-
-import { PageLayout } from "@libs/states";
+// @api
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-
+// @components
 import ProductEdit, { ProductEditTypes } from "@components/forms/productEdit";
 
-const Upload: NextPage = () => {
+const ProductUpload: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
@@ -90,7 +90,7 @@ const Upload: NextPage = () => {
       title: "중고거래 글쓰기",
       header: {
         headerUtils: ["back", "title", "submit"],
-        submitId: "product-upload",
+        submitId: "upload-product",
       },
       navBar: {
         navBarUtils: [],
@@ -100,7 +100,7 @@ const Upload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <ProductEdit formId="product-upload" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <ProductEdit formId="upload-product" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };
@@ -134,4 +134,4 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   };
 });
 
-export default Upload;
+export default ProductUpload;

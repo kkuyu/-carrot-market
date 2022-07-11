@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostPostsCommentResponse {
+export interface PostStoriesCommentResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -36,9 +36,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find story detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const story = await client.story.findUnique({
       where: {
         id: id,
       },
@@ -46,9 +46,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: true,
       },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!story) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
 
@@ -60,9 +60,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             id: user?.id,
           },
         },
-        post: {
+        story: {
           connect: {
-            id: post.id,
+            id: story.id,
           },
         },
         comment,
@@ -74,7 +74,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
 
     // result
-    const result: PostPostsCommentResponse = {
+    const result: PostStoriesCommentResponse = {
       success: true,
     };
     return res.status(200).json(result);

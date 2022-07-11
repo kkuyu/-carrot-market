@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProductDeleteResponse {
+export interface GetProductsDeleteResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -50,7 +50,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
 
     // result
-    const result: GetProductDeleteResponse = {
+    const result: GetProductsDeleteResponse = {
       success: true,
     };
     return res.status(200).json(result);

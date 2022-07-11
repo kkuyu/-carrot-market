@@ -1,11 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Product, Record, User } from "@prisma/client";
-
+import { Product, User } from "@prisma/client";
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProductDetailResponse {
+export interface GetProductsDetailResponse {
   success: boolean;
   product: Product & { user: Pick<User, "id" | "name" | "avatar"> };
   isFavorite: boolean;
@@ -143,7 +143,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         });
 
     // result
-    const result: GetProductDetailResponse = {
+    const result: GetProductsDetailResponse = {
       success: true,
       product,
       isFavorite,

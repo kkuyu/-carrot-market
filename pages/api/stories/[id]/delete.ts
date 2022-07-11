@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostPostsCuriosityResponse {
+export interface PostStoriesDeleteResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -25,60 +25,32 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find story detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const story = await client.story.findUnique({
       where: {
         id,
       },
-      select: {
-        id: true,
-      },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!story) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
+      throw error;
+    }
+    if (story.userId !== user?.id) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
 
-    // check current curiosity status
-    const exists = await client.curiosity.findFirst({
+    await client.story.delete({
       where: {
-        userId: user?.id,
-        postId: post.id,
-      },
-      select: {
-        id: true,
+        id: story.id,
       },
     });
 
-    if (!exists) {
-      // create
-      await client.curiosity.create({
-        data: {
-          user: {
-            connect: {
-              id: user?.id,
-            },
-          },
-          post: {
-            connect: {
-              id: post.id,
-            },
-          },
-        },
-      });
-    } else {
-      // delete
-      await client.curiosity.delete({
-        where: {
-          id: exists.id,
-        },
-      });
-    }
-
     // result
-    const result: PostPostsCuriosityResponse = {
+    const result: PostStoriesDeleteResponse = {
       success: true,
     };
     return res.status(200).json(result);

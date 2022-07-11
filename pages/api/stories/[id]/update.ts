@@ -1,11 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { Story } from "@prisma/client";
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostPostDeleteResponse {
+export interface PostStoriesUpdateResponse {
   success: boolean;
+  story: Story;
   error?: {
     timestamp: Date;
     name: string;
@@ -16,6 +18,7 @@ export interface PostPostDeleteResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
+    const { photo = "", category, content } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -25,33 +28,39 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find story detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const story = await client.story.findUnique({
       where: {
         id,
       },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!story) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
-    if (post.userId !== user?.id) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (story.userId !== user?.id) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
 
-    await client.post.delete({
+    const updateStory = await client.story.update({
       where: {
-        id: post.id,
+        id: story.id,
+      },
+      data: {
+        photo,
+        category,
+        content,
       },
     });
 
     // result
-    const result: PostPostDeleteResponse = {
+    const result: PostStoriesUpdateResponse = {
       success: true,
+      story: updateStory,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

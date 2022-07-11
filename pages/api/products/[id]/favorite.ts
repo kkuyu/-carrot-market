@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductFavoriteResponse {
+export interface PostProductsFavoriteResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -80,7 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // result
-    const result: PostProductFavoriteResponse = {
+    const result: PostProductsFavoriteResponse = {
       success: true,
     };
     return res.status(200).json(result);

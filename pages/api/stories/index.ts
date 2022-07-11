@@ -1,15 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { Feeling, Story, User } from "@prisma/client";
+// @libs
+import { getCategory } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { Curiosity, Feeling, Post, User } from "@prisma/client";
 
-import { getCategory } from "@libs/utils";
-
-export interface GetPostsResponse {
+export interface GetStoriesResponse {
   success: boolean;
-  posts: (Post & {
+  stories: (Story & {
     user: Pick<User, "id" | "name">;
     curiosity: boolean;
     curiosities: { count: number };
@@ -25,9 +24,9 @@ export interface GetPostsResponse {
   };
 }
 
-export interface PostPostsResponse {
+export interface PostStoriesResponse {
   success: boolean;
-  post: Post;
+  story: Story;
   error?: {
     timestamp: Date;
     name: string;
@@ -48,9 +47,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
       if (!_posX || !_posY || !_distance) {
-        const result: GetPostsResponse = {
+        const result: GetStoriesResponse = {
           success: true,
-          posts: [],
+          stories: [],
           pages: 1,
         };
         return res.status(200).json(result);
@@ -67,12 +66,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         emdPosY: { gte: posY - distance, lte: posY + distance },
       };
 
-      // fetch data: client.post
-      const totalPosts = await client.post.count({
+      // fetch data: client.stories
+      const totalStories = await client.story.count({
         where: boundaryArea,
       });
-      const posts = await (
-        await client.post.findMany({
+      const stories = await (
+        await client.story.findMany({
           take: displayRow,
           skip: (page - 1) * displayRow,
           orderBy: {
@@ -108,21 +107,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
           where: boundaryArea,
         })
-      ).map((post) => {
+      ).map((story) => {
         return {
-          ...post,
-          curiosity: !user?.id ? false : Boolean(post.curiosities.find((v) => v.userId === user.id)),
-          curiosities: { count: post.curiosities.length },
-          emotion: !user?.id ? null : post.emotions.find((v) => v.userId === user.id)?.feeling || null,
-          emotions: { count: post.emotions.length, feelings: [...new Set(post.emotions.map((v) => v.feeling))] },
+          ...story,
+          curiosity: !user?.id ? false : Boolean(story.curiosities.find((v) => v.userId === user.id)),
+          curiosities: { count: story.curiosities.length },
+          emotion: !user?.id ? null : story.emotions.find((v) => v.userId === user.id)?.feeling || null,
+          emotions: { count: story.emotions.length, feelings: [...new Set(story.emotions.map((v) => v.feeling))] },
         };
       });
 
       // result
-      const result: GetPostsResponse = {
+      const result: GetStoriesResponse = {
         success: true,
-        posts,
-        pages: Math.ceil(totalPosts / displayRow),
+        stories,
+        pages: Math.ceil(totalStories / displayRow),
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
@@ -150,7 +149,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         const error = new Error("Invalid request body");
         throw error;
       }
-      if (!getCategory("post", category)) {
+      if (!getCategory("story", category)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -161,8 +160,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // create new post
-      const newPost = await client.post.create({
+      // create new story
+      const newStory = await client.story.create({
         data: {
           photo,
           content,
@@ -180,9 +179,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
 
       // result
-      const result: PostPostsResponse = {
+      const result: PostStoriesResponse = {
         success: true,
-        post: newPost,
+        story: newStory,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {

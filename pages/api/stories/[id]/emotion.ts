@@ -1,11 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { Feeling } from "@prisma/client";
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { Feeling } from "@prisma/client";
 
-export interface PostPostsEmotionResponse {
+export interface PostStoriesEmotionResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -26,9 +26,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find post detail
+    // find story detail
     const id = +_id.toString();
-    const post = await client.post.findUnique({
+    const story = await client.story.findUnique({
       where: {
         id,
       },
@@ -36,9 +36,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: true,
       },
     });
-    if (!post) {
-      const error = new Error("NotFoundPost");
-      error.name = "NotFoundPost";
+    if (!story) {
+      const error = new Error("NotFoundStory");
+      error.name = "NotFoundStory";
       throw error;
     }
 
@@ -46,7 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const exists = await client.emotion.findFirst({
       where: {
         userId: user?.id,
-        postId: post.id,
+        storyId: story.id,
       },
       select: {
         id: true,
@@ -70,9 +70,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: user?.id,
             },
           },
-          post: {
+          story: {
             connect: {
-              id: post.id,
+              id: story.id,
             },
           },
         },
@@ -90,9 +90,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: user?.id,
             },
           },
-          post: {
+          story: {
             connect: {
-              id: post.id,
+              id: story.id,
             },
           },
         },
@@ -107,7 +107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // result
-    const result: PostPostsEmotionResponse = {
+    const result: PostStoriesEmotionResponse = {
       success: true,
     };
     return res.status(200).json(result);

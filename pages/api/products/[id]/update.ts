@@ -1,11 +1,11 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Product } from "@prisma/client";
-
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductUpdateResponse {
+export interface PostProductsUpdateResponse {
   success: boolean;
   product: Product;
   error?: {
@@ -60,7 +60,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
 
     // result
-    const result: PostProductUpdateResponse = {
+    const result: PostProductsUpdateResponse = {
       success: true,
       product: updateProduct,
     };

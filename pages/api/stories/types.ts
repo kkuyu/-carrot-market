@@ -1,6 +1,6 @@
 import { Feeling } from "@prisma/client";
 
-export const PostCategoryEnum = {
+export const StoryCategoryEnum = {
   ["동네질문"]: "question",
   ["동네사건사고"]: "accident",
   ["동네소식"]: "news",
@@ -12,9 +12,9 @@ export const PostCategoryEnum = {
   ["동네사진전"]: "photoExhibition",
 } as const;
 
-export type PostCategoryEnum = typeof PostCategoryEnum[keyof typeof PostCategoryEnum];
+export type StoryCategoryEnum = typeof StoryCategoryEnum[keyof typeof StoryCategoryEnum];
 
-export const PostCategory: { text: keyof typeof PostCategoryEnum; value: PostCategoryEnum; feedback: string[] }[] = [
+export const StoryCategory: { text: keyof typeof StoryCategoryEnum; value: StoryCategoryEnum; feedback: string[] }[] = [
   { text: "동네질문", value: "question", feedback: ["curiosity"] },
   { text: "동네사건사고", value: "accident", feedback: ["emotion"] },
   { text: "동네소식", value: "news", feedback: ["emotion"] },

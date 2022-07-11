@@ -1,16 +1,18 @@
+// @libs
 import { getCategory, getDiffTimeStr } from "@libs/utils";
-import { GetPostsResponse } from "@api/posts";
+// @api
+import { GetStoriesResponse } from "@api/stories";
 
-export type PostItem = GetPostsResponse["posts"][0];
+export type StoryItem = GetStoriesResponse["stories"][0];
 
-interface PostProps {
-  item: PostItem;
+interface StoryProps {
+  item: StoryItem;
 }
 
-const Post = ({ item }: PostProps) => {
+const Story = ({ item }: StoryProps) => {
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
-  const category = getCategory("post", item?.category);
+  const category = getCategory("story", item?.category);
 
   return (
     <div className="relative">
@@ -28,4 +30,4 @@ const Post = ({ item }: PostProps) => {
   );
 };
 
-export default Post;
+export default Story;

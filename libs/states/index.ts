@@ -14,10 +14,10 @@ export const HeaderUtils = {
 export type HeaderUtils = typeof HeaderUtils[keyof typeof HeaderUtils];
 
 export const NavBarUtils = {
-  Community: "community",
   Home: "home",
   Inbox: "inbox",
   Profile: "profile",
+  Story: "story",
   Streams: "streams",
 } as const;
 export type NavBarUtils = typeof NavBarUtils[keyof typeof NavBarUtils];

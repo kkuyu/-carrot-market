@@ -1,7 +1,7 @@
 import { IncomingMessage } from "http";
 import { uniqueNamesGenerator, Config, adjectives, starWars } from "unique-names-generator";
-
-import { PostCategory } from "@api/posts/types";
+// @api
+import { StoryCategory } from "@api/stories/types";
 import { ProductCategory } from "@api/products/types";
 
 export const isInstance = <T extends object>(value: string | number, type: T): type is T => {
@@ -33,9 +33,9 @@ export const getRandomName: () => string = () => {
   return uniqueNamesGenerator(config).replace(/\s/g, "-");
 };
 
-export const getCategory = (type: "product" | "post", categoryKey: string) => {
+export const getCategory = (type: "product" | "story", categoryKey: string) => {
   if (type === "product") return ProductCategory.find((v) => v.value === categoryKey) || null;
-  if (type === "post") return PostCategory.find((v) => v.value === categoryKey) || null;
+  if (type === "story") return StoryCategory.find((v) => v.value === categoryKey) || null;
   return null;
 };
 

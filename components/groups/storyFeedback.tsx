@@ -1,22 +1,24 @@
-import { getCategory } from "@libs/utils";
-import { GetPostsResponse } from "@api/posts";
-import { FeelingIcon, FeelingKeys } from "@api/posts/types";
 import { FocusEvent, useState } from "react";
-import { GetPostDetailResponse } from "@api/posts/[id]";
+// @libs
+import { getCategory } from "@libs/utils";
+// @api
+import { GetStoriesResponse } from "@api/stories";
+import { FeelingIcon, FeelingKeys } from "@api/stories/types";
+import { GetStoriesDetailResponse } from "@api/stories/[id]";
 
-export type PostFeedbackItem = GetPostsResponse["posts"][0] | GetPostDetailResponse["post"];
+export type StoryFeedbackItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
-interface PostFeedbackProps {
-  item: PostFeedbackItem;
-  curiosityItem: (item: PostFeedbackItem) => void;
-  emotionItem: (item: PostFeedbackItem, feeling: FeelingKeys) => void;
-  commentItem: (item: PostFeedbackItem) => void;
+interface StoryFeedbackProps {
+  item: StoryFeedbackItem;
+  curiosityItem: (item: StoryFeedbackItem) => void;
+  emotionItem: (item: StoryFeedbackItem, feeling: FeelingKeys) => void;
+  commentItem: (item: StoryFeedbackItem) => void;
 }
 
-const PostFeedback = ({ item, curiosityItem, emotionItem, commentItem }: PostFeedbackProps) => {
+const StoryFeedback = ({ item, curiosityItem, emotionItem, commentItem }: StoryFeedbackProps) => {
   const [pop, setPop] = useState(false);
 
-  const category = getCategory("post", item?.category);
+  const category = getCategory("story", item?.category);
   const emotions = ["Like", "Love", "Haha", "Wow", "Sad", "Angry"] as FeelingKeys[];
 
   // action curiosity
@@ -120,4 +122,4 @@ const PostFeedback = ({ item, curiosityItem, emotionItem, commentItem }: PostFee
   );
 };
 
-export default PostFeedback;
+export default StoryFeedback;

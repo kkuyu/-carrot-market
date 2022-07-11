@@ -1,39 +1,39 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Error from "next/error";
-
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
+// @libs
+import { PageLayout } from "@libs/states";
 import { getCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
-
-import { PageLayout } from "@libs/states";
-import { GetPostDetailResponse } from "@api/posts/[id]";
-import { PostPostsCommentResponse } from "@api/posts/[id]/comment";
-
+// @api
+import { GetStoriesDetailResponse } from "@api/stories/[id]";
+import { PostStoriesCommentResponse } from "@api/stories/[id]/comment";
+import { FeelingKeys } from "@api/stories/types";
+import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
+import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
+// @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Profiles from "@components/profiles";
 import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
 import Comment from "@components/cards/comment";
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
-import PostFeedback, { PostFeedbackItem } from "@components/groups/postFeedback";
-import { FeelingKeys } from "@api/posts/types";
-import { PostPostsCuriosityResponse } from "@api/posts/[id]/curiosity";
-import { PostPostsEmotionResponse } from "@api/posts/[id]/emotion";
+import StoryFeedback, { StoryFeedbackItem } from "@components/groups/storyFeedback";
 
 interface CommentForm {
   comment: string;
 }
 
-const CommunityDetail: NextPage<{
+const StoryDetail: NextPage<{
   staticProps: {
-    post: GetPostDetailResponse["post"];
+    story: GetStoriesDetailResponse["story"];
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
@@ -47,15 +47,15 @@ const CommunityDetail: NextPage<{
     mode: Boolean(user?.id) ? "normal" : "preview",
   });
 
-  // static data: post detail
+  // static data: story detail
   const today = new Date();
-  const [post, setPost] = useState<GetPostDetailResponse["post"] | null>(staticProps?.post ? staticProps.post : null);
-  const diffTime = getDiffTimeStr(new Date(staticProps?.post.updatedAt).getTime(), today.getTime());
-  const category = getCategory("post", staticProps?.post?.category);
-  const cutDownContent = !staticProps?.post?.content ? "" : staticProps.post.content.length <= 15 ? staticProps.post.content : staticProps.post.content.substring(0, 15) + "...";
-  const thumbnails: ThumbnailListItem[] = !staticProps?.post?.photo
+  const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
+  const diffTime = getDiffTimeStr(new Date(staticProps?.story.updatedAt).getTime(), today.getTime());
+  const category = getCategory("story", staticProps?.story?.category);
+  const cutDownContent = !staticProps?.story?.content ? "" : staticProps.story.content.length <= 15 ? staticProps.story.content : staticProps.story.content.substring(0, 15) + "...";
+  const thumbnails: ThumbnailListItem[] = !staticProps?.story?.photo
     ? []
-    : staticProps.post.photo.split(",").map((src, index, array) => ({
+    : staticProps.story.photo.split(",").map((src, index, array) => ({
         src,
         index,
         key: `thumbnails-slider-${index + 1}`,
@@ -63,9 +63,9 @@ const CommunityDetail: NextPage<{
         name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownContent})`,
       }));
 
-  // fetch data: post detail
-  const { data, error, mutate: boundMutate } = useSWR<GetPostDetailResponse>(router.query.id ? `/api/posts/${router.query.id}` : null);
-  const [updateCuriosity, { loading: curiosityLoading }] = useMutation(`/api/posts/${router.query.id}/curiosity`, {
+  // fetch data: story detail
+  const { data, error, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const [updateCuriosity, { loading: curiosityLoading }] = useMutation(`/api/stories/${router.query.id}/curiosity`, {
     onError: (data) => {
       switch (data?.error?.name) {
         default:
@@ -77,7 +77,7 @@ const CommunityDetail: NextPage<{
 
   // new comment
   const { register, handleSubmit, setFocus, setValue } = useForm<CommentForm>();
-  const [sendComment, { data: commentData, loading: commentLoading }] = useMutation<PostPostsCommentResponse>(`/api/posts/${router.query.id}/comment`, {
+  const [sendComment, { data: commentData, loading: commentLoading }] = useMutation<PostStoriesCommentResponse>(`/api/stories/${router.query.id}/comment`, {
     onSuccess: () => {
       setValue("comment", "");
       boundMutate();
@@ -92,9 +92,9 @@ const CommunityDetail: NextPage<{
   });
 
   // kebab action: delete
-  const [deletePost, { loading: deleteLoading }] = useMutation(`/api/posts/${router.query.id}/delete`, {
+  const [deleteStory, { loading: deleteLoading }] = useMutation(`/api/stories/${router.query.id}/delete`, {
     onSuccess: () => {
-      router.replace("/community");
+      router.replace("/stories");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -105,64 +105,64 @@ const CommunityDetail: NextPage<{
     },
   });
 
-  const curiosityItem = async (item: PostFeedbackItem) => {
+  const curiosityItem = async (item: StoryFeedbackItem) => {
     if (!data) return;
     const mutateData = {
       ...data,
-      post: {
-        ...data.post,
-        curiosity: !data.post.curiosity,
+      story: {
+        ...data.story,
+        curiosity: !data.story.curiosity,
         curiosities: {
-          ...data.post.curiosities,
-          count: data.post.curiosity ? data.post.curiosities.count - 1 : data.post.curiosities.count + 1,
+          ...data.story.curiosities,
+          count: data.story.curiosity ? data.story.curiosities.count - 1 : data.story.curiosities.count + 1,
         },
       },
     };
     boundMutate(mutateData, false);
-    const updateCuriosity: PostPostsCuriosityResponse = await (await fetch(`/api/posts/${item.id}/curiosity`, { method: "POST" })).json();
+    const updateCuriosity: PostStoriesCuriosityResponse = await (await fetch(`/api/stories/${item.id}/curiosity`, { method: "POST" })).json();
     if (updateCuriosity.error) console.error(updateCuriosity.error);
     boundMutate();
   };
 
-  const emotionItem = async (item: PostFeedbackItem, feeling: FeelingKeys) => {
+  const emotionItem = async (item: StoryFeedbackItem, feeling: FeelingKeys) => {
     if (!data) return;
-    const actionType = !data.post.emotion ? "create" : data.post.emotion !== feeling ? "update" : "delete";
+    const actionType = !data.story.emotion ? "create" : data.story.emotion !== feeling ? "update" : "delete";
     const mutateData = {
       ...data,
-      post: {
-        ...data.post,
+      story: {
+        ...data.story,
         emotion: (() => {
           if (actionType === "create") return feeling;
           if (actionType === "update") return feeling;
           return null;
         })(),
         emotions: {
-          ...data.post.emotions,
+          ...data.story.emotions,
           count: (() => {
-            if (actionType === "create") return data.post.emotions.count + 1;
-            if (actionType === "update") return data.post.emotions.count;
-            return data.post.emotions.count - 1;
+            if (actionType === "create") return data.story.emotions.count + 1;
+            if (actionType === "update") return data.story.emotions.count;
+            return data.story.emotions.count - 1;
           })(),
           feelings: (() => {
-            if (data.post.emotions.count === 1) {
+            if (data.story.emotions.count === 1) {
               if (actionType === "create") return [feeling];
               if (actionType === "update") return [feeling];
               return [];
             }
-            if (actionType === "create") return data.post.emotions.feelings.includes(feeling) ? data.post.emotions.feelings : [...data.post.emotions.feelings, feeling];
-            if (actionType === "update") return data.post.emotions.feelings.includes(feeling) ? data.post.emotions.feelings : [...data.post.emotions.feelings, feeling];
-            return data.post.emotions.feelings;
+            if (actionType === "create") return data.story.emotions.feelings.includes(feeling) ? data.story.emotions.feelings : [...data.story.emotions.feelings, feeling];
+            if (actionType === "update") return data.story.emotions.feelings.includes(feeling) ? data.story.emotions.feelings : [...data.story.emotions.feelings, feeling];
+            return data.story.emotions.feelings;
           })(),
         },
       },
     };
     boundMutate(mutateData, false);
-    const updateEmotion: PostPostsEmotionResponse = await (await fetch(`/api/posts/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
+    const updateEmotion: PostStoriesEmotionResponse = await (await fetch(`/api/stories/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
     if (updateEmotion.error) console.error(updateEmotion.error);
     boundMutate();
   };
 
-  const commentItem = (item: PostFeedbackItem) => {
+  const commentItem = (item: StoryFeedbackItem) => {
     setFocus("comment");
   };
 
@@ -191,7 +191,7 @@ const CommunityDetail: NextPage<{
 
   // modal: delete
   const openDeleteModal = () => {
-    openModal<MessageModalProps>(MessageModal, "confirmDeletePost", {
+    openModal<MessageModalProps>(MessageModal, "confirmDeleteStory", {
       type: "confirm",
       message: "게시글을 정말 삭제하시겠어요?",
       cancelBtn: "취소",
@@ -199,7 +199,7 @@ const CommunityDetail: NextPage<{
       hasBackdrop: true,
       onConfirm: () => {
         if (deleteLoading) return;
-        deletePost({});
+        deleteStory({});
       },
     });
   };
@@ -208,30 +208,30 @@ const CommunityDetail: NextPage<{
   useEffect(() => {
     if (!data) return;
     if (!data.success) return;
-    setPost((prev) => ({
+    setStory((prev) => ({
       ...prev,
-      ...data.post,
+      ...data.story,
     }));
   }, [data]);
 
   // setting layout
   useEffect(() => {
-    if (!post) return;
+    if (!story) return;
 
     setViewModel({
       mode: Boolean(user?.id) ? "normal" : "preview",
     });
 
     setLayout(() => ({
-      title: post?.content || "",
-      seoTitle: `${post?.content || ""} | 게시글 상세`,
+      title: story?.content || "",
+      seoTitle: `${story?.content || ""} | 게시글 상세`,
       header: {
         headerUtils: ["back", "home", "share", "kebab"],
         kebabActions: !user?.id
           ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
-          : user?.id === post?.userId
+          : user?.id === story?.userId
           ? [
-              { key: "edit", text: "수정", onClick: () => router.push(`/community/${post?.id}/edit`) },
+              { key: "edit", text: "수정", onClick: () => router.push(`/stories/${story?.id}/edit`) },
               { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
             ]
           : [
@@ -245,7 +245,7 @@ const CommunityDetail: NextPage<{
     }));
   }, [user?.id]);
 
-  if (!post) {
+  if (!story) {
     return <Error statusCode={404} />;
   }
 
@@ -260,9 +260,9 @@ const CommunityDetail: NextPage<{
           {/* 카테고리 */}
           <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
           {/* 판매자 */}
-          <Profiles user={post?.user} emdPosNm={post?.emdPosNm} diffTime={diffTime} />
+          <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime} />
           {/* 게시글 내용 */}
-          <p className="mt-5 block whitespace-pre-wrap">{post?.content}</p>
+          <p className="mt-5 block whitespace-pre-wrap">{story?.content}</p>
         </div>
         {/* 썸네일 */}
         {Boolean(thumbnails.length) && (
@@ -277,14 +277,14 @@ const CommunityDetail: NextPage<{
         )}
         {/* 피드백 */}
         {viewModel.mode === "normal" && (
-          <PostFeedback item={post} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
+          <StoryFeedback item={story} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
         )}
       </section>
 
       {/* 댓글 목록: list */}
-      {Boolean(post?.comments) && Boolean(post?.comments?.length) && (
+      {Boolean(story?.comments) && Boolean(story?.comments?.length) && (
         <ul className="mt-5 space-y-3">
-          {post.comments.map((item) => (
+          {story.comments.map((item) => (
             <li key={item.id}>
               <Comment item={item} />
             </li>
@@ -293,7 +293,7 @@ const CommunityDetail: NextPage<{
       )}
 
       {/* 댓글 목록: empty */}
-      {Boolean(post?.comments) && !Boolean(post?.comments?.length) && (
+      {Boolean(story?.comments) && !Boolean(story?.comments?.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">
             아직 댓글이 없어요.
@@ -304,7 +304,7 @@ const CommunityDetail: NextPage<{
       )}
 
       {/* 댓글 입력 */}
-      {viewModel.mode === "normal" && Boolean(post?.comments) && (
+      {viewModel.mode === "normal" && Boolean(story?.comments) && (
         <form onSubmit={handleSubmit(user?.id === -1 ? openSignUpModal : submitComment)} noValidate className="mt-5 space-y-4">
           <div className="space-y-1">
             <Inputs
@@ -345,23 +345,23 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const postId = params?.id?.toString();
+  const storyId = params?.id?.toString();
 
-  // invalid params: postId
-  // redirect: community
-  if (!postId || isNaN(+postId)) {
+  // invalid params: storyId
+  // redirect: stories
+  if (!storyId || isNaN(+storyId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/community`,
+        destination: `/stories`,
       },
     };
   }
 
-  // find post
-  const post = await client.post.findUnique({
+  // find story
+  const story = await client.story.findUnique({
     where: {
-      id: +postId,
+      id: +storyId,
     },
     include: {
       user: {
@@ -381,9 +381,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  // not found post
+  // not found story
   // 404
-  if (!post) {
+  if (!story) {
     return {
       notFound: true,
     };
@@ -393,10 +393,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       staticProps: {
-        post: JSON.parse(JSON.stringify(post || {})),
+        story: JSON.parse(JSON.stringify(story || {})),
       },
     },
   };
 };
 
-export default CommunityDetail;
+export default StoryDetail;
