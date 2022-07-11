@@ -1,6 +1,7 @@
 import Image from "next/image";
-
+// @libs
 import { getDiffTimeStr } from "@libs/utils";
+// @api
 import { GetProductsResponse } from "@api/products";
 
 export type ProductItem = GetProductsResponse["products"][0];

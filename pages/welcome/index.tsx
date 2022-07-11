@@ -1,14 +1,13 @@
 import { NextPage } from "next";
 import Link from "next/link";
-
 import { useEffect } from "react";
 import { useSetRecoilState } from "recoil";
-
+// @libs
 import { PageLayout } from "@libs/states";
-
+// @components
 import Buttons from "@components/buttons";
 
-const Welcome: NextPage = () => {
+const WelcomeHome: NextPage = () => {
   const setLayout = useSetRecoilState(PageLayout);
 
   useEffect(() => {
@@ -59,4 +58,4 @@ const Welcome: NextPage = () => {
   );
 };
 
-export default Welcome;
+export default WelcomeHome;

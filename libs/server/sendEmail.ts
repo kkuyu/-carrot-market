@@ -1,4 +1,5 @@
-import { EmailTemplateKey, getHeader, getSignature } from "./getUtilsNcp";
+// @libs
+import { EmailTemplateKey, getHeader, getSignature } from "@libs/server/getUtilsNcp";
 
 interface SendEmailData {
   sendTo: string;

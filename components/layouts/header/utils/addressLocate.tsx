@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
+// @libs
 import useUser from "@libs/client/useUser";
 import useCoords from "@libs/client/useCoords";
-
+// @api
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
-
+// @components
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 import { ModalControl, ToastControl, UpdateHometown } from "@components/layouts/header";

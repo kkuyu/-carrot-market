@@ -1,10 +1,10 @@
 import Image from "next/image";
-
 import React, { useEffect, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
+// @libs
 import { FileOptions, validateFiles } from "@libs/utils";
 import useToast from "@libs/client/useToast";
-
+// @components
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 
 interface PreviewItem {

@@ -1,9 +1,9 @@
 import Image from "next/image";
-
+// @libs
 import useModal from "@libs/client/useModal";
-
+// @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
-import ThumbnailSlider from "./thumbnailSlider";
+import ThumbnailSlider from "@components/groups/thumbnailSlider";
 
 export type ThumbnailListItem = {
   src: string;

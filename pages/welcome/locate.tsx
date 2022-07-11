@@ -1,16 +1,16 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
-import useCoords from "@libs/client/useCoords";
-
+// @libs
 import { PageLayout } from "@libs/states";
+import useCoords from "@libs/client/useCoords";
+// @api
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
-
+// @components
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 

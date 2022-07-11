@@ -1,12 +1,11 @@
 import Image from "next/image";
-
 import { useEffect, useRef, useState } from "react";
 import Flicking, { ViewportSlot } from "@egjs/react-flicking";
-import useModal from "@libs/client/useModal";
-
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
-
 import "@egjs/react-flicking/dist/flicking.min.css";
+// @libs
+import useModal from "@libs/client/useModal";
+// @components
+import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 
 export interface ThumbnailSliderItem {
   src: string;

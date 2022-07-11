@@ -1,4 +1,5 @@
-import { getHeader, getSignature, getMessageTemplate, MessageTemplateKey } from "./getUtilsNcp";
+// @libs
+import { getHeader, getSignature, getMessageTemplate, MessageTemplateKey } from "@libs/server/getUtilsNcp";
 
 interface SendMessageData {
   templateId: MessageTemplateKey;

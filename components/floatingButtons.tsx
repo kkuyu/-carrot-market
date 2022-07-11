@@ -1,11 +1,11 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
-
 import React from "react";
+// @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
-
-import MessageModal, { MessageModalProps } from "./commons/modals/case/messageModal";
+// @components
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 
 interface FloatingButtonsProps {
   href: string;

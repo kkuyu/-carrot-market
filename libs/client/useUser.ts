@@ -1,4 +1,5 @@
 import useSWR, { KeyedMutator } from "swr";
+// @api
 import { GetUserResponse } from "@api/users/my";
 
 export interface UserProfile {

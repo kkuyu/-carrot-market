@@ -1,11 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Product, Record } from "@prisma/client";
-
+// @libs
+import { getCategory } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-
-import { getCategory } from "@libs/utils";
 
 export interface GetProductsResponse {
   success: boolean;

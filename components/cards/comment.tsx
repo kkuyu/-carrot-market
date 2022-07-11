@@ -1,5 +1,6 @@
+// @libs
 import { getDiffTimeStr } from "@libs/utils";
-
+// @components
 import Profiles, { ProfilesProps } from "@components/profiles";
 
 export type CommentItem = ProfilesProps & {

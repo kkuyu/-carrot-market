@@ -1,10 +1,9 @@
 import type { AppProps } from "next/app";
 import Script from "next/script";
-
 import { RecoilRoot } from "recoil";
 import { SWRConfig } from "swr";
 import "../styles/globals.css";
-
+// @components
 import CommonProvider from "@components/commons/commonProvider";
 import Header from "@components/layouts/header";
 import NavBar from "@components/layouts/navBar";

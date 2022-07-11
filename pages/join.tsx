@@ -1,21 +1,21 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
+// @libs
+import { PageLayout } from "@libs/states";
 import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
-
-import { PageLayout } from "@libs/states";
+// @api
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostJoinDummyResponse } from "@api/users/join-dummy";
-
+// @components
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
@@ -177,7 +177,7 @@ const Join: NextPage = () => {
         {!userData?.success && (
           <p>
             <span className="text-gray-500">전화번호가 변경되었나요?</span>
-            <Link href="/verification-email" passHref>
+            <Link href="/verification/email" passHref>
               <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" className="underline" />
             </Link>
           </p>

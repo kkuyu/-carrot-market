@@ -1,5 +1,5 @@
 import React, { useRef, useEffect } from "react";
-
+// @components
 import { PanelComponentProps } from "@components/commons";
 
 interface PanelContainerProps extends Pick<PanelComponentProps, "onClose"> {

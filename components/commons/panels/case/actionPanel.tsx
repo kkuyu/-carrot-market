@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
+// @libs
 import { clearTimer, setTimer, TimerRef } from "@libs/utils";
-
+// @components
 import { PanelComponentProps } from "@components/commons";
 
 export interface ActionPanelProps {
