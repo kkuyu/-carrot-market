@@ -1,11 +1,12 @@
 import useSWR, { KeyedMutator } from "swr";
+import { User } from "@prisma/client";
 // @api
 import { GetUserResponse } from "@api/users/my";
 
 export interface UserProfile {
   mutate: KeyedMutator<GetUserResponse>;
   loading: boolean;
-  user: Partial<GetUserResponse["profile"]> | null;
+  user: (Pick<User, "id" | "name"> & Partial<User>) | null;
   currentAddr: GetUserResponse["currentAddr"];
 }
 

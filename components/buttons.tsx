@@ -22,8 +22,8 @@ const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRe
   const Component = TagName as React.ElementType;
   const classNames = {
     "round-box": {
-      basic: "block w-full px-4 font-semibold border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
-      sm: "py-2 text-sm",
+      basic: "block w-full px-4 font-semibold text-center border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
+      sm: "py-1.5 text-sm",
       base: "py-2 text-base",
       primary: "text-white bg-orange-500 border-transparent hover:bg-orange-600 focus:ring-orange-500",
       default: "text-black bg-white border border-gray-300 hover:border-gray-500 focus:ring-gray-300",

@@ -18,6 +18,9 @@ const Error500: NextPage = () => {
     if (/^\/stories\/[0-9]*$/.test(router.asPath)) {
       return "게시글을 불러올 수 없습니다.";
     }
+    if (/^\/users\/profiles\/[0-9]*$/.test(router.asPath)) {
+      return "프로필을 불러올 수 없습니다.";
+    }
     return "500";
   };
 

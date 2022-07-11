@@ -17,7 +17,7 @@ import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
-import StoryEdit, { StoryEditTypes } from "@components/forms/editStory";
+import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
 const StoryUpload: NextPage<{
   staticProps: {
@@ -31,7 +31,7 @@ const StoryUpload: NextPage<{
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<StoryEditTypes>();
+  const formData = useForm<EditStoryTypes>();
   const [uploadStory, { loading, data }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: (data) => {
       router.replace(`/stories/${data.story.id}`);
@@ -62,7 +62,7 @@ const StoryUpload: NextPage<{
     setValue("content", staticProps.story.content);
   };
 
-  const submitStoryUpload = async ({ photos, ...data }: StoryEditTypes) => {
+  const submitStoryUpload = async ({ photos, ...data }: EditStoryTypes) => {
     if (loading || photoLoading) return;
 
     if (!photos || !photos.length) {
@@ -123,7 +123,7 @@ const StoryUpload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <StoryEdit formId="edit-story" formData={formData} onValid={submitStoryUpload} isLoading={loading || photoLoading} />
+      <EditStory formId="edit-story" formData={formData} onValid={submitStoryUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };

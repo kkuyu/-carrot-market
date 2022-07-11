@@ -1,5 +1,6 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import Error from "next/error";
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
@@ -260,9 +261,15 @@ const StoryDetail: NextPage<{
           {/* 카테고리 */}
           <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
           {/* 판매자 */}
-          <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime} />
+          <Link href={`/users/profiles/${story?.user?.id}`}>
+            <a>
+              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime} />
+            </a>
+          </Link>
           {/* 게시글 내용 */}
-          <p className="mt-5 block whitespace-pre-wrap">{story?.content}</p>
+          <div className="pt-5 border-t">
+            <p className="whitespace-pre-wrap">{story?.content}</p>
+          </div>
         </div>
         {/* 썸네일 */}
         {Boolean(thumbnails.length) && (

@@ -18,6 +18,9 @@ const Error404: NextPage = () => {
     if (/^\/stories\/[0-9]*$/.test(router.asPath)) {
       return "게시글이 삭제되었거나 존재하지 않습니다.";
     }
+    if (/^\/users\/profiles\/[0-9]*$/.test(router.asPath)) {
+      return "탈퇴하였거나 존재하지 않습니다.";
+    }
     return "404";
   };
 

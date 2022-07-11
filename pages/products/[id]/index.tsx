@@ -207,10 +207,14 @@ const ProductDetail: NextPage<{
       {/* 판매 상품 정보 */}
       <section className="block">
         {/* 판매자 */}
-        <Profiles user={product?.user} emdPosNm={product?.emdPosNm} />
+        <Link href={`/users/profiles/${product?.user?.id}`}>
+          <a>
+            <Profiles user={product?.user} emdPosNm={product?.emdPosNm} />
+          </a>
+        </Link>
 
         {/* 설명 */}
-        <div className="mt-5">
+        <div className="pt-5 border-t">
           <h1 className="text-2xl font-bold">{product.name}</h1>
           <span className="mt-1 block text-sm text-gray-500">
             {category?.text} · {diffTime}
