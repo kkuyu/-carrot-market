@@ -13,7 +13,7 @@ import getSsrUser from "@libs/server/getUser";
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
-import ProductEdit, { ProductEditTypes } from "@components/forms/productEdit";
+import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
 const ProductUpload: NextPage = () => {
   const router = useRouter();
@@ -23,7 +23,7 @@ const ProductUpload: NextPage = () => {
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<ProductEditTypes>();
+  const formData = useForm<EditProductTypes>();
   const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
       setPhotoLoading(false);
@@ -39,7 +39,7 @@ const ProductUpload: NextPage = () => {
     },
   });
 
-  const submitProductUpload = async ({ photos, ...data }: ProductEditTypes) => {
+  const submitProductUpload = async ({ photos, ...data }: EditProductTypes) => {
     if (loading || photoLoading) return;
 
     if (!photos || !photos.length) {
@@ -100,7 +100,7 @@ const ProductUpload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <ProductEdit formId="upload-product" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <EditProduct formId="upload-product" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
     </div>
   );
 };

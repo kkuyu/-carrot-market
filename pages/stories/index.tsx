@@ -24,7 +24,7 @@ import MessageModal, { MessageModalProps } from "@components/commons/modals/case
 import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
 import FloatingButtons from "@components/floatingButtons";
 import Story from "@components/cards/story";
-import StoryFeedback, { StoryFeedbackItem } from "@components/groups/storyFeedback";
+import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
 
 const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/stories?page=1&${query}`;
@@ -50,7 +50,7 @@ const StoryHome: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : [];
 
-  const curiosityItem = async (item: StoryFeedbackItem) => {
+  const curiosityItem = async (item: FeedbackStoryItem) => {
     if (!data) return;
     const mutateData = data.map((dataRow) => {
       const stories = dataRow.stories.map((story) => {
@@ -72,7 +72,7 @@ const StoryHome: NextPage = () => {
     mutate();
   };
 
-  const emotionItem = async (item: StoryFeedbackItem, feeling: FeelingKeys) => {
+  const emotionItem = async (item: FeedbackStoryItem, feeling: FeelingKeys) => {
     if (!data) return;
     const mutateData = data.map((dataRow) => {
       const stories = dataRow.stories.map((story) => {
@@ -113,7 +113,7 @@ const StoryHome: NextPage = () => {
     mutate();
   };
 
-  const commentItem = (item: StoryFeedbackItem) => {
+  const commentItem = (item: FeedbackStoryItem) => {
     router.push(`/stories/${item?.id}`);
   };
 
@@ -184,7 +184,7 @@ const StoryHome: NextPage = () => {
                       />
                     </div>
                   )}
-                  <StoryFeedback
+                  <FeedbackStory
                     item={item}
                     curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem}
                     emotionItem={user?.id === -1 ? openSignUpModal : emotionItem}

@@ -2,36 +2,39 @@ import { UseFormReturn } from "react-hook-form";
 // @libs
 import useUser from "@libs/client/useUser";
 // @api
-import { StoryCategoryEnum, StoryCategory } from "@api/stories/types";
+import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
 // @components
 import Labels from "@components/labels";
+import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
 import Files from "@components/files";
 import Buttons from "@components/buttons";
 import Selects from "@components/selects";
 
-export interface StoryEditTypes {
+export interface EditProductTypes {
   photos: FileList;
-  category: StoryCategoryEnum;
-  content: string;
+  category: ProductCategoryEnum;
+  name: string;
+  price: number;
+  description: string;
 }
 
-interface StoryEditProps {
+interface EditProductProps {
   formId: string;
-  formData: UseFormReturn<StoryEditTypes, object>;
-  onValid: (validForm: StoryEditTypes) => void;
+  formData: UseFormReturn<EditProductTypes, object>;
+  onValid: (validForm: EditProductTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEditProps) => {
+const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading }: EditProductProps) => {
   const { currentAddr } = useUser();
 
   const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
 
   const updateValue = (name: string, value: any) => {
-    const registerName = name as keyof StoryEditTypes;
+    const registerName = name as keyof EditProductTypes;
     resetField(registerName);
     setValue(registerName, value);
   };
@@ -51,6 +54,22 @@ const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEdi
         />
         <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
       </div>
+      {/* 글 제목 */}
+      <div className="space-y-1">
+        <Labels text="글 제목" htmlFor="name" />
+        <Inputs
+          register={register("name", {
+            required: {
+              value: true,
+              message: "글 제목을 입력해주세요",
+            },
+          })}
+          required
+          name="name"
+          type="text"
+        />
+        <span className="empty:hidden invalid">{formState.errors.name?.message}</span>
+      </div>
       {/* 카테고리 */}
       <div className="space-y-1">
         <Labels tag="span" text="카테고리" htmlFor="category" />
@@ -61,7 +80,7 @@ const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEdi
               message: "카테고리를 선택해주세요",
             },
           })}
-          options={[{ value: "", text: "카테고리 선택" }, ...StoryCategory]}
+          options={[{ value: "", text: "카테고리 선택" }, ...ProductCategory]}
           currentValue={watch("category")}
           updateValue={updateValue}
           required
@@ -69,11 +88,30 @@ const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEdi
         />
         <span className="empty:hidden invalid">{formState.errors.category?.message}</span>
       </div>
+      {/* 가격 */}
+      <div className="space-y-1">
+        <Labels text="가격" htmlFor="price" />
+        <Inputs
+          register={register("price", {
+            required: {
+              value: true,
+              message: "가격을 입력해주세요",
+            },
+            valueAsNumber: true,
+          })}
+          required
+          placeholder=""
+          name="price"
+          type="number"
+          kind="price"
+        />
+        <span className="empty:hidden invalid">{formState.errors.price?.message}</span>
+      </div>
       {/* 게시글 내용 */}
       <div className="space-y-1">
-        <Labels text="게시글 내용" htmlFor="content" />
+        <Labels text="게시글 내용" htmlFor="description" />
         <TextAreas
-          register={register("content", {
+          register={register("description", {
             required: {
               value: true,
               message: "게시글 내용을 입력해주세요",
@@ -85,10 +123,10 @@ const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEdi
           })}
           required
           minLength="10"
-          name="content"
+          name="description"
           placeholder={`${currentAddr.emdPosNm}에 올릴 게시글 내용을 작성해주세요.`}
         />
-        <span className="empty:hidden invalid">{formState.errors.content?.message}</span>
+        <span className="empty:hidden invalid">{formState.errors.description?.message}</span>
       </div>
       {/* 완료 */}
       <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={isLoading} />
@@ -96,4 +134,4 @@ const StoryEdit = ({ formId, formData, onValid, isSuccess, isLoading }: StoryEdi
   );
 };
 
-export default StoryEdit;
+export default EditProduct;

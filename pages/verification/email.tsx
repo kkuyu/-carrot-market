@@ -1,16 +1,16 @@
 import { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
-import useMutation from "@libs/client/useMutation";
-
+// @libs
 import { PageLayout } from "@libs/states";
+import useMutation from "@libs/client/useMutation";
+// @api
 import { PostVerificationEmailResponse } from "@api/users/verification-email";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
-
+// @components
 import Buttons from "@components/buttons";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";

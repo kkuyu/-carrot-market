@@ -19,8 +19,8 @@ export const middleware: NextMiddleware = (req) => {
       case "/welcome/locate":
       case "/login":
       case "/join":
-      case "/verification-email":
-      case "/verification-phone":
+      case "/verification/email":
+      case "/verification/phone":
         return NextResponse.next();
       default:
         if (/^\/products\/[0-9]*$/.test(url.pathname)) return NextResponse.next();

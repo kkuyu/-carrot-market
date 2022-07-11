@@ -25,7 +25,7 @@ import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailLi
 import Comment from "@components/cards/comment";
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
-import StoryFeedback, { StoryFeedbackItem } from "@components/groups/storyFeedback";
+import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
 
 interface CommentForm {
   comment: string;
@@ -105,7 +105,7 @@ const StoryDetail: NextPage<{
     },
   });
 
-  const curiosityItem = async (item: StoryFeedbackItem) => {
+  const curiosityItem = async (item: FeedbackStoryItem) => {
     if (!data) return;
     const mutateData = {
       ...data,
@@ -124,7 +124,7 @@ const StoryDetail: NextPage<{
     boundMutate();
   };
 
-  const emotionItem = async (item: StoryFeedbackItem, feeling: FeelingKeys) => {
+  const emotionItem = async (item: FeedbackStoryItem, feeling: FeelingKeys) => {
     if (!data) return;
     const actionType = !data.story.emotion ? "create" : data.story.emotion !== feeling ? "update" : "delete";
     const mutateData = {
@@ -162,7 +162,7 @@ const StoryDetail: NextPage<{
     boundMutate();
   };
 
-  const commentItem = (item: StoryFeedbackItem) => {
+  const commentItem = (item: FeedbackStoryItem) => {
     setFocus("comment");
   };
 
@@ -277,7 +277,7 @@ const StoryDetail: NextPage<{
         )}
         {/* 피드백 */}
         {viewModel.mode === "normal" && (
-          <StoryFeedback item={story} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
+          <FeedbackStory item={story} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
         )}
       </section>
 

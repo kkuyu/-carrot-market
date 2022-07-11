@@ -6,16 +6,16 @@ import { GetStoriesResponse } from "@api/stories";
 import { FeelingIcon, FeelingKeys } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 
-export type StoryFeedbackItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
+export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
-interface StoryFeedbackProps {
-  item: StoryFeedbackItem;
-  curiosityItem: (item: StoryFeedbackItem) => void;
-  emotionItem: (item: StoryFeedbackItem, feeling: FeelingKeys) => void;
-  commentItem: (item: StoryFeedbackItem) => void;
+interface FeedbackStoryProps {
+  item: FeedbackStoryItem;
+  curiosityItem: (item: FeedbackStoryItem) => void;
+  emotionItem: (item: FeedbackStoryItem, feeling: FeelingKeys) => void;
+  commentItem: (item: FeedbackStoryItem) => void;
 }
 
-const StoryFeedback = ({ item, curiosityItem, emotionItem, commentItem }: StoryFeedbackProps) => {
+const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: FeedbackStoryProps) => {
   const [pop, setPop] = useState(false);
 
   const category = getCategory("story", item?.category);
@@ -122,4 +122,4 @@ const StoryFeedback = ({ item, curiosityItem, emotionItem, commentItem }: StoryF
   );
 };
 
-export default StoryFeedback;
+export default FeedbackStory;

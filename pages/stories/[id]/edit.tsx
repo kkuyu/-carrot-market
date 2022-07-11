@@ -17,7 +17,7 @@ import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
-import StoryEdit, { StoryEditTypes } from "@components/forms/storyEdit";
+import StoryEdit, { StoryEditTypes } from "@components/forms/editStory";
 
 const StoryUpload: NextPage<{
   staticProps: {
