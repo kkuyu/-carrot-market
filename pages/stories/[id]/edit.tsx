@@ -12,7 +12,6 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { StoryCategoryEnum } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
@@ -31,8 +30,13 @@ const StoryUpload: NextPage<{
 
   const [photoLoading, setPhotoLoading] = useState(false);
 
-  const formData = useForm<EditStoryTypes>();
-  const [uploadStory, { loading, data }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
+  const formData = useForm<EditStoryTypes>({
+    defaultValues: {
+      category: staticProps.story.category as EditStoryTypes["category"],
+      content: staticProps.story.content,
+    },
+  });
+  const [editStory, { loading, data }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: (data) => {
       router.replace(`/stories/${data.story.id}`);
     },
@@ -45,40 +49,39 @@ const StoryUpload: NextPage<{
     },
   });
 
-  const setDefaultValue = async () => {
-    if (!staticProps?.story) return;
+  const setDefaultPhotos = async () => {
+    if (!staticProps?.story || staticProps?.story?.photos) return;
 
     const transfer = new DataTransfer();
-    const photos = staticProps?.story?.photo ? staticProps.story.photo.split(",") : [];
-    console.log(photos);
+    const photos = staticProps.story.photos.split(",");
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       transfer.items.add(file);
     }
 
-    const { setValue } = formData;
-    setValue("category", staticProps.story.category as StoryCategoryEnum);
-    setValue("photos", transfer.files);
-    setValue("content", staticProps.story.content);
+    formData.setValue("photos", transfer.files);
   };
 
-  const submitStoryUpload = async ({ photos, ...data }: EditStoryTypes) => {
+  const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
     if (loading || photoLoading) return;
 
-    if (!photos || !photos.length) {
-      uploadStory({
-        ...data,
-      });
+    if (!_photos || !_photos.length) {
+      editStory({ ...data });
       return;
     }
 
-    let photo = [];
+    let photos = [];
     setPhotoLoading(true);
 
-    for (let index = 0; index < photos.length; index++) {
+    for (let index = 0; index < _photos.length; index++) {
+      // same photo
+      if (staticProps?.story?.photos && staticProps.story.photos.includes(_photos[index].name)) {
+        photos.push(_photos[index].name);
+        continue;
+      }
+      // new photo
       const form = new FormData();
-      form.append("file", photos[index], `${user?.id}-${index}-${photos[index].name}`);
-
+      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
       // get cloudflare file data
       const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
       if (!fileResponse.success) {
@@ -87,7 +90,6 @@ const StoryUpload: NextPage<{
         console.error(error);
         return;
       }
-
       // upload image delivery
       const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
       if (!imageResponse.success) {
@@ -96,18 +98,14 @@ const StoryUpload: NextPage<{
         console.error(error);
         return;
       }
-
-      photo.push(imageResponse.result.id);
+      photos.push(imageResponse.result.id);
     }
 
-    uploadStory({
-      photo: photo.join(","),
-      ...data,
-    });
+    editStory({ photos: photos.join(","), ...data });
   };
 
   useEffect(() => {
-    setDefaultValue();
+    setDefaultPhotos();
 
     setLayout(() => ({
       title: "동네생활 글 수정하기",
@@ -123,7 +121,7 @@ const StoryUpload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="edit-story" formData={formData} onValid={submitStoryUpload} isLoading={loading || photoLoading} />
+      <EditStory formId="edit-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={staticProps?.story?.emdPosNm || ""} />
     </div>
   );
 };

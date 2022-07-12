@@ -1,6 +1,4 @@
 import { UseFormReturn } from "react-hook-form";
-// @libs
-import useUser from "@libs/client/useUser";
 // @api
 import { StoryCategoryEnum, StoryCategory } from "@api/stories/types";
 // @components
@@ -22,13 +20,17 @@ interface EditStoryProps {
   onValid: (validForm: EditStoryTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
+  emdPosNm: string;
 }
 
-const EditStory = ({ formId, formData, onValid, isSuccess, isLoading }: EditStoryProps) => {
-  const { currentAddr } = useUser();
-
-  const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
+const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm }: EditStoryProps) => {
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
+
+  const fileOptions = {
+    maxLength: 10,
+    duplicateDelete: true,
+    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+  };
 
   const updateValue = (name: string, value: any) => {
     const registerName = name as keyof EditStoryTypes;
@@ -43,9 +45,9 @@ const EditStory = ({ formId, formData, onValid, isSuccess, isLoading }: EditStor
         <Files
           register={register("photos")}
           name="photos"
-          photoOptions={photoOptions}
-          currentValue={watch("photos")}
-          changeValue={(value) => setValue("photos", value)}
+          fileOptions={fileOptions}
+          currentFiles={watch("photos")}
+          changeFiles={(value) => setValue("photos", value)}
           accept="image/*"
           multiple={true}
         />
@@ -86,7 +88,7 @@ const EditStory = ({ formId, formData, onValid, isSuccess, isLoading }: EditStor
           required
           minLength="10"
           name="content"
-          placeholder={`${currentAddr.emdPosNm}에 올릴 게시글 내용을 작성해주세요.`}
+          placeholder={emdPosNm ? `${emdPosNm}에 올릴 게시글 내용을 작성해주세요.` : `게시글 내용을 작성해주세요.`}
         />
         <span className="empty:hidden invalid">{formState.errors.content?.message}</span>
       </div>

@@ -1,5 +1,5 @@
 import Image from "next/image";
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 // @libs
 import { FileOptions, validateFiles } from "@libs/utils";
@@ -16,78 +16,81 @@ interface FilesProps extends React.HTMLAttributes<HTMLInputElement> {
   name: string;
   required?: boolean;
   disabled?: boolean;
-  photoOptions?: FileOptions;
-  currentValue?: FileList;
-  changeValue?: (value: FileList) => void;
+  fileOptions?: FileOptions;
+  currentFiles?: FileList;
+  changeFiles?: (value: FileList) => void;
   accept?: string;
   multiple?: boolean;
   register?: UseFormRegisterReturn;
   [key: string]: any;
 }
 
-const Files = ({ name, required = false, disabled, photoOptions, currentValue, changeValue, accept, multiple = false, register, ...rest }: FilesProps) => {
+const Files = ({ name, required = false, disabled, fileOptions, currentFiles, changeFiles, accept, multiple = false, register, ...rest }: FilesProps) => {
   const [preview, setPreview] = useState<PreviewItem[]>([]);
 
   const { openToast } = useToast();
 
-  const changeFiles = () => {
-    // check empty
-    if (!currentValue?.length) {
-      setPreview([]);
-      return;
+  const updatePreview = () => {
+    // empty
+    if (!currentFiles || !currentFiles?.length) {
+      return setPreview([]);
     }
-
-    // check options
-    const { errors, validFiles } = validateFiles(currentValue, photoOptions);
-    if (errors?.acceptTypes) {
-      openToast<MessageToastProps>(MessageToast, "invalid-photos-acceptTypes", {
-        placement: "bottom",
-        message: "jpg, png, gif 형식의 파일만 등록할 수 있어요",
-      });
-    }
-    if (errors?.maxLength) {
-      openToast<MessageToastProps>(MessageToast, "invalid-photos-maxLength", {
-        placement: "bottom",
-        message: `최대 ${photoOptions?.maxLength}개까지 등록할 수 있어요.`,
-      });
-    }
-
     // set thumbnails
     setPreview(
-      validFiles.map((file: File) => ({
+      Array.from(currentFiles).map((file: File) => ({
         src: URL.createObjectURL(file),
         raw: file,
       }))
     );
   };
 
-  const updateFiles = (type: "remove", preview: PreviewItem) => {
+  const removeFiles = (item: PreviewItem) => {
+    // empty
+    if (!currentFiles || !currentFiles?.length) return;
+    // filter files
     const transfer = new DataTransfer();
+    const filterFiles = Array.from(currentFiles).filter((file) => file.name !== item.raw?.name);
+    filterFiles.forEach((file) => transfer.items.add(file));
+    // update hook form value
+    if (changeFiles) changeFiles(transfer.files);
+  };
 
-    switch (type) {
-      case "remove":
-        if (!currentValue?.length) break;
-        Array.from(currentValue)
-          .filter((file) => file !== preview?.raw)
-          .forEach((file) => transfer.items.add(file));
-        break;
-      default:
-        console.error("updatePhotos", type);
-        return;
-    }
+  const onChangeInput = (e: ChangeEvent<HTMLInputElement>) => {
+    // empty
+    if (!e.target.files || !e.target.files.length) return;
+    // concat files
+    const transfer = new DataTransfer();
+    const newFiles = !multiple ? [...Array.from(e.target.files || [])] : [...Array.from(currentFiles || []), ...Array.from(e.target.files || [])];
+    newFiles.forEach((file) => transfer.items.add(file));
+    // check options
+    const { errors, validFiles } = validateFiles(transfer.files, fileOptions);
+    errors.map((error) => {
+      openToast<MessageToastProps>(MessageToast, `invalid-files-${error.type}`, {
+        placement: "bottom",
+        message: error.message,
+      });
+    });
+    // update hook form value
+    if (changeFiles) changeFiles(validFiles);
+  };
 
-    if (changeValue) changeValue(transfer.files);
-    if (currentValue) changeFiles();
+  const onErrorImage = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+    const img = e.target as HTMLImageElement;
+    img?.setAttribute("class", "error-image");
+    openToast<MessageToastProps>(MessageToast, "error-image", {
+      placement: "bottom",
+      message: `이미지를 확인해주세요.`,
+    });
   };
 
   useEffect(() => {
-    changeFiles();
-  }, [currentValue]);
+    updatePreview();
+  }, [currentFiles]);
 
   return (
     <div className="relative">
       <div className="absolute top-2 left-0">
-        <input {...register} id={name} type="file" name={name} required={required} disabled={disabled} accept={accept} multiple={multiple} className="peer sr-only" {...rest} />
+        <input id={name} type="file" name={name} required={required} disabled={disabled} accept={accept} multiple={multiple} className="peer sr-only" {...rest} onChange={onChangeInput} />
         <label
           htmlFor={name}
           className="relative flex flex-col items-center justify-center w-20 h-20 bg-white border border-gray-300 rounded-md
@@ -104,7 +107,7 @@ const Files = ({ name, required = false, disabled, photoOptions, currentValue, c
           </svg>
           <span className="mt-1 text-sm">
             <em className={`not-italic ${preview.length > 0 ? "text-orange-500" : ""}`}>{preview.length}</em>
-            {photoOptions?.maxLength ? `/${photoOptions?.maxLength}` : ""}
+            {fileOptions?.maxLength ? `/${fileOptions?.maxLength}` : ""}
           </span>
         </label>
       </div>
@@ -113,10 +116,10 @@ const Files = ({ name, required = false, disabled, photoOptions, currentValue, c
           <div key={item.src} className="relative ml-3 w-20 shrink-0">
             <div className="relative border border-gray-300 rounded-md overflow-hidden">
               <span className="block pb-[100%]"></span>
-              <Image src={item.src} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" />
+              <Image src={item.src} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" onError={onErrorImage} />
               {index === 0 && <span className="absolute bottom-0 left-0 w-full text-sm text-center text-white bg-black">대표 사진</span>}
             </div>
-            <button type="button" className="absolute -top-2 -right-2 w-5 h-5 bg-gray-600 rounded-full outline-none hover:bg-black focus:bg-black" onClick={() => updateFiles("remove", item)}>
+            <button type="button" className="absolute -top-2 -right-2 w-5 h-5 bg-gray-600 rounded-full outline-none hover:bg-black focus:bg-black" onClick={() => removeFiles(item)}>
               <svg className="m-auto w-3.5 h-3.5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
               </svg>

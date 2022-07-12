@@ -12,7 +12,6 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { ProductCategoryEnum } from "@api/products/types";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
@@ -29,10 +28,17 @@ const ProductUpload: NextPage<{
 
   const { user } = useUser();
 
-  const [photoLoading, setPhotoLoading] = useState(false);
+  const formData = useForm<EditProductTypes>({
+    defaultValues: {
+      category: staticProps?.product?.category as EditProductTypes["category"],
+      name: staticProps?.product?.name,
+      description: staticProps?.product?.description,
+      price: staticProps?.product?.price,
+    },
+  });
 
-  const formData = useForm<EditProductTypes>();
-  const [updateProduct, { loading, data }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [photoLoading, setPhotoLoading] = useState(false);
+  const [editProduct, { loading, data }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
       setPhotoLoading(false);
       router.replace(`/products/${data.product.id}`);
@@ -47,70 +53,67 @@ const ProductUpload: NextPage<{
     },
   });
 
-  const setDefaultValue = async () => {
-    if (!staticProps?.product) return;
+  const setDefaultPhotos = async () => {
+    if (!staticProps?.product || !staticProps?.product?.photos) return;
 
     const transfer = new DataTransfer();
-    const photos = staticProps?.product?.photo ? staticProps.product.photo.split(",") : [];
+    const photos = staticProps.product.photos.split(",");
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       transfer.items.add(file);
     }
 
-    const { setValue } = formData;
-    setValue("category", staticProps.product.category as ProductCategoryEnum);
-    setValue("name", staticProps.product.name);
-    setValue("description", staticProps.product.description);
-    setValue("photos", transfer.files);
-    setValue("price", staticProps.product.price);
+    formData.setValue("photos", transfer.files);
   };
 
-  const submitProductUpload = async ({ photos, ...data }: EditProductTypes) => {
+  const submitEditProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (loading || photoLoading) return;
 
-    if (!photos || !photos.length) {
-      updateProduct({
-        ...data,
-      });
+    if (!_photos || !_photos.length) {
+      editProduct({ ...data, photos: "" });
       return;
     }
 
-    let photo = [];
+    let photos = [];
     setPhotoLoading(true);
 
-    for (let index = 0; index < photos.length; index++) {
-      const form = new FormData();
-      form.append("file", photos[index], `${user?.id}-${index}-${photos[index].name}`);
-
-      // get cloudflare file data
-      const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
-      if (!fileResponse.success) {
-        const error = new Error("GetFileError");
-        error.name = "GetFileError";
-        console.error(error);
-        return;
+    for (let index = 0; index < _photos.length; index++) {
+      try {
+        // same photo
+        if (staticProps?.product?.photos && staticProps.product.photos.includes(_photos[index].name)) {
+          photos.push(_photos[index].name);
+          continue;
+        }
+        // new photo
+        const form = new FormData();
+        form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
+        // get cloudflare file data
+        const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
+        if (!fileResponse.success) {
+          const error = new Error("GetFileError");
+          error.name = "GetFileError";
+          console.error(error);
+          return;
+        }
+        // upload image delivery
+        const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
+        if (!imageResponse.success) {
+          const error = new Error("UploadFileError");
+          error.name = "UploadFileError";
+          console.error(error);
+          return;
+        }
+        photos.push(imageResponse.result.id);
+      } catch {
+        console.error(`Failed Upload: ${_photos[index].name}`);
       }
-
-      // upload image delivery
-      const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
-      if (!imageResponse.success) {
-        const error = new Error("UploadFileError");
-        error.name = "UploadFileError";
-        console.error(error);
-        return;
-      }
-
-      photo.push(imageResponse.result.id);
     }
 
-    updateProduct({
-      photo: photo.join(","),
-      ...data,
-    });
+    editProduct({ photos: photos.join(","), ...data });
   };
 
   useEffect(() => {
-    setDefaultValue();
+    setDefaultPhotos();
 
     setLayout(() => ({
       title: "중고거래 글 수정하기",
@@ -126,7 +129,7 @@ const ProductUpload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="edit-product" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <EditProduct formId="edit-product" formData={formData} onValid={submitEditProduct} isLoading={loading || photoLoading} emdPosNm={staticProps?.product?.emdPosNm || ""} />
     </div>
   );
 };

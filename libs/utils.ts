@@ -59,34 +59,66 @@ export const getDiffTimeStr = (originTime: number, currentTime: number) => {
 };
 
 export type FileOptions = {
-  maxLength?: number;
+  duplicateDelete?: boolean;
   acceptTypes?: string[];
+  maxLength?: number;
 };
 
 export const validateFiles = (originalFiles: FileList, options: FileOptions = {}) => {
-  let validFiles = Array.from(originalFiles);
-  let errors: { [key in keyof typeof options]?: boolean } = {};
+  let newFiles: File[] = [];
+  let errors: Set<keyof typeof options> = new Set();
 
-  // acceptTypes
+  // check duplicateDelete
+  for (let index = 0; index < originalFiles.length; index++) {
+    if (!options?.duplicateDelete) {
+      newFiles.push(originalFiles[index]);
+      continue;
+    }
+    if (!newFiles.length) {
+      newFiles.push(originalFiles[index]);
+      continue;
+    }
+    const isDuplicate = newFiles.find((file) => file.name === originalFiles[index].name && file.lastModified === originalFiles[index].lastModified);
+    if (!isDuplicate) {
+      newFiles.push(originalFiles[index]);
+      continue;
+    }
+    errors.add("duplicateDelete");
+  }
+
+  // check acceptTypes
   if (options?.acceptTypes) {
-    validFiles = validFiles.filter((file: File) => {
+    newFiles = newFiles.filter((file: File) => {
       if (options?.acceptTypes?.includes(file.type)) return true;
-      errors.acceptTypes = true;
+      errors.add("acceptTypes");
       return false;
     });
   }
 
-  // maxLength
+  // check maxLength
   if (options?.maxLength) {
     if (originalFiles.length > options.maxLength) {
-      errors.maxLength = true;
+      errors.add("maxLength");
     }
-    if (validFiles.length > options.maxLength) {
-      validFiles = validFiles.slice(0, options.maxLength);
+    if (newFiles.length > options.maxLength) {
+      errors.add("maxLength");
+      newFiles = newFiles.slice(0, options.maxLength);
     }
   }
 
-  return { errors, validFiles };
+  const transfer = new DataTransfer();
+  newFiles.forEach((file) => transfer.items.add(file));
+
+  return {
+    errors: Array.from(errors).map((error: keyof FileOptions) => {
+      let message = "";
+      if (error === "duplicateDelete") message = "중복되지 않은 파일만 등록할 수 있어요";
+      if (error === "acceptTypes") message = `${options?.acceptTypes?.map((v) => v.replace(/^\w*\//, "")).join(", ")} 형식의 파일만 등록할 수 있어요`;
+      if (error === "maxLength") message = `최대 ${options?.maxLength}개까지 등록할 수 있어요.`;
+      return { type: error, message };
+    }),
+    validFiles: transfer.files,
+  };
 };
 
 export const convertPhotoToFile = async (photoId: string, variant: string = "public") => {

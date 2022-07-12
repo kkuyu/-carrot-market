@@ -21,9 +21,9 @@ const StoryUpload: NextPage = () => {
 
   const { user, currentAddr } = useUser();
 
-  const [photoLoading, setPhotoLoading] = useState(false);
-
   const formData = useForm<EditStoryTypes>();
+
+  const [photoLoading, setPhotoLoading] = useState(false);
   const [uploadStory, { loading, data }] = useMutation<PostStoriesResponse>("/api/stories", {
     onSuccess: (data) => {
       router.replace(`/stories/${data.story.id}`);
@@ -37,24 +37,21 @@ const StoryUpload: NextPage = () => {
     },
   });
 
-  const submitStoryUpload = async ({ photos, ...data }: EditStoryTypes) => {
+  const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
     if (loading || photoLoading) return;
 
-    if (!photos || !photos.length) {
-      uploadStory({
-        ...data,
-        ...currentAddr,
-      });
+    if (!_photos || !_photos.length) {
+      uploadStory({ ...data, photos: "", ...currentAddr });
       return;
     }
 
-    let photo = [];
+    let photos = [];
     setPhotoLoading(true);
 
-    for (let index = 0; index < photos.length; index++) {
+    for (let index = 0; index < _photos.length; index++) {
+      // new photo
       const form = new FormData();
-      form.append("file", photos[index], `${user?.id}-${index}-${photos[index].name}`);
-
+      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
       // get cloudflare file data
       const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
       if (!fileResponse.success) {
@@ -63,7 +60,6 @@ const StoryUpload: NextPage = () => {
         console.error(error);
         return;
       }
-
       // upload image delivery
       const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
       if (!imageResponse.success) {
@@ -72,15 +68,10 @@ const StoryUpload: NextPage = () => {
         console.error(error);
         return;
       }
-
-      photo.push(imageResponse.result.id);
+      photos.push(imageResponse.result.id);
     }
 
-    uploadStory({
-      photo: photo.join(","),
-      ...data,
-      ...currentAddr,
-    });
+    uploadStory({ photos: photos.join(","), ...data, ...currentAddr });
   };
 
   useEffect(() => {
@@ -98,7 +89,7 @@ const StoryUpload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="upload-story" formData={formData} onValid={submitStoryUpload} isLoading={loading || photoLoading} />
+      <EditStory formId="upload-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };

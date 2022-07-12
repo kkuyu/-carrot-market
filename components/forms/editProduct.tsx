@@ -1,6 +1,4 @@
 import { UseFormReturn } from "react-hook-form";
-// @libs
-import useUser from "@libs/client/useUser";
 // @api
 import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
 // @components
@@ -25,13 +23,17 @@ interface EditProductProps {
   onValid: (validForm: EditProductTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
+  emdPosNm: string;
 }
 
-const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading }: EditProductProps) => {
-  const { currentAddr } = useUser();
-
-  const photoOptions = { maxLength: 10, acceptTypes: ["image/jpeg", "image/png", "image/gif"] };
+const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm }: EditProductProps) => {
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
+
+  const fileOptions = {
+    maxLength: 10,
+    duplicateDelete: true,
+    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+  };
 
   const updateValue = (name: string, value: any) => {
     const registerName = name as keyof EditProductTypes;
@@ -46,9 +48,9 @@ const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading }: EditPr
         <Files
           register={register("photos")}
           name="photos"
-          photoOptions={photoOptions}
-          currentValue={watch("photos")}
-          changeValue={(value) => setValue("photos", value)}
+          fileOptions={fileOptions}
+          currentFiles={watch("photos")}
+          changeFiles={(value) => setValue("photos", value)}
           accept="image/*"
           multiple={true}
         />
@@ -124,7 +126,7 @@ const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading }: EditPr
           required
           minLength="10"
           name="description"
-          placeholder={`${currentAddr.emdPosNm}에 올릴 게시글 내용을 작성해주세요.`}
+          placeholder={emdPosNm ? `${emdPosNm}에 올릴 게시글 내용을 작성해주세요.` : `게시글 내용을 작성해주세요.`}
         />
         <span className="empty:hidden invalid">{formState.errors.description?.message}</span>
       </div>

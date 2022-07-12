@@ -21,9 +21,9 @@ const ProductUpload: NextPage = () => {
 
   const { user, currentAddr } = useUser();
 
-  const [photoLoading, setPhotoLoading] = useState(false);
-
   const formData = useForm<EditProductTypes>();
+
+  const [photoLoading, setPhotoLoading] = useState(false);
   const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
       setPhotoLoading(false);
@@ -39,24 +39,21 @@ const ProductUpload: NextPage = () => {
     },
   });
 
-  const submitProductUpload = async ({ photos, ...data }: EditProductTypes) => {
+  const submitUploadProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (loading || photoLoading) return;
 
-    if (!photos || !photos.length) {
-      uploadProduct({
-        ...data,
-        ...currentAddr,
-      });
+    if (!_photos || !_photos.length) {
+      uploadProduct({ ...data, photos: "", ...currentAddr });
       return;
     }
 
-    let photo = [];
+    let photos = [];
     setPhotoLoading(true);
 
-    for (let index = 0; index < photos.length; index++) {
+    for (let index = 0; index < _photos.length; index++) {
+      // new photo
       const form = new FormData();
-      form.append("file", photos[index], `${user?.id}-${index}-${photos[index].name}`);
-
+      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
       // get cloudflare file data
       const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
       if (!fileResponse.success) {
@@ -65,7 +62,6 @@ const ProductUpload: NextPage = () => {
         console.error(error);
         return;
       }
-
       // upload image delivery
       const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
       if (!imageResponse.success) {
@@ -74,15 +70,10 @@ const ProductUpload: NextPage = () => {
         console.error(error);
         return;
       }
-
-      photo.push(imageResponse.result.id);
+      photos.push(imageResponse.result.id);
     }
 
-    uploadProduct({
-      photo: photo.join(","),
-      ...data,
-      ...currentAddr,
-    });
+    uploadProduct({ ...data, photos: photos.join(","), ...currentAddr });
   };
 
   useEffect(() => {
@@ -100,7 +91,7 @@ const ProductUpload: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="upload-product" formData={formData} onValid={submitProductUpload} isLoading={loading || photoLoading} />
+      <EditProduct formId="upload-product" formData={formData} onValid={submitUploadProduct} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };
