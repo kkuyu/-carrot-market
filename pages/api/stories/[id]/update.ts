@@ -18,7 +18,7 @@ export interface PostStoriesUpdateResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { photo = "", category, content } = req.body;
+    const { photos = "", category, content } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -51,7 +51,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: story.id,
       },
       data: {
-        photo,
+        photos,
         category,
         content,
       },

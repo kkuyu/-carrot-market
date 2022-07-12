@@ -43,9 +43,9 @@ const ProductDetail: NextPage<{
   const diffTime = getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime());
   const category = getCategory("product", staticProps?.product?.category);
   const cutDownName = !staticProps?.product?.name ? "" : staticProps.product.name.length <= 15 ? staticProps.product.name : staticProps.product.name.substring(0, 15) + "...";
-  const thumbnails: ThumbnailSliderItem[] = !staticProps?.product?.photo
+  const thumbnails: ThumbnailSliderItem[] = !staticProps?.product?.photos
     ? []
-    : staticProps.product.photo.split(",").map((src, index, array) => ({
+    : staticProps.product.photos.split(",").map((src, index, array) => ({
         src,
         index,
         key: `thumbnails-slider-${index + 1}`,

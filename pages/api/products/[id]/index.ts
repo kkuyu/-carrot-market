@@ -9,9 +9,9 @@ export interface GetProductsDetailResponse {
   success: boolean;
   product: Product & { user: Pick<User, "id" | "name" | "avatar"> };
   isFavorite: boolean;
-  otherProducts: Pick<Product, "id" | "name" | "photo" | "price">[];
-  similarProducts: Pick<Product, "id" | "name" | "photo" | "price">[];
-  latestProducts: Pick<Product, "id" | "name" | "photo" | "price">[];
+  otherProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
+  similarProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
+  latestProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
   error?: {
     timestamp: Date;
     name: string;
@@ -78,7 +78,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       select: {
         id: true,
         name: true,
-        photo: true,
+        photos: true,
         price: true,
       },
       where: {
@@ -102,7 +102,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           select: {
             id: true,
             name: true,
-            photo: true,
+            photos: true,
             price: true,
           },
           where: {
@@ -130,7 +130,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           select: {
             id: true,
             name: true,
-            photo: true,
+            photos: true,
             price: true,
           },
           where: {

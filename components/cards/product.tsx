@@ -12,7 +12,7 @@ interface ProductProps {
 
 const Product = ({ item }: ProductProps) => {
   const today = new Date();
-  const thumbnailId = item?.photo ? item.photo.split(",")[0] : "";
+  const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
   const diffTime = getDiffTimeStr(new Date(item.updatedAt).getTime(), today.getTime());
 
   return (

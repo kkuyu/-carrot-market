@@ -54,9 +54,9 @@ const StoryDetail: NextPage<{
   const diffTime = getDiffTimeStr(new Date(staticProps?.story.updatedAt).getTime(), today.getTime());
   const category = getCategory("story", staticProps?.story?.category);
   const cutDownContent = !staticProps?.story?.content ? "" : staticProps.story.content.length <= 15 ? staticProps.story.content : staticProps.story.content.substring(0, 15) + "...";
-  const thumbnails: ThumbnailListItem[] = !staticProps?.story?.photo
+  const thumbnails: ThumbnailListItem[] = !staticProps?.story?.photos
     ? []
-    : staticProps.story.photo.split(",").map((src, index, array) => ({
+    : staticProps.story.photos.split(",").map((src, index, array) => ({
         src,
         index,
         key: `thumbnails-slider-${index + 1}`,

@@ -18,7 +18,7 @@ export interface PostProductsUpdateResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { photo = "", name, category, price, description } = req.body;
+    const { photos = "", name, category, price, description } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -51,7 +51,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: product.id,
       },
       data: {
-        photo,
+        photos,
         name,
         category,
         price,

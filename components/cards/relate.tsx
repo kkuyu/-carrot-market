@@ -9,7 +9,7 @@ interface RelateProps {
 }
 
 const Relate = ({ item }: RelateProps) => {
-  const thumbnailId = item?.photo ? item.photo.split(",")[0] : "";
+  const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
 
   return (
     <div className="relative">

@@ -60,7 +60,7 @@ model Token {
 
 model Product {
   id          Int      @id @default(autoincrement())
-  photo       String   @default("") @db.Text
+  photos      String   @default("") @db.Text
   name        String
   category    String
   price       Int
@@ -78,7 +78,7 @@ model Product {
 
 model Story {
   id          Int         @id @default(autoincrement())
-  photo       String      @default("") @db.Text
+  photos      String      @default("") @db.Text
   category    String
   content     String      @db.MediumText
   emdAddrNm   String

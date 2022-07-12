@@ -141,7 +141,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     try {
-      const { photo = "", category, content, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { photos = "", category, content, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
       // request valid
@@ -163,7 +163,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // create new story
       const newStory = await client.story.create({
         data: {
-          photo,
+          photos,
           content,
           category,
           emdAddrNm,

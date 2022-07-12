@@ -105,7 +105,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     try {
-      const { photo = "", name, category, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { photos = "", name, category, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
       // request valid
@@ -128,7 +128,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // create new product
       const newProduct = await client.product.create({
         data: {
-          photo,
+          photos,
           name,
           category,
           price,

@@ -157,9 +157,9 @@ const StoryHome: NextPage = () => {
           <ul className="divide-y-8">
             {stories.map((item) => {
               const cutDownContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
-              const thumbnails: ThumbnailListItem[] = !item?.photo
+              const thumbnails: ThumbnailListItem[] = !item?.photos
                 ? []
-                : item.photo.split(",").map((src, index, array) => ({
+                : item.photos.split(",").map((src, index, array) => ({
                     src,
                     index,
                     key: `thumbnails-list-${index + 1}`,
