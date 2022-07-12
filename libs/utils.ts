@@ -1,5 +1,6 @@
 import { IncomingMessage } from "http";
-import { uniqueNamesGenerator, Config, adjectives, starWars } from "unique-names-generator";
+// @libs
+import name from "@libs/name.json";
 // @api
 import { StoryCategory } from "@api/stories/types";
 import { ProductCategory } from "@api/products/types";
@@ -22,15 +23,10 @@ export const getAbsoluteUrl: (req?: IncomingMessage) => { protocol: string; host
   };
 };
 
-export const getRandomName: () => string = () => {
-  const config: Config = {
-    dictionaries: [adjectives, starWars],
-    separator: "-",
-    length: 2,
-    style: "capital",
-  };
-
-  return uniqueNamesGenerator(config).replace(/\s/g, "-");
+export const getRandomName = () => {
+  const adjectiveIndex = Math.floor(Math.random() * name.adjective.length);
+  const animalIndex = Math.floor(Math.random() * name.animal.length);
+  return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]}`;
 };
 
 export const getCategory = (type: "product" | "story", categoryKey: string) => {
