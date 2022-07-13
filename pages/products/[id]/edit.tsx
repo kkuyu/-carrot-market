@@ -57,10 +57,10 @@ const ProductUpload: NextPage<{
     if (!staticProps?.product || !staticProps?.product?.photos) return;
 
     const transfer = new DataTransfer();
-    const photos = staticProps.product.photos.split(",");
+    const photos = staticProps.product.photos.length ? staticProps.product.photos.split(",") : [];
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
-      transfer.items.add(file);
+      if (file !== null) transfer.items.add(file);
     }
 
     formData.setValue("photos", transfer.files);

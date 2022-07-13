@@ -64,10 +64,10 @@ const ProfileEdit: NextPage<{
     if (!staticProps?.profile || !staticProps?.profile?.avatar) return;
 
     const transfer = new DataTransfer();
-    const photos = staticProps.profile.avatar.split(",");
+    const photos = staticProps.profile.avatar.length ? staticProps.profile.avatar.split(",") : [];
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
-      transfer.items.add(file);
+      if (file !== null) transfer.items.add(file);
     }
 
     formData.setValue("photos", transfer.files);

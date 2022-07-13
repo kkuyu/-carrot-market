@@ -122,10 +122,16 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
 };
 
 export const convertPhotoToFile = async (photoId: string, variant: string = "public") => {
-  const response = await fetch(`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${photoId}/${variant}`);
-  const data = await response.blob();
-  const metadata = { type: data.type };
-  return new File([data], photoId!, metadata);
+  try {
+    if (!photoId) throw new Error();
+    const response = await fetch(`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${photoId}/${variant}`);
+    const data = await response.blob();
+    const metadata = { type: data.type };
+    return new File([data], photoId!, metadata);
+  } catch {
+    console.error("convertPhotoToFile", photoId, variant);
+    return null;
+  }
 };
 
 export type TimerRef = React.MutableRefObject<NodeJS.Timeout | null>;

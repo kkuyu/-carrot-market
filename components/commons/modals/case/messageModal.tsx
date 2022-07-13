@@ -26,7 +26,7 @@ const MessageModal = (props: MessageModalProps & ModalComponentProps) => {
     <>
       {hasBackdrop ? <div className="absolute top-0 left-0 right-0 bottom-0 bg-black bg-opacity-50" /> : <></>}
       <div className="absolute top-0 left-0 right-0 bottom-0 flex justify-center items-center">
-        <div role="dialog" aria-modal="true" aria-labelledby={`${name}-TITLE`} tabIndex={0} className="relative w-64 rounded-lg bg-white border border-gray-300">
+        <div role="dialog" aria-modal="true" aria-labelledby={`${name}-TITLE`} tabIndex={0} className="relative w-72 rounded-lg bg-white border border-gray-300">
           <div id={`${name}-TITLE`} className="px-6 py-8 text-center">
             {message}
           </div>
