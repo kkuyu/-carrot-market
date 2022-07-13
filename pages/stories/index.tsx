@@ -156,7 +156,7 @@ const StoryHome: NextPage = () => {
         <div className="-mx-5">
           <ul className="divide-y-8">
             {stories.map((item) => {
-              const cutDownContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
+              const shortContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
               const thumbnails: ThumbnailListItem[] = !item?.photos
                 ? []
                 : item.photos.split(",").map((src, index, array) => ({
@@ -164,7 +164,7 @@ const StoryHome: NextPage = () => {
                     index,
                     key: `thumbnails-list-${index + 1}`,
                     label: `${index + 1}/${array.length}`,
-                    name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownContent})`,
+                    name: `게시글 이미지 ${index + 1}/${array.length} (${shortContent})`,
                   }));
 
               return (
@@ -179,7 +179,7 @@ const StoryHome: NextPage = () => {
                       <ThumbnailList
                         list={thumbnails || []}
                         modal={{
-                          title: `게시글 이미지 (${cutDownContent})`,
+                          title: `게시글 이미지 (${shortContent})`,
                         }}
                       />
                     </div>
@@ -194,7 +194,7 @@ const StoryHome: NextPage = () => {
               );
             })}
           </ul>
-          <div ref={infiniteRef} className="py-6 text-center border-t">
+          <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
           </div>
         </div>
@@ -210,6 +210,9 @@ const StoryHome: NextPage = () => {
           </p>
         </div>
       )}
+
+      {/* infiniteRef */}
+      <div ref={infiniteRef} />
 
       {/* 글쓰기 */}
       <FloatingButtons href="/stories/upload">

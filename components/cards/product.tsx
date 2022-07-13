@@ -11,9 +11,13 @@ interface ProductProps {
 }
 
 const Product = ({ item }: ProductProps) => {
-  const today = new Date();
+  const diffTime = useRef("");
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
-  const diffTime = getDiffTimeStr(new Date(item.updatedAt).getTime(), today.getTime());
+
+  useEffect(() => {
+    const today = new Date();
+    diffTime.current = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
+  }, []);
 
   return (
     <div className="relative">
@@ -36,7 +40,7 @@ const Product = ({ item }: ProductProps) => {
         <div className="grow pl-4">
           <strong className="block font-normal">{item?.name}</strong>
           <span className="block text-sm text-gray-500">
-            {item?.emdPosNm} · {diffTime}
+            {item?.emdPosNm} · {diffTime.current}
           </span>
           <span className="block mt-2 pr-8 font-semibold">₩{item?.price}</span>
         </div>

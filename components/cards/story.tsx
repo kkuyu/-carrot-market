@@ -1,3 +1,4 @@
+import { useRef, useEffect } from "react";
 // @libs
 import { getCategory, getDiffTimeStr } from "@libs/utils";
 // @api
@@ -10,9 +11,13 @@ interface StoryProps {
 }
 
 const Story = ({ item }: StoryProps) => {
-  const today = new Date();
-  const diffTime = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
+  const diffTime = useRef("");
   const category = getCategory("story", item?.category);
+
+  useEffect(() => {
+    const today = new Date();
+    diffTime.current = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
+  }, []);
 
   return (
     <div className="relative">
@@ -24,7 +29,7 @@ const Story = ({ item }: StoryProps) => {
         <span className="text-sm text-gray-500">
           {item?.user?.name} · {item?.emdPosNm}
         </span>
-        <span className="text-sm text-gray-500">{diffTime}</span>
+        <span className="text-sm text-gray-500">{diffTime.current}</span>
       </div>
     </div>
   );

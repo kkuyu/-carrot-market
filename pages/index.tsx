@@ -73,7 +73,7 @@ const ProductHome: NextPage = () => {
               </li>
             ))}
           </ul>
-          <div ref={infiniteRef} className="px-5 py-6 text-center border-t">
+          <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "판매 상품을 불러오고있어요" : isReachingEnd ? "판매 상품을 모두 확인하였어요" : ""}</span>
           </div>
         </div>
@@ -89,6 +89,9 @@ const ProductHome: NextPage = () => {
           </p>
         </div>
       )}
+
+      {/* infiniteRef */}
+      <div ref={infiniteRef} />
 
       {/* 글쓰기 */}
       <FloatingButtons href="/products/upload">

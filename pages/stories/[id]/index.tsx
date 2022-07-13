@@ -2,7 +2,7 @@ import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Error from "next/error";
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
@@ -49,19 +49,19 @@ const StoryDetail: NextPage<{
   });
 
   // static data: story detail
-  const today = new Date();
-  const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
-  const diffTime = getDiffTimeStr(new Date(staticProps?.story.updatedAt).getTime(), today.getTime());
+  const diffTime = useRef("");
   const category = getCategory("story", staticProps?.story?.category);
-  const cutDownContent = !staticProps?.story?.content ? "" : staticProps.story.content.length <= 15 ? staticProps.story.content : staticProps.story.content.substring(0, 15) + "...";
-  const thumbnails: ThumbnailListItem[] = !staticProps?.story?.photos
+  const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
+
+  const shortContent = !story?.content ? "" : story.content.length <= 15 ? story.content : story.content.substring(0, 15) + "...";
+  const thumbnails: ThumbnailListItem[] = !story?.photos
     ? []
-    : staticProps.story.photos.split(",").map((src, index, array) => ({
+    : story.photos.split(",").map((src, index, array) => ({
         src,
         index,
         key: `thumbnails-slider-${index + 1}`,
         label: `${index + 1}/${array.length}`,
-        name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownContent})`,
+        name: `게시글 이미지 ${index + 1}/${array.length} (${shortContent})`,
       }));
 
   // fetch data: story detail
@@ -219,6 +219,9 @@ const StoryDetail: NextPage<{
   useEffect(() => {
     if (!story) return;
 
+    const today = new Date();
+    diffTime.current = getDiffTimeStr(new Date(story?.updatedAt).getTime(), today.getTime());
+
     setViewModel({
       mode: Boolean(user?.id) ? "normal" : "preview",
     });
@@ -255,7 +258,7 @@ const StoryDetail: NextPage<{
       {/* 게시글 정보 */}
       <section className="-mx-5 border-b">
         {/* 제목 */}
-        <h1 className="sr-only">{cutDownContent}</h1>
+        <h1 className="sr-only">{shortContent}</h1>
         {/* 내용 */}
         <div className="pt-5 pb-4 px-5">
           {/* 카테고리 */}
@@ -263,7 +266,7 @@ const StoryDetail: NextPage<{
           {/* 판매자 */}
           <Link href={`/users/profiles/${story?.user?.id}`}>
             <a>
-              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime} />
+              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime.current} />
             </a>
           </Link>
           {/* 게시글 내용 */}
@@ -277,7 +280,7 @@ const StoryDetail: NextPage<{
             <ThumbnailList
               list={thumbnails || []}
               modal={{
-                title: `게시글 이미지 (${cutDownContent})`,
+                title: `게시글 이미지 (${shortContent})`,
               }}
             />
           </div>

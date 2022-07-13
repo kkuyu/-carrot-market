@@ -2,7 +2,7 @@ import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import Error from "next/error";
-import { useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 // @libs
@@ -38,19 +38,18 @@ const ProductDetail: NextPage<{
   });
 
   // static data: product detail
-  const today = new Date();
-  const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
-  const diffTime = getDiffTimeStr(new Date(staticProps?.product.updatedAt).getTime(), today.getTime());
+  const diffTime = useRef("");
   const category = getCategory("product", staticProps?.product?.category);
-  const cutDownName = !staticProps?.product?.name ? "" : staticProps.product.name.length <= 15 ? staticProps.product.name : staticProps.product.name.substring(0, 15) + "...";
-  const thumbnails: ThumbnailSliderItem[] = !staticProps?.product?.photos
+  const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
+  const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
+  const thumbnails: ThumbnailSliderItem[] = !product?.photos
     ? []
-    : staticProps.product.photos.split(",").map((src, index, array) => ({
+    : product.photos.split(",").map((src, index, array) => ({
         src,
         index,
         key: `thumbnails-slider-${index + 1}`,
         label: `${index + 1}/${array.length}`,
-        name: `게시글 이미지 ${index + 1}/${array.length} (${cutDownName})`,
+        name: `게시글 이미지 ${index + 1}/${array.length} (${shortName})`,
       }));
   const [relate, setRelate] = useState<{
     name: string;
@@ -92,6 +91,20 @@ const ProductDetail: NextPage<{
     if (favoriteLoading) return;
     boundMutate((prev) => prev && { ...prev, isFavorite: !prev.isFavorite }, false);
     updateFavorite({});
+  };
+
+  // modal: welcome
+  const openWelcomeModal = () => {
+    openModal<MessageModalProps>(MessageModal, "signUpNow", {
+      type: "confirm",
+      message: "당근마켓 첫 방문이신가요?",
+      cancelBtn: "취소",
+      confirmBtn: "당근마켓 시작하기",
+      hasBackdrop: true,
+      onConfirm: () => {
+        router.push("/welcome");
+      },
+    });
   };
 
   // modal: sign up
@@ -155,6 +168,9 @@ const ProductDetail: NextPage<{
   useEffect(() => {
     if (!product) return;
 
+    const today = new Date();
+    diffTime.current = getDiffTimeStr(new Date(product?.updatedAt).getTime(), today.getTime());
+
     setViewModel({
       mode: Boolean(user?.id) ? "normal" : "preview",
     });
@@ -198,7 +214,7 @@ const ProductDetail: NextPage<{
             list={thumbnails}
             defaultIndex={0}
             modal={{
-              title: `판매 상품 이미지 (${cutDownName})`,
+              title: `판매 상품 이미지 (${shortName})`,
             }}
           />
         </div>
@@ -217,25 +233,24 @@ const ProductDetail: NextPage<{
         <div className="pt-5 border-t">
           <h1 className="text-2xl font-bold">{product.name}</h1>
           <span className="mt-1 block text-sm text-gray-500">
-            {category?.text} · {diffTime}
-          </span>
           {/* todo: 끌어올리기 */}
+            {category?.text} · {diffTime.current}
+          </span>
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
+          <div className="empty:hidden mt-5 text-sm text-gray-500">{[favorites.length ? `관심 ${favorites.length}` : null].filter((v) => !!v).join(" · ")}</div>
         </div>
 
         {/* 가격, 채팅 */}
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
-            <div className={`grow ${viewModel.mode === "normal" ? "pl-16" : "pl-5"}`}>
+            <div className="relative grow pl-16 before:absolute before:top-1/2 before:left-16 before:-mt-2.5 before:-ml-2.5 before:w-[1px] before:h-5 before:bg-gray-300">
               {/* todo: 가격 제안 가능 여부 */}
               <strong>₩{product.price}</strong>
             </div>
-            {viewModel.mode === "normal" && (
               <div className="absolute top-1/2 left-3 -translate-y-1/2">
-                {/*  */}
                 <button
                   className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
-                  onClick={user?.id === -1 ? openSignUpModal : toggleFavorite}
+                onClick={!user?.id ? openWelcomeModal : user?.id === -1 ? openSignUpModal : toggleFavorite}
                   disabled={favoriteLoading}
                 >
                   {data?.isFavorite ? (
@@ -254,7 +269,6 @@ const ProductDetail: NextPage<{
                   )}
                 </button>
               </div>
-            )}
             {viewModel.mode === "normal" && (
               <div className="flex-none px-5">
                 {user?.id === -1 ? (
@@ -309,8 +323,8 @@ export const getStaticPaths: GetStaticPaths = () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async (context) => {
-  const productId = context?.params?.id?.toString();
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const productId = params?.id?.toString();
 
   // invalid params: productId
   // redirect: /
