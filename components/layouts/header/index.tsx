@@ -11,7 +11,7 @@ import usePanel from "@libs/client/usePanel";
 import useToast from "@libs/client/useToast";
 // @api
 import { PostUserResponse } from "@api/users/my";
-import { PostJoinDummyResponse } from "@api/users/join-dummy";
+import { PostDummyResponse } from "@api/users/dummy";
 // @components
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
@@ -64,7 +64,7 @@ const Header = ({}: HeaderProps) => {
       }
     },
   });
-  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostJoinDummyResponse>("/api/users/join-dummy", {
+  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
     onSuccess: () => {
       console.log("updateDummy success");
       mutateUser();

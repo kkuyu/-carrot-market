@@ -7,7 +7,7 @@ import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { getAbsoluteUrl, getRandomName } from "@libs/utils";
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 
-export interface PostJoinDummyResponse {
+export interface PostDummyResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -80,7 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     await req.session.save();
 
     // result
-    const result: PostJoinDummyResponse = {
+    const result: PostDummyResponse = {
       success: true,
     };
     return res.status(200).json(result);

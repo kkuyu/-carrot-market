@@ -14,7 +14,7 @@ import useMutation from "@libs/client/useMutation";
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
-import { PostJoinDummyResponse } from "@api/users/join-dummy";
+import { PostDummyResponse } from "@api/users/dummy";
 // @components
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -72,7 +72,7 @@ const Join: NextPage = () => {
   });
 
   // join dummy
-  const [joinDummy, { loading: dummyLoading }] = useMutation<PostJoinDummyResponse>("/api/users/join-dummy", {
+  const [joinDummy, { loading: dummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-dummy", {
         placement: "bottom",
