@@ -23,6 +23,7 @@ model User {
   phone           String      @unique
   email           String?     @unique
   avatar          String?
+  concerns        String?
   emdType         EmdType
   MAIN_emdAddrNm  String
   MAIN_emdPosNm   String

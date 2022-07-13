@@ -83,7 +83,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   if (req.method === "POST") {
     try {
       const { user } = req.session;
-      const { email, phone, name, avatarId, emdType, mainAddrNm, mainDistance, subAddrNm, subDistance } = req.body;
+      const { email, phone, name, photos, concerns, emdType, mainAddrNm, mainDistance, subAddrNm, subDistance } = req.body;
 
       // request valid
       if (JSON.stringify(req.body) === JSON.stringify({})) {
@@ -113,7 +113,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
       let userPayload: Partial<User> = {
         ...(name && { name }),
-        ...(avatarId && { avatar: avatarId }),
+        ...((photos || photos === "") && { avatar: photos }),
+        ...((concerns || concerns === "") && { concerns }),
       };
 
       // check data: email

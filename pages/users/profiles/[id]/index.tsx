@@ -11,6 +11,7 @@ import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
 // @api
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
+import { ProfilesConcern } from "@api/users/profiles/types";
 // @components
 import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
@@ -72,19 +73,39 @@ const ProfileDetail: NextPage<{
 
   return (
     <article className="container pb-20">
-      <h1 className="sr-only">${profile?.name || ""} 프로필</h1>
-      <div>
+      <h1>
         <Profiles user={profile} uuid={profile?.id === -1 ? "" : `#${profile?.id}`} />
-        {profile.id === user?.id && (
-          <Link href="/users/profiles/edit" passHref>
-            <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mb-3" />
-          </Link>
-        )}
-      </div>
+      </h1>
+
+      {/* 관심사 */}
+      {(profile?.concerns || profile.id === user?.id) && (
+        <div className="mb-4">
+          <strong className="block">{profile.id === user?.id ? "나의 관심사" : "관심사"}</strong>
+          {profile?.concerns ? (
+            <div>
+              {ProfilesConcern.filter((concern) => profile?.concerns?.includes(concern.value)).map((concern) => (
+                <span key={concern.value} className="inline-block mt-2 mr-2 px-2 py-1.5 text-sm border rounded-lg">
+                  {concern.emoji} {concern.text}
+                </span>
+              ))}
+            </div>
+          ) : (
+            <p className="mt-1 text-gray-500">이웃에게 나를 표현해보세요</p>
+          )}
+        </div>
+      )}
+
+      {/* 프로필 수정 */}
+      {profile.id === user?.id && (
+        <Link href="/users/profiles/edit" passHref>
+          <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mb-4" />
+        </Link>
+      )}
 
       {/* todo: 매너온도 */}
 
-      <div className="-mx-5 border-t-8">
+      {/* 정보 */}
+      <div className="-mx-5 border-t">
         <ul className="divide-y">
           <li>
             <Link href="">

@@ -7,7 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesDetailResponse {
   success: boolean;
-  profile: User & { _count: { products: number } };
+  profile: User & { _count?: { products: number } };
   error?: {
     timestamp: Date;
     name: string;
