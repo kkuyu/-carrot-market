@@ -5,6 +5,7 @@ import Error from "next/error";
 import { useRef, useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
+import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
 import { getCategory, getDiffTimeStr } from "@libs/utils";
@@ -41,6 +42,9 @@ const ProductDetail: NextPage<{
   const diffTime = useRef("");
   const category = getCategory("product", staticProps?.product?.category);
   const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
+
+  const isSale = Boolean(product?.records?.find((record) => record.kind === "Sale"));
+  const favorites = product?.records?.filter((record) => record.kind === "Favorite") || [];
   const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
   const thumbnails: ThumbnailSliderItem[] = !product?.photos
     ? []
@@ -89,7 +93,17 @@ const ProductDetail: NextPage<{
   const toggleFavorite = () => {
     if (!product) return;
     if (favoriteLoading) return;
-    boundMutate((prev) => prev && { ...prev, isFavorite: !prev.isFavorite }, false);
+    boundMutate((prev) => {
+      let records = prev?.product.records || [];
+      prev?.isFavorite ? records.pop() : records.push({ id: 0, kind: Kind.Favorite, userId: 0 });
+      return (
+        prev && {
+          ...prev,
+          product: { ...prev.product, records: records },
+          isFavorite: !prev.isFavorite,
+        }
+      );
+    }, false);
     updateFavorite({});
   };
 
@@ -231,9 +245,12 @@ const ProductDetail: NextPage<{
 
         {/* 설명 */}
         <div className="pt-5 border-t">
-          <h1 className="text-2xl font-bold">{product.name}</h1>
+          <h1 className="text-2xl font-bold">
+            {!isSale && <em className="text-gray-500 not-italic">거래완료 </em>}
+            {product.name}
+          </h1>
           <span className="mt-1 block text-sm text-gray-500">
-          {/* todo: 끌어올리기 */}
+            {/* todo: 끌어올리기 */}
             {category?.text} · {diffTime.current}
           </span>
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
@@ -247,28 +264,28 @@ const ProductDetail: NextPage<{
               {/* todo: 가격 제안 가능 여부 */}
               <strong>₩{product.price}</strong>
             </div>
-              <div className="absolute top-1/2 left-3 -translate-y-1/2">
-                <button
-                  className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
+            <div className="absolute top-1/2 left-3 -translate-y-1/2">
+              <button
+                className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
                 onClick={!user?.id ? openWelcomeModal : user?.id === -1 ? openSignUpModal : toggleFavorite}
-                  disabled={favoriteLoading}
-                >
-                  {data?.isFavorite ? (
-                    <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
-                    </svg>
-                  ) : (
-                    <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                      />
-                    </svg>
-                  )}
-                </button>
-              </div>
+                disabled={favoriteLoading}
+              >
+                {data?.isFavorite ? (
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
+                  </svg>
+                ) : (
+                  <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
             {viewModel.mode === "normal" && (
               <div className="flex-none px-5">
                 {user?.id === -1 ? (
@@ -348,6 +365,16 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           id: true,
           name: true,
           avatar: true,
+        },
+      },
+      records: {
+        where: {
+          OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+        },
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
         },
       },
     },

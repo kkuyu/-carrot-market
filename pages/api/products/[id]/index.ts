@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Product, User } from "@prisma/client";
+import { Kind, Product, Record, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,7 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsDetailResponse {
   success: boolean;
-  product: Product & { user: Pick<User, "id" | "name" | "avatar"> };
+  product: Product & { user: Pick<User, "id" | "name" | "avatar">; records: Pick<Record, "id" | "kind" | "userId">[] };
   isFavorite: boolean;
   otherProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
   similarProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
@@ -45,6 +45,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             avatar: true,
           },
         },
+        records: {
+          where: {
+            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+          },
+          select: {
+            id: true,
+            kind: true,
+            userId: true,
+          },
+        },
       },
     });
     if (!product) {
@@ -52,22 +62,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundProduct";
       throw error;
     }
-
-    // check product detail: like it or not
-    const isFavorite = user?.id
-      ? Boolean(
-          await client.record.findFirst({
-            where: {
-              productId: product.id,
-              userId: user.id,
-              kind: "Favorite",
-            },
-            select: {
-              id: true,
-            },
-          })
-        )
-      : false;
 
     // find user's other products
     const otherProducts = await client.product.findMany({
@@ -84,9 +78,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         AND: {
           userId: user?.id,
-          id: {
-            not: product.id,
-          },
+          id: { not: product.id },
+          records: { some: { kind: Kind.Sale } },
         },
       },
     });
@@ -110,9 +103,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               name: { contains: word },
             })),
             AND: {
-              id: {
-                not: product.id,
-              },
+              id: { not: product.id },
+              records: { some: { kind: Kind.Sale } },
             },
           },
         });
@@ -135,9 +127,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
           where: {
             AND: {
-              id: {
-                not: product.id,
-              },
+              id: { not: product.id },
+              records: { some: { kind: Kind.Sale } },
             },
           },
         });
@@ -146,7 +137,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const result: GetProductsDetailResponse = {
       success: true,
       product,
-      isFavorite,
+      isFavorite: !user?.id ? false : Boolean(product.records.find((record) => record.kind === "Favorite" && record.userId === user.id)),
       otherProducts,
       similarProducts,
       latestProducts,

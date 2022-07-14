@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useRef, useEffect } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
 // @api
@@ -13,6 +14,9 @@ interface ProductProps {
 const Product = ({ item }: ProductProps) => {
   const diffTime = useRef("");
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
+
+  const isSale = Boolean(item?.records?.find((record) => record.kind === "Sale"));
+  const favorites = item?.records?.filter((record) => record.kind === "Favorite");
 
   useEffect(() => {
     const today = new Date();
@@ -42,11 +46,14 @@ const Product = ({ item }: ProductProps) => {
           <span className="block text-sm text-gray-500">
             {item?.emdPosNm} · {diffTime.current}
           </span>
-          <span className="block mt-2 pr-8 font-semibold">₩{item?.price}</span>
+          <div className="block mt-2 pr-8">
+            {!isSale && <em className="inline-block mr-2 px-1.5 py-1 text-xs font-semibold not-italic text-white bg-black rounded-md">거래완료</em>}
+            <span className="font-semibold align-middle">₩{item?.price}</span>
+          </div>
         </div>
       </div>
-      <div className="absolute bottom-5 right-5">
-        {Boolean(item?.records?.length) && (
+      <div className="absolute bottom-0 right-0">
+        {Boolean(favorites?.length) && (
           <div className="flex items-center space-x-0.5 text-sm text-gray-400">
             <svg className="flex-none w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -56,7 +63,7 @@ const Product = ({ item }: ProductProps) => {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
               ></path>
             </svg>
-            <span>{item?.records?.length}</span>
+            <span>{favorites.length}</span>
           </div>
         )}
       </div>

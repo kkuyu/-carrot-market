@@ -1,4 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { Kind } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -46,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         userId: user?.id,
         productId: product.id,
-        kind: "Favorite",
+        kind: Kind.Favorite,
       },
       select: {
         id: true,
@@ -74,7 +75,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: product.id,
             },
           },
-          kind: "Favorite",
+          kind: Kind.Favorite,
         },
       });
     }

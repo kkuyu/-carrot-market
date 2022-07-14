@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Product, Record } from "@prisma/client";
+import { Kind, Product, Record } from "@prisma/client";
 // @libs
 import { getCategory } from "@libs/utils";
 import client from "@libs/server/client";
@@ -8,7 +8,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id">[] })[];
+  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[] })[];
   pages: number;
   error?: {
     timestamp: Date;
@@ -60,7 +60,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
       // fetch data: client.product
       const totalProducts = await client.product.count({
-        where: boundaryArea,
+        where: {
+          ...boundaryArea,
+          records: { some: { kind: Kind.Sale } },
+        },
       });
       const products = await client.product.findMany({
         take: displayRow,
@@ -71,14 +74,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         include: {
           records: {
             where: {
-              kind: "Favorite",
+              OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
             },
             select: {
               id: true,
+              kind: true,
+              userId: true,
             },
           },
         },
-        where: boundaryArea,
+        where: {
+          ...boundaryArea,
+          records: {
+            some: { kind: Kind.Sale },
+          },
+        },
       });
 
       // result
@@ -142,6 +152,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: user?.id,
             },
           },
+        },
+      });
+
+      // create new record
+      await client.record.create({
+        data: {
+          user: {
+            connect: {
+              id: user?.id,
+            },
+          },
+          product: {
+            connect: {
+              id: newProduct.id,
+            },
+          },
+          kind: Kind.Sale,
         },
       });
 

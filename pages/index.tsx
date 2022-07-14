@@ -3,6 +3,7 @@ import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
+import { Kind } from "@prisma/client";
 // @lib
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
@@ -152,6 +153,19 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           where: {
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
+            AND: { records: { some: { kind: { in: Kind.Sale } } } },
+          },
+          include: {
+            records: {
+              where: {
+                OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+              },
+              select: {
+                id: true,
+                kind: true,
+                userId: true,
+              },
+            },
           },
         });
 
