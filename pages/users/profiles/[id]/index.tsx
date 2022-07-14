@@ -28,7 +28,7 @@ const ProfileDetail: NextPage<{
 
   // view model
   const [viewModel, setViewModel] = useState({
-    mode: Boolean(user?.id) ? "normal" : "preview",
+    mode: !user?.id ? "preview" : user?.id !== staticProps?.profile?.id ? "public" : "private",
   });
 
   // static data: profile detail
@@ -51,9 +51,8 @@ const ProfileDetail: NextPage<{
   useEffect(() => {
     if (!profile) return;
 
-    setViewModel({
-      mode: Boolean(user?.id) ? "normal" : "preview",
-    });
+    const mode = !user?.id ? "preview" : user?.id !== profile?.id ? "public" : "private";
+    setViewModel({ mode });
 
     setLayout(() => ({
       title: "프로필",
@@ -78,10 +77,10 @@ const ProfileDetail: NextPage<{
       </h1>
 
       {/* 관심사 */}
-      {(profile?.concerns || profile.id === user?.id) && (
+      {(viewModel.mode === "private" || profile?.concerns) && (
         <div className="mb-4">
-          <strong className="block">{profile.id === user?.id ? "나의 관심사" : "관심사"}</strong>
-          {profile?.concerns ? (
+          <strong className="block">{viewModel.mode === "private" ? "나의 관심사" : "관심사"}</strong>
+          {profile?.concerns && (
             <div>
               {ProfilesConcern.filter((concern) => profile?.concerns?.includes(concern.value)).map((concern) => (
                 <span key={concern.value} className="inline-block mt-2 mr-2 px-2 py-1.5 text-sm border rounded-lg">
@@ -89,14 +88,13 @@ const ProfileDetail: NextPage<{
                 </span>
               ))}
             </div>
-          ) : (
-            <p className="mt-1 text-gray-500">이웃에게 나를 표현해보세요</p>
           )}
+          {!profile?.concerns && <p className="mt-1 text-gray-500">이웃에게 나를 표현해보세요</p>}
         </div>
       )}
 
       {/* 프로필 수정 */}
-      {profile.id === user?.id && (
+      {viewModel.mode === "private" && (
         <Link href="/users/profiles/edit" passHref>
           <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mb-4" />
         </Link>
@@ -108,7 +106,7 @@ const ProfileDetail: NextPage<{
       <div className="-mx-5 border-t">
         <ul className="divide-y">
           <li>
-            <Link href="">
+            <Link href={`/users/profiles/${profile.id}/products`}>
               <a className="relative block py-4 pl-5 pr-10 font-semibold">
                 판매상품 {profile?._count?.products ? `${profile._count.products}개` : ""}
                 <svg className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -160,8 +158,8 @@ export const getStaticPaths: GetStaticPaths = () => {
   };
 };
 
-export const getStaticProps: GetStaticProps = async (context) => {
-  const profileId = context?.params?.id?.toString();
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const profileId = params?.id?.toString();
 
   // invalid params: profileId
   // redirect: /

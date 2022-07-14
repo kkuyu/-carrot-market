@@ -45,7 +45,7 @@ const StoryDetail: NextPage<{
 
   // view model
   const [viewModel, setViewModel] = useState({
-    mode: Boolean(user?.id) ? "normal" : "preview",
+    mode: !user?.id ? "preview" : user?.id !== staticProps?.story?.userId ? "public" : "private",
   });
 
   // static data: story detail
@@ -222,26 +222,28 @@ const StoryDetail: NextPage<{
     const today = new Date();
     diffTime.current = getDiffTimeStr(new Date(story?.updatedAt).getTime(), today.getTime());
 
-    setViewModel({
-      mode: Boolean(user?.id) ? "normal" : "preview",
-    });
+    const mode = !user?.id ? "preview" : user?.id !== story?.userId ? "public" : "private";
+    setViewModel({ mode });
 
     setLayout(() => ({
       title: story?.content || "",
       seoTitle: `${story?.content || ""} | 게시글 상세`,
       header: {
         headerUtils: ["back", "home", "share", "kebab"],
-        kebabActions: !user?.id
-          ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
-          : user?.id === story?.userId
-          ? [
-              { key: "edit", text: "수정", onClick: () => router.push(`/stories/${story?.id}/edit`) },
-              { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
-            ]
-          : [
-              { key: "report", text: "신고" },
-              { key: "block", text: "이 사용자의 글 보지 않기" },
-            ],
+        kebabActions:
+          mode === "preview"
+            ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
+            : mode === "public"
+            ? [
+                { key: "report", text: "신고" },
+                { key: "block", text: "이 사용자의 글 보지 않기" },
+              ]
+            : mode === "private"
+            ? [
+                { key: "edit", text: "수정", onClick: () => router.push(`/stories/${story?.id}/edit`) },
+                { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+              ]
+            : [],
       },
       navBar: {
         navBarUtils: [],
@@ -286,7 +288,7 @@ const StoryDetail: NextPage<{
           </div>
         )}
         {/* 피드백 */}
-        {viewModel.mode === "normal" && (
+        {(viewModel.mode === "public" || viewModel.mode === "private") && (
           <FeedbackStory item={story} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
         )}
       </section>
@@ -304,7 +306,7 @@ const StoryDetail: NextPage<{
 
       {/* 댓글 목록: empty */}
       {Boolean(story?.comments) && !Boolean(story?.comments?.length) && (
-        <div className="py-10 text-center">
+        <div className="pt-10 pb-5 text-center">
           <p className="text-gray-500">
             아직 댓글이 없어요.
             <br />
@@ -314,7 +316,7 @@ const StoryDetail: NextPage<{
       )}
 
       {/* 댓글 입력 */}
-      {viewModel.mode === "normal" && Boolean(story?.comments) && (
+      {(viewModel.mode === "normal" || viewModel.mode === "private") && Boolean(story?.comments) && (
         <form onSubmit={handleSubmit(user?.id === -1 ? openSignUpModal : submitComment)} noValidate className="mt-5 space-y-4">
           <div className="space-y-1">
             <Inputs

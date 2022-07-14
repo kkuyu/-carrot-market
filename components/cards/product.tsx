@@ -15,7 +15,8 @@ const Product = ({ item }: ProductProps) => {
   const diffTime = useRef("");
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
 
-  const isSale = Boolean(item?.records?.find((record) => record.kind === "Sale"));
+  const isSale = item?.records && Boolean(item?.records?.find((record) => record.kind === "Sale"));
+  const isSold = item?.records && !isSale;
   const favorites = item?.records?.filter((record) => record.kind === "Favorite");
 
   useEffect(() => {
@@ -47,7 +48,7 @@ const Product = ({ item }: ProductProps) => {
             {item?.emdPosNm} · {diffTime.current}
           </span>
           <div className="block mt-2 pr-8">
-            {!isSale && <em className="inline-block mr-2 px-1.5 py-1 text-xs font-semibold not-italic text-white bg-black rounded-md">거래완료</em>}
+            {isSold && <em className="inline-block mr-2 px-1.5 py-1 text-xs font-semibold not-italic text-white bg-black rounded-md">판매완료</em>}
             <span className="font-semibold align-middle">₩{item?.price}</span>
           </div>
         </div>

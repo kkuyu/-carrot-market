@@ -35,7 +35,7 @@ const ProductDetail: NextPage<{
 
   // view model
   const [viewModel, setViewModel] = useState({
-    mode: Boolean(user?.id) ? "normal" : "preview",
+    mode: !user?.id ? "preview" : user?.id !== staticProps?.product?.userId ? "public" : "private",
   });
 
   // static data: product detail
@@ -43,7 +43,8 @@ const ProductDetail: NextPage<{
   const category = getCategory("product", staticProps?.product?.category);
   const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
 
-  const isSale = Boolean(product?.records?.find((record) => record.kind === "Sale"));
+  const isSale = product?.records && Boolean(product?.records?.find((record) => record.kind === "Sale"));
+  const isSold = product?.records && !isSale;
   const favorites = product?.records?.filter((record) => record.kind === "Favorite") || [];
   const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
   const thumbnails: ThumbnailSliderItem[] = !product?.photos
@@ -185,9 +186,8 @@ const ProductDetail: NextPage<{
     const today = new Date();
     diffTime.current = getDiffTimeStr(new Date(product?.updatedAt).getTime(), today.getTime());
 
-    setViewModel({
-      mode: Boolean(user?.id) ? "normal" : "preview",
-    });
+    const mode = !user?.id ? "preview" : user?.id !== product?.userId ? "public" : "private";
+    setViewModel({ mode });
 
     setLayout(() => ({
       title: product?.name || "",
@@ -195,19 +195,22 @@ const ProductDetail: NextPage<{
       header: {
         headerUtils: ["back", "home", "share", "kebab"],
         headerColor: Boolean(thumbnails.length) ? "transparent" : "white",
-        kebabActions: !user?.id
-          ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
-          : user?.id === product?.userId
-          ? [
+        kebabActions:
+          mode === "preview"
+            ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
+            : mode === "public"
+            ? [
+                { key: "report", text: "신고" },
+                { key: "block", text: "이 사용자의 글 보지 않기" },
+              ]
+            : mode === "private"
+            ? [
               { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
               { key: "pull", text: "끌어올리기" },
               { key: "hide", text: "숨기기" },
               { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
             ]
-          : [
-              { key: "report", text: "신고" },
-              { key: "block", text: "이 사용자의 글 보지 않기" },
-            ],
+            : [],
       },
       navBar: {
         navBarUtils: [],
@@ -246,7 +249,7 @@ const ProductDetail: NextPage<{
         {/* 설명 */}
         <div className="pt-5 border-t">
           <h1 className="text-2xl font-bold">
-            {!isSale && <em className="text-gray-500 not-italic">거래완료 </em>}
+            {isSold && <em className="text-gray-500 not-italic">판매완료 </em>}
             {product.name}
           </h1>
           <span className="mt-1 block text-sm text-gray-500">
@@ -265,16 +268,26 @@ const ProductDetail: NextPage<{
               <strong>₩{product.price}</strong>
             </div>
             <div className="absolute top-1/2 left-3 -translate-y-1/2">
-              <button
-                className={`p-2 rounded-md hover:bg-gray-100 ${data?.isFavorite ? "text-red-500 hover:text-red-600" : "text-gray-400  hover:text-gray-500"}`}
-                onClick={!user?.id ? openWelcomeModal : user?.id === -1 ? openSignUpModal : toggleFavorite}
-                disabled={favoriteLoading}
-              >
-                {data?.isFavorite ? (
-                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+              {viewModel.mode === "preview" && (
+                <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={openWelcomeModal} disabled={favoriteLoading}>
+                  <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                    />
+                  </svg>
+                </button>
+              )}
+              {(viewModel.mode === "public" || viewModel.mode === "private") && (
+                <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={user?.id === -1 ? openSignUpModal : toggleFavorite} disabled={favoriteLoading}>
+                  {data?.isFavorite && (
+                    <svg className="w-6 h-6" fill="currentColor" color="rgb(239 68 68)" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
                   </svg>
-                ) : (
+                  )}
+                  {!data?.isFavorite && (
                   <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path
                       strokeLinecap="round"
@@ -285,25 +298,28 @@ const ProductDetail: NextPage<{
                   </svg>
                 )}
               </button>
+              )}
             </div>
-            {viewModel.mode === "normal" && (
               <div className="flex-none px-5">
-                {user?.id === -1 ? (
+              {viewModel.mode === "preview" && (
+                <Link href="/welcome" passHref>
+                  <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
+                </Link>
+              )}
+              {viewModel.mode === "public" &&
+                (user?.id === -1 ? (
                   <Buttons tag="button" text="채팅하기" size="sm" onClick={openSignUpModal} />
                 ) : (
                   <Link href={`/inbox/${product.user.id}`} passHref>
                     <Buttons tag="a" text="채팅하기" size="sm" />
                   </Link>
-                )}
-              </div>
-            )}
-            {viewModel.mode === "preview" && (
-              <div className="flex-none px-5">
-                <Link href="/welcome" passHref>
-                  <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
+                ))}
+              {viewModel.mode === "private" && (
+                <Link href="" passHref>
+                  <Buttons tag="a" text="대화 중인 채팅방" size="sm" />
                 </Link>
+              )}
               </div>
-            )}
           </div>
         </div>
       </section>
