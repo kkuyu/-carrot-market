@@ -12,11 +12,13 @@ import { getCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
+import usePanel from "@libs/client/usePanel";
 import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
 import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
 import Relate from "@components/cards/relate";
@@ -32,6 +34,7 @@ const ProductDetail: NextPage<{
 
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
+  const { openPanel } = usePanel();
 
   // view model
   const [viewModel, setViewModel] = useState({
@@ -106,6 +109,18 @@ const ProductDetail: NextPage<{
       );
     }, false);
     updateFavorite({});
+  };
+
+  // modal: openStatusPanel
+  const openStatusPanel = () => {
+    openPanel<ActionPanelProps>(ActionPanel, "statusPanel", {
+      hasBackdrop: true,
+      actions: [
+        { key: "sale", text: "판매중", onClick: () => console.log("판매중") },
+        { key: "sold", text: "판매완료", onClick: () => console.log("판매완료") },
+      ],
+      cancelBtn: "닫기",
+    });
   };
 
   // modal: welcome
@@ -205,11 +220,11 @@ const ProductDetail: NextPage<{
               ]
             : mode === "private"
             ? [
-              { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
-              { key: "pull", text: "끌어올리기" },
-              { key: "hide", text: "숨기기" },
-              { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
-            ]
+                { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
+                { key: "pull", text: "끌어올리기" },
+                { key: "hide", text: "숨기기" },
+                { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+              ]
             : [],
       },
       navBar: {
@@ -248,6 +263,17 @@ const ProductDetail: NextPage<{
 
         {/* 설명 */}
         <div className="pt-5 border-t">
+          {viewModel.mode === "private" && (
+            <div className="pb-5">
+              <span className="relative inline-block min-w-[100px]">
+                <strong className="sr-only">상태변경</strong>
+                <Buttons text={isSale ? "판매중" : isSold ? "판매완료" : ""} size="sm" status="default" className="pr-8 !text-left" onClick={openStatusPanel} />
+                <svg className="absolute top-1/2 right-2.5 w-4 h-4 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </span>
+            </div>
+          )}
           <h1 className="text-2xl font-bold">
             {isSold && <em className="text-gray-500 not-italic">판매완료 </em>}
             {product.name}
@@ -284,23 +310,23 @@ const ProductDetail: NextPage<{
                 <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={user?.id === -1 ? openSignUpModal : toggleFavorite} disabled={favoriteLoading}>
                   {data?.isFavorite && (
                     <svg className="w-6 h-6" fill="currentColor" color="rgb(239 68 68)" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                    <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
-                  </svg>
+                      <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
+                    </svg>
                   )}
                   {!data?.isFavorite && (
-                  <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-                    />
-                  </svg>
-                )}
-              </button>
+                    <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
+                        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+                      />
+                    </svg>
+                  )}
+                </button>
               )}
             </div>
-              <div className="flex-none px-5">
+            <div className="flex-none px-5">
               {viewModel.mode === "preview" && (
                 <Link href="/welcome" passHref>
                   <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
@@ -319,7 +345,7 @@ const ProductDetail: NextPage<{
                   <Buttons tag="a" text="대화 중인 채팅방" size="sm" />
                 </Link>
               )}
-              </div>
+            </div>
           </div>
         </div>
       </section>

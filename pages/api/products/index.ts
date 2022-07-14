@@ -147,6 +147,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           emdPosNm,
           emdPosX,
           emdPosY,
+          resumeAt: new Date(),
           user: {
             connect: {
               id: user?.id,
