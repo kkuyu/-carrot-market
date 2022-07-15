@@ -13,7 +13,7 @@ export interface GetStoriesDetailResponse {
     curiosities: { count: number };
     emotion: Feeling | null;
     emotions: { count: number; feelings: Feeling[] };
-    comments: (Pick<Comment, "id" | "comment" | "emdPosNm" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
+    comments: (Pick<Comment, "id" | "comment" | "emdPosNm" | "createdAt" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
     _count: { curiosities: number; emotions: number; comments: number };
   };
   error?: {
@@ -66,6 +66,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           select: {
             id: true,
             comment: true,
+            createdAt: true,
             updatedAt: true,
             emdPosNm: true,
             user: {

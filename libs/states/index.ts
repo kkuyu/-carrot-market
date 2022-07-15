@@ -32,6 +32,7 @@ export const KebabActions = {
   Delete: "delete",
 } as const;
 export type KebabActions = typeof KebabActions[keyof typeof KebabActions];
+
 export interface PageLayoutTypes {
   title?: string;
   seoTitle?: string;

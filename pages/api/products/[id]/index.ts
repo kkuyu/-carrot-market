@@ -67,7 +67,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const otherProducts = await client.product.findMany({
       take: 4,
       orderBy: {
-        createdAt: "desc",
+        resumeAt: "desc",
       },
       select: {
         id: true,
@@ -90,7 +90,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       : await client.product.findMany({
           take: 4,
           orderBy: {
-            createdAt: "desc",
+            resumeAt: "desc",
           },
           select: {
             id: true,
@@ -117,7 +117,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       : await client.product.findMany({
           take: 4,
           orderBy: {
-            createdAt: "desc",
+            resumeAt: "desc",
           },
           select: {
             id: true,

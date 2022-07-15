@@ -69,7 +69,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         take: displayRow,
         skip: (page - 1) * displayRow,
         orderBy: {
-          createdAt: "desc",
+          resumeAt: "desc",
         },
         include: {
           records: {

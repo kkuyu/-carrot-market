@@ -10,6 +10,7 @@ export type CommentItem = ProfilesProps & {
   comment: string;
   emdPosNm: string;
   updatedAt: Date;
+  createdAt: Date;
 };
 
 interface CommentProps {
@@ -21,7 +22,8 @@ const Comment = ({ item }: CommentProps) => {
 
   useEffect(() => {
     const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
+    const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
+    diffTime.current = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
   }, []);
 
   return (

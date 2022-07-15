@@ -16,7 +16,7 @@ const Story = ({ item }: StoryProps) => {
 
   useEffect(() => {
     const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime());
+    diffTime.current = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
   }, []);
 
   return (

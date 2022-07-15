@@ -220,7 +220,7 @@ const StoryDetail: NextPage<{
     if (!story) return;
 
     const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(story?.updatedAt).getTime(), today.getTime());
+    diffTime.current = getDiffTimeStr(new Date(story?.createdAt).getTime(), today.getTime());
 
     const mode = !user?.id ? "preview" : user?.id !== story?.userId ? "public" : "private";
     setViewModel({ mode });

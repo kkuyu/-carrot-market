@@ -199,7 +199,7 @@ const ProductDetail: NextPage<{
     if (!product) return;
 
     const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(product?.updatedAt).getTime(), today.getTime());
+    diffTime.current = getDiffTimeStr(new Date(product?.createdAt).getTime(), today.getTime());
 
     const mode = !user?.id ? "preview" : user?.id !== product?.userId ? "public" : "private";
     setViewModel({ mode });

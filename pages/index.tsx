@@ -148,7 +148,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           take: 10,
           skip: 0,
           orderBy: {
-            createdAt: "desc",
+            resumeAt: "desc",
           },
           where: {
             emdPosX: { gte: posX - distance, lte: posX + distance },
