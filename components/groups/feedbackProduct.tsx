@@ -1,13 +1,11 @@
-// @api
-import { GetProfilesProductsResponse } from "@api/users/profiles/products";
-
-export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
+// @components
+import { ProductItem } from "@components/cards/product";
 
 interface FeedbackProductProps {
-  item: FeedbackProductItem;
-  resumeItem: (item: FeedbackProductItem) => void;
-  soldItem: (item: FeedbackProductItem) => void;
-  reviewItem: (item: FeedbackProductItem) => void;
+  item: ProductItem;
+  resumeItem: (item: ProductItem) => void;
+  soldItem: (item: ProductItem) => void;
+  reviewItem: (item: ProductItem) => void;
 }
 
 const FeedbackProduct = ({ item, resumeItem, soldItem, reviewItem }: FeedbackProductProps) => {

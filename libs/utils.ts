@@ -35,7 +35,7 @@ export const getCategory = (type: "product" | "story", categoryKey: string) => {
   return null;
 };
 
-export const getDiffTimeStr = (originTime: number, currentTime: number) => {
+export const getDiffTimeStr = (originTime: number, currentTime: number, suffixStr: string = " 전") => {
   let resultStr = "";
 
   const diffTime = currentTime - originTime;
@@ -50,12 +50,12 @@ export const getDiffTimeStr = (originTime: number, currentTime: number) => {
   for (let index = 0; index < times.length; index++) {
     const diff = Math.floor(diffTime / times[index].ms);
     if (diff > 0) {
-      resultStr = `${diff}${times[index].label} 전`;
+      resultStr = `${diff}${times[index].label}${suffixStr}`;
       break;
     }
   }
 
-  return resultStr || "방금 전";
+  return resultStr || `방금${suffixStr}`;
 };
 
 export type FileOptions = {

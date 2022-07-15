@@ -18,8 +18,8 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/products";
 // @components
-import Product from "@components/cards/product";
-import FeedbackProduct, { FeedbackProductItem } from "@components/groups/feedbackProduct";
+import Product, { ProductItem } from "@components/cards/product";
+import FeedbackProduct from "@components/groups/feedbackProduct";
 
 type FilterTab = {
   index: number;
@@ -81,15 +81,15 @@ const ProfileProducts: NextPage<{
     window.scrollTo(0, 0);
   };
 
-  const resumeItem = (item: FeedbackProductItem) => {
-    console.log("resumeItem", item);
+  const resumeItem = (item: ProductItem) => {
+    router.push(`/products/${item.id}/resume`);
   };
 
-  const soldItem = (item: FeedbackProductItem) => {
+  const soldItem = (item: ProductItem) => {
     console.log("soldItem", item);
   };
 
-  const reviewItem = (item: FeedbackProductItem) => {
+  const reviewItem = (item: ProductItem) => {
     console.log("reviewItem", item);
   };
 
@@ -260,7 +260,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     take: 10,
     skip: 0,
     orderBy: {
-      createdAt: "desc",
+      resumeAt: "desc",
     },
     where: {
       userId: +profileId,
@@ -280,7 +280,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     take: 10,
     skip: 0,
     orderBy: {
-      createdAt: "desc",
+      resumeAt: "desc",
     },
     where: {
       userId: +profileId,
@@ -303,7 +303,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     take: 10,
     skip: 0,
     orderBy: {
-      createdAt: "desc",
+      resumeAt: "desc",
     },
     where: {
       userId: +profileId,

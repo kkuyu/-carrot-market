@@ -18,7 +18,7 @@ export interface PostProductsUpdateResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { photos = "", name, category, price, description } = req.body;
+    const { photos = "", name, category, price, description, resume = false } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -56,6 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         category,
         price,
         description,
+        ...(resume ? { resumeAt: new Date(), resumeCount: product.resumeCount + 1 } : {}),
       },
     });
 
