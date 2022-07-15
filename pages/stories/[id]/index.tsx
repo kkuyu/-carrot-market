@@ -49,7 +49,8 @@ const StoryDetail: NextPage<{
   });
 
   // static data: story detail
-  const diffTime = useRef("");
+  const today = new Date();
+  const diffTime = getDiffTimeStr(new Date(staticProps?.story?.createdAt).getTime(), today.getTime());
   const category = getCategory("story", staticProps?.story?.category);
   const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
 
@@ -219,9 +220,6 @@ const StoryDetail: NextPage<{
   useEffect(() => {
     if (!story) return;
 
-    const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(story?.createdAt).getTime(), today.getTime());
-
     const mode = !user?.id ? "preview" : user?.id !== story?.userId ? "public" : "private";
     setViewModel({ mode });
 
@@ -268,7 +266,7 @@ const StoryDetail: NextPage<{
           {/* 판매자 */}
           <Link href={`/users/profiles/${story?.user?.id}`}>
             <a>
-              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime.current} />
+              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime} />
             </a>
           </Link>
           {/* 게시글 내용 */}

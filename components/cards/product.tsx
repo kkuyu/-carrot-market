@@ -1,5 +1,4 @@
 import Image from "next/image";
-import { useRef, useEffect } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
 // @api
@@ -14,17 +13,13 @@ interface ProductProps {
 }
 
 const Product = ({ item, size = "base" }: ProductProps) => {
-  const diffTime = useRef("");
+  const today = new Date();
+  const diffTime = getDiffTimeStr(new Date(item?.resumeAt).getTime(), today.getTime());
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
 
   const isSale = item?.records && Boolean(item?.records?.find((record) => record.kind === "Sale"));
   const isSold = item?.records && !isSale;
   const favorites = item?.records?.filter((record) => record.kind === "Favorite");
-
-  useEffect(() => {
-    const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(item?.resumeAt).getTime(), today.getTime());
-  }, []);
 
   if (size === "tiny") {
     return (
@@ -86,7 +81,7 @@ const Product = ({ item, size = "base" }: ProductProps) => {
         </div>
         <div className="grow pl-4">
           <strong className="block font-normal">{item?.name}</strong>
-          <span className="block text-sm text-gray-500">{[item?.emdPosNm, diffTime.current, !item?.resumeCount ? null : `끌올 ${item.resumeCount}회`].filter((v) => !!v).join(" · ")}</span>
+          <span className="block text-sm text-gray-500">{[item?.emdPosNm, diffTime, !item?.resumeCount ? null : `끌올 ${item.resumeCount}회`].filter((v) => !!v).join(" · ")}</span>
           <div className="block mt-2 pr-8">
             {isSold && <em className="inline-block mr-2 px-1.5 py-1 text-xs font-semibold not-italic text-white bg-black rounded-md">판매완료</em>}
             <span className="font-semibold align-middle">₩{item?.price}</span>

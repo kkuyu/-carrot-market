@@ -35,10 +35,10 @@ const ProductResume: NextPage<{
 
   const { user } = useUser();
 
-  const diffTime = useRef(["", ""]);
+  const [state, setState] = useState<"HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null>(null);
   const discounts = staticProps.product.price > 10000 ? ["5%", "10%", "15%"] : staticProps.product.price >= 4000 ? ["1000원", "2000원", "3000원"] : [];
 
-  const [state, setState] = useState<"HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null>(null);
+  const today = new Date();
   const targetDate = (() => {
     const date = new Date(staticProps.product.resumeAt);
     date.setDate(date.getDate() + (2 + staticProps.product.resumeCount));
@@ -50,6 +50,11 @@ const ProductResume: NextPage<{
     const date = new Date(targetDate);
     date.setDate(date.getDate() + (2 + staticProps.product.resumeCount));
     return date;
+  })();
+  const diffTime = (() => {
+    const target = !targetDate ? "" : getDiffTimeStr(today.getTime(), targetDate.getTime(), " 후");
+    const nextTarget = !nextTargetDate ? "" : getDiffTimeStr(today.getTime(), nextTargetDate.getTime() + 1000 * 60 * 60 * 24, " 후");
+    return [target, nextTarget];
   })();
 
   const { register, handleSubmit, formState, getValues, setValue } = useForm<ResumeProductTypes>({
@@ -90,15 +95,8 @@ const ProductResume: NextPage<{
       return;
     }
 
-    const today = new Date();
     if (today > targetDate) setState(staticProps.product.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct");
     if (today < targetDate) setState("HoldOff");
-
-    diffTime.current = (() => {
-      const target = !targetDate ? "" : getDiffTimeStr(today.getTime(), targetDate.getTime(), " 후");
-      const nextTarget = !nextTargetDate ? "" : getDiffTimeStr(today.getTime(), nextTargetDate.getTime() + 1000 * 60 * 60 * 24, " 후");
-      return [target, nextTarget];
-    })();
 
     setLayout(() => ({
       title: "끌어올리기",
@@ -124,7 +122,7 @@ const ProductResume: NextPage<{
       {state === "HoldOff" && (
         <div className="mt-5 pt-5 border-t">
           <strong className="text-lg">
-            <span className="text-orange-500">{diffTime.current[0]}에</span>
+            <span className="text-orange-500">{diffTime[0]}에</span>
             <br />
             끌어올릴 수 있어요
           </strong>
@@ -174,7 +172,7 @@ const ProductResume: NextPage<{
           <strong className="text-lg">지금 끌어올리시겠어요?</strong>
           {nextTargetDate && (
             <p className="mt-5">
-              다음 끌어올리기는 <span className="text-orange-500">{diffTime.current[1]}</span>에 할 수 있어요
+              다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
             </p>
           )}
           <Buttons type="submit" text="끌어올리기" className="mt-10" disabled={loading} onClick={submitResumeProduct} />
@@ -226,7 +224,7 @@ const ProductResume: NextPage<{
             </div>
             {nextTargetDate && (
               <p>
-                다음 끌어올리기는 <span className="text-orange-500">{diffTime.current[1]}</span>에 할 수 있어요
+                다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
               </p>
             )}
             <Buttons type="submit" text="끌어올리기" disabled={loading} />

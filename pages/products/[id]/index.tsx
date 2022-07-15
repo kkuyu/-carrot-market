@@ -42,7 +42,8 @@ const ProductDetail: NextPage<{
   });
 
   // static data: product detail
-  const diffTime = useRef("");
+  const today = new Date();
+  const diffTime = getDiffTimeStr(new Date(staticProps?.product?.createdAt).getTime(), today.getTime());
   const category = getCategory("product", staticProps?.product?.category);
   const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
 
@@ -198,9 +199,6 @@ const ProductDetail: NextPage<{
   useEffect(() => {
     if (!product) return;
 
-    const today = new Date();
-    diffTime.current = getDiffTimeStr(new Date(product?.createdAt).getTime(), today.getTime());
-
     const mode = !user?.id ? "preview" : user?.id !== product?.userId ? "public" : "private";
     setViewModel({ mode });
 
@@ -221,8 +219,7 @@ const ProductDetail: NextPage<{
             : mode === "private"
             ? [
                 { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
-                { key: "pull", text: "끌어올리기" },
-                { key: "hide", text: "숨기기" },
+                { key: "pull", text: "끌어올리기", onClick: () => router.push(`/products/${product.id}/resume`) },
                 { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
               ]
             : [],
@@ -278,10 +275,7 @@ const ProductDetail: NextPage<{
             {isSold && <em className="text-gray-500 not-italic">판매완료 </em>}
             {product.name}
           </h1>
-          <span className="mt-1 block text-sm text-gray-500">
-            {/* todo: 끌어올리기 */}
-            {category?.text} · {diffTime.current}
-          </span>
+          <span className="mt-1 block text-sm text-gray-500">{[category?.text, diffTime, !product?.resumeCount ? null : `끌올 ${product.resumeCount}회`].filter((v) => !!v).join(" · ")}</span>
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
           <div className="empty:hidden mt-5 text-sm text-gray-500">{[favorites.length ? `관심 ${favorites.length}` : null].filter((v) => !!v).join(" · ")}</div>
         </div>

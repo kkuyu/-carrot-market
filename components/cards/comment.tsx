@@ -18,19 +18,15 @@ interface CommentProps {
 }
 
 const Comment = ({ item }: CommentProps) => {
-  const diffTime = useRef("");
-
-  useEffect(() => {
-    const today = new Date();
-    const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
-    diffTime.current = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
-  }, []);
+  const today = new Date();
+  const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
+  const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
 
   return (
     <div className="relative">
       <Link href={`/users/profiles/${item?.user?.id}`}>
         <a>
-          <Profiles user={item?.user} emdPosNm={item.emdPosNm} diffTime={diffTime.current} size="sm" />
+          <Profiles user={item?.user} emdPosNm={item.emdPosNm} diffTime={diffTime} size="sm" />
         </a>
       </Link>
       <div className="pl-14">
