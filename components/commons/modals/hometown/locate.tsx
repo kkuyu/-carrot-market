@@ -3,25 +3,82 @@ import { useForm } from "react-hook-form";
 import useSWR from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
+import useModal from "@libs/client/useModal";
+import useToast from "@libs/client/useToast";
 import useCoords from "@libs/client/useCoords";
+import useMutation from "@libs/client/useMutation";
 // @api
+import { PostUserRequestBody, PostUserResponse } from "@api/users/my";
+import { PostDummyResponse } from "@api/users/dummy";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
 // @components
-import Buttons from "@components/buttons";
+import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
-import { ModalControl, ToastControl, UpdateHometown } from "@components/layouts/header";
+import Buttons from "@components/buttons";
 
-interface AddressLocateProps {
-  toastControl: ToastControl;
-  modalControl: ModalControl;
-  updateHometown: UpdateHometown;
+interface HometownLocateProps {
   addrType: "MAIN" | "SUB";
 }
 
-const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }: AddressLocateProps) => {
-  const { user } = useUser();
+const HometownLocate = ({ addrType }: HometownLocateProps) => {
+  const { user, mutate: mutateUser } = useUser();
   const [keyword, setKeyword] = useState("");
+
+  const { openModal, closeModal } = useModal();
+  const { openToast } = useToast();
+
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
+    onSuccess: () => {
+      mutateUser();
+      closeModal(LayerModal, "HometownLocate");
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        case "GeocodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+            placement: "bottom",
+            message: data.error.message,
+          });
+          break;
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
+    onSuccess: () => {
+      mutateUser();
+      closeModal(LayerModal, "HometownLocate");
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        case "GeocodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+            placement: "bottom",
+            message: data.error.message,
+          });
+          break;
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+
+  const updateHometown = (updateData: PostUserRequestBody) => {
+    // dummy user
+    if (user?.id === -1) {
+      if (updateDummyLoading) return;
+      updateDummy(updateData);
+      return;
+    }
+    // membership user
+    if (updateUserLoading) return;
+    updateUser(updateData);
+  };
 
   const searchAddressForm = useForm<SearchAddressTypes>();
   const { setValue: SearchAddressValue, setFocus: SearchAddressFocus } = searchAddressForm;
@@ -40,18 +97,17 @@ const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }:
 
   const selectItem = (itemData: GetBoundarySearchResponse["emdList"][0] | GetKeywordSearchResponse["emdList"][0]) => {
     if (user?.MAIN_emdPosNm === itemData.emdNm) {
-      toastControl("alreadyRegisteredAddress", { open: true });
-      modalControl("locateModal", { open: false });
+      openToast<MessageToastProps>(MessageToast, "alreadyRegisteredAddress", {
+        placement: "bottom",
+        message: "이미 등록된 주소예요",
+      });
+      closeModal(LayerModal, "HometownLocate");
       return;
     }
-    modalControl("locateModal", {
-      open: false,
-      beforeClose: () =>
-        updateHometown({
-          emdType: addrType,
-          ...(addrType === "MAIN" ? { mainAddrNm: itemData.addrNm, mainDistance: 0.02 } : {}),
-          ...(addrType === "SUB" ? { subAddrNm: itemData.addrNm, subDistance: 0.02 } : {}),
-        }),
+    updateHometown({
+      emdType: addrType,
+      ...(addrType === "MAIN" ? { mainAddrNm: itemData.addrNm, mainDistance: 0.02 } : {}),
+      ...(addrType === "SUB" ? { subAddrNm: itemData.addrNm, subDistance: 0.02 } : {}),
     });
   };
 
@@ -147,4 +203,4 @@ const AddressLocate = ({ toastControl, modalControl, updateHometown, addrType }:
   );
 };
 
-export default AddressLocate;
+export default HometownLocate;

@@ -1,30 +1,84 @@
+import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
+import useToast from "@libs/client/useToast";
+import useMutation from "@libs/client/useMutation";
 // @api
+import { PostUserRequestBody, PostUserResponse } from "@api/users/my";
+import { PostDummyResponse } from "@api/users/dummy";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 // @components
+import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import { ModalControl, ToastControl, UpdateHometown } from "@components/layouts/header";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
+import HometownLocate from "@components/commons/modals/hometown/locate";
 import Buttons from "@components/buttons";
 
-interface AddressUpdateProps {
-  toastControl: ToastControl;
-  modalControl: ModalControl;
-  updateHometown: UpdateHometown;
-}
+interface HometownUpdateProps {}
 
 interface DistanceForm {
   range: number;
 }
 
-const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUpdateProps) => {
-  const { user, currentAddr } = useUser();
+const HometownUpdate = ({}: HometownUpdateProps) => {
+  const router = useRouter();
+  const { user, currentAddr, mutate: mutateUser } = useUser();
 
   const { openModal, closeModal } = useModal();
+  const { openToast } = useToast();
+
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
+    onSuccess: () => {
+      mutateUser();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        case "GeocodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+            placement: "bottom",
+            message: data.error.message,
+          });
+          break;
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
+    onSuccess: () => {
+      mutateUser();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        case "GeocodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+            placement: "bottom",
+            message: data.error.message,
+          });
+          break;
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+
+  const updateHometown = (updateData: PostUserRequestBody) => {
+    // dummy user
+    if (user?.id === -1) {
+      if (updateDummyLoading) return;
+      updateDummy(updateData);
+      return;
+    }
+    // membership user
+    if (updateUserLoading) return;
+    updateUser(updateData);
+  };
 
   // address
   const addressWrapper = useRef<HTMLDivElement>(null);
@@ -44,8 +98,11 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
             confirmBtn: "변경",
             hasBackdrop: true,
             onConfirm: () => {
-              modalControl("locateModal", { open: true, addrType: "MAIN" });
-              modalControl("updateModal", { open: false });
+              openModal<LayerModalProps>(LayerModal, "HometownLocate", {
+                headerType: "default",
+                title: "내 동네 추가하기",
+                contents: <HometownLocate addrType="MAIN" />,
+              });
             },
           });
           return;
@@ -57,7 +114,7 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
           confirmBtn: "삭제",
           hasBackdrop: true,
           onConfirm: () => {
-            updateHometown({ emdType: "MAIN", mainAddrNm: user.SUB_emdAddrNm!, mainDistance: user?.SUB_emdPosDx || 0.02, subAddrNm: null, subDistance: null });
+            updateHometown({ emdType: "MAIN", mainAddrNm: user?.SUB_emdAddrNm!, mainDistance: user?.SUB_emdPosDx || 0.02, subAddrNm: null, subDistance: null });
           },
         });
       },
@@ -71,7 +128,7 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
       removeItem: () => {
         openModal<MessageModalProps>(MessageModal, "confirmDeleteSubAddress", {
           type: "confirm",
-          message: "게시글을 정말 삭제하시겠어요?",
+          message: "선택한 지역을 삭제하시겠습니까?",
           cancelBtn: "취소",
           confirmBtn: "삭제",
           hasBackdrop: true,
@@ -87,11 +144,25 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
       selectItem: () => {
         // dummy user
         if (user?.id === -1) {
-          modalControl("signUpNow", { open: true });
+          openModal<MessageModalProps>(MessageModal, "signUpNow", {
+            type: "confirm",
+            message: "휴대폰 인증하고 회원가입하시겠어요?",
+            cancelBtn: "취소",
+            confirmBtn: "회원가입",
+            hasBackdrop: true,
+            onConfirm: () => {
+              closeModal(LayerModal, "HometownUpdate");
+              router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+            },
+          });
           return;
         }
         // membership user
-        modalControl("locateModal", { open: true });
+        openModal<LayerModalProps>(LayerModal, "HometownLocate", {
+          headerType: "default",
+          title: "내 동네 추가하기",
+          contents: <HometownLocate addrType="SUB" />,
+        });
       },
       removeItem: () => null,
     },
@@ -194,4 +265,4 @@ const AddressUpdate = ({ toastControl, modalControl, updateHometown }: AddressUp
   );
 };
 
-export default AddressUpdate;
+export default HometownUpdate;

@@ -37,7 +37,7 @@ const VerificationPhone: NextPage = () => {
         case "NotFoundUser":
           openToast<MessageToastProps>(MessageToast, "invalid-user", {
             placement: "bottom",
-            message: "이메일 주소를 다시 확인해주세요",
+            message: data.error.message,
           });
           router.replace("/verification-email");
           return;

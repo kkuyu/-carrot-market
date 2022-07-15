@@ -1,42 +1,23 @@
 import Head from "next/head";
 import { useRouter } from "next/router";
 import { useRecoilValue } from "recoil";
-import { EmdType } from "@prisma/client";
 // @libs
 import { HeaderUtils, PageLayout } from "@libs/states";
-import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
-import useToast from "@libs/client/useToast";
-// @api
-import { PostUserResponse } from "@api/users/my";
-import { PostDummyResponse } from "@api/users/dummy";
 // @components
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
-import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import AddressButton from "@components/layouts/header/utils/addressButton";
-import AddressDropdown from "@components/layouts/header/utils/addressDropdown";
-import AddressUpdate from "@components/layouts/header/utils/addressUpdate";
-import AddressLocate from "@components/layouts/header/utils/addressLocate";
+import HometownDropdown from "@components/commons/modals/hometown/dropdown";
+import HometownUpdate from "@components/commons/modals/hometown/update";
 
 export interface HeaderProps {}
 
-type ModalNames = "dropdownModal" | "updateModal" | "locateModal" | "signUpNow";
-type PanelNames = "kebabPanel";
-type ToastNames = "alreadyRegisteredAddress" | "updateUserError" | "updateDummyError";
-
-export type ModalControl = (name: ModalNames, config: { open: boolean; addrType?: EmdType; beforeClose?: () => void }) => void;
-export type PanelControl = (name: PanelNames, config: { open: boolean }) => void;
-export type ToastControl = (name: ToastNames, config: { open: boolean }) => void;
-export type UpdateHometown = (updateData: { emdType?: EmdType; mainAddrNm?: string; mainDistance?: number; subAddrNm?: string | null; subDistance?: number | null }) => void;
-
 const Header = ({}: HeaderProps) => {
   const router = useRouter();
-  const { user, currentAddr, mutate: mutateUser } = useUser();
+  const { user, currentAddr } = useUser();
 
   const {
     title,
@@ -44,183 +25,46 @@ const Header = ({}: HeaderProps) => {
     header: { headerColor = "white", headerUtils, kebabActions, submitId },
   } = useRecoilValue(PageLayout);
 
-  const { openModal, closeModal } = useModal();
-  const { openPanel, closePanel } = usePanel();
-  const { openToast, closeToast } = useToast();
-
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
-    onSuccess: () => {
-      console.log("updateUser success");
-      mutateUser();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          toastControl("updateUserError", { open: true });
-          break;
-        default:
-          console.error(data.error);
-          break;
-      }
-    },
-  });
-  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
-    onSuccess: () => {
-      console.log("updateDummy success");
-      mutateUser();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          toastControl("updateDummyError", { open: true });
-          break;
-        default:
-          console.error(data.error);
-          break;
-      }
-    },
-  });
-
-  const updateHometown: UpdateHometown = (updateData) => {
-    // dummy user
-    if (user?.id === -1) {
-      if (updateDummyLoading) return;
-      updateDummy(updateData);
-      return;
-    }
-    // membership user
-    if (updateUserLoading) return;
-    updateUser(updateData);
-  };
-
-  const modalControl: ModalControl = (name, config) => {
-    switch (name) {
-      case "dropdownModal":
-        if (!config.open) {
-          if (config?.beforeClose) config.beforeClose();
-          closeModal(CustomModal, name);
-          break;
-        }
-        openModal<CustomModalProps>(CustomModal, name, {
-          hasBackdrop: true,
-          contents: <AddressDropdown toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />,
-        });
-        break;
-      case "updateModal":
-        if (!config.open) {
-          if (config?.beforeClose) config.beforeClose();
-          closeModal(LayerModal, name);
-          break;
-        }
-        openModal<LayerModalProps>(LayerModal, name, {
-          headerType: "default",
-          title: "내 동네 설정하기",
-          contents: <AddressUpdate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} />,
-        });
-        break;
-      case "locateModal":
-        if (!config.open) {
-          if (config?.beforeClose) config.beforeClose();
-          closeModal(LayerModal, name);
-          break;
-        }
-        openModal<LayerModalProps>(LayerModal, name, {
-          headerType: "default",
-          title: "내 동네 추가하기",
-          contents: <AddressLocate toastControl={toastControl} modalControl={modalControl} updateHometown={updateHometown} addrType={config?.addrType || "SUB"} />,
-        });
-        break;
-      case "signUpNow":
-        if (!config.open) {
-          closeModal(MessageModal, name);
-          break;
-        }
-        openModal<MessageModalProps>(MessageModal, name, {
-          type: "confirm",
-          message: "휴대폰 인증하고 회원가입하시겠어요?",
-          cancelBtn: "취소",
-          confirmBtn: "회원가입",
-          hasBackdrop: true,
-          onConfirm: () => {
-            modalControl("updateModal", { open: false });
-            router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
-          },
-        });
-        break;
-      default:
-        console.error("modalControl", name);
-        break;
-    }
-  };
-
-  const panelControl: PanelControl = (name, config) => {
-    switch (name) {
-      case "kebabPanel":
-        if (!config.open) {
-          closePanel(ActionPanel, name);
-          break;
-        }
-        openPanel<ActionPanelProps>(ActionPanel, name, {
-          hasBackdrop: true,
-          actions:
-            kebabActions?.map((item) => {
-              return { ...item, onClick: item?.onClick ? item.onClick : () => console.log(item.key) };
-            }) || [],
-          cancelBtn: "취소",
-        });
-        break;
-      default:
-        console.error("panelControl", name);
-        break;
-    }
-  };
-
-  const toastControl: ToastControl = (name, config) => {
-    switch (name) {
-      case "alreadyRegisteredAddress":
-        if (!config.open) {
-          closeToast(MessageToast, name);
-          break;
-        }
-        openToast<MessageToastProps>(MessageToast, name, {
-          placement: "bottom",
-          message: "이미 등록된 주소예요",
-        });
-        break;
-      case "updateUserError":
-      case "updateDummyError":
-        if (!config.open) {
-          closeToast(MessageToast, name);
-          break;
-        }
-        openToast<MessageToastProps>(MessageToast, name, {
-          placement: "bottom",
-          message: "서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.",
-        });
-        break;
-      default:
-        console.error("toastControl", name);
-        break;
-    }
-  };
+  const { openModal } = useModal();
+  const { openPanel } = usePanel();
 
   const getUtils = (name: HeaderUtils) => {
     switch (name) {
       case "address":
+        if (!currentAddr?.emdPosNm) return null;
         return (
-          <AddressButton
-            text={currentAddr?.emdPosNm || ""}
+          <button
+            className="h-12 flex items-center px-5"
             onClick={() => {
               // dummy user
               if (user?.id === -1) {
-                modalControl("updateModal", { open: true });
+                openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
+                  headerType: "default",
+                  title: "내 동네 설정하기",
+                  contents: <HometownUpdate />,
+                });
                 return;
               }
               // membership user
-              if (user?.SUB_emdPosNm) modalControl("dropdownModal", { open: true });
-              if (!user?.SUB_emdPosNm) modalControl("updateModal", { open: true });
+              if (!user?.SUB_emdPosNm) {
+                openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
+                  headerType: "default",
+                  title: "내 동네 설정하기",
+                  contents: <HometownUpdate />,
+                });
+              } else {
+                openModal<CustomModalProps>(CustomModal, "HometownDropdown", {
+                  hasBackdrop: true,
+                  contents: <HometownDropdown />,
+                });
+              }
             }}
-          />
+          >
+            <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
+            </svg>
+          </button>
         );
       case "back":
         return (
@@ -245,7 +89,19 @@ const Header = ({}: HeaderProps) => {
         );
       case "kebab":
         return (
-          <button className="p-3" onClick={() => panelControl("kebabPanel", { open: true })}>
+          <button
+            className="p-3"
+            onClick={() => {
+              openPanel<ActionPanelProps>(ActionPanel, name, {
+                hasBackdrop: true,
+                actions:
+                  kebabActions?.map((item) => {
+                    return { ...item, onClick: item?.onClick ? item.onClick : () => console.log(item.key) };
+                  }) || [],
+                cancelBtn: "취소",
+              });
+            }}
+          >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 strokeLinecap="round"

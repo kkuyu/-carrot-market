@@ -43,7 +43,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
     if (!foundUserByEmail) {
-      const error = new Error("기존 계정 정보를 다시 확인해주세요.");
+      const error = new Error("계정 정보를 다시 확인해주세요.");
       error.name = "NotFoundUser";
       throw error;
     }

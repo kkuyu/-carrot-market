@@ -49,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const { origin: originUrl } = getAbsoluteUrl(req);
       const mainResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${mainAddrNm}`)).json();
       if (!mainResponse.success) {
-        const error = new Error("GeocodeDistrictError");
+        const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
         error.name = "GeocodeDistrictError";
         throw error;
       }
