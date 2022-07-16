@@ -1,7 +1,7 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Error from "next/error";
+import NextError from "next/error";
 import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
@@ -67,7 +67,7 @@ const ProfileDetail: NextPage<{
   }, [user?.id]);
 
   if (!profile) {
-    return <Error statusCode={404} />;
+    return <NextError statusCode={404} />;
   }
 
   return (

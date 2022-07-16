@@ -1,8 +1,8 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Error from "next/error";
-import { useRef, useEffect, useState } from "react";
+import NextError from "next/error";
+import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
@@ -250,7 +250,7 @@ const StoryDetail: NextPage<{
   }, [user?.id]);
 
   if (!story) {
-    return <Error statusCode={404} />;
+    return <NextError statusCode={404} />;
   }
 
   return (

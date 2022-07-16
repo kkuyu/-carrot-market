@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Error from "next/error";
+import NextError from "next/error";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
@@ -17,6 +17,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/products";
+import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import Product, { ProductItem } from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
@@ -42,7 +43,7 @@ const ProfileProducts: NextPage<{
   const { user } = useUser();
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
 
-  // fetch data: profile product
+  // profile product paging
   const tabs: FilterTab[] = [
     { index: 0, value: "ALL", text: "전체", name: "등록된 게시글" },
     { index: 1, value: "SALE", text: "판매중", name: "판매 중인 게시글" },
@@ -59,12 +60,15 @@ const ProfileProducts: NextPage<{
     SALE: { 1: staticProps.SALE },
     SOLD: { 1: staticProps.SOLD },
   });
+
+  // fetch data: profile product
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "0px" });
   const { data: productData, error: productError } = useSWR<GetProfilesProductsResponse>(
     router.query.id ? `/api/users/profiles/products?id=${router.query.id}&filter=${filter}&page=${pageIndex[filter]}` : null
   );
 
+  // profile product list
   const activeTab = tabs.find((tab) => tab.value === filter)!;
   const isReachingEnd = pageIndex[filter] >= pageItems[filter]?.[Object.keys(pageItems[filter]).length]?.pages || false;
   const isLoading = !productData && !productError;
@@ -85,8 +89,32 @@ const ProfileProducts: NextPage<{
     router.push(`/products/${item.id}/resume`);
   };
 
-  const soldItem = (item: ProductItem) => {
-    console.log("soldItem", item);
+  const [soldLoading, setSoldLoading] = useState(false);
+  const soldItem = async (item: ProductItem) => {
+    if (!products) return;
+    if (!soldLoading) return;
+
+    try {
+      setSoldLoading(true);
+      const saleResponse: PostProductsSaleResponse = await (
+        await fetch(`/api/products/${item.id}/sale`, {
+          method: "POST",
+          body: JSON.stringify({ sale: false }),
+          headers: { "Content-Type": "application/json" },
+        })
+      ).json();
+      if (!saleResponse.success) {
+        const error = new Error("SaleProductError");
+        error.name = "SaleProductError";
+        console.error(error);
+        return;
+      }
+      if (!saleResponse.recordSale) {
+        router.push(`/products/${item.id}/sold`);
+      }
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   const reviewItem = (item: ProductItem) => {
@@ -126,7 +154,7 @@ const ProfileProducts: NextPage<{
   }, []);
 
   if (!profileData?.profile) {
-    return <Error statusCode={404} />;
+    return <NextError statusCode={404} />;
   }
 
   return (
@@ -156,7 +184,7 @@ const ProfileProducts: NextPage<{
                     <Product item={item} />
                   </a>
                 </Link>
-                <FeedbackProduct item={item} resumeItem={resumeItem} soldItem={soldItem} reviewItem={reviewItem} />
+                <FeedbackProduct item={item} resumeItem={resumeItem} soldItem={soldItem} reviewItem={reviewItem} isLoading={soldLoading} />
               </li>
             ))}
           </ul>

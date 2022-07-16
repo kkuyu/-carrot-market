@@ -175,7 +175,7 @@ const ProductResume: NextPage<{
               다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
             </p>
           )}
-          <Buttons type="submit" text="끌어올리기" className="mt-10" disabled={loading} onClick={submitResumeProduct} />
+          <Buttons type="submit" text="끌어올리기" className="mt-5" disabled={loading} onClick={submitResumeProduct} />
         </div>
       )}
 

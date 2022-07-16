@@ -1,7 +1,7 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import Error from "next/error";
+import NextError from "next/error";
 import { useRef, useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
@@ -16,6 +16,8 @@ import usePanel from "@libs/client/usePanel";
 import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
+import { PostProductsSaleResponse } from "@api/products/[id]/sale";
+import { PostProductsFavoriteResponse } from "@api/products/[id]/favorite";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
@@ -70,7 +72,26 @@ const ProductDetail: NextPage<{
 
   // fetch data: product detail
   const { data, error, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(router.query.id && product ? `/api/products/${router.query.id}` : null);
-  const [updateFavorite, { loading: favoriteLoading }] = useMutation(`/api/products/${router.query.id}/favorite`, {
+  const [updateFavorite, { loading: favoriteLoading }] = useMutation<PostProductsFavoriteResponse>(`/api/products/${router.query.id}/favorite`, {
+    onSuccess: (data) => {
+      boundMutate();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(`/api/products/${router.query.id}/sale`, {
+    onSuccess: (data) => {
+      if (!data.recordSale) {
+        router.push(`/products/${router.query.id}/sold`);
+      } else {
+        boundMutate();
+      }
+    },
     onError: (data) => {
       switch (data?.error?.name) {
         default:
@@ -94,13 +115,17 @@ const ProductDetail: NextPage<{
     },
   });
 
-  // click favorite
+  // toggle favorite
   const toggleFavorite = () => {
     if (!product) return;
     if (favoriteLoading) return;
+
     boundMutate((prev) => {
       let records = prev?.product.records || [];
-      prev?.isFavorite ? records.pop() : records.push({ id: 0, kind: Kind.Favorite, userId: 0 });
+      const idx = records.findIndex((record) => record.kind === Kind.Favorite && record.userId === user?.id);
+      const exists = idx !== -1;
+      if (exists) records.splice(idx, 1);
+      if (!exists) records.push({ id: 0, kind: Kind.Favorite, userId: user?.id! });
       return (
         prev && {
           ...prev,
@@ -112,13 +137,37 @@ const ProductDetail: NextPage<{
     updateFavorite({});
   };
 
+  // toggle sale
+  const toggleSale = (value: boolean) => {
+    if (!product) return;
+    if (saleLoading) return;
+    if (isSold && value === false) return;
+    if (isSale && value === true) return;
+
+    boundMutate((prev) => {
+      let records = prev?.product.records || [];
+      const idx = records.findIndex((record) => record.kind === Kind.Sale && record.userId === user?.id);
+      const exists = idx !== -1;
+      if (exists && value === false) records.splice(idx, 1);
+      if (!exists && value === true) records.push({ id: 0, kind: Kind.Sale, userId: user?.id! });
+      return (
+        prev && {
+          ...prev,
+          product: { ...prev.product, records: records },
+        }
+      );
+    }, false);
+    updateSale({ sale: value });
+  };
+
   // modal: openStatusPanel
   const openStatusPanel = () => {
+    if (!product) return;
     openPanel<ActionPanelProps>(ActionPanel, "statusPanel", {
       hasBackdrop: true,
       actions: [
-        { key: "sale", text: "판매중", onClick: () => console.log("판매중") },
-        { key: "sold", text: "판매완료", onClick: () => console.log("판매완료") },
+        { key: "sale", text: "판매중", onClick: () => toggleSale(true) },
+        { key: "sold", text: "판매완료", onClick: () => toggleSale(false) },
       ],
       cancelBtn: "닫기",
     });
@@ -231,7 +280,7 @@ const ProductDetail: NextPage<{
   }, [user?.id]);
 
   if (!product) {
-    return <Error statusCode={404} />;
+    return <NextError statusCode={404} />;
   }
 
   return (
@@ -265,7 +314,7 @@ const ProductDetail: NextPage<{
               <span className="relative inline-block min-w-[100px]">
                 <strong className="sr-only">상태변경</strong>
                 <Buttons text={isSale ? "판매중" : isSold ? "판매완료" : ""} size="sm" status="default" className="pr-8 !text-left" onClick={openStatusPanel} />
-                <svg className="absolute top-1/2 right-2.5 w-4 h-4 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="absolute top-1/2 right-2.5 w-4 h-4 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               </span>

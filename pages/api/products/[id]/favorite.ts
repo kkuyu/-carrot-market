@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind } from "@prisma/client";
+import { Kind, Record } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,6 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostProductsFavoriteResponse {
   success: boolean;
+  recordFavorite: Record | null;
   error?: {
     timestamp: Date;
     name: string;
@@ -54,6 +55,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
+    let recordFavorite = null;
     if (exists) {
       // delete
       await client.record.delete({
@@ -63,7 +65,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
     } else {
       // create
-      await client.record.create({
+      recordFavorite = await client.record.create({
         data: {
           user: {
             connect: {
@@ -83,6 +85,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // result
     const result: PostProductsFavoriteResponse = {
       success: true,
+      recordFavorite,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

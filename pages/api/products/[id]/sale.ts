@@ -1,13 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Product } from "@prisma/client";
+import { Kind, Record } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductsUpdateResponse {
+export interface PostProductsSaleResponse {
   success: boolean;
-  product: Product;
+  recordSale: Record | null;
   error?: {
     timestamp: Date;
     name: string;
@@ -18,11 +18,16 @@ export interface PostProductsUpdateResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { photos = "", name, category, price, description, resume } = req.body;
+    const { sale, id: _idByBody } = req.body;
     const { user } = req.session;
 
     // request valid
     if (!_id) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (typeof sale !== "boolean") {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -33,6 +38,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const product = await client.product.findUnique({
       where: {
         id,
+      },
+      select: {
+        id: true,
+        userId: true,
       },
     });
     if (!product) {
@@ -46,24 +55,49 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    const updateProduct = await client.product.update({
+    // check current sale status
+    const exists = await client.record.findFirst({
       where: {
-        id: product.id,
+        userId: user?.id,
+        productId: product.id,
+        kind: Kind.Sale,
       },
-      data: {
-        photos,
-        name,
-        category,
-        price,
-        description,
-        ...(typeof resume === "boolean" && resume === true ? { resumeAt: new Date(), resumeCount: product.resumeCount + 1 } : {}),
+      select: {
+        id: true,
       },
     });
 
+    let recordSale = null;
+    if (exists && sale === false) {
+      // delete
+      await client.record.delete({
+        where: {
+          id: exists.id,
+        },
+      });
+    } else if (!exists && sale === true) {
+      // create
+      recordSale = await client.record.create({
+        data: {
+          user: {
+            connect: {
+              id: user?.id,
+            },
+          },
+          product: {
+            connect: {
+              id: product.id,
+            },
+          },
+          kind: Kind.Sale,
+        },
+      });
+    }
+
     // result
-    const result: PostProductsUpdateResponse = {
+    const result: PostProductsSaleResponse = {
       success: true,
-      product: updateProduct,
+      recordSale,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
