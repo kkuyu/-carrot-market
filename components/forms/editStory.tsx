@@ -14,7 +14,7 @@ export interface EditStoryTypes {
   content: string;
 }
 
-interface EditStoryProps {
+interface EditStoryProps extends React.HTMLAttributes<HTMLFormElement> {
   formId: string;
   formData: UseFormReturn<EditStoryTypes, object>;
   onValid: (validForm: EditStoryTypes) => void;
@@ -23,7 +23,7 @@ interface EditStoryProps {
   emdPosNm: string;
 }
 
-const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm }: EditStoryProps) => {
+const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm, ...rest }: EditStoryProps) => {
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
 
   const fileOptions = {
@@ -39,7 +39,7 @@ const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm }
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files

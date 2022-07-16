@@ -7,18 +7,18 @@ export interface VerifyTokenTypes {
   token: string;
 }
 
-interface VerifyTokenProps {
+interface VerifyTokenProps extends React.HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<VerifyTokenTypes, object>;
   onValid: (validForm: VerifyTokenTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const VerifyToken = ({ formData, onValid, isSuccess, isLoading }: VerifyTokenProps) => {
+const VerifyToken = ({ formData, onValid, isSuccess, isLoading, ...rest }: VerifyTokenProps) => {
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
       <div className="space-y-1">
         <Inputs
           register={register("token", {

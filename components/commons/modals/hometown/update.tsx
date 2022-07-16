@@ -224,7 +224,7 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
                       status={user?.emdType === key ? "primary" : "default"}
                       text={text}
                       onClick={selectItem}
-                      className={`${key}-select-button text-left`}
+                      className={`${key}-select-button !text-left`}
                       aria-label={`${text} ${user?.emdType === key ? "선택 됨" : "선택"}`}
                     />
                     <Buttons

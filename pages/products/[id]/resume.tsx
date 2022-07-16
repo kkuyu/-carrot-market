@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 // @libs
@@ -17,13 +17,8 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @components
 import Buttons from "@components/buttons";
-import Inputs from "@components/inputs";
-import Labels from "@components/labels";
 import Product from "@components/cards/product";
-
-interface ResumeProductTypes {
-  price: number;
-}
+import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
 
 const ProductResume: NextPage<{
   staticProps: {
@@ -36,28 +31,28 @@ const ProductResume: NextPage<{
   const { user } = useUser();
 
   const [state, setState] = useState<"HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null>(null);
-  const discounts = staticProps.product.price > 10000 ? ["5%", "10%", "15%"] : staticProps.product.price >= 4000 ? ["1000원", "2000원", "3000원"] : [];
 
   const today = new Date();
   const targetDate = (() => {
-    const date = new Date(staticProps.product.resumeAt);
-    date.setDate(date.getDate() + (2 + staticProps.product.resumeCount));
-    return staticProps.product.resumeCount > 15 ? null : date;
-  })();
-  const nextTargetDate = (() => {
-    if (!targetDate) return null;
-    if (staticProps.product.resumeCount + 1 > 15) null;
-    const date = new Date(targetDate);
-    date.setDate(date.getDate() + (2 + staticProps.product.resumeCount));
-    return date;
+    let target: Date | null = null;
+    let nextTarget: Date | null = null;
+    if (staticProps.product.resumeCount > 15) {
+      target = new Date(staticProps.product.resumeAt);
+      target.setDate(target.getDate() + (2 + staticProps.product.resumeCount));
+    }
+    if (target && staticProps.product.resumeCount + 1 > 15) {
+      nextTarget = new Date(target);
+      nextTarget.setDate(nextTarget.getDate() + (2 + staticProps.product.resumeCount));
+    }
+    return [target, nextTarget];
   })();
   const diffTime = (() => {
-    const target = !targetDate ? "" : getDiffTimeStr(today.getTime(), targetDate.getTime(), " 후");
-    const nextTarget = !nextTargetDate ? "" : getDiffTimeStr(today.getTime(), nextTargetDate.getTime() + 1000 * 60 * 60 * 24, " 후");
+    const target = !targetDate[0] ? "" : getDiffTimeStr(today.getTime(), targetDate[0].getTime(), " 후");
+    const nextTarget = !targetDate[1] ? "" : getDiffTimeStr(today.getTime(), targetDate[1].getTime() + 1000 * 60 * 60 * 24, " 후");
     return [target, nextTarget];
   })();
 
-  const { register, handleSubmit, formState, getValues, setValue } = useForm<ResumeProductTypes>({
+  const formData = useForm<ResumeProductTypes>({
     defaultValues: {
       price: staticProps.product.price,
     },
@@ -76,27 +71,22 @@ const ProductResume: NextPage<{
     },
   });
 
-  const discountPrice = (discount: string) => {
-    if (/%$/.test(discount)) setValue("price", staticProps.product.price - staticProps.product.price * (parseInt(discount) / 100));
-    if (/원$/.test(discount)) setValue("price", staticProps.product.price - parseInt(discount));
-  };
-
   const submitResumeProduct = () => {
     if (loading) return;
     editProduct({
       resume: true,
-      price: getValues("price"),
+      price: formData.getValues("price"),
     });
   };
 
   useEffect(() => {
-    if (targetDate === null) {
+    if (targetDate[0] === null) {
       setState("MaxCount");
       return;
     }
 
-    if (today > targetDate) setState(staticProps.product.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct");
-    if (today < targetDate) setState("HoldOff");
+    if (today > targetDate[0]) setState(staticProps.product.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct");
+    if (today < targetDate[0]) setState("HoldOff");
 
     setLayout(() => ({
       title: "끌어올리기",
@@ -170,7 +160,7 @@ const ProductResume: NextPage<{
       {state === "ReadyFreeProduct" && (
         <div className="mt-5 pt-5 border-t">
           <strong className="text-lg">지금 끌어올리시겠어요?</strong>
-          {nextTargetDate && (
+          {targetDate[1] && (
             <p className="mt-5">
               다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
             </p>
@@ -187,48 +177,7 @@ const ProductResume: NextPage<{
             <br />
             가격을 낮춰보세요
           </strong>
-          <form onSubmit={handleSubmit(submitResumeProduct)} noValidate className="mt-5 space-y-5">
-            {/* 가격 */}
-            <div className="space-y-1">
-              <Labels text="가격" htmlFor="price" className="sr-only" />
-              <Inputs
-                register={register("price", {
-                  required: {
-                    value: true,
-                    message: "가격을 입력해주세요",
-                  },
-                  valueAsNumber: true,
-                })}
-                required
-                placeholder=""
-                name="price"
-                type="number"
-                kind="price"
-              />
-              <span className="empty:hidden invalid">{formState.errors.price?.message}</span>
-              {!Boolean(discounts.length) && (
-                <div className="!mt-3">
-                  <span className="text-sm text-gray-500">0원을 입력하면 나눔을 할 수 있어요</span>
-                </div>
-              )}
-              {Boolean(discounts.length) && (
-                <div className="!mt-3">
-                  {discounts.map((discount) => (
-                    <button type="button" key={discount} className="mr-1.5 min-w-[3.5rem] px-2.5 py-1 text-sm border border-gray-300 rounded-xl" onClick={() => discountPrice(discount)}>
-                      {discount}
-                    </button>
-                  ))}
-                  <span className="text-sm text-gray-500">할인</span>
-                </div>
-              )}
-            </div>
-            {nextTargetDate && (
-              <p>
-                다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
-              </p>
-            )}
-            <Buttons type="submit" text="끌어올리기" disabled={loading} />
-          </form>
+          <ResumeProduct formData={formData} onValid={submitResumeProduct} isLoading={loading} originalPrice={staticProps.product.price} targetDate={targetDate} diffTime={diffTime} />
         </div>
       )}
     </div>

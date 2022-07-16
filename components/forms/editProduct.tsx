@@ -17,7 +17,7 @@ export interface EditProductTypes {
   description: string;
 }
 
-interface EditProductProps {
+interface EditProductProps extends React.HTMLAttributes<HTMLFormElement> {
   formId: string;
   formData: UseFormReturn<EditProductTypes, object>;
   onValid: (validForm: EditProductTypes) => void;
@@ -26,7 +26,7 @@ interface EditProductProps {
   emdPosNm: string;
 }
 
-const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm }: EditProductProps) => {
+const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm, ...rest }: EditProductProps) => {
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
 
   const fileOptions = {
@@ -42,7 +42,7 @@ const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files

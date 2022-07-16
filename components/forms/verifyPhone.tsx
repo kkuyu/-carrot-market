@@ -8,18 +8,18 @@ export interface VerifyPhoneTypes {
   targetEmail?: string;
 }
 
-interface VerifyPhoneProps {
+interface VerifyPhoneProps extends React.HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<VerifyPhoneTypes, object>;
   onValid: (validForm: VerifyPhoneTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const VerifyPhone = ({ formData, onValid, isSuccess, isLoading }: VerifyPhoneProps) => {
+const VerifyPhone = ({ formData, onValid, isSuccess, isLoading, ...rest }: VerifyPhoneProps) => {
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
       <div className="space-y-1">
         <Inputs
           register={register("phone", {

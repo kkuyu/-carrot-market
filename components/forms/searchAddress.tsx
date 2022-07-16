@@ -7,20 +7,19 @@ export interface SearchAddressTypes {
   keyword: string;
 }
 
-interface SearchAddressProps {
+interface SearchAddressProps extends React.HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<SearchAddressTypes, object>;
   onValid: (validForm: SearchAddressTypes) => void;
   onReset: () => void;
-  stickyClass?: string;
   keyword: string;
 }
 
-const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }: SearchAddressProps) => {
+const SearchAddress = ({ formData, onValid, onReset, keyword, ...rest }: SearchAddressProps) => {
   const { register, handleSubmit } = formData;
 
   return (
-    <div className={`-mx-5 px-5 pt-5 pb-3 bg-white ${stickyClass ? "sticky " + stickyClass : ""}`}>
-      <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
+    <>
+      <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
         <div className="space-y-1">
           <Inputs
             register={register("keyword", {})}
@@ -49,7 +48,7 @@ const SearchAddress = ({ formData, onValid, onReset, stickyClass = "", keyword }
       <div className="mt-5">
         <strong>{Boolean(keyword.length) ? `'${keyword}' 검색 결과` : `근처 동네`}</strong>
       </div>
-    </div>
+    </>
   );
 };
 

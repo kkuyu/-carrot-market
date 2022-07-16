@@ -15,7 +15,7 @@ export interface EditProfileTypes {
   concerns?: ProfilesConcernEnum[];
 }
 
-interface EditProfileProps {
+interface EditProfileProps extends React.HTMLAttributes<HTMLFormElement> {
   formId: string;
   formData: UseFormReturn<EditProfileTypes, object>;
   onValid: (validForm: EditProfileTypes) => void;
@@ -24,7 +24,7 @@ interface EditProfileProps {
   isLoading?: boolean;
 }
 
-const EditProfile = ({ formId, formData, onValid, isDummyProfile, isSuccess, isLoading }: EditProfileProps) => {
+const EditProfile = ({ formId, formData, onValid, isDummyProfile, isSuccess, isLoading, ...rest }: EditProfileProps) => {
   const { register, handleSubmit, formState, watch, setValue } = formData;
 
   const fileOptions = {
@@ -88,7 +88,7 @@ const EditProfile = ({ formId, formData, onValid, isDummyProfile, isSuccess, isL
   }
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files register={register("photos")} name="photos" fileOptions={fileOptions} currentFiles={watch("photos")} changeFiles={(value) => setValue("photos", value)} accept="image/*" />

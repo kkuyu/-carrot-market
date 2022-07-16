@@ -114,15 +114,16 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   return (
     <section className="container pb-5">
       {/* 읍면동 검색 폼 */}
-      <SearchAddress
-        formData={searchAddressForm}
-        onValid={(data: SearchAddressTypes) => {
-          setKeyword(data.keyword);
-        }}
-        onReset={resetForm}
-        stickyClass="top-0 left-0"
-        keyword={keyword}
-      />
+      <div className="sticky top-0 left-0 -mx-5 px-5 pt-5 pb-3 bg-white">
+        <SearchAddress
+          formData={searchAddressForm}
+          onValid={(data: SearchAddressTypes) => {
+            setKeyword(data.keyword);
+          }}
+          onReset={resetForm}
+          keyword={keyword}
+        />
+      </div>
 
       {/* 키워드 검색 결과 */}
       {Boolean(keyword.length) && (

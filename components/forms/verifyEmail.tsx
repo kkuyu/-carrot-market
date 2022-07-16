@@ -7,18 +7,18 @@ export interface VerifyEmailTypes {
   email: string;
 }
 
-interface VerifyEmailProps {
+interface VerifyEmailProps extends React.HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<VerifyEmailTypes, object>;
   onValid: (validForm: VerifyEmailTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const VerifyEmail = ({ formData, onValid, isSuccess, isLoading }: VerifyEmailProps) => {
+const VerifyEmail = ({ formData, onValid, isSuccess, isLoading, ...rest }: VerifyEmailProps) => {
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4">
+    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
       <div className="space-y-1">
         <Inputs
           register={register("email", {
