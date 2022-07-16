@@ -18,10 +18,10 @@ enum EmdType {
 }
 
 model User {
-  id              Int         @id @default(autoincrement())
+  id              Int           @id @default(autoincrement())
   name            String
-  phone           String      @unique
-  email           String?     @unique
+  phone           String        @unique
+  email           String?       @unique
   avatar          String?
   concerns        String?
   emdType         EmdType
@@ -35,16 +35,18 @@ model User {
   SUB_emdPosDx    Float?
   SUB_emdPosX     Float?
   SUB_emdPosY     Float?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
   tokens          Token[]
   products        Product[]
+  chats           Chat[]
+  chatMessages    ChatMessage[]
   stories         Story[]
   comments        Comment[]
   curiosities     Curiosity[]
   emotions        Emotion[]
-  writtenReviews  Review[]    @relation(name: "writtenReviews")
-  receivedReviews Review[]    @relation(name: "receivedReviews")
+  writtenReviews  Review[]      @relation(name: "writtenReviews")
+  receivedReviews Review[]      @relation(name: "receivedReviews")
   records         Record[]
   streams         Stream[]
   messages        Message[]
@@ -76,7 +78,29 @@ model Product {
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
+  chats       Chat[]
   records     Record[]
+}
+
+model Chat {
+  id           Int           @id @default(autoincrement())
+  users        User[]
+  product      Product?      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId    Int?
+  chatMessages ChatMessage[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt()
+}
+
+model ChatMessage {
+  id        Int      @id @default(autoincrement())
+  text      String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
+  chatId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
 }
 
 model Story {

@@ -15,7 +15,7 @@ export type HeaderUtils = typeof HeaderUtils[keyof typeof HeaderUtils];
 
 export const NavBarUtils = {
   Home: "home",
-  Inbox: "inbox",
+  Chat: "chat",
   Profile: "profile",
   Story: "story",
   Streams: "streams",

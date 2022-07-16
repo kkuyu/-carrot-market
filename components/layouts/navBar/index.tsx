@@ -38,10 +38,10 @@ const NavBar = ({}: NavBarProps) => {
             </a>
           </Link>
         );
-      case "inbox":
+      case "chat":
         return (
-          <Link href="/inbox">
-            <a className={`${classNames.default} ${router.pathname === "/inbox" ? classNames.active : classNames.inactive}`}>
+          <Link href="/chats">
+            <a className={`${classNames.default} ${router.pathname === "/chats" ? classNames.active : classNames.inactive}`}>
               <svg className="m-auto w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path
                   strokeLinecap="round"
@@ -112,7 +112,7 @@ const NavBar = ({}: NavBarProps) => {
         <div className="-mb-1 flex w-full h-full">
           {navBarUtils.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
           {navBarUtils.includes(NavBarUtils["Story"]) && <>{getUtils(NavBarUtils["Story"])}</>}
-          {navBarUtils.includes(NavBarUtils["Inbox"]) && <>{getUtils(NavBarUtils["Inbox"])}</>}
+          {navBarUtils.includes(NavBarUtils["Chat"]) && <>{getUtils(NavBarUtils["Chat"])}</>}
           {navBarUtils.includes(NavBarUtils["Streams"]) && <>{getUtils(NavBarUtils["Streams"])}</>}
           {navBarUtils.includes(NavBarUtils["Profile"]) && <>{getUtils(NavBarUtils["Profile"])}</>}
         </div>

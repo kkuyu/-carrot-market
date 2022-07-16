@@ -53,7 +53,7 @@ const ProductHome: NextPage = () => {
         headerUtils: ["address", "search"],
       },
       navBar: {
-        navBarUtils: ["home", "inbox", "profile", "story", "streams"],
+        navBarUtils: ["home", "chat", "profile", "story", "streams"],
       },
     }));
   }, []);

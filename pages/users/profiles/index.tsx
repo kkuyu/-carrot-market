@@ -24,7 +24,7 @@ const ProfileHome: NextPage = () => {
         headerUtils: ["title"],
       },
       navBar: {
-        navBarUtils: ["home", "inbox", "profile", "story", "streams"],
+        navBarUtils: ["home", "chat", "profile", "story", "streams"],
       },
     }));
   }, []);
