@@ -18,6 +18,8 @@ interface CommentProps {
 }
 
 const Comment = ({ item }: CommentProps) => {
+  if (!item) return null;
+
   const today = new Date();
   const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
   const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";

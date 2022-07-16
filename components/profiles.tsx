@@ -50,8 +50,8 @@ const Profiles = ({ user, uuid, emdPosNm, diffTime, size = "base" }: ProfilesPro
           </svg>
         )}
       </div>
-      <div className="grow pl-3">
-        <strong className={`block font-semibold ${classNames[size].name}`}>{user?.name}</strong>
+      <div className="grow shrink basis-auto min-w-0 pl-3">
+        <strong className={`block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].name}`}>{user?.name}</strong>
         <span className={`block text-gray-500 ${classNames[size].extra}`}>{[emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
       </div>
       {/* <div>todo: 매너온도</div> */}

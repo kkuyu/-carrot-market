@@ -13,6 +13,8 @@ interface ProductProps {
 }
 
 const Product = ({ item, size = "base" }: ProductProps) => {
+  if (!item) return null;
+
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.resumeAt).getTime(), today.getTime());
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
@@ -24,7 +26,7 @@ const Product = ({ item, size = "base" }: ProductProps) => {
   if (size === "tiny") {
     return (
       <div className="flex items-start">
-        <div className="relative flex-none w-14 border border-gray-200 bg-slate-300 overflow-hidden rounded-md">
+        <div className="relative flex-none w-11 border border-gray-200 bg-slate-300 overflow-hidden rounded-md">
           <div className="pb-[100%]" />
           {thumbnailId ? (
             <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${thumbnailId}/public`} alt="" layout="fill" objectFit="cover" />
@@ -45,8 +47,11 @@ const Product = ({ item, size = "base" }: ProductProps) => {
             </svg>
           )}
         </div>
-        <div className="grow pl-3">
-          <strong className="block text-sm font-normal">{item.name}</strong>
+        <div className="grow shrink basis-auto min-w-0 pl-2">
+          <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">
+            {isSold && <span className="text-gray-500">판매완료 </span>}
+            {item.name}
+          </strong>
           <div className="block">
             <span className="text-sm font-semibold">₩{item.price}</span>
           </div>

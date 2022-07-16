@@ -10,6 +10,8 @@ interface StoryProps {
 }
 
 const Story = ({ item }: StoryProps) => {
+  if (!item) return null;
+
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
   const category = getCategory("story", item?.category);

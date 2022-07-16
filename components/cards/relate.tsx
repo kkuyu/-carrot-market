@@ -9,6 +9,8 @@ interface RelateProps {
 }
 
 const Relate = ({ item }: RelateProps) => {
+  if (!item) return null;
+
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
 
   return (
