@@ -3,30 +3,28 @@ import Image from "next/image";
 import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetChatsResponse } from "@api/chats";
-import { GetChatsByProductsResponse } from "@api/chats/products/[id]";
 
-type ChatItem = GetChatsResponse["chats"][0] | GetChatsByProductsResponse["chats"][0];
+export type ChatItem = GetChatsResponse["chats"][0];
 
 interface ChatProps {
   item: ChatItem;
   users: ChatItem["users"];
+  type?: "message" | "timestamp";
   usersThumbnail?: string;
   productThumbnail?: string;
 }
 
-const Chat = ({ item, users, usersThumbnail = "", productThumbnail = "" }: ChatProps) => {
+const Chat = ({ item, users, type = "message", usersThumbnail = "", productThumbnail = "" }: ChatProps) => {
   if (!item) return null;
 
   const today = new Date();
   const createdDate = new Date(item.chatMessages[0].createdAt);
 
-  const diffTime =
-    today.toISOString().replace(/T.*$/, "") === (item.createdAt + "").replace(/T.*$/, "")
-      ? createdDate.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })
-      : getDiffTimeStr(createdDate.getTime(), today.getTime());
+  const timeStr = createdDate.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
+  const diffTime = getDiffTimeStr(createdDate.getTime(), today.getTime(), { defaultValue: timeStr, diffLabel: "일" });
 
   return (
-    <div className="flex w-full items-center gap-3">
+    <div className="flex w-full items-center text-left gap-3">
       <div className="relative flex-none w-14 h-14 bg-slate-300 border border-gray-300 overflow-hidden rounded-full">
         {usersThumbnail ? (
           <>
@@ -47,9 +45,10 @@ const Chat = ({ item, users, usersThumbnail = "", productThumbnail = "" }: ChatP
       <div className="grow shrink basis-auto min-w-0">
         <div className="flex items-center">
           <strong className="overflow-hidden whitespace-nowrap overflow-ellipsis">{users.map((user) => user.name).join(", ")}</strong>
-          <span className="flex-none pl-1.5 text-sm text-gray-500">{diffTime}</span>
+          {type === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{diffTime}</span>}
         </div>
-        <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>
+        {type === "message" && <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>}
+        {type === "timestamp" && <span className="block text-sm text-gray-500">{diffTime}</span>}
       </div>
       {productThumbnail && (
         <div className="relative flex-none w-10 h-10 bg-slate-300 overflow-hidden rounded-md">

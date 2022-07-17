@@ -35,27 +35,32 @@ export const getCategory = (type: "product" | "story", categoryKey: string) => {
   return null;
 };
 
-export const getDiffTimeStr = (originTime: number, currentTime: number, suffixStr: string = " 전") => {
-  let resultStr = "";
+type timeLabel = "분" | "시간" | "일" | "개월" | "년";
+
+export const getDiffTimeStr = (originTime: number, currentTime: number, config?: { defaultValue?: string; suffixStr?: string; diffLabel?: timeLabel }) => {
+  let resultStr = config?.defaultValue || `방금${config?.suffixStr || " 전"}`;
 
   const diffTime = currentTime - originTime;
   const times = [
-    { ms: 1000 * 60, label: "분" },
-    { ms: 1000 * 60 * 60, label: "시간" },
-    { ms: 1000 * 60 * 60 * 24, label: "일" },
-    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" },
-    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" },
+    { ms: 1000 * 60, label: "분" as timeLabel },
+    { ms: 1000 * 60 * 60, label: "시간" as timeLabel },
+    { ms: 1000 * 60 * 60 * 24, label: "일" as timeLabel },
+    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" as timeLabel },
+    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" as timeLabel },
   ].reverse();
 
   for (let index = 0; index < times.length; index++) {
     const diff = Math.floor(diffTime / times[index].ms);
     if (diff > 0) {
-      resultStr = `${diff}${times[index].label}${suffixStr}`;
+      resultStr = `${diff}${times[index].label}${config?.suffixStr || " 전"}`;
+      break;
+    }
+    if (times[index].label === config?.diffLabel) {
       break;
     }
   }
 
-  return resultStr || `방금${suffixStr}`;
+  return resultStr;
 };
 
 export type FileOptions = {

@@ -19,12 +19,9 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsFavoriteResponse } from "@api/products/[id]/favorite";
 import { PostChatsResponse } from "@api/chats";
-import { GetChatsByProductsResponse } from "@api/chats/products/[id]";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
-import Chat from "@components/cards/chat";
 import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
@@ -39,7 +36,7 @@ const ProductDetail: NextPage<{
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user, currentAddr } = useUser();
-  const { openModal, closeModal } = useModal();
+  const { openModal } = useModal();
   const { openPanel } = usePanel();
 
   // view model
@@ -91,7 +88,7 @@ const ProductDetail: NextPage<{
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(`/api/products/${router.query.id}/sale`, {
     onSuccess: (data) => {
       if (!data.recordSale) {
-        router.push(`/products/${router.query.id}/sold`);
+        router.push(`/products/${router.query.id}/purchase`);
       } else {
         boundMutate();
       }
@@ -106,7 +103,6 @@ const ProductDetail: NextPage<{
   });
 
   // fetch data: chat
-  const { data: chatData, error: chatError } = useSWR<GetChatsByProductsResponse>(router.query.id && product ? `/api/chats/products/${router.query.id}` : null);
   const [createChat, { loading: createChatLoading }] = useMutation<PostChatsResponse>(`/api/chats`, {
     onSuccess: (data) => {
       router.push(`/chats/${data.chat.id}`);
@@ -186,46 +182,6 @@ const ProductDetail: NextPage<{
     createChat({
       userIds: [user.id, product.user.id],
       productId: product.id,
-    });
-  };
-
-  const openChatModal = () => {
-    if (!product) return;
-    if (!user || user.id === -1) return;
-    openModal<LayerModalProps>(LayerModal, "chatModal", {
-      headerType: "default",
-      title: "대화 중인 채팅방",
-      contents: (
-        <div>
-          {/* 채팅: List */}
-          {Boolean(chatData?.chats.length) && (
-            <ul className="divide-y">
-              {chatData?.chats.map((item) => {
-                const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
-                const usersThumbnail = users.length === 1 ? users[0].avatar || "" : "";
-                const productThumbnail = product.photos.length ? product.photos.split(",")[0] : "";
-                const onClick = async () => {
-                  await router.push(`/chats/${item.id}`);
-                  closeModal(LayerModal, "chatModal");
-                };
-                return (
-                  <li key={item.id}>
-                    <button type="button" className="block w-full px-5 py-3 text-left" onClick={onClick}>
-                      <Chat item={item} users={users} usersThumbnail={usersThumbnail} productThumbnail={productThumbnail} />
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-          {/* 채팅: Empty */}
-          {!Boolean(chatData?.chats.length) && (
-            <div className="py-10 text-center">
-              <p className="text-gray-500">채팅한 이웃이 없어요</p>
-            </div>
-          )}
-        </div>
-      ),
     });
   };
 
@@ -445,7 +401,7 @@ const ProductDetail: NextPage<{
                 </Link>
               )}
               {viewModel.mode === "public" && <Buttons tag="button" text="채팅하기" size="sm" onClick={user?.id === -1 ? openSignUpModal : goChat} />}
-              {viewModel.mode === "private" && <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={openChatModal} />}
+              {viewModel.mode === "private" && <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${product.id}/chats`)} />}
             </div>
           </div>
         </div>

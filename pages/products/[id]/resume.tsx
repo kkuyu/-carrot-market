@@ -36,19 +36,19 @@ const ProductResume: NextPage<{
   const targetDate = (() => {
     let target: Date | null = null;
     let nextTarget: Date | null = null;
-    if (staticProps.product.resumeCount > 15) {
+    if (staticProps.product.resumeCount < 15) {
       target = new Date(staticProps.product.resumeAt);
       target.setDate(target.getDate() + (2 + staticProps.product.resumeCount));
     }
-    if (target && staticProps.product.resumeCount + 1 > 15) {
+    if (target && staticProps.product.resumeCount + 1 < 15) {
       nextTarget = new Date(target);
       nextTarget.setDate(nextTarget.getDate() + (2 + staticProps.product.resumeCount));
     }
     return [target, nextTarget];
   })();
   const diffTime = (() => {
-    const target = !targetDate[0] ? "" : getDiffTimeStr(today.getTime(), targetDate[0].getTime(), " 후");
-    const nextTarget = !targetDate[1] ? "" : getDiffTimeStr(today.getTime(), targetDate[1].getTime() + 1000 * 60 * 60 * 24, " 후");
+    const target = !targetDate[0] ? "" : getDiffTimeStr(today.getTime(), targetDate[0].getTime(), { suffixStr: " 후" });
+    const nextTarget = !targetDate[1] ? "" : getDiffTimeStr(today.getTime(), targetDate[1].getTime() + 1000 * 60 * 60 * 24, { suffixStr: " 후" });
     return [target, nextTarget];
   })();
 
@@ -104,13 +104,17 @@ const ProductResume: NextPage<{
   }
 
   return (
-    <div className="container pt-5 pb-5">
+    <div className="container pb-5">
       {/* 제품정보 */}
-      <Product item={staticProps.product} size="tiny" />
+      <Link href={`/products/${staticProps.product.id}`}>
+        <a className="block -mx-5 px-5 py-3 bg-gray-200">
+          <Product item={staticProps.product} size="tiny" />
+        </a>
+      </Link>
 
       {/* 끌어올리기: HoldOff */}
       {state === "HoldOff" && (
-        <div className="mt-5 pt-5 border-t">
+        <div className="mt-5">
           <strong className="text-lg">
             <span className="text-orange-500">{diffTime[0]}에</span>
             <br />
@@ -133,7 +137,7 @@ const ProductResume: NextPage<{
 
       {/* 끌어올리기: MaxCount */}
       {state === "MaxCount" && (
-        <div className="mt-5 pt-5 border-t">
+        <div className="mt-5">
           <strong className="text-lg">
             <span className="text-orange-500">게시글당 최대 15번</span> 끌어올릴 수 있어요
             <br />
@@ -158,7 +162,7 @@ const ProductResume: NextPage<{
 
       {/* 끌어올리기: ReadyFreeProduct */}
       {state === "ReadyFreeProduct" && (
-        <div className="mt-5 pt-5 border-t">
+        <div className="mt-5">
           <strong className="text-lg">지금 끌어올리시겠어요?</strong>
           {targetDate[1] && (
             <p className="mt-5">
@@ -171,7 +175,7 @@ const ProductResume: NextPage<{
 
       {/* 끌어올리기: ReadyPayProduct */}
       {state === "ReadyPayProduct" && (
-        <div className="mt-5 pt-5 border-t">
+        <div className="mt-5">
           <strong className="text-lg">
             {user?.name}님, 끌어올리기 전에
             <br />
@@ -222,13 +226,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     return {
       redirect: {
         permanent: false,
-        destination: `/`,
+        destination: `/products/${productId}`,
       },
     };
   }
 
   // invalid product: not my product
-  if (product.userId !== ssrUser?.profile?.id) {
+  // redirect: /products/id
+  if (product.userId !== ssrUser?.profile?.id || ssrUser.dummyProfile) {
     return {
       redirect: {
         permanent: false,

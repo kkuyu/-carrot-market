@@ -96,13 +96,13 @@ const ChatDetail: NextPage = () => {
           <Link href={`/products/${data.chat.product.id}`}>
             <a>
               <Product item={data.chat.product} size="tiny" />
-              <div className="mt-2">
-                <button type="button" className="px-2 py-1 text-sm font-semibold border border-gray-300 rounded-md">
-                  후기 보내기 or 보낸 후기 보기
-                </button>
-              </div>
             </a>
           </Link>
+          <div className="mt-2">
+            <button type="button" className="px-2 py-1 text-sm font-semibold border border-gray-300 rounded-md">
+              후기 보내기 or 보낸 후기 보기
+            </button>
+          </div>
         </div>
       )}
       <div className="mt-2 space-y-2.5">

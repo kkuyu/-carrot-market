@@ -10,7 +10,7 @@ export interface GetChatsResponse {
   chats: (Chat & {
     users: Pick<User, "id" | "name" | "avatar">[];
     chatMessages: ChatMessage[];
-    product: Pick<Product, "id" | "name" | "photos"> | null;
+    product?: Pick<Product, "id" | "name" | "photos"> | null;
   })[];
   pages: number;
   error?: {
@@ -33,7 +33,7 @@ export interface PostChatsResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
     try {
-      const { page: _page } = req.query;
+      const { page: _page, productId: _productId } = req.query;
       const { user } = req.session;
 
       // request valid
@@ -64,6 +64,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: user?.id,
             },
           },
+          ...(_productId ? { productId: +_productId.toString() } : {}),
         },
       });
       const chats = await client.chat.findMany({
@@ -86,13 +87,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               updatedAt: "desc",
             },
           },
-          product: {
-            select: {
-              id: true,
-              name: true,
-              photos: true,
-            },
-          },
+          ...(_productId
+            ? {}
+            : {
+                product: {
+                  select: { id: true, name: true, photos: true },
+                },
+              }),
         },
         where: {
           users: {
@@ -100,6 +101,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: user?.id,
             },
           },
+          ...(_productId ? { productId: +_productId.toString() } : {}),
         },
       });
 
