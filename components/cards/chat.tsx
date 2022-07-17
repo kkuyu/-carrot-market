@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
 // @api
@@ -15,6 +16,12 @@ interface ChatProps {
 }
 
 const Chat = ({ item, users, type = "message", usersThumbnail = "", productThumbnail = "" }: ChatProps) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!item) return null;
 
   const today = new Date();
@@ -45,10 +52,10 @@ const Chat = ({ item, users, type = "message", usersThumbnail = "", productThumb
       <div className="grow shrink basis-auto min-w-0">
         <div className="flex items-center">
           <strong className="overflow-hidden whitespace-nowrap overflow-ellipsis">{users.map((user) => user.name).join(", ")}</strong>
-          {type === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{diffTime}</span>}
+          {type === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{mounted ? diffTime : null}</span>}
         </div>
         {type === "message" && <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>}
-        {type === "timestamp" && <span className="block text-sm text-gray-500">{diffTime}</span>}
+        {type === "timestamp" && <span className="block text-sm text-gray-500">{mounted ? diffTime : null}</span>}
       </div>
       {productThumbnail && (
         <div className="relative flex-none w-10 h-10 bg-slate-300 overflow-hidden rounded-md">

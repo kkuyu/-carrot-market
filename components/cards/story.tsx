@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 // @libs
 import { getCategory, getDiffTimeStr } from "@libs/utils";
 // @api
@@ -10,6 +11,12 @@ interface StoryProps {
 }
 
 const Story = ({ item }: StoryProps) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!item) return null;
 
   const today = new Date();
@@ -24,7 +31,7 @@ const Story = ({ item }: StoryProps) => {
       </div>
       <div className="mt-2 flex justify-between">
         <span className="text-sm text-gray-500">{[item?.user?.name, item?.emdPosNm].filter((v) => !!v).join(" · ")}</span>
-        <span className="text-sm text-gray-500">{diffTime}</span>
+        <span className="text-sm text-gray-500">{mounted ? diffTime : null}</span>
       </div>
     </div>
   );

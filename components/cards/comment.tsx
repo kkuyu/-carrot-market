@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { useRef, useEffect } from "react";
+import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
 // @components
@@ -18,6 +18,12 @@ interface CommentProps {
 }
 
 const Comment = ({ item }: CommentProps) => {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!item) return null;
 
   const today = new Date();
@@ -28,7 +34,7 @@ const Comment = ({ item }: CommentProps) => {
     <div className="relative">
       <Link href={`/users/profiles/${item?.user?.id}`}>
         <a>
-          <Profiles user={item?.user} emdPosNm={item.emdPosNm} diffTime={diffTime} size="sm" />
+          <Profiles user={item?.user} emdPosNm={item.emdPosNm} diffTime={mounted ? diffTime : ""} size="sm" />
         </a>
       </Link>
       <div className="pl-14">
