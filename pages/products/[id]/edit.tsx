@@ -182,7 +182,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     return {
       redirect: {
         permanent: false,
-        destination: `/`,
+        destination: `/products/${productId}`,
       },
     };
   }

@@ -33,8 +33,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         id,
       },
-      select: {
-        id: true,
+      include: {
+        records: {
+          where: {
+            kind: Kind.Favorite,
+            userId: user?.id,
+          },
+        },
       },
     });
     if (!product) {
@@ -43,19 +48,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // check current favorite status
-    const exists = await client.record.findFirst({
-      where: {
-        userId: user?.id,
-        productId: product.id,
-        kind: Kind.Favorite,
-      },
-      select: {
-        id: true,
-      },
-    });
-
     let recordFavorite = null;
+    const exists = product.records.length ? product.records[0] : null;
+
     if (exists) {
       // delete
       await client.record.delete({

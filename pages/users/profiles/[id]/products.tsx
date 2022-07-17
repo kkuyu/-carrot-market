@@ -86,18 +86,18 @@ const ProfileProducts: NextPage<{
   };
 
   const resumeItem = (item: ProductItem) => {
-    router.push(`/products/${item.id}/resume`);
+    router.push(`/products/${item?.id}/resume`);
   };
 
   const [soldLoading, setSoldLoading] = useState(false);
   const soldItem = async (item: ProductItem) => {
     if (!products) return;
-    if (!soldLoading) return;
+    if (soldLoading) return;
 
     try {
       setSoldLoading(true);
       const saleResponse: PostProductsSaleResponse = await (
-        await fetch(`/api/products/${item.id}/sale`, {
+        await fetch(`/api/products/${item?.id}/sale`, {
           method: "POST",
           body: JSON.stringify({ sale: false }),
           headers: { "Content-Type": "application/json" },
@@ -110,7 +110,7 @@ const ProfileProducts: NextPage<{
         return;
       }
       if (!saleResponse.recordSale) {
-        router.push(`/products/${item.id}/sold`);
+        router.push(`/products/${item?.id}/purchase`);
       }
     } catch (error) {
       console.error(error);

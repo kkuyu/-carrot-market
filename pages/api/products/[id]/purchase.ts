@@ -5,9 +5,9 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductsSaleResponse {
+export interface PostProductsPurchaseResponse {
   success: boolean;
-  recordSale: Record | null;
+  recordPurchase: Record | null;
   error?: {
     timestamp: Date;
     name: string;
@@ -18,8 +18,7 @@ export interface PostProductsSaleResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { sale } = req.body;
-    const { user } = req.session;
+    const { purchase, purchaseUserId: _purchaseUserId } = req.body;
 
     // request valid
     if (!_id) {
@@ -27,7 +26,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (typeof sale !== "boolean") {
+    if (typeof purchase !== "boolean") {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (purchase === true && !_purchaseUserId) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -42,7 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            kind: Kind.Sale,
+            kind: Kind.Purchase,
           },
           select: {
             id: true,
@@ -55,29 +59,43 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (product.userId !== user?.id) {
-      const error = new Error("NotFoundProduct");
-      error.name = "NotFoundProduct";
+
+    // find purchase user
+    const purchaseUserId = _purchaseUserId ? +_purchaseUserId.toString() : null;
+    const purchaseUser = purchaseUserId
+      ? await client.user.findUnique({
+          where: {
+            id: purchaseUserId,
+          },
+          select: {
+            id: true,
+          },
+        })
+      : null;
+
+    if (purchaseUserId && !purchaseUser) {
+      const error = new Error("NotFoundUser");
+      error.name = "NotFoundUser";
       throw error;
     }
 
-    let recordSale = null;
+    let recordPurchase = null;
     const exists = product.records.length ? product.records[0] : null;
 
-    if (exists && sale === false) {
+    if (exists && purchase === false) {
       // delete
       await client.record.delete({
         where: {
           id: exists.id,
         },
       });
-    } else if (!exists && sale === true) {
+    } else if (!exists && purchase === true && purchaseUser) {
       // create
-      recordSale = await client.record.create({
+      recordPurchase = await client.record.create({
         data: {
           user: {
             connect: {
-              id: user?.id,
+              id: purchaseUser.id,
             },
           },
           product: {
@@ -85,15 +103,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: product.id,
             },
           },
-          kind: Kind.Sale,
+          kind: Kind.Purchase,
         },
       });
     }
 
     // result
-    const result: PostProductsSaleResponse = {
+    const result: PostProductsPurchaseResponse = {
       success: true,
-      recordSale,
+      recordPurchase,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
