@@ -106,6 +106,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           kind: Kind.Purchase,
         },
       });
+    } else if (exists && purchase === true && purchaseUser) {
+      // delete
+      await client.record.delete({
+        where: {
+          id: exists.id,
+        },
+      });
+      // create
+      recordPurchase = await client.record.create({
+        data: {
+          user: {
+            connect: {
+              id: purchaseUser.id,
+            },
+          },
+          product: {
+            connect: {
+              id: product.id,
+            },
+          },
+          kind: Kind.Purchase,
+        },
+      });
     }
 
     // result

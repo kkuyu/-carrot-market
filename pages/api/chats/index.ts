@@ -159,7 +159,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // check product
       const productId = _productId ? +_productId.toString() : null;
       const product = productId
-        ? await client.user.findUnique({
+        ? await client.product.findUnique({
             where: {
               id: productId,
             },

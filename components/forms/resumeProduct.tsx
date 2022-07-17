@@ -7,7 +7,7 @@ export interface ResumeProductTypes {
   price: number;
 }
 
-interface ResumeProductProps {
+interface ResumeProductProps extends React.HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<ResumeProductTypes, object>;
   onValid: (validForm: ResumeProductTypes) => void;
   isSuccess?: boolean;
@@ -27,7 +27,7 @@ const ResumeProduct = ({ formData, onValid, isSuccess, isLoading, originalPrice,
   };
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="mt-5 space-y-5" {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
       <div className="space-y-1">
         <Labels text="가격" htmlFor="price" className="sr-only" />
         <Inputs

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
 import { getDiffTimeStr } from "@libs/utils";
@@ -181,7 +182,9 @@ const ProductResume: NextPage<{
             <br />
             가격을 낮춰보세요
           </strong>
-          <ResumeProduct formData={formData} onValid={submitResumeProduct} isLoading={loading} originalPrice={staticProps.product.price} targetDate={targetDate} diffTime={diffTime} />
+          <div className="mt-5">
+            <ResumeProduct formData={formData} onValid={submitResumeProduct} isLoading={loading} originalPrice={staticProps.product.price} targetDate={targetDate} diffTime={diffTime} />
+          </div>
         </div>
       )}
     </div>
@@ -219,6 +222,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     where: {
       id: +productId,
     },
+    include: {
+      records: {
+        where: {
+          OR: [{ kind: Kind.Sale }],
+        },
+      },
+    },
   });
 
   // invalid product: not found
@@ -231,6 +241,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  const saleRecord = product.records.find((record) => record.kind === Kind.Sale);
+
   // invalid product: not my product
   // redirect: /products/id
   if (product.userId !== ssrUser?.profile?.id || ssrUser.dummyProfile) {
@@ -238,6 +250,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       redirect: {
         permanent: false,
         destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // sale product
+  if (!saleRecord) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${product.id}`,
       },
     };
   }

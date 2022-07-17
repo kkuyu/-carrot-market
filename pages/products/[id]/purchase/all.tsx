@@ -61,9 +61,9 @@ const ProductPurchaseAll: NextPage<{
     return entries?.flatMap(([key, value]) => (value === undefined ? [] : value.chats));
   }, [pageItems]);
 
-  const purchaseItem = (item: ChatItem, users: ChatItem["users"]) => {
+  const purchaseItem = (item: ChatItem, user: ChatItem["users"][0]) => {
     if (updatePurchaseLoading) return;
-    updatePurchase({ purchase: true, purchaseUserId: item.users[0].id });
+    updatePurchase({ purchase: true, purchaseUserId: user.id });
   };
 
   useEffect(() => {
@@ -101,18 +101,21 @@ const ProductPurchaseAll: NextPage<{
             {chats
               .filter((item) => item.chatMessages.length)
               .map((item) => {
-                const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
-                const usersThumbnail = users.length === 1 ? users[0].avatar || "" : "";
-                return (
-                  <li key={item.id}>
-                    <button type="button" className="relative block w-full pl-5 pr-10 py-3" onClick={() => purchaseItem(item, users)}>
-                      <Chat item={item} users={users} type="timestamp" usersThumbnail={usersThumbnail} />
-                      <svg className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </button>
-                  </li>
-                );
+                return item.users
+                  .filter((chatUser) => chatUser.id !== user?.id)
+                  .map((chatUser) => {
+                    const usersThumbnail = chatUser.avatar || "";
+                    return (
+                      <li key={`${item.id}-${chatUser.id}`}>
+                        <button type="button" className="relative block w-full pl-5 pr-10 py-3" onClick={() => purchaseItem(item, chatUser)}>
+                          <Chat item={item} users={[chatUser]} type="timestamp" usersThumbnail={usersThumbnail} />
+                          <svg className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                          </svg>
+                        </button>
+                      </li>
+                    );
+                  });
               })}
           </ul>
           <div className="py-6 text-center border-t">
@@ -192,8 +195,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         select: {
           id: true,
           kind: true,
+          userId: true,
         },
       },
+      reviews: true,
     },
   });
 
@@ -208,6 +213,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  const role = ssrUser?.profile?.id === product.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = product.records.find((record) => record.kind === Kind.Sale);
+  const purchaseRecord = product.records.find((record) => record.kind === Kind.Purchase);
+  const existsReview = product.reviews.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
+
   // invalid product: not my product
   // redirect: /products/id
   if (product.userId !== ssrUser?.profile?.id || ssrUser.dummyProfile) {
@@ -220,7 +230,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // sale product
-  if (product.records.find((record) => record.kind === Kind.Sale)) {
+  // redirect: /products/id
+  if (saleRecord) {
     return {
       redirect: {
         permanent: false,
@@ -229,12 +240,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // purchase product
-  if (product.records.find((record) => record.kind === Kind.Purchase)) {
+  // purchase product && exists review
+  // redirect: /review/id
+  if (purchaseRecord && existsReview) {
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${product.id}/review`,
+        destination: `/review/${existsReview.id}`,
       },
     };
   }
