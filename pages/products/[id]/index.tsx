@@ -2,7 +2,7 @@ import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
-import { useRef, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
@@ -18,12 +18,16 @@ import client from "@libs/server/client";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsFavoriteResponse } from "@api/products/[id]/favorite";
+import { PostChatsResponse } from "@api/chats";
+import { GetChatsByProductsResponse } from "@api/chats/products/[id]";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
-import Profiles from "@components/profiles";
-import Buttons from "@components/buttons";
+import Chat from "@components/cards/chat";
 import Relate from "@components/cards/relate";
+import Buttons from "@components/buttons";
+import Profiles from "@components/profiles";
 import ThumbnailSlider, { ThumbnailSliderItem } from "@components/groups/thumbnailSlider";
 
 const ProductDetail: NextPage<{
@@ -35,7 +39,7 @@ const ProductDetail: NextPage<{
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user, currentAddr } = useUser();
-  const { openModal } = useModal();
+  const { openModal, closeModal } = useModal();
   const { openPanel } = usePanel();
 
   // view model
@@ -91,6 +95,21 @@ const ProductDetail: NextPage<{
       } else {
         boundMutate();
       }
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
+  // fetch data: chat
+  const { data: chatData, error: chatError } = useSWR<GetChatsByProductsResponse>(router.query.id && product ? `/api/chats/products/${router.query.id}` : null);
+  const [createChat, { loading: createChatLoading }] = useMutation<PostChatsResponse>(`/api/chats`, {
+    onSuccess: (data) => {
+      router.push(`/chats/${data.chat.id}`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -158,6 +177,56 @@ const ProductDetail: NextPage<{
       );
     }, false);
     updateSale({ sale: value });
+  };
+
+  const goChat = () => {
+    if (!product) return;
+    if (!user || user.id === -1) return;
+    if (createChatLoading) return;
+    createChat({
+      userIds: [user.id, product.user.id],
+      productId: product.id,
+    });
+  };
+
+  const openChatModal = () => {
+    if (!product) return;
+    if (!user || user.id === -1) return;
+    openModal<LayerModalProps>(LayerModal, "chatModal", {
+      headerType: "default",
+      title: "대화 중인 채팅방",
+      contents: (
+        <div>
+          {/* 채팅: List */}
+          {Boolean(chatData?.chats.length) && (
+            <ul className="divide-y">
+              {chatData?.chats.map((item) => {
+                const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
+                const usersThumbnail = users.length === 1 ? users[0].avatar || "" : "";
+                const productThumbnail = product.photos.length ? product.photos.split(",")[0] : "";
+                const onClick = async () => {
+                  await router.push(`/chats/${item.id}`);
+                  closeModal(LayerModal, "chatModal");
+                };
+                return (
+                  <li key={item.id}>
+                    <button type="button" className="block w-full px-5 py-3 text-left" onClick={onClick}>
+                      <Chat item={item} users={users} usersThumbnail={usersThumbnail} productThumbnail={productThumbnail} />
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {/* 채팅: Empty */}
+          {!Boolean(chatData?.chats.length) && (
+            <div className="py-10 text-center">
+              <p className="text-gray-500">채팅한 이웃이 없어요</p>
+            </div>
+          )}
+        </div>
+      ),
+    });
   };
 
   // modal: openStatusPanel
@@ -375,19 +444,8 @@ const ProductDetail: NextPage<{
                   <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
                 </Link>
               )}
-              {viewModel.mode === "public" &&
-                (user?.id === -1 ? (
-                  <Buttons tag="button" text="채팅하기" size="sm" onClick={openSignUpModal} />
-                ) : (
-                  <Link href={`/inbox/${product.user.id}`} passHref>
-                    <Buttons tag="a" text="채팅하기" size="sm" />
-                  </Link>
-                ))}
-              {viewModel.mode === "private" && (
-                <Link href="" passHref>
-                  <Buttons tag="a" text="대화 중인 채팅방" size="sm" />
-                </Link>
-              )}
+              {viewModel.mode === "public" && <Buttons tag="button" text="채팅하기" size="sm" onClick={user?.id === -1 ? openSignUpModal : goChat} />}
+              {viewModel.mode === "private" && <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={openChatModal} />}
             </div>
           </div>
         </div>
