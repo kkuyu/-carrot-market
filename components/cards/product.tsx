@@ -4,8 +4,9 @@ import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetProductsResponse } from "@api/products";
 import { GetProfilesProductsResponse } from "@api/users/profiles/products";
+import { GetChatsDetailResponse } from "@api/chats/[id]";
 
-export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
+export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0] | GetChatsDetailResponse["chat"]["product"];
 
 interface ProductProps {
   item: ProductItem;

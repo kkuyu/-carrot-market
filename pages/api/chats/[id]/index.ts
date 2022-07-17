@@ -5,9 +5,11 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
+type ChatMessages = (ChatMessage & { user: Pick<User, "id" | "name" | "avatar"> })[];
+
 export interface GetChatsDetailResponse {
   success: boolean;
-  chat: Chat & { users: Pick<User, "id" | "name" | "avatar">[] } & { chatMessages: ChatMessage[] } & { product: (Product & { records: Pick<Record, "id" | "kind" | "userId">[] }) | null };
+  chat: Chat & { chatMessages: ChatMessages } & { users: Pick<User, "id" | "name" | "avatar">[] } & { product: (Product & { records: Pick<Record, "id" | "kind" | "userId">[] }) | null };
   error?: {
     timestamp: Date;
     name: string;
@@ -34,16 +36,25 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id,
       },
       include: {
+        chatMessages: {
+          orderBy: {
+            updatedAt: "asc",
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+          },
+        },
         users: {
           select: {
             id: true,
             name: true,
             avatar: true,
-          },
-        },
-        chatMessages: {
-          orderBy: {
-            updatedAt: "asc",
           },
         },
         product: {
