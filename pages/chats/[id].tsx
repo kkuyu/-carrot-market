@@ -18,9 +18,10 @@ import { GetUserResponse } from "@api/users/my";
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 import { PostChatsMessageResponse } from "@api/chats/[id]/message";
 // @components
-import Product from "@components/cards/product";
-import ChatMessage from "@components/cards/chatMessage";
 import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
+import ChatMessage from "@components/cards/chatMessage";
+import Product from "@components/cards/product";
+import Buttons from "@components/buttons";
 
 const ChatDetail: NextPage = () => {
   const router = useRouter();
@@ -30,6 +31,11 @@ const ChatDetail: NextPage = () => {
 
   // fetch data: chat detail
   const { data, error, mutate: boundMutate } = useSWR<GetChatsDetailResponse>(router.query.id ? `/api/chats/${router.query.id}` : null, { refreshInterval: 1000, revalidateOnFocus: false });
+
+  const role = user?.id === data?.chat?.product?.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.Sale);
+  const purchaseRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.Purchase);
+  const existsReview = data?.chat?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
   // chat message form
   const formData = useForm<SendMessageTypes>({});
@@ -92,37 +98,43 @@ const ChatDetail: NextPage = () => {
   return (
     <article className="container pb-20">
       {data.chat.product && (
-        <div className="-mx-5 sticky top-12 left-0 block py-3 px-5 bg-white border-b">
+        <div className="-mx-5 sticky top-12 left-0 block py-3 px-5 bg-gray-200">
           <Link href={`/products/${data.chat.product.id}`}>
             <a>
               <Product item={data.chat.product} size="tiny" />
             </a>
           </Link>
           <div className="mt-2">
-            <button type="button" className="px-2 py-1 text-sm font-semibold border border-gray-300 rounded-md">
-              후기 보내기 or 보낸 후기 보기
-            </button>
+            {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
+              <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
+                <Buttons tag="a" text="후기 보내기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
+              </Link>
+            )}
+            {!saleRecord && purchaseRecord && existsReview && data?.chat.users.find((chatUser) => chatUser.id === existsReview?.[`${role === "sellUser" ? "purchaseUser" : "sellUser"}Id`]) && (
+              <Link href={`/review/${existsReview.id}`} passHref>
+                <Buttons tag="a" text="보낸 후기 보기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
+              </Link>
+            )}
           </div>
         </div>
       )}
       <div className="mt-2 space-y-2.5">
-        {data.chat.chatMessages.map((item, index, array) => {
-          let createdDate: Date | null = null;
-          const currentDate = (item.createdAt + "").replace(/T.*$/, "");
-          const beforeDate = index === 0 ? "" : (array[index - 1].createdAt + "").replace(/T.*$/, "");
-          if (currentDate !== beforeDate) createdDate = new Date(item.createdAt);
-          return (
-            <>
-              {createdDate && (
-                <span key={currentDate} className="block pt-2 text-center text-sm text-gray-500">
-                  {createdDate.toLocaleDateString("ko-KR")}
-                </span>
-              )}
-              <ChatMessage key={item.id} item={item} direction={item.user.id === user?.id ? "forward" : "reverse"} />
-            </>
-          );
+        {data.chat.chatMessages.map((item, index) => {
+          const currentDate = new Date(item.createdAt).toISOString().replace(/T.*$/, "");
+          const beforeDate = index === 0 ? "" : new Date(data.chat.chatMessages[index - 1].createdAt).toISOString().replace(/T.*$/, "");
+          return <ChatMessage key={item.id} item={item} direction={item.user.id === user?.id ? "forward" : "reverse"} isDifferentDate={currentDate !== beforeDate} currentDate={currentDate} />;
         })}
       </div>
+      {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
+        <div className="mt-4 p-3 bg-orange-100 rounded-md">
+          {user?.name}님, 거래 잘 하셨나요?
+          <br />
+          이웃에게 따뜻한 마음을 전해보세요!
+          <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
+            <Buttons tag="a" sort="text-link" status="default" text="후기 보내기" />
+          </Link>
+        </div>
+      )}
       <div className="fixed bottom-0 left-0 w-full z-[50]">
         <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
           <SendMessage formData={formData} onValid={submitChatMessage} isLoading={sendChatMessageLoading} className="w-full pl-5 pr-3" />
@@ -217,7 +229,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         include: {
           records: {
             where: {
-              OR: [{ kind: Kind.Sale }],
+              OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
             },
             select: {
               id: true,
@@ -225,6 +237,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
               userId: true,
             },
           },
+          reviews: true,
         },
       },
     },

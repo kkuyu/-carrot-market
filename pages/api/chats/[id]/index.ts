@@ -1,15 +1,16 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, ChatMessage, Kind, Product, Record, User } from "@prisma/client";
+import { Chat, ChatMessage, Kind, Product, Record, User, Review } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 type ChatMessages = (ChatMessage & { user: Pick<User, "id" | "name" | "avatar"> })[];
+type ChatProduct = (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Review[] }) | null;
 
 export interface GetChatsDetailResponse {
   success: boolean;
-  chat: Chat & { chatMessages: ChatMessages } & { users: Pick<User, "id" | "name" | "avatar">[] } & { product: (Product & { records: Pick<Record, "id" | "kind" | "userId">[] }) | null };
+  chat: Chat & { chatMessages: ChatMessages } & { users: Pick<User, "id" | "name" | "avatar">[] } & { product: ChatProduct };
   error?: {
     timestamp: Date;
     name: string;
@@ -61,7 +62,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           include: {
             records: {
               where: {
-                OR: [{ kind: Kind.Sale }],
+                OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
               },
               select: {
                 id: true,
@@ -69,6 +70,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
                 userId: true,
               },
             },
+            reviews: true,
           },
         },
       },
