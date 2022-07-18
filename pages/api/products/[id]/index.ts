@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Product, Record, User } from "@prisma/client";
+import { Kind, Product, Record, Review, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,7 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsDetailResponse {
   success: boolean;
-  product: Product & { user: Pick<User, "id" | "name" | "avatar">; records: Pick<Record, "id" | "kind" | "userId">[] };
+  product: Product & { user: Pick<User, "id" | "name" | "avatar">; records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Review[] };
   isFavorite: boolean;
   otherProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
   similarProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
@@ -55,6 +55,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             userId: true,
           },
         },
+        reviews: true,
       },
     });
     if (!product) {

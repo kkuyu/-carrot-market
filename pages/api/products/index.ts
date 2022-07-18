@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Product, Record } from "@prisma/client";
+import { Chat, Kind, Product, Record } from "@prisma/client";
 // @libs
 import { getCategory } from "@libs/utils";
 import client from "@libs/server/client";
@@ -8,7 +8,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[] })[];
+  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats: (Chat & { _count: { chatMessages: number } })[] })[];
   pages: number;
   error?: {
     timestamp: Date;
@@ -80,6 +80,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: true,
               kind: true,
               userId: true,
+            },
+          },
+          chats: {
+            include: {
+              _count: {
+                select: {
+                  chatMessages: true,
+                },
+              },
             },
           },
         },

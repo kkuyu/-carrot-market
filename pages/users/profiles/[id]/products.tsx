@@ -17,9 +17,8 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/products";
-import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
-import Product, { ProductItem } from "@components/cards/product";
+import Product from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 
 type FilterTab = {
@@ -85,42 +84,6 @@ const ProfileProducts: NextPage<{
     window.scrollTo(0, 0);
   };
 
-  const resumeItem = (item: ProductItem) => {
-    router.push(`/products/${item?.id}/resume`);
-  };
-
-  const [soldLoading, setSoldLoading] = useState(false);
-  const soldItem = async (item: ProductItem) => {
-    if (!products) return;
-    if (soldLoading) return;
-
-    try {
-      setSoldLoading(true);
-      const saleResponse: PostProductsSaleResponse = await (
-        await fetch(`/api/products/${item?.id}/sale`, {
-          method: "POST",
-          body: JSON.stringify({ sale: false }),
-          headers: { "Content-Type": "application/json" },
-        })
-      ).json();
-      if (!saleResponse.success) {
-        const error = new Error("SaleProductError");
-        error.name = "SaleProductError";
-        console.error(error);
-        return;
-      }
-      if (!saleResponse.recordSale) {
-        router.push(`/products/${item?.id}/purchase`);
-      }
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const reviewItem = (item: ProductItem) => {
-    console.log("reviewItem", item);
-  };
-
   useEffect(() => {
     if (isLoading) return;
     if (isVisible && !isReachingEnd) {
@@ -160,12 +123,15 @@ const ProfileProducts: NextPage<{
   return (
     <div className="container">
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
-        {tabs.map((tab) => (
-          <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
-            {tab.text}
-            {staticProps[tab.value].total > 0 && ` ${staticProps[tab.value].total}`}
-          </button>
-        ))}
+        {tabs.map((tab) => {
+          const entries = Object.entries(pageItems[tab.value])?.sort((a, b) => a[0].localeCompare(b[0]));
+          const total = entries.length ? entries[0]?.[1]?.total : 0;
+          return (
+            <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
+              {`${tab.text}${total > 0 ? ` ${total}` : ""}`}
+            </button>
+          );
+        })}
         <span
           aria-hidden="true"
           className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
@@ -178,13 +144,13 @@ const ProfileProducts: NextPage<{
         <div className="-mx-5">
           <ul className="divide-y-8">
             {products.map((item) => (
-              <li key={item?.id}>
+              <li key={item?.id} className="relative">
                 <Link href={`/products/${item?.id}`}>
                   <a className="block p-5">
                     <Product item={item} />
                   </a>
                 </Link>
-                <FeedbackProduct item={item} resumeItem={resumeItem} soldItem={soldItem} reviewItem={reviewItem} isLoading={soldLoading} />
+                {profileData?.profile.id === user?.id && <FeedbackProduct item={item} />}
               </li>
             ))}
           </ul>
@@ -293,6 +259,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     where: {
       userId: +profileId,
     },
+    include: {
+      records: {
+        where: {
+          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+        },
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      reviews: true,
+    },
   });
 
   // getSaleProduct
@@ -316,6 +295,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         records: { some: { kind: Kind.Sale } },
       },
     },
+    include: {
+      records: {
+        where: {
+          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+        },
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      reviews: true,
+    },
   });
 
   // getSoldProduct
@@ -338,6 +330,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       NOT: {
         records: { some: { kind: Kind.Sale } },
       },
+    },
+    include: {
+      records: {
+        where: {
+          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+        },
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      reviews: true,
     },
   });
 

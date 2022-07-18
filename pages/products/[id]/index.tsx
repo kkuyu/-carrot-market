@@ -12,16 +12,13 @@ import { getCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
-import usePanel from "@libs/client/usePanel";
 import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsFavoriteResponse } from "@api/products/[id]/favorite";
 import { PostChatsResponse } from "@api/chats";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
 import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
@@ -37,7 +34,6 @@ const ProductDetail: NextPage<{
 
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
-  const { openPanel } = usePanel();
 
   // view model
   const [viewModel, setViewModel] = useState({
@@ -50,9 +46,8 @@ const ProductDetail: NextPage<{
   const category = getCategory("product", staticProps?.product?.category);
   const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
 
-  const isSale = product?.records && Boolean(product?.records?.find((record) => record.kind === "Sale"));
-  const isSold = product?.records && !isSale;
-  const favorites = product?.records?.filter((record) => record.kind === "Favorite") || [];
+  const saleRecord = product?.records?.find((record) => record.kind === Kind.Sale);
+  const favoriteRecords = product?.records?.filter((record) => record.kind === Kind.Favorite) || [];
   const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
   const thumbnails: ThumbnailSliderItem[] = !product?.photos
     ? []
@@ -85,41 +80,11 @@ const ProductDetail: NextPage<{
       }
     },
   });
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(`/api/products/${router.query.id}/sale`, {
-    onSuccess: (data) => {
-      if (!data.recordSale) {
-        router.push(`/products/${router.query.id}/purchase`);
-      } else {
-        boundMutate();
-      }
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
 
   // fetch data: chat
   const [createChat, { loading: createChatLoading }] = useMutation<PostChatsResponse>(`/api/chats`, {
     onSuccess: (data) => {
       router.push(`/chats/${data.chat.id}`);
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-
-  // kebab action: delete
-  const [deleteProduct, { loading: deleteLoading }] = useMutation(`/api/products/${router.query.id}/delete`, {
-    onSuccess: () => {
-      router.replace("/");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -152,29 +117,6 @@ const ProductDetail: NextPage<{
     updateFavorite({});
   };
 
-  // toggle sale
-  const toggleSale = (value: boolean) => {
-    if (!product) return;
-    if (saleLoading) return;
-    if (isSold && value === false) return;
-    if (isSale && value === true) return;
-
-    boundMutate((prev) => {
-      let records = prev?.product.records || [];
-      const idx = records.findIndex((record) => record.kind === Kind.Sale && record.userId === user?.id);
-      const exists = idx !== -1;
-      if (exists && value === false) records.splice(idx, 1);
-      if (!exists && value === true) records.push({ id: 0, kind: Kind.Sale, userId: user?.id! });
-      return (
-        prev && {
-          ...prev,
-          product: { ...prev.product, records: records },
-        }
-      );
-    }, false);
-    updateSale({ sale: value });
-  };
-
   const goChat = () => {
     if (!product) return;
     if (!user || user.id === -1) return;
@@ -185,22 +127,9 @@ const ProductDetail: NextPage<{
     });
   };
 
-  // modal: openStatusPanel
-  const openStatusPanel = () => {
-    if (!product) return;
-    openPanel<ActionPanelProps>(ActionPanel, "statusPanel", {
-      hasBackdrop: true,
-      actions: [
-        { key: "sale", text: "판매중", onClick: () => toggleSale(true) },
-        { key: "sold", text: "판매완료", onClick: () => toggleSale(false) },
-      ],
-      cancelBtn: "닫기",
-    });
-  };
-
   // modal: welcome
   const openWelcomeModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
+    openModal<MessageModalProps>(MessageModal, "welcome", {
       type: "confirm",
       message: "당근마켓 첫 방문이신가요?",
       cancelBtn: "취소",
@@ -222,21 +151,6 @@ const ProductDetail: NextPage<{
       hasBackdrop: true,
       onConfirm: () => {
         router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
-      },
-    });
-  };
-
-  // modal: delete
-  const openDeleteModal = () => {
-    openModal<MessageModalProps>(MessageModal, "confirmDeleteProduct", {
-      type: "confirm",
-      message: "게시글을 정말 삭제하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "삭제",
-      hasBackdrop: true,
-      onConfirm: () => {
-        if (deleteLoading) return;
-        deleteProduct({});
       },
     });
   };
@@ -290,11 +204,16 @@ const ProductDetail: NextPage<{
                 { key: "report", text: "신고" },
                 { key: "block", text: "이 사용자의 글 보지 않기" },
               ]
-            : mode === "private"
+            : mode === "private" && saleRecord
             ? [
                 { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
                 { key: "pull", text: "끌어올리기", onClick: () => router.push(`/products/${product.id}/resume`) },
-                { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+                { key: "delete", text: "삭제", onClick: () => router.push(`/products/${product.id}/delete`) },
+              ]
+            : mode === "private" && !saleRecord
+            ? [
+                { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
+                { key: "delete", text: "삭제", onClick: () => router.push(`/products/${product.id}/delete`) },
               ]
             : [],
       },
@@ -302,7 +221,7 @@ const ProductDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id]);
+  }, [user?.id, product?.records]);
 
   if (!product) {
     return <NextError statusCode={404} />;
@@ -334,24 +253,13 @@ const ProductDetail: NextPage<{
 
         {/* 설명 */}
         <div className="pt-5 border-t">
-          {viewModel.mode === "private" && (
-            <div className="pb-5">
-              <span className="relative inline-block min-w-[100px]">
-                <strong className="sr-only">상태변경</strong>
-                <Buttons text={isSale ? "판매중" : isSold ? "판매완료" : ""} size="sm" status="default" className="pr-8 !text-left" onClick={openStatusPanel} />
-                <svg className="absolute top-1/2 right-2.5 w-4 h-4 -translate-y-1/2 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                </svg>
-              </span>
-            </div>
-          )}
           <h1 className="text-2xl font-bold">
-            {isSold && <em className="text-gray-500 not-italic">판매완료 </em>}
+            {!saleRecord && <em className="text-gray-500 not-italic">판매완료 </em>}
             {product.name}
           </h1>
           <span className="mt-1 block text-sm text-gray-500">{[category?.text, diffTime, !product?.resumeCount ? null : `끌올 ${product.resumeCount}회`].filter((v) => !!v).join(" · ")}</span>
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
-          <div className="empty:hidden mt-5 text-sm text-gray-500">{[favorites.length ? `관심 ${favorites.length}` : null].filter((v) => !!v).join(" · ")}</div>
+          <div className="empty:hidden mt-5 text-sm text-gray-500">{[favoriteRecords.length ? `관심 ${favoriteRecords.length}` : null].filter((v) => !!v).join(" · ")}</div>
         </div>
 
         {/* 가격, 채팅 */}

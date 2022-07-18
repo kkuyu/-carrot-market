@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Product, Record } from "@prisma/client";
+import { Chat, Kind, Product, Record, Review } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -9,7 +9,7 @@ export type ProfilesProductsFilter = "ALL" | "SALE" | "SOLD";
 
 export interface GetProfilesProductsResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[] })[];
+  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats: (Chat & { _count: { chatMessages: number } })[]; reviews: Review[] })[];
   pages: number;
   total: number;
   error?: {
@@ -68,7 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
           },
           select: {
             id: true,
@@ -76,6 +76,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             userId: true,
           },
         },
+        chats: {
+          include: {
+            _count: {
+              select: {
+                chatMessages: true,
+              },
+            },
+          },
+        },
+        reviews: true,
       },
       where: {
         userId: id,

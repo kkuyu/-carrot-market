@@ -166,6 +166,15 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
                 userId: true,
               },
             },
+            chats: {
+              include: {
+                _count: {
+                  select: {
+                    chatMessages: true,
+                  },
+                },
+              },
+            },
           },
         });
 
