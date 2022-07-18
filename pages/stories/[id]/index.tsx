@@ -44,6 +44,7 @@ const StoryDetail: NextPage<{
   const { openModal } = useModal();
 
   // view model
+  const [mounted, setMounted] = useState(false);
   const [viewModel, setViewModel] = useState({
     mode: !user?.id ? "preview" : user?.id !== staticProps?.story?.userId ? "public" : "private",
   });
@@ -249,6 +250,10 @@ const StoryDetail: NextPage<{
     }));
   }, [user?.id]);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!story) {
     return <NextError statusCode={404} />;
   }
@@ -266,7 +271,7 @@ const StoryDetail: NextPage<{
           {/* 판매자 */}
           <Link href={`/users/profiles/${story?.user?.id}`}>
             <a>
-              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={diffTime} />
+              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} />
             </a>
           </Link>
           {/* 게시글 내용 */}

@@ -9,7 +9,7 @@ export type ProfilesProductsFilter = "ALL" | "SALE" | "SOLD";
 
 export interface GetProfilesProductsResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats: (Chat & { _count: { chatMessages: number } })[]; reviews: Review[] })[];
+  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[]; reviews: Review[] })[];
   pages: number;
   total: number;
   error?: {

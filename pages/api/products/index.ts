@@ -8,7 +8,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats: (Chat & { _count: { chatMessages: number } })[] })[];
+  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[] })[];
   pages: number;
   error?: {
     timestamp: Date;

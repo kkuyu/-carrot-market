@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Product, Record, Review, User } from "@prisma/client";
+import { Chat, Kind, Product, Record, Review, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,11 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsDetailResponse {
   success: boolean;
-  product: Product & { user: Pick<User, "id" | "name" | "avatar">; records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Review[] };
-  isFavorite: boolean;
-  otherProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
-  similarProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
-  latestProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
+  product: Product & { user: Pick<User, "id" | "name" | "avatar">; records: Pick<Record, "id" | "kind" | "userId">[]; chats: (Chat & { _count: { chatMessages: number } })[]; reviews: Review[] };
   error?: {
     timestamp: Date;
     name: string;
@@ -47,12 +43,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
         records: {
           where: {
-            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
           },
           select: {
             id: true,
             kind: true,
             userId: true,
+          },
+        },
+        chats: {
+          include: {
+            _count: {
+              select: {
+                chatMessages: true,
+              },
+            },
           },
         },
         reviews: true,
@@ -64,84 +69,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find user's other products
-    const otherProducts = await client.product.findMany({
-      take: 4,
-      orderBy: {
-        resumeAt: "desc",
-      },
-      select: {
-        id: true,
-        name: true,
-        photos: true,
-        price: true,
-      },
-      where: {
-        AND: {
-          userId: user?.id,
-          id: { not: product.id },
-          records: { some: { kind: Kind.Sale } },
-        },
-      },
-    });
-
-    // find similar product
-    const similarProducts = otherProducts.length
-      ? []
-      : await client.product.findMany({
-          take: 4,
-          orderBy: {
-            resumeAt: "desc",
-          },
-          select: {
-            id: true,
-            name: true,
-            photos: true,
-            price: true,
-          },
-          where: {
-            OR: product.name.split(" ").map((word) => ({
-              name: { contains: word },
-            })),
-            AND: {
-              id: { not: product.id },
-              records: { some: { kind: Kind.Sale } },
-            },
-          },
-        });
-
-    // find latest products
-    const latestProducts = otherProducts.length
-      ? []
-      : similarProducts.length
-      ? []
-      : await client.product.findMany({
-          take: 4,
-          orderBy: {
-            resumeAt: "desc",
-          },
-          select: {
-            id: true,
-            name: true,
-            photos: true,
-            price: true,
-          },
-          where: {
-            AND: {
-              id: { not: product.id },
-              records: { some: { kind: Kind.Sale } },
-            },
-          },
-        });
-
     // result
     const result: GetProductsDetailResponse = {
       success: true,
       product,
-      isFavorite: !user?.id ? false : Boolean(product.records.find((record) => record.kind === "Favorite" && record.userId === user.id)),
-      otherProducts,
-      similarProducts,
-      latestProducts,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

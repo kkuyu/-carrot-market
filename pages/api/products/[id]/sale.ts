@@ -72,6 +72,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
     } else if (!exists && sale === true) {
+      // delete record Kind.Purchase
+      await client.record.deleteMany({
+        where: {
+          productId: product.id,
+          kind: Kind.Purchase,
+        },
+      });
+
+      // delete review
+      await client.review.deleteMany({
+        where: {
+          productId: product.id,
+        },
+      });
+
       // create
       recordSale = await client.record.create({
         data: {

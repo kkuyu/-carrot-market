@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProductsDeleteResponse {
+export interface PostProductsDeleteResponse {
   success: boolean;
   error?: {
     timestamp: Date;
@@ -43,6 +43,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
+    // remove review
+    await client.review.deleteMany({
+      where: {
+        productId: product.id,
+      },
+    });
+
+    // remove record
+    await client.record.deleteMany({
+      where: {
+        productId: product.id,
+      },
+    });
+
+    // remove chat
+    await client.chat.deleteMany({
+      where: {
+        productId: product.id,
+      },
+    });
+
+    // remove product
     await client.product.delete({
       where: {
         id: product.id,
@@ -50,7 +72,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
 
     // result
-    const result: GetProductsDeleteResponse = {
+    const result: PostProductsDeleteResponse = {
       success: true,
     };
     return res.status(200).json(result);

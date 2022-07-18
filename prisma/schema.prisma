@@ -169,9 +169,10 @@ model Emotion {
 
 model Review {
   id             Int      @id @default(autoincrement())
+  role           String
   satisfaction   String
   inquiry        String   @db.MediumText
-  text           String   @db.MediumText
+  text           String?  @db.MediumText
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
   sellUser       User     @relation(name: "sellUserReview", fields: [sellUserId], references: [id], onDelete: Cascade)

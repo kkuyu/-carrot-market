@@ -23,6 +23,7 @@ import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
 import ThumbnailSlider, { ThumbnailSliderItem } from "@components/groups/thumbnailSlider";
+import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 
 const ProductDetail: NextPage<{
   staticProps: {
@@ -36,6 +37,7 @@ const ProductDetail: NextPage<{
   const { openModal } = useModal();
 
   // view model
+  const [mounted, setMounted] = useState(false);
   const [viewModel, setViewModel] = useState({
     mode: !user?.id ? "preview" : user?.id !== staticProps?.product?.userId ? "public" : "private",
   });
@@ -48,6 +50,9 @@ const ProductDetail: NextPage<{
 
   const saleRecord = product?.records?.find((record) => record.kind === Kind.Sale);
   const favoriteRecords = product?.records?.filter((record) => record.kind === Kind.Favorite) || [];
+  const foundChats = product?.chats?.filter((chat) => chat._count.chatMessages > 0);
+
+  const isFavorite = Boolean(favoriteRecords.find((record) => record.userId === user?.id));
   const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
   const thumbnails: ThumbnailSliderItem[] = !product?.photos
     ? []
@@ -58,16 +63,10 @@ const ProductDetail: NextPage<{
         label: `${index + 1}/${array.length}`,
         name: `게시글 이미지 ${index + 1}/${array.length} (${shortName})`,
       }));
-  const [relate, setRelate] = useState<{
-    name: string;
-    products: GetProductsDetailResponse["otherProducts"] | GetProductsDetailResponse["similarProducts"] | GetProductsDetailResponse["latestProducts"];
-  }>({
-    name: "",
-    products: [],
-  });
 
   // fetch data: product detail
   const { data, error, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(router.query.id && product ? `/api/products/${router.query.id}` : null);
+  const { data: othersData } = useSWR<GetProductsDetailOthersResponse>(router.query.id && product ? `/api/products/${router.query.id}/others` : null);
   const [updateFavorite, { loading: favoriteLoading }] = useMutation<PostProductsFavoriteResponse>(`/api/products/${router.query.id}/favorite`, {
     onSuccess: (data) => {
       boundMutate();
@@ -110,7 +109,6 @@ const ProductDetail: NextPage<{
         prev && {
           ...prev,
           product: { ...prev.product, records: records },
-          isFavorite: !prev.isFavorite,
         }
       );
     }, false);
@@ -163,24 +161,6 @@ const ProductDetail: NextPage<{
       ...prev,
       ...data.product,
     }));
-    setRelate(() => {
-      if (data.otherProducts.length) {
-        return {
-          name: `${data?.product.user.name}님의 판매 상품`,
-          products: data.otherProducts,
-        };
-      }
-      if (data.similarProducts.length) {
-        return {
-          name: `이 글과 함께 봤어요`,
-          products: data.similarProducts,
-        };
-      }
-      return {
-        name: `최근 등록된 판매 상품`,
-        products: data.latestProducts,
-      };
-    });
   }, [data]);
 
   // setting layout
@@ -223,6 +203,10 @@ const ProductDetail: NextPage<{
     }));
   }, [user?.id, product?.records]);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   if (!product) {
     return <NextError statusCode={404} />;
   }
@@ -257,9 +241,13 @@ const ProductDetail: NextPage<{
             {!saleRecord && <em className="text-gray-500 not-italic">판매완료 </em>}
             {product.name}
           </h1>
-          <span className="mt-1 block text-sm text-gray-500">{[category?.text, diffTime, !product?.resumeCount ? null : `끌올 ${product.resumeCount}회`].filter((v) => !!v).join(" · ")}</span>
+          <span className="mt-1 block text-sm text-gray-500">
+            {[category?.text, mounted && diffTime ? diffTime : null, !product?.resumeCount ? null : `끌올 ${product.resumeCount}회`].filter((v) => !!v).join(" · ")}
+          </span>
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
-          <div className="empty:hidden mt-5 text-sm text-gray-500">{[favoriteRecords.length ? `관심 ${favoriteRecords.length}` : null].filter((v) => !!v).join(" · ")}</div>
+          <div className="empty:hidden mt-5 text-sm text-gray-500">
+            {[favoriteRecords.length ? `관심 ${favoriteRecords.length}` : null, foundChats?.length ? `채팅 ${foundChats.length}` : null].filter((v) => !!v).join(" · ")}
+          </div>
         </div>
 
         {/* 가격, 채팅 */}
@@ -284,12 +272,12 @@ const ProductDetail: NextPage<{
               )}
               {(viewModel.mode === "public" || viewModel.mode === "private") && (
                 <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={user?.id === -1 ? openSignUpModal : toggleFavorite} disabled={favoriteLoading}>
-                  {data?.isFavorite && (
+                  {isFavorite && (
                     <svg className="w-6 h-6" fill="currentColor" color="rgb(239 68 68)" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
                     </svg>
                   )}
-                  {!data?.isFavorite && (
+                  {!isFavorite && (
                     <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path
                         strokeLinecap="round"
@@ -318,11 +306,19 @@ const ProductDetail: NextPage<{
       {/* <div>todo: 신고하기</div> */}
 
       {/* 관련 상품목록 */}
-      {Boolean(relate.products.length) && (
+      {Boolean(othersData?.otherProducts.length) && (
         <section className="mt-5 pt-5 border-t">
-          <h2 className="text-xl">{relate.name}</h2>
+          <h2 className="text-xl">
+            {othersData?.type === "userProducts"
+              ? `${data?.product.user.name}님의 판매 상품`
+              : othersData?.type === "similarProducts"
+              ? `이 글과 함께 봤어요`
+              : othersData?.type === "latestProducts"
+              ? `최근 등록된 판매 상품`
+              : ""}
+          </h2>
           <ul className="-m-2 mt-4 block after:block after:clear-both">
-            {relate.products.map((item) => {
+            {othersData?.otherProducts.map((item) => {
               return (
                 <li key={item?.id} className="float-left w-1/2 p-2">
                   <Link href={`/products/${item.id}`}>
