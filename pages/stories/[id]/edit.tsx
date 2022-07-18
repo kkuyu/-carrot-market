@@ -108,7 +108,7 @@ const StoryUpload: NextPage<{
     setDefaultPhotos();
 
     setLayout(() => ({
-      title: "동네생활 글 수정하기",
+      title: "동네생활 글 수정",
       header: {
         headerUtils: ["back", "title", "submit"],
         submitId: "edit-story",

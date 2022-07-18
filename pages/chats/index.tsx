@@ -62,15 +62,10 @@ const ChatHome: NextPage = () => {
     return (
       <div className="container">
         <div className="py-10 text-center">
-          <div className="relative inline-block pl-6">
-            <svg className="absolute top-0.5 left-0 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <p className="text-left">
-              이웃과의 채팅은
-              <Buttons text="회원가입" sort="text-link" status="default" className="align-top" onClick={() => router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`)} />후 이용 가능합니다.
-            </p>
-          </div>
+          <p className="text-notice inline-block">
+            이웃과의 채팅은
+            <Buttons text="회원가입" sort="text-link" status="default" className="align-top" onClick={() => router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`)} />후 이용 가능합니다.
+          </p>
         </div>
       </div>
     );

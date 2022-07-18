@@ -116,7 +116,7 @@ const ProductUpload: NextPage<{
     setDefaultPhotos();
 
     setLayout(() => ({
-      title: "중고거래 글 수정하기",
+      title: "중고거래 글 수정",
       header: {
         headerUtils: ["back", "title", "submit"],
         submitId: "edit-product",

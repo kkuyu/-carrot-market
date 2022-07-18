@@ -20,7 +20,7 @@ import Buttons from "@components/buttons";
 import Product from "@components/cards/product";
 import ReviewProduct, { ReviewProductTypes } from "@components/forms/reviewProduct";
 
-const ProductResume: NextPage<{
+const ProductReview: NextPage<{
   staticProps: {
     product: GetProductsDetailResponse["product"];
     role: "sellUser" | "purchaseUser";
@@ -73,7 +73,7 @@ const ProductResume: NextPage<{
   }, []);
 
   return (
-    <div className="container">
+    <div className="container pb-5">
       {/* 제품정보 */}
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${staticProps.product.id}`}>
@@ -81,11 +81,13 @@ const ProductResume: NextPage<{
             <Product item={staticProps.product} size="tiny" />
           </a>
         </Link>
-        <div className="mt-2">
-          <Link href={`/products/${staticProps.product.id}/purchase`} passHref>
-            <Buttons tag="a" status="default" size="sm" text="구매자 변경하기" className="!inline-block !w-auto" />
-          </Link>
-        </div>
+        {staticProps.role === "sellUser" && !staticProps.product.reviews.length && (
+          <div className="mt-2">
+            <Link href={`/products/${staticProps.product.id}/purchase`} passHref>
+              <Buttons tag="a" status="default" size="sm" text="구매자 변경하기" className="!inline-block !w-auto" />
+            </Link>
+          </div>
+        )}
       </div>
 
       <div className="mt-5">
@@ -103,12 +105,6 @@ const ProductResume: NextPage<{
           </strong>
         ) : null}
         <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
-        {/* <div className="mt-2 after:block after:clear-both">
-          <p className="float-left">거래 선호도는 나만 볼 수 있어요</p>
-          <Link href={`/products/${staticProps.product.id}/purchase`} passHref>
-            <Buttons tag="a" sort="text-link" status="default" text="구매자 변경하기" className="float-right" />
-          </Link>
-        </div> */}
       </div>
 
       {/* 리뷰 */}
@@ -240,9 +236,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // 리뷰를 작성한 뒤 접근했을때
-  // 보낸 리뷰 보기로 보냄
-
   return {
     props: {
       staticProps: {
@@ -255,4 +248,4 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   };
 });
 
-export default ProductResume;
+export default ProductReview;

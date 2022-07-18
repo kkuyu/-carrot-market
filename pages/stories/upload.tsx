@@ -76,7 +76,7 @@ const StoryUpload: NextPage = () => {
 
   useEffect(() => {
     setLayout(() => ({
-      title: "동네생활 글쓰기",
+      title: "동네생활 글 쓰기",
       header: {
         headerUtils: ["back", "title", "submit"],
         submitId: "upload-story",

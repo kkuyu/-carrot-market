@@ -41,15 +41,10 @@ const EditProfile = ({ formId, formData, onValid, isDummyProfile, isSuccess, isL
   if (isDummyProfile) {
     return (
       <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5">
-        <div className="relative w-full pl-6">
-          <svg className="absolute top-0.5 left-0 w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p>
-            프로필 사진 및 관심사 설정은
-            <Buttons text="회원가입" sort="text-link" status="default" className="align-top" />후 이용 가능합니다.
-          </p>
-        </div>
+        <p className="text-notice">
+          프로필 사진 및 관심사 설정은
+          <Buttons text="회원가입" sort="text-link" status="default" className="align-top" />후 이용 가능합니다.
+        </p>
         {/* 닉네임 */}
         <div className="space-y-1">
           <Labels text="닉네임" htmlFor="name" />

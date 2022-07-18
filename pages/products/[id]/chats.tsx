@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
+import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
@@ -170,6 +171,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const product = await client.product.findUnique({
     where: {
       id: +productId,
+    },
+    include: {
+      records: {
+        where: {
+          OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+        },
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
     },
   });
 

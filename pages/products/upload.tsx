@@ -78,7 +78,7 @@ const ProductUpload: NextPage = () => {
 
   useEffect(() => {
     setLayout(() => ({
-      title: "중고거래 글쓰기",
+      title: "중고거래 글 쓰기",
       header: {
         headerUtils: ["back", "title", "submit"],
         submitId: "upload-product",

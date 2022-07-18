@@ -89,9 +89,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           id: exists.id,
         },
       });
-    } else if (!exists && purchase === true && purchaseUser) {
-      // create
-      recordPurchase = await client.record.create({
+    } else if (exists && purchase === true && purchaseUser) {
+      // update
+      recordPurchase = await client.record.update({
+        where: {
+          id: exists.id,
+        },
         data: {
           user: {
             connect: {
@@ -106,13 +109,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           kind: Kind.Purchase,
         },
       });
-    } else if (exists && purchase === true && purchaseUser) {
-      // delete
-      await client.record.delete({
-        where: {
-          id: exists.id,
-        },
-      });
+    } else if (!exists && purchase === true && purchaseUser) {
       // create
       recordPurchase = await client.record.create({
         data: {
