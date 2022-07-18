@@ -35,6 +35,7 @@ npx prisma studio
 - [ ] Comment -> StoryComment
 - [ ] Stream -> Streams
 - [ ] Message -> StreamsMessages
+- [ ] @relation(onDelete: Cascade)
 
 #### Header
 

@@ -1,49 +1,142 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { Review } from "@prisma/client";
+// @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { Review, User } from "@prisma/client";
 
-export interface GetReviewsResponse {
+export interface PostReviewsResponse {
   success: boolean;
-  reviews: (Review & { createdBy: Pick<User, "id" | "name" | "avatar"> })[];
+  review: Review | null;
+  error?: {
+    timestamp: Date;
+    name: string;
+    message: string;
+  };
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  const { user } = req.session;
-  const reviews = await client.review.findMany({
-    orderBy: {
-      createdAt: "desc",
-    },
-    where: {
-      createdForId: user?.id,
-    },
-    include: {
-      createdBy: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
+  try {
+    const { role, satisfaction, inquiry, text, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId, productId: _productId } = req.body;
+    const { user } = req.session;
+
+    // request valid
+    if (!role || !satisfaction || !_purchaseUserId || !_sellUserId) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (role !== "sellUser" && role !== "purchaseUser") {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    const sellUserId = +_sellUserId.toString();
+    const purchaseUserId = +_purchaseUserId.toString();
+    const productId = +_productId.toString();
+
+    const sellUser = await client.user.findUnique({
+      where: {
+        id: sellUserId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!sellUser) {
+      const error = new Error("NotFoundUser");
+      error.name = "NotFoundUser";
+      throw error;
+    }
+
+    const purchaseUser = await client.user.findUnique({
+      where: {
+        id: purchaseUserId,
+      },
+      select: {
+        id: true,
+      },
+    });
+    if (!purchaseUser) {
+      const error = new Error("NotFoundUser");
+      error.name = "NotFoundUser";
+      throw error;
+    }
+
+    const product = await client.product.findUnique({
+      where: {
+        id: productId,
+      },
+      include: {
+        reviews: true,
+      },
+    });
+    if (!product) {
+      const error = new Error("NotFoundProduct");
+      error.name = "NotFoundProduct";
+      throw error;
+    }
+
+    let newReview = null;
+    const exists = product.reviews.find((review) => review.role === role && review.sellUserId === sellUser.id && review.purchaseUserId === purchaseUser.id);
+
+    if (exists) {
+      const error = new Error("ExistsReview");
+      error.name = "ExistsReview";
+      throw error;
+    }
+
+    // create
+    newReview = await client.review.create({
+      data: {
+        role,
+        satisfaction,
+        inquiry,
+        text,
+        sellUser: {
+          connect: {
+            id: sellUser.id,
+          },
+        },
+        purchaseUser: {
+          connect: {
+            id: purchaseUser.id,
+          },
+        },
+        product: {
+          connect: {
+            id: product.id,
+          },
         },
       },
-    },
-  });
-  if (!reviews) {
-    res.status(200).json({
-      success: true,
-      reviews: [],
     });
+
+    // result
+    const result: PostReviewsResponse = {
+      success: true,
+      review: newReview,
+    };
+    return res.status(200).json(result);
+  } catch (error: unknown) {
+    // error
+    if (error instanceof Error) {
+      const result = {
+        success: false,
+        error: {
+          timestamp: Date.now().toString(),
+          name: error.name,
+          message: error.message,
+        },
+      };
+      return res.status(422).json(result);
+    }
   }
-  return res.status(200).json({
-    success: true,
-    reviews,
-  });
 }
 
 export default withSessionRoute(
   withHandler({
-    methods: ["GET"],
+    methods: [{ type: "POST", isPrivate: true }],
     handler,
   })
 );

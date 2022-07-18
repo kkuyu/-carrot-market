@@ -18,38 +18,38 @@ enum EmdType {
 }
 
 model User {
-  id              Int           @id @default(autoincrement())
-  name            String
-  phone           String        @unique
-  email           String?       @unique
-  avatar          String?
-  concerns        String?
-  emdType         EmdType
-  MAIN_emdAddrNm  String
-  MAIN_emdPosNm   String
-  MAIN_emdPosDx   Float
-  MAIN_emdPosX    Float
-  MAIN_emdPosY    Float
-  SUB_emdAddrNm   String?
-  SUB_emdPosNm    String?
-  SUB_emdPosDx    Float?
-  SUB_emdPosX     Float?
-  SUB_emdPosY     Float?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
-  tokens          Token[]
-  products        Product[]
-  chats           Chat[]
-  chatMessages    ChatMessage[]
-  stories         Story[]
-  comments        Comment[]
-  curiosities     Curiosity[]
-  emotions        Emotion[]
-  writtenReviews  Review[]      @relation(name: "writtenReviews")
-  receivedReviews Review[]      @relation(name: "receivedReviews")
-  records         Record[]
-  streams         Stream[]
-  messages        Message[]
+  id                 Int           @id @default(autoincrement())
+  name               String
+  phone              String        @unique
+  email              String?       @unique
+  avatar             String?
+  concerns           String?
+  emdType            EmdType
+  MAIN_emdAddrNm     String
+  MAIN_emdPosNm      String
+  MAIN_emdPosDx      Float
+  MAIN_emdPosX       Float
+  MAIN_emdPosY       Float
+  SUB_emdAddrNm      String?
+  SUB_emdPosNm       String?
+  SUB_emdPosDx       Float?
+  SUB_emdPosX        Float?
+  SUB_emdPosY        Float?
+  createdAt          DateTime      @default(now())
+  updatedAt          DateTime      @updatedAt
+  tokens             Token[]
+  products           Product[]
+  chats              Chat[]
+  chatMessages       ChatMessage[]
+  stories            Story[]
+  comments           Comment[]
+  curiosities        Curiosity[]
+  emotions           Emotion[]
+  sellUserReview     Review[]      @relation(name: "sellUserReview")
+  purchaseUserReview Review[]      @relation(name: "purchaseUserReview")
+  records            Record[]
+  streams            Stream[]
+  messages           Message[]
 }
 
 model Token {
@@ -78,6 +78,7 @@ model Product {
   updatedAt   DateTime @updatedAt
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
+  reviews     Review[]
   chats       Chat[]
   records     Record[]
 }
@@ -95,7 +96,7 @@ model Chat {
 model ChatMessage {
   id        Int      @id @default(autoincrement())
   text      String
-  user      User     @relation(fields: [userId], references: [id])
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
   chat      Chat     @relation(fields: [chatId], references: [id], onDelete: Cascade)
   chatId    Int
@@ -167,15 +168,18 @@ model Emotion {
 }
 
 model Review {
-  id           Int      @id @default(autoincrement())
-  review       String   @db.MediumText
-  score        Int      @default(1)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-  createdBy    User     @relation(name: "writtenReviews", fields: [createdById], references: [id], onDelete: Cascade)
-  createdById  Int
-  createdFor   User     @relation(name: "receivedReviews", fields: [createdForId], references: [id], onDelete: Cascade)
-  createdForId Int
+  id             Int      @id @default(autoincrement())
+  satisfaction   String
+  inquiry        String   @db.MediumText
+  text           String   @db.MediumText
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  sellUser       User     @relation(name: "sellUserReview", fields: [sellUserId], references: [id], onDelete: Cascade)
+  sellUserId     Int
+  purchaseUser   User     @relation(name: "purchaseUserReview", fields: [purchaseUserId], references: [id], onDelete: Cascade)
+  purchaseUserId Int
+  product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId      Int
 }
 
 enum Kind {
