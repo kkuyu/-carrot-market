@@ -6,7 +6,7 @@ import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { GetProfilesProductsResponse } from "@api/users/profiles/products";
+import { GetProfilesProductsResponse } from "@api/users/profiles/[id]/products";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -30,7 +30,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   const purchaseRecord = item?.records?.find((record) => record.kind === Kind.Purchase);
   const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(`/api/products/${item.id}/sale`, {
+  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : '', {
     onSuccess: (data) => {
       if (!data.recordSale) {
         router.push(`/products/${item.id}/purchase`);

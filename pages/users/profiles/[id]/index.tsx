@@ -10,8 +10,9 @@ import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
 // @api
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { ProfilesConcern } from "@api/users/profiles/types";
+import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
+import { GetProfilesProductsResponse } from "@api/users/profiles/[id]/products";
 // @components
 import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
@@ -35,7 +36,8 @@ const ProfileDetail: NextPage<{
   const [profile, setProfile] = useState<GetProfilesDetailResponse["profile"] | null>(staticProps?.profile ? staticProps.profile : null);
 
   // fetch data: profile detail
-  const { data, error, mutate: boundMutate } = useSWR<GetProfilesDetailResponse>(router.query.id && profile ? `/api/users/profiles/${router.query.id}` : null);
+  const { data, error } = useSWR<GetProfilesDetailResponse>(router.query.id && profile ? `/api/users/profiles/${router.query.id}` : null);
+  const { data: productData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=ALL` : null);
 
   // merge data
   useEffect(() => {
@@ -108,7 +110,7 @@ const ProfileDetail: NextPage<{
           <li>
             <Link href={`/users/profiles/${profile.id}/products`}>
               <a className="relative block py-4 pl-5 pr-10 font-semibold">
-                판매상품 {profile?._count?.products ? `${profile._count.products}개` : ""}
+                판매상품{productData?.total ? ` ${productData.total}개` : ""}
                 <svg className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
@@ -176,13 +178,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
-    },
-    include: {
-      _count: {
-        select: {
-          products: true,
-        },
-      },
     },
   });
 

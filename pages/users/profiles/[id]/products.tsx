@@ -2,9 +2,10 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
+import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
 import { PageLayout } from "@libs/states";
@@ -16,29 +17,25 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/products";
+import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/[id]/products";
 // @components
 import Product from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 
-type FilterTab = {
-  index: number;
-  value: ProfilesProductsFilter;
-  text: string;
-  name: string;
+const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string ="") => {
+  if (!id) return null;
+  if (pageIndex === 0) return `/api/users/profiles/${id}/products?page=1&${query}`;
+  if (previousPageData && !previousPageData.products.length) return null;
+  if (pageIndex + 1 > previousPageData.pages) return null;
+  return `/api/users/profiles/${id}/products?page=${pageIndex + 1}&${query}`;
 };
 
-const ProfileProducts: NextPage<{
-  staticProps: {
-    ALL: GetProfilesProductsResponse;
-    SALE: GetProfilesProductsResponse;
-    SOLD: GetProfilesProductsResponse;
-  };
-}> = ({ staticProps }) => {
+type FilterTab = { index: number; value: ProfilesProductsFilter; text: string; name: string };
+
+const ProfileProducts: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  // fetch data: profile detail
   const { user } = useUser();
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
 
@@ -49,35 +46,19 @@ const ProfileProducts: NextPage<{
     { index: 2, value: "SOLD", text: "판매완료", name: "판매 완료된 게시글" },
   ];
   const [filter, setFilter] = useState<FilterTab["value"]>(tabs[0].value);
-  const [pageIndex, setPageIndex] = useState<{ [key in ProfilesProductsFilter]: number }>({
-    ALL: 1,
-    SALE: 1,
-    SOLD: 1,
-  });
-  const [pageItems, setPageItems] = useState<{ [key in ProfilesProductsFilter]: { [key: number]: GetProfilesProductsResponse } }>({
-    ALL: { 1: staticProps.ALL },
-    SALE: { 1: staticProps.SALE },
-    SOLD: { 1: staticProps.SOLD },
-  });
-
-  // fetch data: profile product
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "0px" });
-  const { data: productData, error: productError } = useSWR<GetProfilesProductsResponse>(
-    router.query.id ? `/api/users/profiles/products?id=${router.query.id}&filter=${filter}&page=${pageIndex[filter]}` : null
-  );
-
-  // profile product list
   const activeTab = tabs.find((tab) => tab.value === filter)!;
-  const isReachingEnd = pageIndex[filter] >= pageItems[filter]?.[Object.keys(pageItems[filter]).length]?.pages || false;
-  const isLoading = !productData && !productError;
-  const products = useMemo(() => {
-    // empty
-    if (!Object.keys(pageItems[filter]).length) return [];
-    // entry
-    const entries = Object.entries(pageItems[filter])?.sort((a, b) => a[0].localeCompare(b[0]));
-    return entries?.flatMap(([key, value]) => (value === undefined ? [] : value.products));
-  }, [filter, pageItems]);
+
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+
+  const { data, size, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}`: ''));
+  const { data: allData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=ALL` : null);
+  const { data: saleData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SALE` : null);
+  const { data: soldData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SOLD` : null);
+
+  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isLoading = data && typeof data[data.length - 1] === "undefined";
+  const products = data ? data.flatMap((item) => item.products) : [];
 
   const changeFilter = (tab: FilterTab) => {
     setFilter(tab.value);
@@ -85,24 +66,10 @@ const ProfileProducts: NextPage<{
   };
 
   useEffect(() => {
-    if (isLoading) return;
     if (isVisible && !isReachingEnd) {
-      setPageIndex((pageIndex) => ({
-        ...pageIndex,
-        [filter]: pageIndex[filter] + 1,
-      }));
+      setSize(size + 1);
     }
   }, [isVisible, isReachingEnd]);
-
-  useEffect(() => {
-    setPageItems((pageItems) => ({
-      ...pageItems,
-      [filter]: {
-        ...pageItems[filter],
-        [pageIndex[filter]]: productData,
-      },
-    }));
-  }, [productData]);
 
   useEffect(() => {
     setLayout(() => ({
@@ -124,11 +91,12 @@ const ProfileProducts: NextPage<{
     <div className="container">
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
-          const entries = Object.entries(pageItems[tab.value])?.sort((a, b) => a[0].localeCompare(b[0]));
-          const total = entries.length ? entries[0]?.[1]?.total : 0;
           return (
             <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
-              {`${tab.text}${total > 0 ? ` ${total}` : ""}`}
+              {tab.text}
+              {tab.value === "ALL" && allData && allData?.total > 0 ? ` ${allData.total}` : null}
+              {tab.value === "SALE" && saleData && saleData?.total > 0 ? ` ${saleData.total}` : null}
+              {tab.value === "SOLD" && soldData && soldData?.total > 0 ? ` ${soldData.total}` : null}
             </button>
           );
         })}
@@ -176,30 +144,23 @@ const ProfileProducts: NextPage<{
 const Page: NextPage<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getProduct: { query: string; response: GetProfilesProductsResponse };
-  getProductBySale: { query: string; response: GetProfilesProductsResponse };
-  getProductBySold: { query: string; response: GetProfilesProductsResponse };
-}> = ({ getUser, getProfile, getProduct, getProductBySale, getProductBySold }) => {
-  const profileId = getProfile.response.profile.id;
+  getProductsByAll: { query: string; response: GetProfilesProductsResponse };
+  getProductsBySale: { query: string; response: GetProfilesProductsResponse };
+  getProductsBySold: { query: string; response: GetProfilesProductsResponse };
+}> = ({ getUser, getProfile, getProductsByAll, getProductsBySale, getProductsBySold }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users/my": getUser.response,
-          [`/api/users/profiles/${profileId}`]: getProfile.response,
-          [`/api/users/profiles/products?${getProduct.query}`]: getProduct.response,
-          [`/api/users/profiles/products?${getProductBySale.query}`]: getProductBySale.response,
-          [`/api/users/profiles/products?${getProductBySold.query}`]: getProductBySold.response,
+          [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsByAll.query, `${getProfile.response.profile.id}`))]: [getProductsByAll.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySold.query, `${getProfile.response.profile.id}`))]: [getProductsBySold.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySale.query, `${getProfile.response.profile.id}`))]: [getProductsBySale.response],
         },
       }}
     >
-      <ProfileProducts
-        staticProps={{
-          ALL: getProduct.response,
-          SALE: getProductBySale.response,
-          SOLD: getProductBySold.response,
-        }}
-      />
+      <ProfileProducts />
     </SWRConfig>
   );
 };
@@ -244,20 +205,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // getProduct
-  const countByAll = await client.product.count({
-    where: {
-      userId: +profileId,
-    },
-  });
-  const productsByAll = await client.product.findMany({
+  // find product
+  const productByAll = await client.product.findMany({
     take: 10,
     skip: 0,
     orderBy: {
       resumeAt: "desc",
     },
     where: {
-      userId: +profileId,
+      userId: profile.id,
     },
     include: {
       records: {
@@ -274,23 +230,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // getSaleProduct
-  const countBySale = await client.product.count({
-    where: {
-      userId: +profileId,
-      AND: {
-        records: { some: { kind: Kind.Sale } },
-      },
-    },
-  });
-  const productsBySale = await client.product.findMany({
+  // find product by sale
+  const productBySale = await client.product.findMany({
     take: 10,
     skip: 0,
     orderBy: {
       resumeAt: "desc",
     },
     where: {
-      userId: +profileId,
+      userId: profile.id,
       AND: {
         records: { some: { kind: Kind.Sale } },
       },
@@ -310,23 +258,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // getSoldProduct
-  const countBySold = await client.product.count({
-    where: {
-      userId: +profileId,
-      NOT: {
-        records: { some: { kind: Kind.Sale } },
-      },
-    },
-  });
-  const productsBySold = await client.product.findMany({
+  // find product by sold
+  const productBySold = await client.product.findMany({
     take: 10,
     skip: 0,
     orderBy: {
       resumeAt: "desc",
     },
     where: {
-      userId: +profileId,
+      userId: profile.id,
       NOT: {
         records: { some: { kind: Kind.Sale } },
       },
@@ -362,31 +302,28 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           profile: JSON.parse(JSON.stringify(profile || {})),
         },
       },
-      getProduct: {
-        query: `id=${profileId}&filter=ALL&page=1`,
+      getProductsByAll: {
+        query: `filter=ALL`,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(productsByAll || [])),
+          products: JSON.parse(JSON.stringify(productByAll || [])),
           pages: 0,
-          total: countByAll,
         },
       },
-      getProductBySale: {
-        query: `id=${profileId}&filter=SALE&page=1`,
+      getProductsBySale: {
+        query: `filter=SALE`,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(productsBySale || [])),
+          products: JSON.parse(JSON.stringify(productBySale || [])),
           pages: 0,
-          total: countBySale,
         },
       },
-      getProductBySold: {
-        query: `id=${profileId}&filter=SOLD&page=1`,
+      getProductsBySold: {
+        query: `filter=SOLD`,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(productsBySold || [])),
+          products: JSON.parse(JSON.stringify(productBySold || [])),
           pages: 0,
-          total: countBySold,
         },
       },
     },
