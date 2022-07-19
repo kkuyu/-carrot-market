@@ -1,43 +1,43 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import useSWR, { SWRConfig } from "swr";
+import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
+import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
-// @libs
+// @lib
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
-import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
+import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetChatsResponse } from "@api/chats";
+import { GetUserResponse } from "@api/users/my";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @components
-import Chat, { ChatItem } from "@components/cards/chat";
+import Chat from "@components/cards/chat";
 
-const ProductPurchaseAll: NextPage<{
-  staticProps: {
-    product: GetProductsDetailResponse["product"];
-  };
-  getChats: { query: string; response: GetChatsResponse };
-}> = ({ staticProps, getChats }) => {
+const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
+  if (pageIndex === 0) return `/api/chats?page=1`;
+  if (previousPageData && !previousPageData.chats.length) return null;
+  if (pageIndex + 1 > previousPageData.pages) return null;
+  return `/api/chats?page=${pageIndex + 1}`;
+};
+
+const ProductPurchase: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user } = useUser();
 
-  const [pageIndex, setPageIndex] = useState(1);
-  const [pageItems, setPageItems] = useState<{ [key: number]: GetChatsResponse }>({ 1: getChats.response });
-
-  // fetch data: chats
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "0px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
-  const { data, error } = useSWR<GetChatsResponse>(router.query.id ? `/api/chats?page=${pageIndex}` : null);
+  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>(getKey);
   const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
     onSuccess: (data) => {
       router.push(`/products/${router.query.id}/review`);
@@ -51,34 +51,20 @@ const ProductPurchaseAll: NextPage<{
     },
   });
 
-  const isReachingEnd = pageIndex >= pageItems?.[Object.keys(pageItems).length]?.pages || false;
-  const isLoading = !data && !error;
-  const chats = useMemo(() => {
-    // empty
-    if (!Object.keys(pageItems).length) return [];
-    // entry
-    const entries = Object.entries(pageItems)?.sort((a, b) => a[0].localeCompare(b[0]));
-    return entries?.flatMap(([key, value]) => (value === undefined ? [] : value.chats));
-  }, [pageItems]);
+  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isLoading = data && typeof data[data.length - 1] === "undefined";
+  const chats = data ? data.flatMap((item) => item.chats) : [];
 
-  const purchaseItem = (item: ChatItem, user: ChatItem["users"][0]) => {
+  const purchaseItem = (item: GetChatsResponse["chats"][0], chatUser: GetChatsResponse["chats"][0]["users"][0]) => {
     if (updatePurchaseLoading) return;
-    updatePurchase({ purchase: true, purchaseUserId: user.id });
+    updatePurchase({ purchase: true, purchaseUserId: chatUser.id });
   };
 
   useEffect(() => {
-    if (isLoading) return;
     if (isVisible && !isReachingEnd) {
-      setPageIndex((pageIndex) => pageIndex + 1);
+      setSize(size + 1);
     }
   }, [isVisible, isReachingEnd]);
-
-  useEffect(() => {
-    setPageItems((pageItems) => ({
-      ...pageItems,
-      [pageIndex]: data!,
-    }));
-  }, [data]);
 
   useEffect(() => {
     setLayout(() => ({
@@ -138,20 +124,19 @@ const ProductPurchaseAll: NextPage<{
 };
 
 const Page: NextPage<{
-  staticProps: {
-    product: GetProductsDetailResponse["product"];
-  };
-  getChats: { query: string; response: GetChatsResponse };
-}> = ({ staticProps, getChats }) => {
+  getUser: { response: GetUserResponse };
+  getChat: { response: GetChatsResponse };
+}> = ({ getUser, getChat }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          [`/api/chats?${getChats.query}`]: getChats.response,
+          "/api/users/my": getUser.response,
+          [unstable_serialize(getKey)]: [getChat.response],
         },
       }}
     >
-      <ProductPurchaseAll {...{ staticProps, getChats }} />
+      <ProductPurchase />
     </SWRConfig>
   );
 };
@@ -203,7 +188,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // invalid product: not found
-  // redirect: /
+  // redirect: /products/id
   if (!product) {
     return {
       redirect: {
@@ -251,16 +236,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const totalChats = await client.chat.count({
-    where: {
-      users: {
-        some: {
-          id: ssrUser.profile?.id,
-        },
-      },
-    },
-  });
-
+  // find chat
   const chats = ssrUser.profile
     ? await client.chat.findMany({
         take: 10,
@@ -288,21 +264,26 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
               id: ssrUser.profile?.id,
             },
           },
+          // productId: product.id,
         },
       })
     : [];
 
   return {
     props: {
-      staticProps: {
-        product: JSON.parse(JSON.stringify(product || {})),
+      getUser: {
+        response: {
+          success: true,
+          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
+          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
+          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
+        },
       },
-      getChats: {
-        query: `page=1`,
+      getChat: {
         response: {
           success: true,
           chats: JSON.parse(JSON.stringify(chats || [])),
-          pages: Math.ceil(totalChats / 10),
+          pages: 0,
         },
       },
     },

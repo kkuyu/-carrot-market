@@ -36,7 +36,7 @@ const ChatHome: NextPage = () => {
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
   const { data, size, setSize, mutate } = useSWRInfinite<GetChatsResponse>(getKey);
 
-  const isReachingEnd = data && size === data[data.length - 1].pages;
+  const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : [];
 

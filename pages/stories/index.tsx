@@ -46,7 +46,7 @@ const StoryHome: NextPage = () => {
     getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
   );
 
-  const isReachingEnd = data && size === data[data.length - 1].pages;
+  const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : [];
 
