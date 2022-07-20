@@ -21,6 +21,7 @@ import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/
 // @components
 import Product from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
+import FeedbackProductOthers from "@components/groups/feedbackProductOthers";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string ="") => {
   if (!id) return null;
@@ -119,6 +120,7 @@ const ProfileProducts: NextPage = () => {
                   </a>
                 </Link>
                 {profileData?.profile.id === user?.id && <FeedbackProduct item={item} />}
+                {profileData?.profile.id === user?.id && <FeedbackProductOthers item={item} />}
               </li>
             ))}
           </ul>
