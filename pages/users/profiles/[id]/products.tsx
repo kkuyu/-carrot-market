@@ -1,7 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import NextError from "next/error";
 import { useEffect, useRef, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
@@ -85,7 +84,7 @@ const ProfileProducts: NextPage = () => {
   }, []);
 
   if (!profileData?.profile) {
-    return <NextError statusCode={404} />;
+    return null
   }
 
   return (
@@ -203,12 +202,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // 404
   if (!profile) {
     return {
-      notFound: true,
+      redirect: {
+        permanent: false,
+        destination: `/users/profiles/${profileId}`,
+      },
     };
   }
 
   // find product
-  const productByAll = await client.product.findMany({
+  const productsByAll = await client.product.findMany({
     take: 10,
     skip: 0,
     orderBy: {
@@ -233,7 +235,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // find product by sale
-  const productBySale = await client.product.findMany({
+  const productsBySale = await client.product.findMany({
     take: 10,
     skip: 0,
     orderBy: {
@@ -261,7 +263,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // find product by sold
-  const productBySold = await client.product.findMany({
+  const productsBySold = await client.product.findMany({
     take: 10,
     skip: 0,
     orderBy: {
@@ -308,7 +310,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         query: `filter=ALL`,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(productByAll || [])),
+          products: JSON.parse(JSON.stringify(productsByAll || [])),
           pages: 0,
         },
       },
@@ -316,7 +318,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         query: `filter=SALE`,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(productBySale || [])),
+          products: JSON.parse(JSON.stringify(productsBySale || [])),
           pages: 0,
         },
       },
@@ -324,7 +326,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         query: `filter=SOLD`,
         response: {
           success: true,
-          products: JSON.parse(JSON.stringify(productBySold || [])),
+          products: JSON.parse(JSON.stringify(productsBySold || [])),
           pages: 0,
         },
       },

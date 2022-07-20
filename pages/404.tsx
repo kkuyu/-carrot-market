@@ -21,9 +21,6 @@ const Error404: NextPage = () => {
     if (/^\/users\/profiles\/[0-9]*$/.test(router.asPath)) {
       return "탈퇴하였거나 존재하지 않습니다.";
     }
-    if (/^\/users\/profiles\/[0-9]*\/products$/.test(router.asPath)) {
-      return "탈퇴하였거나 존재하지 않습니다.";
-    }
     return "404";
   };
 

@@ -267,6 +267,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // purchase product && exists review (purchase)
+  // redirect: /products/id/review
+  if (purchaseRecord && product.reviews.length) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${product.id}/review`,
+      },
+    };
+  }
+
   // find chat
   const chats = ssrUser.profile
     ? await client.chat.findMany({
