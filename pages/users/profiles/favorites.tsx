@@ -15,19 +15,18 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users/my";
-import { GetProfilesPurchasesResponse } from "@api/users/profiles/purchases";
+import { GetProfilesFavoritesResponse } from "@api/users/profiles/favorites";
 // @components
 import Product from "@components/cards/product";
-import FeedbackProduct from "@components/groups/feedbackProduct";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse) => {
-  if (pageIndex === 0) return `/api/users/profiles/purchases?page=1`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesFavoritesResponse) => {
+  if (pageIndex === 0) return `/api/users/profiles/favorites?page=1`;
   if (previousPageData && !previousPageData.products.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/profiles/purchases?page=${pageIndex + 1}`;
+  return `/api/users/profiles/favorites?page=${pageIndex + 1}`;
 };
 
-const ProfilePurchase: NextPage = () => {
+const ProfileFavorites: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
@@ -36,7 +35,7 @@ const ProfilePurchase: NextPage = () => {
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>(getKey);
+  const { data, size, setSize } = useSWRInfinite<GetProfilesFavoritesResponse>(getKey);
 
   const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
@@ -50,7 +49,7 @@ const ProfilePurchase: NextPage = () => {
 
   useEffect(() => {
     setLayout(() => ({
-      title: "구매내역",
+      title: "관심목록",
       header: {
         headerUtils: ["back", "title"],
       },
@@ -62,7 +61,7 @@ const ProfilePurchase: NextPage = () => {
 
   return (
     <div className="container">
-      {/* 구매내역: List */}
+      {/* 관심목록: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
           <ul className="divide-y-8">
@@ -73,20 +72,19 @@ const ProfilePurchase: NextPage = () => {
                     <Product item={item} />
                   </a>
                 </Link>
-                <FeedbackProduct item={item} />
               </li>
             ))}
           </ul>
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? `구매내역을 불러오고있어요` : isReachingEnd ? `구매내역을 모두 확인하였어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isLoading ? `관심목록을 불러오고있어요` : isReachingEnd ? `관심목록을 모두 확인하였어요` : ""}</span>
           </div>
         </div>
       )}
 
-      {/* 구매내역: Empty */}
+      {/* 관심목록: Empty */}
       {!Boolean(products.length) && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">{`구매내역이 존재하지 않아요`}</p>
+          <p className="text-gray-500">{`관심목록이 존재하지 않아요`}</p>
         </div>
       )}
 
@@ -98,7 +96,7 @@ const ProfilePurchase: NextPage = () => {
 
 const Page: NextPage<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProfilesPurchasesResponse };
+  getProduct: { response: GetProfilesFavoritesResponse };
 }> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
@@ -109,7 +107,7 @@ const Page: NextPage<{
         },
       }}
     >
-      <ProfilePurchase />
+      <ProfileFavorites />
     </SWRConfig>
   );
 };
@@ -148,7 +146,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         where: {
           userId: ssrUser.profile.id,
-          kind: Kind.Purchase,
+          kind: Kind.Favorite,
         },
         include: {
           product: {
