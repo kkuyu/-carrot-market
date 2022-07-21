@@ -22,7 +22,7 @@ import Product from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import FeedbackProductOthers from "@components/groups/feedbackProductOthers";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string ="") => {
+const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string = "") => {
   if (!id) return null;
   if (pageIndex === 0) return `/api/users/profiles/${id}/products?page=1&${query}`;
   if (previousPageData && !previousPageData.products.length) return null;
@@ -51,10 +51,12 @@ const ProfileProducts: NextPage = () => {
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}`: ''));
-  const { data: allData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=ALL` : null);
-  const { data: saleData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SALE` : null);
-  const { data: soldData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SOLD` : null);
+  const { data, size, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) =>
+    getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
+  );
+  const { data: allData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=ALL&type=ONLY_COUNT` : null);
+  const { data: saleData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SALE&type=ONLY_COUNT` : null);
+  const { data: soldData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SOLD&type=ONLY_COUNT` : null);
 
   const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
@@ -84,7 +86,7 @@ const ProfileProducts: NextPage = () => {
   }, []);
 
   if (!profileData?.profile) {
-    return null
+    return null;
   }
 
   return (
@@ -155,9 +157,15 @@ const Page: NextPage<{
         fallback: {
           "/api/users/my": getUser.response,
           [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsByAll.query, `${getProfile.response.profile.id}`))]: [getProductsByAll.response],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySold.query, `${getProfile.response.profile.id}`))]: [getProductsBySold.response],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySale.query, `${getProfile.response.profile.id}`))]: [getProductsBySale.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsByAll.query, `${getProfile.response.profile.id}`))]: [
+            getProductsByAll.response,
+          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySold.query, `${getProfile.response.profile.id}`))]: [
+            getProductsBySold.response,
+          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySale.query, `${getProfile.response.profile.id}`))]: [
+            getProductsBySale.response,
+          ],
         },
       }}
     >
@@ -188,13 +196,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
-    },
-    include: {
-      _count: {
-        select: {
-          products: true,
-        },
-      },
     },
   });
 

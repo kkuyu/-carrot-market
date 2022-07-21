@@ -18,107 +18,86 @@ export interface GetProfilesFavoritesResponse {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  if (!req.query.page) {
+  try {
+    const { page: _page } = req.query;
     const { user } = req.session;
 
-    // fetch data: client.record
+    // request valid
+    if (!_page) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data: client.product
+    const displayRow = 10;
+    const page = +_page.toString();
+
     const totalRecords = await client.record.count({
       where: {
         userId: user?.id,
         kind: Kind.Purchase,
       },
     });
+    const records = await client.record.findMany({
+      take: displayRow,
+      skip: (page - 1) * displayRow,
+      orderBy: {
+        createdAt: "desc",
+      },
+      include: {
+        product: {
+          include: {
+            records: {
+              where: {
+                OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
+              },
+              select: {
+                id: true,
+                kind: true,
+                userId: true,
+              },
+            },
+            chats: {
+              include: {
+                _count: {
+                  select: {
+                    chatMessages: true,
+                  },
+                },
+              },
+            },
+            reviews: true,
+          },
+        },
+      },
+      where: {
+        userId: user?.id,
+        kind: Kind.Favorite,
+      },
+    });
+    const products = records.map((record) => record.product);
 
     // result
     const result: GetProfilesFavoritesResponse = {
       success: true,
-      products: [],
-      pages: 0,
+      products,
+      pages: Math.ceil(totalRecords / displayRow),
       total: totalRecords,
     };
     return res.status(200).json(result);
-  } else {
-    try {
-      const { page: _page } = req.query;
-      const { user } = req.session;
-
-      // request valid
-      if (!_page) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
-
-      // fetch data: client.product
-      const displayRow = 10;
-      const page = +_page.toString();
-
-      const totalRecords = await client.record.count({
-        where: {
-          userId: user?.id,
-          kind: Kind.Purchase,
+  } catch (error: unknown) {
+    // error
+    if (error instanceof Error) {
+      const result = {
+        success: false,
+        error: {
+          timestamp: Date.now().toString(),
+          name: error.name,
+          message: error.message,
         },
-      });
-      const records = await client.record.findMany({
-        take: displayRow,
-        skip: (page - 1) * displayRow,
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          product: {
-            include: {
-              records: {
-                where: {
-                  OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
-                },
-                select: {
-                  id: true,
-                  kind: true,
-                  userId: true,
-                },
-              },
-              chats: {
-                include: {
-                  _count: {
-                    select: {
-                      chatMessages: true,
-                    },
-                  },
-                },
-              },
-              reviews: true,
-            },
-          },
-        },
-        where: {
-          userId: user?.id,
-          kind: Kind.Favorite,
-        },
-      });
-      const products = records.map((record) => record.product);
-
-      // result
-      const result: GetProfilesFavoritesResponse = {
-        success: true,
-        products,
-        pages: Math.ceil(totalRecords / displayRow),
-        total: totalRecords,
       };
-      return res.status(200).json(result);
-    } catch (error: unknown) {
-      // error
-      if (error instanceof Error) {
-        const result = {
-          success: false,
-          error: {
-            timestamp: Date.now().toString(),
-            name: error.name,
-            message: error.message,
-          },
-        };
-        return res.status(422).json(result);
-      }
+      return res.status(422).json(result);
     }
   }
 }

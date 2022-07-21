@@ -20,11 +20,17 @@ export interface GetProfilesProductsResponse {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  if (!req.query.page) {
+  // ONLY_COUNT
+  if (req.query.type === "ONLY_COUNT") {
     const { id: _id, filter: _filter } = req.query;
 
     // request valid
     if (!_id || !_filter) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (!(_filter === "ALL" || _filter === "SALE" || _filter === "SOLD")) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -61,101 +67,102 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       total: totalProducts,
     };
     return res.status(200).json(result);
-  } else {
-    try {
-      const { id: _id, filter: _filter, page: _page } = req.query;
+  }
 
-      // request valid
-      if (!_id || !_filter) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
-      if (!_page) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
+  // DEFAULT
+  try {
+    const { id: _id, filter: _filter, page: _page } = req.query;
 
-      // fetch data: client.product
-      const id = +_id.toString();
-      const filter = _filter.toString() as ProfilesProductsFilter;
-      const displayRow = 10;
-      const page = +_page.toString();
-      const recordsFilter =
-        filter === "ALL"
-          ? {}
-          : filter === "SALE"
-          ? {
-              AND: { records: { some: { kind: Kind.Sale } } },
-            }
-          : filter === "SOLD"
-          ? {
-              NOT: { records: { some: { kind: Kind.Sale } } },
-            }
-          : {};
+    // request valid
+    if (!_id || !_filter) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (!_page) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
-      const totalProducts = await client.product.count({
-        where: {
-          userId: id,
-          ...recordsFilter,
-        },
-      });
-      const products = await client.product.findMany({
-        take: displayRow,
-        skip: (page - 1) * displayRow,
-        orderBy: {
-          resumeAt: "desc",
-        },
-        include: {
-          records: {
-            where: {
-              OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
-            },
-            select: {
-              id: true,
-              kind: true,
-              userId: true,
-            },
+    // fetch data: client.product
+    const id = +_id.toString();
+    const filter = _filter.toString() as ProfilesProductsFilter;
+    const displayRow = 10;
+    const page = +_page.toString();
+    const recordsFilter =
+      filter === "ALL"
+        ? {}
+        : filter === "SALE"
+        ? {
+            AND: { records: { some: { kind: Kind.Sale } } },
+          }
+        : filter === "SOLD"
+        ? {
+            NOT: { records: { some: { kind: Kind.Sale } } },
+          }
+        : {};
+
+    const totalProducts = await client.product.count({
+      where: {
+        userId: id,
+        ...recordsFilter,
+      },
+    });
+    const products = await client.product.findMany({
+      take: displayRow,
+      skip: (page - 1) * displayRow,
+      orderBy: {
+        resumeAt: "desc",
+      },
+      include: {
+        records: {
+          where: {
+            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
           },
-          chats: {
-            include: {
-              _count: {
-                select: {
-                  chatMessages: true,
-                },
+          select: {
+            id: true,
+            kind: true,
+            userId: true,
+          },
+        },
+        chats: {
+          include: {
+            _count: {
+              select: {
+                chatMessages: true,
               },
             },
           },
-          reviews: true,
         },
-        where: {
-          userId: id,
-          ...recordsFilter,
-        },
-      });
+        reviews: true,
+      },
+      where: {
+        userId: id,
+        ...recordsFilter,
+      },
+    });
 
-      // result
-      const result: GetProfilesProductsResponse = {
-        success: true,
-        products,
-        pages: Math.ceil(totalProducts / displayRow),
-        total: totalProducts,
+    // result
+    const result: GetProfilesProductsResponse = {
+      success: true,
+      products,
+      pages: Math.ceil(totalProducts / displayRow),
+      total: totalProducts,
+    };
+    return res.status(200).json(result);
+  } catch (error: unknown) {
+    // error
+    if (error instanceof Error) {
+      const result = {
+        success: false,
+        error: {
+          timestamp: Date.now().toString(),
+          name: error.name,
+          message: error.message,
+        },
       };
-      return res.status(200).json(result);
-    } catch (error: unknown) {
-      // error
-      if (error instanceof Error) {
-        const result = {
-          success: false,
-          error: {
-            timestamp: Date.now().toString(),
-            name: error.name,
-            message: error.message,
-          },
-        };
-        return res.status(422).json(result);
-      }
+      return res.status(422).json(result);
     }
   }
 }
