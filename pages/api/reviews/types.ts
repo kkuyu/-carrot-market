@@ -12,7 +12,7 @@ export const ReviewSatisfaction: { text: keyof typeof ReviewSatisfactionEnum; va
   { text: "최고예요", value: "best" },
 ];
 
-export const ReviewInquiryEnum = {
+export const ReviewMannersEnum = {
   ["제가 있는 곳까지 와서 거래했어요"]: "come-to-my-place-and-trade",
   ["친절하고 매너가 좋아요"]: "kind-and-good-manners",
   ["시간 약속을 잘 지켜요"]: "keep-your-appointment-on-time",
@@ -35,9 +35,9 @@ export const ReviewInquiryEnum = {
   ["원하지 않는 가격을 계속 요구해요"]: "asking-for-the-price-do-not-want",
 } as const;
 
-export type ReviewInquiryEnum = typeof ReviewInquiryEnum[keyof typeof ReviewInquiryEnum];
+export type ReviewMannersEnum = typeof ReviewMannersEnum[keyof typeof ReviewMannersEnum];
 
-export const ReviewInquiry: { text: keyof typeof ReviewInquiryEnum; value: ReviewInquiryEnum; satisfaction: ReviewSatisfactionEnum[]; role: ("sellUser" | "purchaseUser")[] }[] = [
+export const ReviewManners: { text: keyof typeof ReviewMannersEnum; value: ReviewMannersEnum; satisfaction: ReviewSatisfactionEnum[]; role: ("sellUser" | "purchaseUser")[] }[] = [
   { text: "제가 있는 곳까지 와서 거래했어요", value: "come-to-my-place-and-trade", satisfaction: ["best", "good"], role: ["sellUser"] },
   { text: "친절하고 매너가 좋아요", value: "kind-and-good-manners", satisfaction: ["best", "good"], role: ["sellUser", "purchaseUser"] },
   { text: "시간 약속을 잘 지켜요", value: "keep-your-appointment-on-time", satisfaction: ["best", "good"], role: ["sellUser", "purchaseUser"] },

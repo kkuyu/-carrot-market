@@ -1,7 +1,7 @@
 import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @api
-import { ReviewInquiry, ReviewInquiryEnum, ReviewSatisfaction, ReviewSatisfactionEnum } from "@api/reviews/types";
+import { ReviewManners, ReviewMannersEnum, ReviewSatisfaction, ReviewSatisfactionEnum } from "@api/reviews/types";
 // @components
 import Buttons from "@components/buttons";
 import Labels from "@components/labels";
@@ -10,7 +10,7 @@ import TextAreas from "@components/textareas";
 export interface ReviewProductTypes {
   role: "sellUser" | "purchaseUser";
   satisfaction: ReviewSatisfactionEnum;
-  inquiry: ReviewInquiryEnum[];
+  manners: ReviewMannersEnum[];
   text: string;
 }
 
@@ -26,11 +26,11 @@ const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: Rev
 
   const satisfaction = watch("satisfaction");
 
-  const inquiryLabel = `어떤점이 ${satisfaction === "best" ? "최고였나요?" : satisfaction === "good" ? "좋았나요?" : satisfaction === "dislike" ? "별로였나요?" : ""}`;
-  const inquiries = !satisfaction ? [] : ReviewInquiry.filter((inquiry) => inquiry.role.includes(getValues("role")) && inquiry.satisfaction.includes(satisfaction));
+  const mannersLabel = `어떤점이 ${satisfaction === "best" ? "최고였나요?" : satisfaction === "good" ? "좋았나요?" : satisfaction === "dislike" ? "별로였나요?" : ""}`;
+  const mannersItems = !satisfaction ? [] : ReviewManners.filter((assessment) => assessment.role.includes(getValues("role")) && assessment.satisfaction.includes(satisfaction));
 
   useEffect(() => {
-    resetField("inquiry");
+    resetField("manners");
     resetField("text");
   }, [satisfaction]);
 
@@ -48,17 +48,17 @@ const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: Rev
         ))}
       </div>
       {/* 평가 */}
-      {satisfaction && Boolean(inquiries.length) && (
+      {satisfaction && Boolean(mannersItems.length) && (
         <div className="space-y-1">
-          <Labels tag="span" htmlFor="inquiry" text={inquiryLabel} />
-          {inquiries.map((inquiry) => (
-            <span key={inquiry.value} className="relative block">
-              <input {...register("inquiry")} type="checkbox" id={inquiry.value} value={inquiry.value} className="peer sr-only" />
+          <Labels tag="span" htmlFor="manners" text={mannersLabel} />
+          {mannersItems.map((item) => (
+            <span key={item.value} className="relative block">
+              <input {...register("manners")} type="checkbox" id={item.value} value={item.value} className="peer sr-only" />
               <svg className="absolute top-0.5 l-0 w-5 h-5 text-gray-300 peer-checked:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <label htmlFor={inquiry.value} className="pl-6">
-                {inquiry.text}
+              <label htmlFor={item.value} className="pl-6">
+                {item.text}
               </label>
             </span>
           ))}

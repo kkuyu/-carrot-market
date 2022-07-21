@@ -47,6 +47,7 @@ model User {
   emotions           Emotion[]
   sellUserReview     Review[]      @relation(name: "sellUserReview")
   purchaseUserReview Review[]      @relation(name: "purchaseUserReview")
+  manners            Manner[]
   records            Record[]
   streams            Stream[]
   messages           Message[]
@@ -167,11 +168,22 @@ model Emotion {
   storyId   Int
 }
 
+model Manner {
+  id        Int      @id @default(autoincrement())
+  count     Int
+  value     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  reviews   Review[]
+}
+
 model Review {
   id             Int      @id @default(autoincrement())
   role           String
   satisfaction   String
-  inquiry        String   @db.MediumText
+  manners        Manner[]
   text           String?  @db.MediumText
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt

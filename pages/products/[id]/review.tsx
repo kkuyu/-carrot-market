@@ -53,7 +53,7 @@ const ProductReview: NextPage<{
     if (loading) return;
     uploadReview({
       ...data,
-      inquiry: data.inquiry?.join(","),
+      manners: data.manners,
       purchaseUserId: staticProps?.purchaseUser.id,
       sellUserId: staticProps?.sellUser.id,
       productId: staticProps.product.id,

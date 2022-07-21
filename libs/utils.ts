@@ -4,6 +4,7 @@ import name from "@libs/name.json";
 // @api
 import { StoryCategory } from "@api/stories/types";
 import { ProductCategory } from "@api/products/types";
+import { ReviewManners } from "@api/reviews/types";
 
 export const isInstance = <T extends object>(value: string | number, type: T): type is T => {
   return Object.values(type).includes(value);
@@ -33,6 +34,10 @@ export const getCategory = (type: "product" | "story", categoryKey: string) => {
   if (type === "product") return ProductCategory.find((v) => v.value === categoryKey) || null;
   if (type === "story") return StoryCategory.find((v) => v.value === categoryKey) || null;
   return null;
+};
+
+export const getReviewManners = (mannerKey: string) => {
+  return ReviewManners.find((v) => v.value === mannerKey) || null;
 };
 
 type timeLabel = "분" | "시간" | "일" | "개월" | "년";

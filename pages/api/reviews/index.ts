@@ -17,7 +17,7 @@ export interface PostReviewsResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { role, satisfaction, inquiry, text, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId, productId: _productId } = req.body;
+    const { role, satisfaction, manners = [], text, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId, productId: _productId } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -42,6 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
       select: {
         id: true,
+        manners: true,
       },
     });
     if (!sellUser) {
@@ -56,6 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
       select: {
         id: true,
+        manners: true,
       },
     });
     if (!purchaseUser) {
@@ -92,7 +94,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       data: {
         role,
         satisfaction,
-        inquiry,
         text,
         sellUser: {
           connect: {
@@ -111,6 +112,43 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       },
     });
+
+    const mannerUser = newReview.role === "sellUser" ? purchaseUser : sellUser;
+    for (let index = 0; index < manners.length; index++) {
+      const exists = mannerUser.manners.find((manner) => manner.value === manners[index]);
+      if (exists) {
+        await client.manner.update({
+          where: {
+            id: exists.id,
+          },
+          data: {
+            count: exists.count + 1,
+            reviews: {
+              connect: {
+                id: newReview.id,
+              },
+            },
+          },
+        });
+      } else {
+        await client.manner.create({
+          data: {
+            count: 1,
+            value: manners[index],
+            reviews: {
+              connect: {
+                id: newReview.id,
+              },
+            },
+            user: {
+              connect: {
+                id: mannerUser.id,
+              },
+            },
+          },
+        });
+      }
+    }
 
     // result
     const result: PostReviewsResponse = {
