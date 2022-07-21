@@ -114,11 +114,8 @@ const ProductPurchase: NextPage = () => {
                     const usersThumbnail = chatUser.avatar || "";
                     return (
                       <li key={`${item.id}-${chatUser.id}`}>
-                        <button type="button" className="relative block w-full pl-5 pr-10 py-3" onClick={() => purchaseItem(item, chatUser)}>
+                        <button type="button" className="block-arrow py-3" onClick={() => purchaseItem(item, chatUser)}>
                           <Chat item={item} users={[chatUser]} type="timestamp" usersThumbnail={usersThumbnail} />
-                          <svg className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                          </svg>
                         </button>
                       </li>
                     );

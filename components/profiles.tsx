@@ -7,13 +7,14 @@ export interface ProfilesProps {
     name: string;
     avatar?: string | null;
   };
+  signature?: string;
   uuid?: string;
   emdPosNm?: string;
   diffTime?: string;
   size?: "sm" | "base";
 }
 
-const Profiles = ({ user, uuid, emdPosNm, diffTime, size = "base" }: ProfilesProps) => {
+const Profiles = ({ user, signature, uuid, emdPosNm, diffTime, size = "base" }: ProfilesProps) => {
   const classNames = {
     sm: {
       wrapper: "",
@@ -52,7 +53,7 @@ const Profiles = ({ user, uuid, emdPosNm, diffTime, size = "base" }: ProfilesPro
       </div>
       <div className="grow shrink basis-auto min-w-0 pl-3">
         <strong className={`block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].name}`}>{user?.name}</strong>
-        <span className={`block text-gray-500 ${classNames[size].extra}`}>{[emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
+        <span className={`block text-gray-500 ${classNames[size].extra}`}>{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
       </div>
       {/* <div>todo: 매너온도</div> */}
     </div>

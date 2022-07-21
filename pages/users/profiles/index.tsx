@@ -86,11 +86,8 @@ const ProfileHome: NextPage = () => {
 
       <div className="-mx-5">
         <Link href={`/users/profiles/${user?.id}`}>
-          <a className="relative block pl-5 pr-10">
+          <a className="block-arrow">
             <Profiles user={user} uuid={user?.id === -1 ? "" : `#${user?.id}`} emdPosNm={currentAddr?.emdPosNm || ""} />
-            <svg className="absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-            </svg>
           </a>
         </Link>
       </div>

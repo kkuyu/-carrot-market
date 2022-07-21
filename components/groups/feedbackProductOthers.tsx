@@ -27,9 +27,8 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
 
   const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
   const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
-  const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : '', {
+  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: (data) => {
       if (!data.recordSale) {
         router.push(`/products/${item.id}/purchase`);
@@ -60,7 +59,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
             { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item.id}/delete`) },
           ]
         : [
-            { key: "sale", text: "판매중", onClick: () => (existsReview ? openSaleModal() : toggleSale(true)) },
+            { key: "sale", text: "판매중", onClick: () => (item?.reviews?.length ? openSaleModal() : toggleSale(true)) },
             { key: "update", text: "수정", onClick: () => router.push(`/products/${item.id}/edit`) },
             { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item.id}/delete`) },
           ],
@@ -81,12 +80,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   return (
     <button type="button" className="absolute top-0 right-0 p-3" onClick={openOthersPanel} disabled={saleLoading}>
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-        />
+        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
       </svg>
     </button>
   );
