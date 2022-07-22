@@ -76,14 +76,14 @@ const ProfileDetail: NextPage<{
   }
 
   return (
-    <article className="container pb-20">
+    <article className="container pt-5 pb-5">
       <h1>
         <Profiles user={profile} uuid={profile?.id === -1 ? "" : `#${profile?.id}`} />
       </h1>
 
       {/* 관심사 */}
       {(viewModel.mode === "private" || profile?.concerns) && (
-        <div className="mb-4">
+        <div className="mt-3">
           <strong className="block">{viewModel.mode === "private" ? "나의 관심사" : "관심사"}</strong>
           {profile?.concerns && (
             <div>
@@ -101,32 +101,32 @@ const ProfileDetail: NextPage<{
       {/* 프로필 수정 */}
       {viewModel.mode === "private" && (
         <Link href="/users/profiles/edit" passHref>
-          <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mb-4" />
+          <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mt-3" />
         </Link>
       )}
 
       {/* todo: 매너온도 */}
 
       {/* 정보 */}
-      <div className="-mx-5 border-t">
+      <div className="-mx-5 mt-5 border-t">
         <ul className="divide-y">
           <li>
             <Link href={`/users/profiles/${profile.id}/products`}>
-              <a className="block py-5">
+              <a className="block py-3">
                 <span className="block-arrow font-semibold">판매상품{data?.profile?._count?.products ? ` ${data.profile._count.products}개` : ""}</span>
               </a>
             </Link>
           </li>
           <li>
             <Link href="">
-              <a className="block py-5">
+              <a className="block py-3">
                 <span className="block-arrow font-semibold">동네생활</span>
               </a>
             </Link>
           </li>
           <li>
             <Link href={`/users/profiles/${profile.id}/manners`}>
-              <a className="block py-5">
+              <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 평가</span>
                 {Boolean(profile?.manners?.length) && (
                   <ul className="mt-3 space-y-2">
@@ -142,7 +142,7 @@ const ProfileDetail: NextPage<{
           </li>
           <li>
             <Link href={`/users/profiles/${profile.id}/reviews`}>
-              <a className="block py-5">
+              <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 후기</span>
               </a>
             </Link>
@@ -158,9 +158,9 @@ const ProfileDetail: NextPage<{
                     const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
                     if (user?.id?.toString() !== router.query.id) {
                       return (
-                        <li key={item?.id} className="relative">
+                        <li key={item?.id} className="relative px-5 py-3">
                           <Link href={`/users/profiles/${profile?.id}`}>
-                            <a className="block p-5">
+                            <a className="block">
                               <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
                               <p className="pt-1 pl-14">{item.text}</p>
                             </a>
@@ -169,14 +169,14 @@ const ProfileDetail: NextPage<{
                       );
                     }
                     return (
-                      <li key={item?.id} className="relative">
+                      <li key={item?.id} className="relative px-5 py-3">
                         <Link href={`/users/profiles/${profile?.id}`}>
-                          <a className="block p-5 pb-0">
+                          <a className="block">
                             <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
                           </a>
                         </Link>
                         <Link href={`/reviews/${item?.id}`}>
-                          <a className="block p-5 pt-1 pl-[4.75rem]">{item.text}</a>
+                          <a className="block pt-1 pl-14">{item.text}</a>
                         </Link>
                       </li>
                     );
@@ -224,7 +224,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         },
         where: {
           reviews: {
-            none: {
+            every: {
               satisfaction: "dislike",
             },
           },

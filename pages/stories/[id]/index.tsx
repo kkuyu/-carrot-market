@@ -22,7 +22,7 @@ import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Profiles from "@components/profiles";
-import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
+import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import Comment from "@components/cards/comment";
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
@@ -56,7 +56,7 @@ const StoryDetail: NextPage<{
   const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
 
   const shortContent = !story?.content ? "" : story.content.length <= 15 ? story.content : story.content.substring(0, 15) + "...";
-  const thumbnails: ThumbnailListItem[] = !story?.photos
+  const thumbnails: PictureListItem[] = !story?.photos
     ? []
     : story.photos.split(",").map((src, index, array) => ({
         src,
@@ -270,7 +270,7 @@ const StoryDetail: NextPage<{
           <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
           {/* 판매자 */}
           <Link href={`/users/profiles/${story?.user?.id}`}>
-            <a>
+            <a className="block py-3">
               <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} />
             </a>
           </Link>
@@ -282,12 +282,7 @@ const StoryDetail: NextPage<{
         {/* 썸네일 */}
         {Boolean(thumbnails.length) && (
           <div className="pb-5 px-5">
-            <ThumbnailList
-              list={thumbnails || []}
-              modal={{
-                title: `게시글 이미지 (${shortContent})`,
-              }}
-            />
+            <PictureList list={thumbnails || []} />
           </div>
         )}
         {/* 피드백 */}

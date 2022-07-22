@@ -118,9 +118,9 @@ const ProfileProducts: NextPage = () => {
               const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
               if (user?.id?.toString() !== router.query.id) {
                 return (
-                  <li key={item?.id} className="relative">
+                  <li key={item?.id} className="relative px-5 py-3">
                     <Link href={`/users/profiles/${profile?.id}`}>
-                      <a className="block p-5">
+                      <a className="block">
                         <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
                         <p className="pt-1 pl-14">{item.text}</p>
                       </a>
@@ -129,14 +129,14 @@ const ProfileProducts: NextPage = () => {
                 );
               }
               return (
-                <li key={item?.id} className="relative">
+                <li key={item?.id} className="relative px-5 py-3">
                   <Link href={`/users/profiles/${profile?.id}`}>
-                    <a className="block p-5 pb-0">
+                    <a className="block">
                       <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
                     </a>
                   </Link>
                   <Link href={`/reviews/${item?.id}`}>
-                    <a className="block p-5 pt-1 pl-[4.75rem]">{item.text}</a>
+                    <a className="block pt-1 pl-14">{item.text}</a>
                   </Link>
                 </li>
               );

@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { Kind } from "@prisma/client";
 // @libs
@@ -6,6 +5,8 @@ import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetProductsResponse } from "@api/products";
 import { GetProfilesProductsResponse } from "@api/users/profiles/[id]/products";
+// @components
+import Images from "@components/images";
 
 export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
 
@@ -34,28 +35,10 @@ const Product = ({ item, size = "base" }: ProductProps) => {
   if (size === "tiny") {
     return (
       <div className="flex items-start">
-        <div className="relative flex-none w-11 border border-gray-200 bg-slate-300 overflow-hidden rounded-md">
-          <div className="pb-[100%]" />
-          {thumbnailId ? (
-            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${thumbnailId}/public`} alt="" layout="fill" objectFit="cover" />
-          ) : (
-            <svg
-              className="absolute top-1/2 left-1/2 w-6 h-6 -translate-x-1/2 -translate-y-1/2 text-slate-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-              ></path>
-            </svg>
-          )}
+        <div className="flex-none">
+          <Images size="2.75rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
         </div>
-        <div className="grow shrink basis-auto min-w-0 pl-2">
+        <div className="grow shrink basis-auto min-w-0 pl-3">
           <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">
             {!saleRecord && <span className="text-gray-500">판매완료 </span>}
             {item.name}
@@ -71,26 +54,8 @@ const Product = ({ item, size = "base" }: ProductProps) => {
   return (
     <div className="relative">
       <div className="flex items-start">
-        <div className="relative flex-none w-24 border border-gray-200 bg-slate-300 overflow-hidden rounded-md">
-          <div className="pb-[100%]" />
-          {thumbnailId ? (
-            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${thumbnailId}/public`} alt="" layout="fill" objectFit="cover" />
-          ) : (
-            <svg
-              className="absolute top-1/2 left-1/2 w-8 h-8 -translate-x-1/2 -translate-y-1/2 text-slate-500"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-              ></path>
-            </svg>
-          )}
+        <div className="flex-none">
+          <Images size="6rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
         </div>
         <div className="grow pl-4">
           <strong className="block font-normal">{item?.name}</strong>

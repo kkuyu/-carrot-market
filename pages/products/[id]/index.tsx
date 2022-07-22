@@ -22,7 +22,7 @@ import MessageModal, { MessageModalProps } from "@components/commons/modals/case
 import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
-import ThumbnailSlider, { ThumbnailSliderItem } from "@components/groups/thumbnailSlider";
+import PictureSlider, { PictureSliderItem } from "@components/groups/pictureSlider";
 import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 
 const ProductDetail: NextPage<{
@@ -54,7 +54,7 @@ const ProductDetail: NextPage<{
 
   const isFavorite = Boolean(favoriteRecords.find((record) => record.userId === user?.id));
   const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
-  const thumbnails: ThumbnailSliderItem[] = !product?.photos
+  const thumbnails: PictureSliderItem[] = !product?.photos
     ? []
     : product.photos.split(",").map((src, index, array) => ({
         src,
@@ -216,13 +216,7 @@ const ProductDetail: NextPage<{
       {/* 썸네일 */}
       {Boolean(thumbnails.length) && (
         <div className="-mx-5">
-          <ThumbnailSlider
-            list={thumbnails}
-            defaultIndex={0}
-            modal={{
-              title: `판매 상품 이미지 (${shortName})`,
-            }}
-          />
+          <PictureSlider list={thumbnails} defaultIndex={0} />
         </div>
       )}
 
@@ -230,7 +224,7 @@ const ProductDetail: NextPage<{
       <section className="block">
         {/* 판매자 */}
         <Link href={`/users/profiles/${product?.user?.id}`}>
-          <a>
+          <a className="block py-3">
             <Profiles user={product?.user} emdPosNm={product?.emdPosNm} />
           </a>
         </Link>

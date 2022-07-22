@@ -21,7 +21,7 @@ import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
 import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import ThumbnailList, { ThumbnailListItem } from "@components/groups/thumbnailList";
+import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import FloatingButtons from "@components/floatingButtons";
 import Story from "@components/cards/story";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
@@ -157,7 +157,7 @@ const StoryHome: NextPage = () => {
           <ul className="divide-y-8">
             {stories.map((item) => {
               const shortContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
-              const thumbnails: ThumbnailListItem[] = !item?.photos
+              const thumbnails: PictureListItem[] = !item?.photos
                 ? []
                 : item.photos.split(",").map((src, index, array) => ({
                     src,
@@ -176,12 +176,7 @@ const StoryHome: NextPage = () => {
                   </Link>
                   {Boolean(thumbnails.length) && (
                     <div className="pb-5 px-5">
-                      <ThumbnailList
-                        list={thumbnails || []}
-                        modal={{
-                          title: `게시글 이미지 (${shortContent})`,
-                        }}
-                      />
+                      <PictureList list={thumbnails || []} />
                     </div>
                   )}
                   <FeedbackStory

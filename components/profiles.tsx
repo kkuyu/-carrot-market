@@ -1,5 +1,5 @@
-import Link from "next/link";
-import Image from "next/image";
+// @components
+import Images from "@components/images";
 
 export interface ProfilesProps {
   user: {
@@ -15,47 +15,27 @@ export interface ProfilesProps {
 }
 
 const Profiles = ({ user, signature, uuid, emdPosNm, diffTime, size = "base" }: ProfilesProps) => {
-  const classNames = {
-    sm: {
-      wrapper: "",
-      avatar: "w-11 h-11",
-      avatarSvg: "my-3 w-5",
-      name: "text-sm",
-      extra: "text-xs",
-    },
-    base: {
-      wrapper: "py-3",
-      avatar: "w-14 h-14",
-      avatarSvg: "my-4 w-6",
-      name: "text-base",
-      extra: "text-sm",
-    },
-  };
+  if (size === "sm") {
+    return (
+      <div className="flex items-center w-full">
+        <Images size="2.75rem" cloudId={user?.avatar} alt="" />
+        <div className="grow shrink basis-auto min-w-0 pl-3">
+          <strong className="block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis text-sm">{user?.name}</strong>
+          <span className="block text-gray-500 text-xs">{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
+          {/* <div>todo: 매너온도</div> */}
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className={`flex items-center w-full ${classNames[size].wrapper}`}>
-      <div className={`relative flex-none bg-slate-300 border border-gray-300 overflow-hidden rounded-full ${classNames[size].avatar}`}>
-        {user?.avatar ? (
-          <>
-            <span className="block pb-[100%]"></span>
-            <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${user?.avatar}/avatar`} alt="" layout="fill" objectFit="cover" />
-          </>
-        ) : (
-          <svg className={`mx-auto text-slate-500 ${classNames[size].avatarSvg}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z"
-            ></path>
-          </svg>
-        )}
-      </div>
+    <div className="flex items-center w-full">
+      <Images cloudId={user?.avatar} alt="" />
       <div className="grow shrink basis-auto min-w-0 pl-3">
-        <strong className={`block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].name}`}>{user?.name}</strong>
-        <span className={`block text-gray-500 ${classNames[size].extra}`}>{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
+        <strong className="block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis text-base">{user?.name}</strong>
+        <span className="block text-gray-500 text-sm">{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
+        {/* <div>todo: 매너온도</div> */}
       </div>
-      {/* <div>todo: 매너온도</div> */}
     </div>
   );
 };

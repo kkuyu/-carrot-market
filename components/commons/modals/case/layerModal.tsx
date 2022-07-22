@@ -3,13 +3,14 @@ import React from "react";
 import { ModalComponentProps } from "@components/commons";
 
 export interface LayerModalProps {
-  headerType: "default";
+  headerType: "default" | "transparent";
   title?: string;
+  closeColor?: string;
   contents: React.ReactNode;
 }
 
 const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
-  const { name, headerType, title = "", contents, onOpen, onClose } = props;
+  const { name, headerType, title = "", closeColor = "black", contents, onOpen, onClose } = props;
 
   const clickClose = () => {
     onClose();
@@ -25,13 +26,11 @@ const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
         </div>
       )}
       <div className="relative grow overflow-auto">{contents}</div>
-      {headerType === "default" && (
-        <button type="button" className="absolute top-0 right-0 p-3" onClick={clickClose}>
-          <svg className="block mx-auto w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
-          </svg>
-        </button>
-      )}
+      <button type="button" className={`absolute top-0 right-0 p-3 ${closeColor ? `text-${closeColor}` : ""}`} onClick={clickClose}>
+        <svg className="block mx-auto w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path>
+        </svg>
+      </button>
     </div>
   );
 };

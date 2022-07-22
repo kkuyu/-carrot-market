@@ -111,11 +111,10 @@ const ProductPurchase: NextPage = () => {
                 return item.users
                   .filter((chatUser) => chatUser.id !== user?.id)
                   .map((chatUser) => {
-                    const usersThumbnail = chatUser.avatar || "";
                     return (
                       <li key={`${item.id}-${chatUser.id}`}>
                         <button type="button" className="block-arrow py-3" onClick={() => purchaseItem(item, chatUser)}>
-                          <Chat item={item} users={[chatUser]} type="timestamp" usersThumbnail={usersThumbnail} />
+                          <Chat item={item} users={[chatUser]} type="timestamp" isVisibleProduct={false} />
                         </button>
                       </li>
                     );

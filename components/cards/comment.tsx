@@ -33,11 +33,11 @@ const Comment = ({ item }: CommentProps) => {
   return (
     <div className="relative">
       <Link href={`/users/profiles/${item?.user?.id}`}>
-        <a>
+        <a className="block">
           <Profiles user={item?.user} emdPosNm={item.emdPosNm} diffTime={mounted ? diffTime : ""} size="sm" />
         </a>
       </Link>
-      <div className="pl-14">
+      <div className="mt-1 pl-14">
         <p>{item.comment}</p>
         {/* todo: 삭제, 수정 */}
       </div>

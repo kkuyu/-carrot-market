@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import Flicking, { ViewportSlot } from "@egjs/react-flicking";
 import "@egjs/react-flicking/dist/flicking.min.css";
@@ -6,8 +5,10 @@ import "@egjs/react-flicking/dist/flicking.min.css";
 import useModal from "@libs/client/useModal";
 // @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
+import PictureZoom from "@components/groups/pictureZoom";
+import Images from "@components/images";
 
-export interface ThumbnailSliderItem {
+export interface PictureSliderItem {
   src: string;
   index: number;
   key: string;
@@ -15,15 +16,12 @@ export interface ThumbnailSliderItem {
   name: string;
 }
 
-interface ThumbnailSliderProps {
-  list: ThumbnailSliderItem[];
+interface PictureSliderProps {
+  list: PictureSliderItem[];
   defaultIndex: number;
-  modal: null | {
-    title: string;
-  };
 }
 
-const ThumbnailSlider = ({ list, defaultIndex, modal }: ThumbnailSliderProps) => {
+const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
   const { openModal } = useModal();
   const [mounted, setMounted] = useState(false);
 
@@ -31,21 +29,13 @@ const ThumbnailSlider = ({ list, defaultIndex, modal }: ThumbnailSliderProps) =>
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
 
-  const makeSliderItem = (item: ThumbnailSliderItem, index: number, array: ThumbnailSliderItem[]) => {
-    if (!modal) {
-      return (
-        <span className="relative block w-full bg-slate-300">
-          <span className="block pb-[80%]"></span>
-          <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${item.src}/public`} alt={item.name} layout="fill" objectFit="cover" />
-        </span>
-      );
-    }
+  const makeSliderItem = (item: PictureSliderItem, index: number, array: PictureSliderItem[]) => {
     return (
       <button
         type="button"
         className="relative block w-full bg-slate-300"
         onClick={() => {
-          openThumbnailModal(list, index);
+          openPictureModal(list, index);
         }}
         onFocus={() => {
           if (!flickingRef.current) return;
@@ -53,8 +43,7 @@ const ThumbnailSlider = ({ list, defaultIndex, modal }: ThumbnailSliderProps) =>
           flickingRef.current.moveTo(index, 0);
         }}
       >
-        <span className="block pb-[80%]"></span>
-        <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${item.src}/public`} alt={item.name} layout="fill" objectFit="cover" />
+        <Images cloudId={item.src} cloudVariant="public" size="100%" ratioX={5} ratioY={3} rounded="none" alt={item.name} />
       </button>
     );
   };
@@ -72,15 +61,13 @@ const ThumbnailSlider = ({ list, defaultIndex, modal }: ThumbnailSliderProps) =>
     flickingRef.current.camera.element.setAttribute("aria-live", 'polite"');
   };
 
-  const openThumbnailModal = (list: ThumbnailSliderItem[], index: number) => {
-    if (!modal) return;
-
-    openModal<LayerModalProps>(LayerModal, "thumbnailModal", {
-      headerType: "default",
-      title: modal.title,
+  const openPictureModal = (list: PictureSliderItem[], index: number) => {
+    openModal<LayerModalProps>(LayerModal, "PictureSlider", {
+      headerType: "transparent",
+      closeColor: "white",
       contents: (
-        <div className="absolute top-0 left-0 right-0 bottom-0 flex items-center bg-slate-300">
-          <ThumbnailSlider list={list} defaultIndex={index} modal={null} />
+        <div className="absolute top-0 left-0 right-0 bottom-0">
+          <PictureZoom list={list} defaultIndex={index} />
         </div>
       ),
     });
@@ -151,4 +138,4 @@ const ThumbnailSlider = ({ list, defaultIndex, modal }: ThumbnailSliderProps) =>
   );
 };
 
-export default ThumbnailSlider;
+export default PictureSlider;

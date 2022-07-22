@@ -81,13 +81,11 @@ const ChatHome: NextPage = () => {
               .filter((item) => item.chatMessages.length)
               .map((item) => {
                 const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
-                const usersThumbnail = users.length === 1 ? users[0].avatar || "" : "";
-                const productThumbnail = item.product?.photos.length ? item.product?.photos.split(",")[0] : "";
                 return (
                   <li key={item.id}>
                     <Link href={`/chats/${item.id}`}>
                       <a className="block px-5 py-3">
-                        <Chat item={item} users={users} usersThumbnail={usersThumbnail} productThumbnail={productThumbnail} />
+                        <Chat item={item} users={users} isVisibleProduct={true} />
                       </a>
                     </Link>
                   </li>

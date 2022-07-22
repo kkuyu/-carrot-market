@@ -38,7 +38,7 @@ const ProfileHome: NextPage = () => {
       <section className="container pb-5">
         <h1 className="sr-only">나의 당근</h1>
         <div className="-mx-5">
-          <div className="relative block pl-5 pr-10">
+          <div className="relative block px-5 py-3">
             <Profiles user={user} uuid={user?.id === -1 ? "" : `#${user?.id}`} emdPosNm={currentAddr?.emdPosNm || ""} />
           </div>
         </div>
@@ -86,7 +86,7 @@ const ProfileHome: NextPage = () => {
 
       <div className="-mx-5">
         <Link href={`/users/profiles/${user?.id}`}>
-          <a className="block-arrow">
+          <a className="block-arrow py-3">
             <Profiles user={user} uuid={user?.id === -1 ? "" : `#${user?.id}`} emdPosNm={currentAddr?.emdPosNm || ""} />
           </a>
         </Link>
