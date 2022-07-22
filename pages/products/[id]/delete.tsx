@@ -93,7 +93,7 @@ const ProductDelete: NextPage<{
                       sort="round-box"
                       size="sm"
                       status="default"
-                      text={review.role === "sellUser" ? "보낸후기로 이동" : review.role === "purchaseUser" ? "받은후기로 이동" : ""}
+                      text={review.role === "sellUser" ? "보낸 후기로 이동" : review.role === "purchaseUser" ? "받은 후기로 이동" : ""}
                       className="!inline-block !w-auto"
                     />
                   </Link>
@@ -159,7 +159,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           },
         },
       },
-      reviews: true,
+      reviews: {
+        where: {
+          OR: [{ role: "sellUser" }, { role: "purchaseUser", NOT: { satisfaction: "dislike" } }],
+        },
+      },
     },
   });
 
