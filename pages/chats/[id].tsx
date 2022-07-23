@@ -22,6 +22,7 @@ import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
 import ChatMessage from "@components/cards/chatMessage";
 import Product from "@components/cards/product";
 import Buttons from "@components/buttons";
+import ChatMessageList from "@components/lists/chatMessageList";
 
 const ChatDetail: NextPage = () => {
   const router = useRouter();
@@ -118,12 +119,8 @@ const ChatDetail: NextPage = () => {
           </div>
         </div>
       )}
-      <div className="mt-2 space-y-2.5">
-        {data.chat.chatMessages.map((item, index) => {
-          const currentDate = new Date(item.createdAt).toISOString().replace(/T.*$/, "");
-          const beforeDate = index === 0 ? "" : new Date(data.chat.chatMessages[index - 1].createdAt).toISOString().replace(/T.*$/, "");
-          return <ChatMessage key={item.id} item={item} direction={item.user.id === user?.id ? "forward" : "reverse"} isDifferentDate={currentDate !== beforeDate} currentDate={currentDate} />;
-        })}
+      <div className="mt-2">
+        <ChatMessageList list={data.chat.chatMessages} />
       </div>
       {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
         <div className="mt-4 p-3 bg-orange-100 rounded-md">

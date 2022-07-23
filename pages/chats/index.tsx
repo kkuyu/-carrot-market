@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
@@ -16,7 +15,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetChatsResponse } from "@api/chats";
 // @components
-import Chat from "@components/cards/chat";
+import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
 const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
@@ -76,22 +75,7 @@ const ChatHome: NextPage = () => {
       {/* 채팅: List */}
       {Boolean(chats.length) && (
         <div className="-mx-5">
-          <ul className="divide-y">
-            {chats
-              .filter((item) => item.chatMessages.length)
-              .map((item) => {
-                const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
-                return (
-                  <li key={item.id}>
-                    <Link href={`/chats/${item.id}`}>
-                      <a className="block px-5 py-3">
-                        <Chat item={item} users={users} isVisibleProduct={true} />
-                      </a>
-                    </Link>
-                  </li>
-                );
-              })}
-          </ul>
+          <ChatList type="link" list={chats} content="message" isVisibleOnlyOneUser={false} />
           <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "채팅을 불러오고있어요" : isReachingEnd ? "채팅을 모두 확인하였어요" : ""}</span>
           </div>

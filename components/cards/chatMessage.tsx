@@ -1,8 +1,8 @@
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 
-type ChatMessageItem = GetChatsDetailResponse["chat"]["chatMessages"][0];
+export type ChatMessageItem = GetChatsDetailResponse["chat"]["chatMessages"][0];
 
-interface ChatMessageProps {
+export interface ChatMessageProps {
   item: ChatMessageItem;
   direction: "forward" | "reverse";
   isDifferentDate: boolean;

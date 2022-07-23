@@ -16,10 +16,9 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetChatsResponse } from "@api/chats";
 import { GetUserResponse } from "@api/users/my";
-import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @components
-import Chat from "@components/cards/chat";
+import ChatList from "@components/lists/chatList";
 
 const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
   if (pageIndex === 0) return `/api/chats?page=1`;
@@ -83,23 +82,7 @@ const ProductPurchase: NextPage = () => {
       {/* 최근 채팅 목록: List */}
       {Boolean(chats.length) && (
         <div className="-mx-5">
-          <ul className="divide-y">
-            {chats
-              .filter((item) => item.chatMessages.length)
-              .map((item) => {
-                return item.users
-                  .filter((chatUser) => chatUser.id !== user?.id)
-                  .map((chatUser) => {
-                    return (
-                      <li key={`${item.id}-${chatUser.id}`}>
-                        <button type="button" className="block-arrow py-3" onClick={() => purchaseItem(item, chatUser)}>
-                          <Chat item={item} users={[chatUser]} type="timestamp" isVisibleProduct={false} />
-                        </button>
-                      </li>
-                    );
-                  });
-              })}
-          </ul>
+          <ChatList type="button" list={chats} content="timestamp" isVisibleOnlyOneUser={true} selectItem={purchaseItem} />
           <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "채팅을 불러오고있어요" : isReachingEnd ? "채팅을 모두 확인하였어요" : ""}</span>
           </div>

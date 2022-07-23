@@ -19,7 +19,7 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 // @components
 import Product from "@components/cards/product";
-import Chat from "@components/cards/chat";
+import ChatList from "@components/lists/chatList";
 
 const getKey = (pageIndex: number, previousPageData: GetChatsResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/chats?page=1&${query}`;
@@ -75,22 +75,7 @@ const ProductChats: NextPage = () => {
       {/* 채팅: List */}
       {Boolean(chats.length) && (
         <div className="-mx-5">
-          <ul className="divide-y">
-            {chats
-              .filter((item) => item.chatMessages.length)
-              .map((item) => {
-                const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
-                return (
-                  <li key={item.id}>
-                    <Link href={`/chats/${item.id}`}>
-                      <a className="block px-5 py-3">
-                        <Chat item={item} users={users} isVisibleProduct={true} />
-                      </a>
-                    </Link>
-                  </li>
-                );
-              })}
-          </ul>
+          <ChatList type="link" list={chats} content="message" isVisibleOnlyOneUser={false} />
           <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "채팅을 불러오고있어요" : isReachingEnd ? "채팅을 모두 확인하였어요" : ""}</span>
           </div>

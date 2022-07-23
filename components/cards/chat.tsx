@@ -8,14 +8,14 @@ import Images from "@components/images";
 
 export type ChatItem = GetChatsResponse["chats"][0];
 
-interface ChatProps {
+export interface ChatProps {
   item: ChatItem;
   users: ChatItem["users"];
-  type?: "message" | "timestamp";
+  content: "message" | "timestamp";
   isVisibleProduct?: boolean;
 }
 
-const Chat = ({ item, users, type = "message", isVisibleProduct = true }: ChatProps) => {
+const Chat = ({ item, users, content, isVisibleProduct = true }: ChatProps) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -38,10 +38,10 @@ const Chat = ({ item, users, type = "message", isVisibleProduct = true }: ChatPr
       <div className="grow shrink basis-auto min-w-0">
         <div className="flex items-center">
           <strong className="overflow-hidden whitespace-nowrap overflow-ellipsis">{users.map((user) => user.name).join(", ")}</strong>
-          {type === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{mounted ? diffTime : null}</span>}
+          {content === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{mounted ? diffTime : null}</span>}
         </div>
-        {type === "message" && <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>}
-        {type === "timestamp" && <span className="block text-sm text-gray-500">{mounted ? diffTime : null}</span>}
+        {content === "message" && <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>}
+        {content === "timestamp" && <span className="block text-sm text-gray-500">{mounted ? diffTime : null}</span>}
       </div>
       {isVisibleProduct && Boolean(item.product?.photos.length) && (
         <Images size="2.5rem" cloudId={item.product?.photos.length ? item.product?.photos.split(",")[0] : null} cloudVariant="avatar" rounded="md" alt="" />
