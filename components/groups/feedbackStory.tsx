@@ -8,15 +8,17 @@ import { GetStoriesDetailResponse } from "@api/stories/[id]";
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
-interface FeedbackStoryProps {
-  item: FeedbackStoryItem;
+export interface FeedbackStoryProps {
+  item?: FeedbackStoryItem;
   curiosityItem: (item: FeedbackStoryItem) => void;
   emotionItem: (item: FeedbackStoryItem, feeling: FeelingKeys) => void;
   commentItem: (item: FeedbackStoryItem) => void;
 }
 
 const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: FeedbackStoryProps) => {
-  const [pop, setPop] = useState(false);
+  const [emotionOpen, setEmotionOpen] = useState(false);
+
+  if (!item) return null;
 
   const category = getCategory("story", item?.category);
   const emotions = ["Like", "Love", "Haha", "Wow", "Sad", "Angry"] as FeelingKeys[];
@@ -25,12 +27,12 @@ const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: Feedba
   const curiosityClick = () => curiosityItem(item);
 
   // action emotion
-  const emotionClick = () => setPop((prev) => !prev);
+  const emotionClick = () => setEmotionOpen((prev) => !prev);
   const emotionBlur = (e: FocusEvent<HTMLButtonElement, Element>) => {
     const boxEl = e.relatedTarget?.closest(".emotionBox");
     if (boxEl?.isSameNode(e.relatedTarget)) return;
     if (boxEl?.contains(e.relatedTarget)) return;
-    setPop(false);
+    setEmotionOpen(false);
   };
   const emotionBoxBlur = (e: FocusEvent<HTMLDivElement, Element>) => {
     const boxEl = e.target.closest(".emotionBox");
@@ -38,7 +40,7 @@ const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: Feedba
     if (boxEl?.isSameNode(e.relatedTarget)) return;
     if (boxEl?.contains(e.relatedTarget)) return;
     prevEl?.focus();
-    setPop(false);
+    setEmotionOpen(false);
   };
 
   // action comment
@@ -75,12 +77,12 @@ const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: Feedba
       )}
       {/* 공감하기: box */}
       {category?.feedback.includes("emotion") && (
-        <div onBlur={emotionBoxBlur} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${pop ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
+        <div onBlur={emotionBoxBlur} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${emotionOpen ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
             {emotions.map((feeling) => {
               const emotionBoxClick = () => {
                 emotionItem(item, feeling);
-                setPop(false);
+                setEmotionOpen(false);
               };
               return (
                 <button key={feeling} type="button" onClick={emotionBoxClick} className="p-1">

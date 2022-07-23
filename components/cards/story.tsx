@@ -6,7 +6,7 @@ import { GetStoriesResponse } from "@api/stories";
 
 export type StoryItem = GetStoriesResponse["stories"][0];
 
-interface StoryProps {
+export interface StoryProps {
   item: StoryItem;
 }
 

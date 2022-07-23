@@ -13,7 +13,7 @@ export type CommentItem = ProfilesProps & {
   createdAt: Date;
 };
 
-interface CommentProps {
+export interface CommentProps {
   item: CommentItem;
 }
 

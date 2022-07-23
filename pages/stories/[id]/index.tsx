@@ -21,12 +21,12 @@ import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
 import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import Profiles from "@components/profiles";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
-import Comment from "@components/cards/comment";
+import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
+import CommentList from "@components/lists/commentList";
+import Profiles from "@components/profiles";
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
-import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
 
 interface CommentForm {
   comment: string;
@@ -293,13 +293,9 @@ const StoryDetail: NextPage<{
 
       {/* 댓글 목록: list */}
       {Boolean(story?.comments) && Boolean(story?.comments?.length) && (
-        <ul className="mt-5 space-y-3">
-          {story.comments.map((item) => (
-            <li key={item.id}>
-              <Comment item={item} />
-            </li>
-          ))}
-        </ul>
+        <div className="mt-5">
+          <CommentList list={story.comments} />
+        </div>
       )}
 
       {/* 댓글 목록: empty */}

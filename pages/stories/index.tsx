@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
@@ -21,9 +20,8 @@ import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
 import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import PictureList, { PictureListItem } from "@components/groups/pictureList";
+import StoryWithFeedbackList from "@components/lists/storyWithFeedbackList";
 import FloatingButtons from "@components/floatingButtons";
-import Story from "@components/cards/story";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
 
 const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: string = "") => {
@@ -154,41 +152,9 @@ const StoryHome: NextPage = () => {
       {/* 동네생활: List */}
       {Boolean(stories.length) && (
         <div className="-mx-5">
-          <ul className="divide-y-8">
-            {stories.map((item) => {
-              const shortContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
-              const thumbnails: PictureListItem[] = !item?.photos
-                ? []
-                : item.photos.split(",").map((src, index, array) => ({
-                    src,
-                    index,
-                    key: `thumbnails-list-${index + 1}`,
-                    label: `${index + 1}/${array.length}`,
-                    name: `게시글 이미지 ${index + 1}/${array.length} (${shortContent})`,
-                  }));
-
-              return (
-                <li key={item?.id}>
-                  <Link href={`/stories/${item?.id}`}>
-                    <a className="block pt-5 pb-4 px-5">
-                      <Story item={item} />
-                    </a>
-                  </Link>
-                  {Boolean(thumbnails.length) && (
-                    <div className="pb-5 px-5">
-                      <PictureList list={thumbnails || []} />
-                    </div>
-                  )}
-                  <FeedbackStory
-                    item={item}
-                    curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem}
-                    emotionItem={user?.id === -1 ? openSignUpModal : emotionItem}
-                    commentItem={commentItem}
-                  />
-                </li>
-              );
-            })}
-          </ul>
+          <StoryWithFeedbackList list={stories}>
+            <FeedbackStory curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
+          </StoryWithFeedbackList>
           <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
           </div>
