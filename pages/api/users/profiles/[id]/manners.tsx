@@ -37,7 +37,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       ...(id !== user?.id
         ? {
             reviews: {
-              none: { satisfaction: "dislike" },
+              some: {
+                NOT: [{ satisfaction: "dislike" }],
+              },
             },
           }
         : {}),

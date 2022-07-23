@@ -9,14 +9,14 @@ import useSWR from "swr";
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
-import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { ProfilesConcern } from "@api/users/profiles/types";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 // @components
 import Profiles from "@components/profiles";
+import MannerList from "@components/lists/mannerList";
+import ReviewList from "@components/lists/reviewList";
 import Buttons from "@components/buttons";
-import Manner from "@components/cards/manner";
 
 const ProfileDetail: NextPage<{
   staticProps: {
@@ -26,9 +26,7 @@ const ProfileDetail: NextPage<{
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const { user, currentAddr } = useUser();
-
-  const [mounted, setMounted] = useState(false);
+  const { user } = useUser();
 
   // view model
   const [viewModel, setViewModel] = useState({
@@ -58,7 +56,6 @@ const ProfileDetail: NextPage<{
     const mode = !user?.id ? "preview" : user?.id !== profile?.id ? "public" : "private";
     setViewModel({ mode });
 
-    setMounted(true);
     setLayout(() => ({
       title: "프로필",
       seoTitle: `${profile?.name || ""} | 프로필`,
@@ -129,13 +126,9 @@ const ProfileDetail: NextPage<{
               <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 평가</span>
                 {Boolean(profile?.manners?.length) && (
-                  <ul className="mt-3 space-y-2">
-                    {profile.manners.map((item) => (
-                      <li key={item.id} className="px-5">
-                        <Manner item={item} />
-                      </li>
-                    ))}
-                  </ul>
+                  <div className="mt-3 px-5">
+                    <MannerList list={profile?.manners} />
+                  </div>
                 )}
               </a>
             </Link>
@@ -147,41 +140,9 @@ const ProfileDetail: NextPage<{
               </a>
             </Link>
             {(Boolean(profile?.sellUserReview?.length) || Boolean(profile?.purchaseUserReview?.length)) && (
-              <ul className="divide-y">
-                {[...profile?.sellUserReview, ...profile?.purchaseUserReview]
-                  .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-                  .map((item) => {
-                    const signature = item.role === "sellUser" ? "판매자" : item.role === "purchaseUser" ? "구매자" : null;
-                    const profile = item.role === "sellUser" ? item.sellUser : item.role === "purchaseUser" ? item.purchaseUser : null;
-                    if (!signature || !profile) return null;
-                    const today = new Date();
-                    const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
-                    if (user?.id?.toString() !== router.query.id) {
-                      return (
-                        <li key={item?.id} className="relative px-5 py-3">
-                          <Link href={`/users/profiles/${profile?.id}`}>
-                            <a className="block">
-                              <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
-                              <p className="pt-1 pl-14">{item.text}</p>
-                            </a>
-                          </Link>
-                        </li>
-                      );
-                    }
-                    return (
-                      <li key={item?.id} className="relative px-5 py-3">
-                        <Link href={`/users/profiles/${profile?.id}`}>
-                          <a className="block">
-                            <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
-                          </a>
-                        </Link>
-                        <Link href={`/reviews/${item?.id}`}>
-                          <a className="block pt-1 pl-14">{item.text}</a>
-                        </Link>
-                      </li>
-                    );
-                  })}
-              </ul>
+              <div className="px-5">
+                <ReviewList list={[...profile?.sellUserReview, ...profile?.purchaseUserReview]} />
+              </div>
             )}
           </li>
         </ul>
@@ -224,8 +185,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         },
         where: {
           reviews: {
-            every: {
-              satisfaction: "dislike",
+            some: {
+              NOT: [{ satisfaction: "dislike" }],
             },
           },
         },

@@ -14,7 +14,7 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesMannersResponse } from "@api/users/profiles/[id]/manners";
 // @components
-import Manner from "@components/cards/manner";
+import MannerList from "@components/lists/mannerList";
 import Buttons from "@components/buttons";
 
 const ProfileManners: NextPage = () => {
@@ -44,30 +44,14 @@ const ProfileManners: NextPage = () => {
     <div className="container pb-5">
       <h1 className="mt-5">받은 매너</h1>
       <div className="mt-2">
-        {Boolean(goodManners.length) && (
-          <ul className=" space-y-2">
-            {goodManners.map((item) => (
-              <li key={item.id}>
-                <Manner item={item} />
-              </li>
-            ))}
-          </ul>
-        )}
+        {Boolean(goodManners.length) && <MannerList list={goodManners} />}
         {!Boolean(goodManners.length) && <p>받은 매너 칭찬이 아직 없어요</p>}
       </div>
 
       <h1 className="mt-5 pt-5 border-t">받은 비매너</h1>
       <div className="mt-2">
         {user?.id !== profileData?.profile.id && <p>받은 비매너는 본인에게만 보여요</p>}
-        {user?.id === profileData?.profile.id && Boolean(badManners.length) && user?.id === profileData?.profile.id && (
-          <ul className="mt-2 space-y-2">
-            {badManners.map((item) => (
-              <li key={item.id}>
-                <Manner item={item} />
-              </li>
-            ))}
-          </ul>
-        )}
+        {user?.id === profileData?.profile.id && Boolean(badManners.length) && user?.id === profileData?.profile.id && <MannerList list={badManners}></MannerList>}
         {user?.id === profileData?.profile.id && !Boolean(badManners.length) && <p>받은 비매너가 없어요</p>}
       </div>
 
@@ -157,7 +141,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       ...(profile.id !== ssrUser.profile?.id
         ? {
             reviews: {
-              none: { satisfaction: "dislike" },
+              some: {
+                NOT: [{ satisfaction: "dislike" }],
+              },
             },
           }
         : {}),

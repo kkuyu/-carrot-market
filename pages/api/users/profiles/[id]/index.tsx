@@ -45,8 +45,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
           where: {
             reviews: {
-              every: {
-                satisfaction: "dislike",
+              some: {
+                NOT: [{ satisfaction: "dislike" }],
               },
             },
           },

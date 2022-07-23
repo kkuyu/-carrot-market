@@ -86,7 +86,7 @@ const ProfileHome: NextPage = () => {
 
       <div className="-mx-5">
         <Link href={`/users/profiles/${user?.id}`}>
-          <a className="block-arrow py-3">
+          <a className="block-arrow py-5">
             <Profiles user={user} uuid={user?.id === -1 ? "" : `#${user?.id}`} emdPosNm={currentAddr?.emdPosNm || ""} />
           </a>
         </Link>
