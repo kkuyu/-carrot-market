@@ -15,7 +15,7 @@ import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/a
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
 
 export interface FeedbackProductProps {
-  item: FeedbackProductItem;
+  item?: FeedbackProductItem;
 }
 
 const FeedbackProduct = ({ item }: FeedbackProductProps) => {
@@ -25,15 +25,12 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
-  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
-
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: (data) => {
       if (!data.recordSale) {
-        router.push(`/products/${item.id}/purchase`);
+        router.push(`/products/${item?.id}/purchase`);
       } else {
-        router.push(`/products/${item.id}`);
+        router.push(`/products/${item?.id}`);
       }
     },
     onError: (data) => {
@@ -44,6 +41,11 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
       }
     },
   });
+
+  if (!item) return null;
+
+  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
 
   const toggleSale = (value: boolean) => {
     if (saleLoading) return;

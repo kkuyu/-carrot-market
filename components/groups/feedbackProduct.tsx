@@ -10,24 +10,19 @@ import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
 
 export interface FeedbackProductProps {
-  item: FeedbackProductItem;
+  item?: FeedbackProductItem;
 }
 
 const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
-  const purchaseRecord = item?.records?.find((record) => record.kind === Kind.Purchase);
-  const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
-
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : '', {
+  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: (data) => {
       if (!data.recordSale) {
-        router.push(`/products/${item.id}/purchase`);
+        router.push(`/products/${item?.id}/purchase`);
       } else {
-        router.push(`/products/${item.id}`);
+        router.push(`/products/${item?.id}`);
       }
     },
     onError: (data) => {
@@ -38,6 +33,13 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
       }
     },
   });
+
+  if (!item) return null;
+
+  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
+  const purchaseRecord = item?.records?.find((record) => record.kind === Kind.Purchase);
+  const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
   const toggleSale = (value: boolean) => {
     if (saleLoading) return;

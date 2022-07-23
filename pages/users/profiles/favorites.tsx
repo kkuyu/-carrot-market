@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
@@ -17,7 +16,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesFavoritesResponse } from "@api/users/profiles/favorites";
 // @components
-import Product from "@components/cards/product";
+import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesFavoritesResponse) => {
   if (pageIndex === 0) return `/api/users/profiles/favorites?page=1`;
@@ -64,17 +63,9 @@ const ProfileFavorites: NextPage = () => {
       {/* 관심목록: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ul className="divide-y-8">
-            {products.map((item) => (
-              <li key={item?.id} className="relative">
-                <Link href={`/products/${item?.id}`}>
-                  <a className="block p-5">
-                    <Product item={item} />
-                  </a>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <ProductWithFeedbackList list={products}>
+            <></>
+          </ProductWithFeedbackList>
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? `관심목록을 불러오고있어요` : isReachingEnd ? `관심목록을 모두 확인하였어요` : ""}</span>
           </div>

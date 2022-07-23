@@ -10,7 +10,7 @@ import Images from "@components/images";
 
 export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
 
-interface ProductProps {
+export interface ProductProps {
   item: ProductItem;
   size?: "tiny" | "base";
 }

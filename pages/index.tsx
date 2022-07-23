@@ -16,8 +16,7 @@ import { GetProductsResponse } from "@api/products";
 import { GetUserResponse } from "@api/users/my";
 // @components
 import FloatingButtons from "@components/floatingButtons";
-import Product from "@components/cards/product";
-import Link from "next/link";
+import ProductList from "@components/lists/productList";
 
 const getKey = (pageIndex: number, previousPageData: GetProductsResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/products?page=1&${query}`;
@@ -63,17 +62,7 @@ const ProductHome: NextPage = () => {
       {/* 판매상품: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ul className="divide-y">
-            {products.map((item) => (
-              <li key={item?.id}>
-                <Link href={`/products/${item?.id}`}>
-                  <a className="block p-5">
-                    <Product item={item} />
-                  </a>
-                </Link>
-              </li>
-            ))}
-          </ul>
+          <ProductList list={products} />
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "판매 상품을 불러오고있어요" : isReachingEnd ? "판매 상품을 모두 확인하였어요" : ""}</span>
           </div>

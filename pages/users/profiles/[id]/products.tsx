@@ -18,9 +18,9 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/[id]/products";
 // @components
-import Product from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import FeedbackProductOthers from "@components/groups/feedbackProductOthers";
+import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string = "") => {
   if (!id) return null;
@@ -112,19 +112,10 @@ const ProfileProducts: NextPage = () => {
       {/* 판매상품: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ul className="divide-y-8">
-            {products.map((item) => (
-              <li key={item?.id} className="relative">
-                <Link href={`/products/${item?.id}`}>
-                  <a className="block p-5">
-                    <Product item={item} />
-                  </a>
-                </Link>
-                {profileData?.profile.id === user?.id && <FeedbackProduct item={item} />}
-                {profileData?.profile.id === user?.id && <FeedbackProductOthers item={item} />}
-              </li>
-            ))}
-          </ul>
+          <ProductWithFeedbackList list={products}>
+            {profileData?.profile.id === user?.id && <FeedbackProduct />}
+            {profileData?.profile.id === user?.id && <FeedbackProductOthers />}
+          </ProductWithFeedbackList>
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}을 불러오고있어요` : isReachingEnd ? `${activeTab?.name}을 모두 확인하였어요` : ""}</span>
           </div>

@@ -1,6 +1,5 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
@@ -17,8 +16,8 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesPurchasesResponse } from "@api/users/profiles/purchases";
 // @components
-import Product from "@components/cards/product";
 import FeedbackProduct from "@components/groups/feedbackProduct";
+import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse) => {
   if (pageIndex === 0) return `/api/users/profiles/purchases?page=1`;
@@ -65,18 +64,9 @@ const ProfilePurchase: NextPage = () => {
       {/* 구매내역: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ul className="divide-y-8">
-            {products.map((item) => (
-              <li key={item?.id} className="relative">
-                <Link href={`/products/${item?.id}`}>
-                  <a className="block p-5">
-                    <Product item={item} />
-                  </a>
-                </Link>
-                <FeedbackProduct item={item} />
-              </li>
-            ))}
-          </ul>
+          <ProductWithFeedbackList list={products}>
+            <FeedbackProduct />
+          </ProductWithFeedbackList>
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? `구매내역을 불러오고있어요` : isReachingEnd ? `구매내역을 모두 확인하였어요` : ""}</span>
           </div>
