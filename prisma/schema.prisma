@@ -22,8 +22,8 @@ model User {
   name               String
   phone              String        @unique
   email              String?       @unique
-  avatar             String?
-  concerns           String?
+  avatar             String        @default("")
+  concerns           String        @default("")
   emdType            EmdType
   MAIN_emdAddrNm     String
   MAIN_emdPosNm      String

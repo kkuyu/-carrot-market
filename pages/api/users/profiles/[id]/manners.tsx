@@ -16,7 +16,7 @@ export interface GetProfilesMannersResponse {
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
-  const { id: _id } = req.query;
+  const { id: _id, includeDislike: _includeDislike } = req.query;
   const { user } = req.session;
 
   // request valid
@@ -28,13 +28,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
   // fetch data: client.manner
   const id = +_id.toString();
+  const includeDislike = _includeDislike ? JSON.parse(_includeDislike.toString()) : false;
   const manners = await client.manner.findMany({
     orderBy: {
       count: "desc",
     },
     where: {
       userId: id,
-      ...(id !== user?.id
+      ...(id !== user?.id || includeDislike === false
         ? {
             reviews: {
               some: {

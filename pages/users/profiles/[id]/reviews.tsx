@@ -1,14 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
 import { PageLayout } from "@libs/states";
-import { getDiffTimeStr } from "@libs/utils";
-import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -18,7 +15,6 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesReviewsResponse, ProfilesReviewsFilter } from "@api/users/profiles/[id]/reviews";
 // @components
-import Profiles from "@components/profiles";
 import ReviewList from "@components/lists/reviewList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesReviewsResponse, query: string = "", id: string = "") => {
@@ -34,11 +30,6 @@ type FilterTab = { index: number; value: ProfilesReviewsFilter; text: string; na
 const ProfileProducts: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
-
-  const { user } = useUser();
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
-
-  const [mounted, setMounted] = useState(false);
 
   // profile review paging
   const tabs: FilterTab[] = [
@@ -75,7 +66,6 @@ const ProfileProducts: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setMounted(true);
     setLayout(() => ({
       title: "거래 후기 상세",
       header: {
@@ -131,17 +121,15 @@ const ProfileProducts: NextPage = () => {
 };
 
 const Page: NextPage<{
-  getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
   getReviewsByAll: { query: string; response: GetProfilesReviewsResponse };
   getReviewsBySellUser: { query: string; response: GetProfilesReviewsResponse };
   getReviewsByPurchaseUser: { query: string; response: GetProfilesReviewsResponse };
-}> = ({ getUser, getProfile, getReviewsByAll, getReviewsBySellUser, getReviewsByPurchaseUser }) => {
+}> = ({ getProfile, getReviewsByAll, getReviewsBySellUser, getReviewsByPurchaseUser }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
           [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(arg[0], arg[1], getReviewsByAll.query, `${getProfile.response.profile.id}`))]: [
             getReviewsByAll.response,
@@ -293,14 +281,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
-      },
       getProfile: {
         response: {
           success: true,

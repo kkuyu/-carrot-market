@@ -90,7 +90,7 @@ const ChatDetail: NextPage = () => {
         navBarUtils: [],
       },
     }));
-  }, []);
+  }, [data?.chat.users]);
 
   if (!data) {
     return null;
@@ -112,7 +112,7 @@ const ChatDetail: NextPage = () => {
               </Link>
             )}
             {!saleRecord && purchaseRecord && existsReview && data?.chat.users.find((chatUser) => chatUser.id === existsReview?.[`${role === "sellUser" ? "purchaseUser" : "sellUser"}Id`]) && (
-              <Link href={`/review/${existsReview.id}`} passHref>
+              <Link href={`/reviews/${existsReview.id}`} passHref>
                 <Buttons tag="a" text="보낸 후기 보기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
               </Link>
             )}

@@ -28,41 +28,43 @@ const ReviewList = ({ list }: ReviewListProps) => {
 
   return (
     <ul className="space-y-3">
-      {list
-        .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
-        .map((item) => {
-          const signature = item.role === "sellUser" ? "판매자" : item.role === "purchaseUser" ? "구매자" : null;
-          const profile = item.role === "sellUser" ? item.sellUser : item.role === "purchaseUser" ? item.purchaseUser : null;
-          const today = new Date();
-          const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
-          if (!signature || !profile) return null;
+      {list.map((item) => {
+        const profile = item.role === "sellUser" ? item.sellUser : item.role === "purchaseUser" ? item.purchaseUser : null;
+        const signature = item.role === "sellUser" ? "판매자" : item.role === "purchaseUser" ? "구매자" : null;
 
-          if (user?.id?.toString() !== router.query.id) {
-            return (
-              <li key={item?.id}>
-                <Link href={`/users/profiles/${profile?.id}`}>
-                  <a className="block">
-                    <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
-                    <p className="pt-1 pl-14">{item.text}</p>
-                  </a>
-                </Link>
-              </li>
-            );
-          }
+        if (!profile || !signature) {
+          return null;
+        }
 
+        const today = new Date();
+        const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
+
+        if (user?.id?.toString() !== router.query.id) {
           return (
             <li key={item?.id}>
               <Link href={`/users/profiles/${profile?.id}`}>
                 <a className="block">
                   <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
+                  <p className="pt-1 pl-14">{item.text}</p>
                 </a>
-              </Link>
-              <Link href={`/reviews/${item?.id}`}>
-                <a className="block pt-1 pl-14">{item.text}</a>
               </Link>
             </li>
           );
-        })}
+        }
+
+        return (
+          <li key={item?.id}>
+            <Link href={`/users/profiles/${profile?.id}`}>
+              <a className="block">
+                <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
+              </a>
+            </Link>
+            <Link href={`/reviews/${item?.id}`}>
+              <a className="block pt-1 pl-14">{item.text}</a>
+            </Link>
+          </li>
+        );
+      })}
     </ul>
   );
 };

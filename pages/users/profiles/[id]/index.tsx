@@ -141,7 +141,7 @@ const ProfileDetail: NextPage<{
             </Link>
             {(Boolean(profile?.sellUserReview?.length) || Boolean(profile?.purchaseUserReview?.length)) && (
               <div className="px-5">
-                <ReviewList list={[...profile?.sellUserReview, ...profile?.purchaseUserReview]} />
+                <ReviewList list={[...profile?.sellUserReview, ...profile?.purchaseUserReview].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())} />
               </div>
             )}
           </li>

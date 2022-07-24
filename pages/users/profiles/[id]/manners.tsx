@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @lib
+import { getReviewManners } from "@libs/utils";
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
@@ -23,10 +24,11 @@ const ProfileManners: NextPage = () => {
 
   const { user } = useUser();
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
-  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/manners` : null);
+  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/manners?includeDislike=true` : null);
 
-  const goodManners = mannerData?.manners?.length ? mannerData.manners.filter((manner) => !manner.reviews.find((review) => review.satisfaction === "dislike")) : [];
-  const badManners = mannerData?.manners?.length ? mannerData.manners.filter((manner) => !manner.reviews.find((review) => review.satisfaction !== "dislike")) : [];
+  const manners = mannerData?.manners.length ? mannerData?.manners : [];
+  const goodManners = manners?.filter((manner) => !manner.reviews.find((review) => review.satisfaction === "dislike"));
+  const badManners = manners?.filter((manner) => manner.reviews.find((review) => manner.count > 1 && review.satisfaction === "dislike"));
 
   useEffect(() => {
     setLayout(() => ({
@@ -79,7 +81,7 @@ const Page: NextPage<{
         fallback: {
           "/api/users/my": getUser.response,
           [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}/manners`]: getManners.response,
+          [`/api/users/profiles/${getProfile.response.profile.id}/manners?includeDislike=true`]: getManners.response,
         },
       }}
     >
@@ -138,15 +140,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
     where: {
       userId: profile.id,
-      ...(profile.id !== ssrUser.profile?.id
-        ? {
-            reviews: {
-              some: {
-                NOT: [{ satisfaction: "dislike" }],
-              },
-            },
-          }
-        : {}),
     },
     include: {
       reviews: {
