@@ -237,12 +237,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // purchase product && exists review
-  // redirect: /review/id
+  // redirect: /reviews/id
   if (purchaseRecord && existsReview) {
     return {
       redirect: {
         permanent: false,
-        destination: `/review/${existsReview.id}`,
+        destination: `/reviews/${existsReview.id}`,
       },
     };
   }

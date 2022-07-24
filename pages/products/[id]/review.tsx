@@ -53,7 +53,6 @@ const ProductReview: NextPage<{
     if (loading) return;
     uploadReview({
       ...data,
-      manners: data.manners,
       purchaseUserId: staticProps?.purchaseUser.id,
       sellUserId: staticProps?.sellUser.id,
       productId: staticProps.product.id,
@@ -219,12 +218,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // exists review
-  // redirect: /review/id
+  // redirect: /reviews/id
   if (purchaseRecord && existsReview) {
     return {
       redirect: {
         permanent: false,
-        destination: `/review/${existsReview.id}`,
+        destination: `/reviews/${existsReview.id}`,
       },
     };
   }

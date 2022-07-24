@@ -51,17 +51,31 @@ const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: Rev
       {satisfaction && Boolean(mannersItems.length) && (
         <div className="space-y-1">
           <Labels tag="span" htmlFor="manners" text={mannersLabel} />
-          {mannersItems.map((item) => (
-            <span key={item.value} className="relative block">
-              <input {...register("manners")} type="checkbox" id={item.value} value={item.value} className="peer sr-only" />
-              <svg className="absolute top-0.5 l-0 w-5 h-5 text-gray-300 peer-checked:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <label htmlFor={item.value} className="pl-6">
-                {item.text}
-              </label>
-            </span>
-          ))}
+          <div className="space-y-1">
+            {mannersItems.map((item) => (
+              <span key={item.value} className="relative block">
+                <input
+                  {...register("manners", {
+                    required: {
+                      value: true,
+                      message: "한 개 이상 선택해주세요",
+                    },
+                  })}
+                  type="checkbox"
+                  id={item.value}
+                  value={item.value}
+                  className="peer sr-only"
+                />
+                <svg className="absolute top-0.5 l-0 w-5 h-5 text-gray-300 peer-checked:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <label htmlFor={item.value} className="pl-6">
+                  {item.text}
+                </label>
+              </span>
+            ))}
+          </div>
+          <span className="empty:hidden invalid">{formState.errors.manners?.message}</span>
         </div>
       )}
       {/* 게시글 내용 */}
