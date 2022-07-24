@@ -7,12 +7,9 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesDetailResponse {
   success: boolean;
-  profile: User & {
-    manners: Pick<Manner, "id" | "count" | "value">[];
-    sellUserReview: (Review & { sellUser: Pick<User, "id" | "name" | "avatar">; purchaseUser: Pick<User, "id" | "name" | "avatar"> })[];
-    purchaseUserReview: (Review & { sellUser: Pick<User, "id" | "name" | "avatar">; purchaseUser: Pick<User, "id" | "name" | "avatar"> })[];
-    _count?: { products: number };
-  };
+  profile: User & { _count?: { products: number } };
+  manners: (Manner & { reviews: Pick<Review, "id" | "satisfaction">[] })[];
+  reviews: (Review & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
   error?: {
     timestamp: Date;
     name: string;
@@ -38,78 +35,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id,
       },
       include: {
-        manners: {
-          take: 3,
-          orderBy: {
-            count: "desc",
-          },
-          where: {
-            reviews: {
-              some: {
-                NOT: [{ satisfaction: "dislike" }],
-              },
-            },
-          },
-          select: {
-            id: true,
-            value: true,
-            count: true,
-          },
-        },
-        sellUserReview: {
-          take: 1,
-          orderBy: {
-            createdAt: "desc",
-          },
-          where: {
-            satisfaction: {
-              not: "dislike",
-            },
-          },
-          include: {
-            sellUser: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-            purchaseUser: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-          },
-        },
-        purchaseUserReview: {
-          take: 1,
-          orderBy: {
-            createdAt: "desc",
-          },
-          where: {
-            satisfaction: {
-              not: "dislike",
-            },
-          },
-          include: {
-            sellUser: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-            purchaseUser: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
-            },
-          },
-        },
         _count: {
           select: {
             products: true,
@@ -123,10 +48,68 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
+    // find manners
+    const manners = await client.manner.findMany({
+      where: {
+        userId: profile.id,
+        reviews: {
+          some: {
+            NOT: [{ satisfaction: "dislike" }],
+          },
+        },
+      },
+      include: {
+        reviews: {
+          select: {
+            id: true,
+            satisfaction: true,
+          },
+        },
+      },
+    });
+
+    // find reviews
+    const reviews = await client.review.findMany({
+      take: 3,
+      orderBy: {
+        createdAt: "desc",
+      },
+      where: {
+        satisfaction: {
+          not: "dislike",
+        },
+        text: {
+          not: "",
+        },
+        OR: [
+          { role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } },
+          { role: "purchaseUser", sellUserId: id, product: { userId: { equals: id } } },
+        ],
+      },
+      include: {
+        purchaseUser: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+        sellUser: {
+          select: {
+            id: true,
+            name: true,
+            avatar: true,
+          },
+        },
+      },
+    });
+
     // result
     const result: GetProfilesDetailResponse = {
       success: true,
       profile,
+      manners: manners.sort((a, b) => b.reviews.length - a.reviews.length).splice(0, 3),
+      reviews,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -57,6 +57,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
+    // remove chatMessage
+    await client.chatMessage.deleteMany({
+      where: {
+        chat: {
+          productId: product.id,
+        },
+      },
+    });
+
     // remove chat
     await client.chat.deleteMany({
       where: {

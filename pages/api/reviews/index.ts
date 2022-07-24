@@ -21,7 +21,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const { user } = req.session;
 
     // request valid
-    if (!role || !satisfaction || !_purchaseUserId || !_sellUserId) {
+    if (!role || !satisfaction || !manners.length || !_purchaseUserId || !_sellUserId) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -122,7 +122,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             id: exists.id,
           },
           data: {
-            count: exists.count + 1,
             reviews: {
               connect: {
                 id: newReview.id,
@@ -133,7 +132,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       } else {
         await client.manner.create({
           data: {
-            count: 1,
             value: manners[index],
             reviews: {
               connect: {

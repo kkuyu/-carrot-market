@@ -83,7 +83,7 @@ const ReviewsDetail: NextPage = () => {
           <Buttons tag="a" text={`${data?.review?.role === role ? "받은" : "보낸"} 거래 후기 보기`} className="mt-5" />
         </Link>
       ) : data?.review?.role !== role ? (
-        <Link href={`products/${data.review.product.id}/review`} passHref>
+        <Link href={`/products/${data.review.product.id}/review`} passHref>
           <Buttons tag="a" text="거래 후기 보내기" className="mt-5" />
         </Link>
       ) : null}

@@ -10,7 +10,7 @@ import { GetProfilesReviewsResponse } from "@api/users/profiles/[id]/reviews";
 // @components
 import Profiles from "@components/profiles";
 
-type ReviewListItem = GetProfilesDetailResponse["profile"]["sellUserReview"][0] | GetProfilesDetailResponse["profile"]["purchaseUserReview"][0] | GetProfilesReviewsResponse["reviews"][0];
+type ReviewListItem = GetProfilesDetailResponse["reviews"][0] | GetProfilesReviewsResponse["reviews"][0];
 
 interface ReviewListProps {
   list: ReviewListItem[];
@@ -32,7 +32,8 @@ const ReviewList = ({ list }: ReviewListProps) => {
         const profile = item.role === "sellUser" ? item.sellUser : item.role === "purchaseUser" ? item.purchaseUser : null;
         const signature = item.role === "sellUser" ? "판매자" : item.role === "purchaseUser" ? "구매자" : null;
 
-        if (!profile || !signature) {
+        if (!profile || !signature || item.text === "") {
+          console.error("ReviewList", item);
           return null;
         }
 

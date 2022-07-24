@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @lib
-import { getReviewManners } from "@libs/utils";
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
@@ -24,11 +23,11 @@ const ProfileManners: NextPage = () => {
 
   const { user } = useUser();
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
-  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/manners?includeDislike=true` : null);
+  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/manners?includeDislike=${profileData?.profile.id === user?.id}` : null);
 
   const manners = mannerData?.manners.length ? mannerData?.manners : [];
-  const goodManners = manners?.filter((manner) => !manner.reviews.find((review) => review.satisfaction === "dislike"));
-  const badManners = manners?.filter((manner) => manner.reviews.find((review) => manner.count > 1 && review.satisfaction === "dislike"));
+  const goodManners = manners?.filter((manner) => manner.reviews.length > 0 && !manner.reviews.find((review) => review.satisfaction === "dislike"));
+  const badManners = manners?.filter((manner) => manner.reviews.length > 1 && manner.reviews.find((review) => review.satisfaction === "dislike"));
 
   useEffect(() => {
     setLayout(() => ({
@@ -53,7 +52,7 @@ const ProfileManners: NextPage = () => {
       <h1 className="mt-5 pt-5 border-t">받은 비매너</h1>
       <div className="mt-2">
         {user?.id !== profileData?.profile.id && <p>받은 비매너는 본인에게만 보여요</p>}
-        {user?.id === profileData?.profile.id && Boolean(badManners.length) && user?.id === profileData?.profile.id && <MannerList list={badManners}></MannerList>}
+        {user?.id === profileData?.profile.id && Boolean(badManners.length) && <MannerList list={badManners}></MannerList>}
         {user?.id === profileData?.profile.id && !Boolean(badManners.length) && <p>받은 비매너가 없어요</p>}
       </div>
 
@@ -73,7 +72,7 @@ const ProfileManners: NextPage = () => {
 const Page: NextPage<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getManners: { response: GetProfilesMannersResponse };
+  getManners: { query: string; response: GetProfilesMannersResponse };
 }> = ({ getUser, getProfile, getManners }) => {
   return (
     <SWRConfig
@@ -81,7 +80,7 @@ const Page: NextPage<{
         fallback: {
           "/api/users/my": getUser.response,
           [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}/manners?includeDislike=true`]: getManners.response,
+          [`/api/users/profiles/${getProfile.response.profile.id}/manners?${getManners.query}`]: getManners.response,
         },
       }}
     >
@@ -134,16 +133,22 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // find manner
+  const allowDislike = profile.id === ssrUser?.profile?.id;
   const manners = await client.manner.findMany({
-    orderBy: {
-      count: "desc",
-    },
     where: {
       userId: profile.id,
+      ...(!allowDislike
+        ? {
+            reviews: {
+              some: { NOT: [{ satisfaction: "dislike" }] },
+            },
+          }
+        : {}),
     },
     include: {
       reviews: {
         select: {
+          id: true,
           satisfaction: true,
         },
       },
@@ -167,6 +172,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getManners: {
+        query: `includeDislike=${allowDislike}`,
         response: {
           success: true,
           manners: JSON.parse(JSON.stringify(manners || [])),

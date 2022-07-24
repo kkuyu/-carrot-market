@@ -125,9 +125,9 @@ const ProfileDetail: NextPage<{
             <Link href={`/users/profiles/${profile.id}/manners`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 평가</span>
-                {Boolean(profile?.manners?.length) && (
+                {data && Boolean(data?.manners?.length) && (
                   <div className="mt-3 px-5">
-                    <MannerList list={profile?.manners} />
+                    <MannerList list={data.manners} />
                   </div>
                 )}
               </a>
@@ -139,9 +139,9 @@ const ProfileDetail: NextPage<{
                 <span className="block-arrow font-semibold">받은 매너 후기</span>
               </a>
             </Link>
-            {(Boolean(profile?.sellUserReview?.length) || Boolean(profile?.purchaseUserReview?.length)) && (
+            {data && Boolean(data?.reviews?.length) && (
               <div className="px-5">
-                <ReviewList list={[...profile?.sellUserReview, ...profile?.purchaseUserReview].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())} />
+                <ReviewList list={data?.reviews} />
               </div>
             )}
           </li>
@@ -178,78 +178,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       id: +profileId,
     },
     include: {
-      manners: {
-        take: 3,
-        orderBy: {
-          count: "desc",
-        },
-        where: {
-          reviews: {
-            some: {
-              NOT: [{ satisfaction: "dislike" }],
-            },
-          },
-        },
-        select: {
-          id: true,
-          value: true,
-          count: true,
-        },
-      },
-      sellUserReview: {
-        take: 1,
-        orderBy: {
-          createdAt: "desc",
-        },
-        where: {
-          satisfaction: {
-            not: "dislike",
-          },
-        },
-        include: {
-          sellUser: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          purchaseUser: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-        },
-      },
-      purchaseUserReview: {
-        take: 1,
-        orderBy: {
-          createdAt: "desc",
-        },
-        where: {
-          satisfaction: {
-            not: "dislike",
-          },
-        },
-        include: {
-          sellUser: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          purchaseUser: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-        },
-      },
       _count: {
         select: {
           products: true,

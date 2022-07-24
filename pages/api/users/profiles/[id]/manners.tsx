@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Manner } from "@prisma/client";
+import { Manner, Review } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,7 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesMannersResponse {
   success: boolean;
-  manners: (Manner & { reviews: { satisfaction: string }[] })[];
+  manners: (Manner & { reviews: Pick<Review, "id" | "satisfaction">[] })[];
   error?: {
     timestamp: Date;
     name: string;
@@ -29,18 +29,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   // fetch data: client.manner
   const id = +_id.toString();
   const includeDislike = _includeDislike ? JSON.parse(_includeDislike.toString()) : false;
+  const allowDislike = includeDislike === false || id !== user?.id;
   const manners = await client.manner.findMany({
-    orderBy: {
-      count: "desc",
-    },
     where: {
       userId: id,
-      ...(id !== user?.id || includeDislike === false
+      ...(!allowDislike
         ? {
             reviews: {
-              some: {
-                NOT: [{ satisfaction: "dislike" }],
-              },
+              some: { NOT: [{ satisfaction: "dislike" }] },
             },
           }
         : {}),
@@ -48,6 +44,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     include: {
       reviews: {
         select: {
+          id: true,
           satisfaction: true,
         },
       },
@@ -57,7 +54,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   // result
   const result: GetProfilesMannersResponse = {
     success: true,
-    manners,
+    manners: manners.sort((a, b) => b.reviews.length - a.reviews.length),
   };
   return res.status(200).json(result);
 }

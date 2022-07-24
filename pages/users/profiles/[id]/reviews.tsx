@@ -194,6 +194,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       satisfaction: {
         not: "dislike",
       },
+      text: {
+        not: "",
+      },
       OR: [
         { role: "sellUser", purchaseUserId: profile.id, product: { userId: { not: profile.id } } },
         { role: "purchaseUser", sellUserId: profile.id, product: { userId: { equals: profile.id } } },
@@ -228,6 +231,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       satisfaction: {
         not: "dislike",
       },
+      text: {
+        not: "",
+      },
       OR: [{ role: "sellUser", purchaseUserId: profile.id, product: { userId: { not: profile.id } } }],
     },
     include: {
@@ -258,6 +264,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     where: {
       satisfaction: {
         not: "dislike",
+      },
+      text: {
+        not: "",
       },
       OR: [{ role: "purchaseUser", sellUserId: profile.id, product: { userId: { equals: profile.id } } }],
     },

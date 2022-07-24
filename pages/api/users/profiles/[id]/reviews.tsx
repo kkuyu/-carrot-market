@@ -62,6 +62,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         satisfaction: {
           not: "dislike",
         },
+        text: {
+          not: "",
+        },
         ...reviewsFilter,
       },
     });
@@ -120,6 +123,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         satisfaction: {
           not: "dislike",
         },
+        text: {
+          not: "",
+        },
         ...reviewsFilter,
       },
     });
@@ -132,6 +138,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         satisfaction: {
           not: "dislike",
+        },
+        text: {
+          not: "",
         },
         ...reviewsFilter,
       },
