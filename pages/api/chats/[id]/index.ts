@@ -6,11 +6,11 @@ import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 type ChatMessages = (ChatMessage & { user: Pick<User, "id" | "name" | "avatar"> })[];
-type ChatProduct = (Product & { user: Pick<User, "id" | "name"> } & { records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Review[] }) | null;
+type ChatProduct = Product & { user: Pick<User, "id" | "name"> } & { records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[] };
 
 export interface GetChatsDetailResponse {
   success: boolean;
-  chat: Chat & { chatMessages: ChatMessages } & { users: Pick<User, "id" | "name" | "avatar">[] } & { product: ChatProduct };
+  chat: Chat & { chatMessages: ChatMessages } & { users: Pick<User, "id" | "name" | "avatar">[] } & { product: ChatProduct | null };
   error?: {
     timestamp: Date;
     name: string;
@@ -76,7 +76,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
                 userId: true,
               },
             },
-            reviews: true,
+            reviews: {
+              select: {
+                id: true,
+                role: true,
+                sellUserId: true,
+                purchaseUserId: true,
+              },
+            },
           },
         },
       },

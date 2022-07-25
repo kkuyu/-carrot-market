@@ -72,7 +72,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
       )}
       {!saleRecord && !existsReview && (
         <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
-          후기 보내기
+          거래 후기 보내기
         </button>
       )}
       {!saleRecord && existsReview && (

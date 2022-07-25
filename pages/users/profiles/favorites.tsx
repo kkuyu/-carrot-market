@@ -161,7 +161,14 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
                   },
                 },
               },
-              reviews: true,
+              reviews: {
+                select: {
+                  id: true,
+                  role: true,
+                  sellUserId: true,
+                  purchaseUserId: true,
+                },
+              },
             },
           },
         },

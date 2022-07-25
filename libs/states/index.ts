@@ -22,24 +22,13 @@ export const NavBarUtils = {
 } as const;
 export type NavBarUtils = typeof NavBarUtils[keyof typeof NavBarUtils];
 
-export const KebabActions = {
-  Welcome: "welcome",
-  Report: "report",
-  Block: "block",
-  Edit: "edit",
-  Pull: "pull",
-  Hide: "hide",
-  Delete: "delete",
-} as const;
-export type KebabActions = typeof KebabActions[keyof typeof KebabActions];
-
 export interface PageLayoutTypes {
   title?: string;
   seoTitle?: string;
   header: {
     headerUtils: HeaderUtils[];
     headerColor?: string;
-    kebabActions?: { key: KebabActions; text: string; onClick?: () => void }[];
+    kebabActions?: { key: string; text: string; onClick?: () => void }[];
     submitId?: string;
   };
   navBar: {

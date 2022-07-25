@@ -89,7 +89,7 @@ const ChatDetail: NextPage = () => {
   const toggleSale = (value: boolean) => {
     if (saleLoading) return;
     if (updatePurchaseLoading) return;
-    updateSale({ sale: value, forced: true });
+    updateSale({ sale: value });
   };
 
   const openSoldProductModal = () => {
@@ -149,6 +149,7 @@ const ChatDetail: NextPage = () => {
 
   return (
     <article className="container pb-20">
+      {/* 상품 정보 */}
       {data.chat.product && (
         <div className="-mx-5 sticky top-12 left-0 block py-3 px-5 bg-gray-200">
           <Link href={`/products/${data.chat.product.id}`}>
@@ -161,10 +162,10 @@ const ChatDetail: NextPage = () => {
             {saleRecord && (
               <Buttons type="button" text={role === "sellUser" ? "판매완료" : "구매완료"} size="sm" status="default" className="!inline-block !w-auto !text-left" onClick={openSoldProductModal} />
             )}
-            {/* 후기 보내기 */}
+            {/* 거래 후기 보내기 */}
             {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
               <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
-                <Buttons tag="a" text="후기 보내기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
+                <Buttons tag="a" text="거래 후기 보내기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
               </Link>
             )}
             {/* 보낸 후기 보기 */}
@@ -176,19 +177,22 @@ const ChatDetail: NextPage = () => {
           </div>
         </div>
       )}
+      {/* 채팅 목록 */}
       <div className="mt-2">
         <ChatMessageList list={data.chat.chatMessages} />
       </div>
+      {/* 거래 후기 보내기 */}
       {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
         <div className="mt-4 p-3 bg-orange-100 rounded-md">
           {user?.name}님, 거래 잘 하셨나요?
           <br />
           이웃에게 따뜻한 마음을 전해보세요!
           <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
-            <Buttons tag="a" sort="text-link" status="default" text="후기 보내기" />
+            <Buttons tag="a" sort="text-link" status="default" text="거래 후기 보내기" />
           </Link>
         </div>
       )}
+      {/* 채팅 입력 */}
       <div className="fixed bottom-0 left-0 w-full z-[50]">
         <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
           <SendMessage formData={formData} onValid={submitChatMessage} isLoading={sendChatMessageLoading} className="w-full pl-5 pr-3" />
@@ -297,7 +301,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
               userId: true,
             },
           },
-          reviews: true,
         },
       },
     },

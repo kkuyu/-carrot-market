@@ -15,7 +15,9 @@ import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 import { PostProductsFavoriteResponse } from "@api/products/[id]/favorite";
+import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostChatsResponse } from "@api/chats";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -23,7 +25,6 @@ import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
 import PictureSlider, { PictureSliderItem } from "@components/groups/pictureSlider";
-import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 
 const ProductDetail: NextPage<{
   staticProps: {
@@ -79,6 +80,22 @@ const ProductDetail: NextPage<{
       }
     },
   });
+  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
+    onSuccess: (data) => {
+      if (!data.recordSale) {
+        router.push(`/products/${router.query.id}/purchase`);
+      } else {
+        boundMutate();
+      }
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
 
   // fetch data: chat
   const [createChat, { loading: createChatLoading }] = useMutation<PostChatsResponse>(`/api/chats`, {
@@ -113,6 +130,26 @@ const ProductDetail: NextPage<{
       );
     }, false);
     updateFavorite({});
+  };
+
+  const toggleSale = (value: boolean) => {
+    if (!product) return;
+    if (saleLoading) return;
+
+    boundMutate((prev) => {
+      let records = prev?.product.records || [];
+      const idx = records.findIndex((record) => record.kind === Kind.Sale);
+      const exists = idx !== -1;
+      if (exists) records.splice(idx, 1);
+      if (!exists) records.push({ id: 0, kind: Kind.Sale, userId: user?.id! });
+      return (
+        prev && {
+          ...prev,
+          product: { ...prev.product, records: records },
+        }
+      );
+    }, false);
+    updateSale({ sale: value });
   };
 
   const goChat = () => {
@@ -153,6 +190,17 @@ const ProductDetail: NextPage<{
     });
   };
 
+  // modal: sale
+  const openSaleModal = () => {
+    openModal<MessageModalProps>(MessageModal, "sale", {
+      type: "confirm",
+      hasBackdrop: true,
+      message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
+      confirmBtn: "변경",
+      onConfirm: () => toggleSale(true),
+    });
+  };
+
   // merge data
   useEffect(() => {
     if (!data) return;
@@ -186,12 +234,15 @@ const ProductDetail: NextPage<{
               ]
             : mode === "private" && saleRecord
             ? [
+                { key: "sold", text: "판매완료", onClick: () => toggleSale(false) },
                 { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
-                { key: "pull", text: "끌어올리기", onClick: () => router.push(`/products/${product.id}/resume`) },
+                { key: "resume", text: "끌어올리기", onClick: () => router.push(`/products/${product.id}/resume`) },
                 { key: "delete", text: "삭제", onClick: () => router.push(`/products/${product.id}/delete`) },
               ]
             : mode === "private" && !saleRecord
             ? [
+                { key: "sale", text: "판매중", onClick: () => (product?.reviews?.length ? openSaleModal() : toggleSale(true)) },
+                { key: "review", text: "거래 후기 보내기", onClick: () => router.push(`/products/${product.id}/review`) },
                 { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
                 { key: "delete", text: "삭제", onClick: () => router.push(`/products/${product.id}/delete`) },
               ]
@@ -201,7 +252,7 @@ const ProductDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, product?.records]);
+  }, [user?.id, product?.reviews, product?.records]);
 
   useEffect(() => {
     setMounted(true);

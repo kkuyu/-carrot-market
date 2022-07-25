@@ -7,7 +7,11 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesPurchasesResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[]; reviews: Review[] })[];
+  products: (Product & {
+    records: Pick<Record, "id" | "kind" | "userId">[];
+    chats?: (Chat & { _count: { chatMessages: number } })[];
+    reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+  })[];
   pages: number;
   total: number;
   error?: {
@@ -67,7 +71,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
                 },
               },
             },
-            reviews: true,
+            reviews: {
+              select: {
+                id: true,
+                role: true,
+                sellUserId: true,
+                purchaseUserId: true,
+              },
+            },
           },
         },
       },

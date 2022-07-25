@@ -9,7 +9,11 @@ export type ProfilesProductsFilter = "ALL" | "SALE" | "SOLD";
 
 export interface GetProfilesProductsResponse {
   success: boolean;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[]; reviews?: Review[] })[];
+  products: (Product & {
+    records: Pick<Record, "id" | "kind" | "userId">[];
+    chats?: (Chat & { _count: { chatMessages: number } })[];
+    reviews?: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+  })[];
   pages: number;
   total: number;
   error?: {
@@ -135,7 +139,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
           },
         },
-        reviews: true,
+        reviews: {
+          select: {
+            id: true,
+            role: true,
+            sellUserId: true,
+            purchaseUserId: true,
+          },
+        },
       },
       where: {
         userId: id,
