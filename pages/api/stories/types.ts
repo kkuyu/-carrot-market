@@ -1,4 +1,4 @@
-import { Feeling } from "@prisma/client";
+import { Emotion } from "@prisma/client";
 
 export const StoryCategoryEnum = {
   ["동네질문"]: "question",
@@ -14,20 +14,20 @@ export const StoryCategoryEnum = {
 
 export type StoryCategoryEnum = typeof StoryCategoryEnum[keyof typeof StoryCategoryEnum];
 
-export const StoryCategory: { text: keyof typeof StoryCategoryEnum; value: StoryCategoryEnum; feedback: string[] }[] = [
-  { text: "동네질문", value: "question", feedback: ["curiosity"] },
-  { text: "동네사건사고", value: "incident", feedback: ["emotion"] },
-  { text: "동네소식", value: "report", feedback: ["emotion"] },
-  { text: "동네맛집", value: "restaurant", feedback: ["emotion"] },
-  { text: "취미생활", value: "dilettante-life", feedback: ["emotion"] },
-  { text: "일상", value: "daily", feedback: ["curiosity"] },
-  { text: "분실/실종센터", value: "missing/disappear", feedback: ["emotion"] },
-  { text: "해주세요", value: "entrust", feedback: ["emotion"] },
-  { text: "동네사진전", value: "photo-exhibit", feedback: ["emotion"] },
+export const StoryCategory: { text: keyof typeof StoryCategoryEnum; value: StoryCategoryEnum; isLikeWithEmotion: boolean }[] = [
+  { text: "동네질문", value: "question", isLikeWithEmotion: false },
+  { text: "동네사건사고", value: "incident", isLikeWithEmotion: true },
+  { text: "동네소식", value: "report", isLikeWithEmotion: true },
+  { text: "동네맛집", value: "restaurant", isLikeWithEmotion: true },
+  { text: "취미생활", value: "dilettante-life", isLikeWithEmotion: true },
+  { text: "일상", value: "daily", isLikeWithEmotion: false },
+  { text: "분실/실종센터", value: "missing/disappear", isLikeWithEmotion: true },
+  { text: "해주세요", value: "entrust", isLikeWithEmotion: true },
+  { text: "동네사진전", value: "photo-exhibit", isLikeWithEmotion: true },
 ];
 
-export type FeelingKeys = Feeling;
-export const FeelingIcon: { [key in FeelingKeys]: string } = {
+export type EmotionKeys = Emotion;
+export const EmotionIcon: { [key in EmotionKeys]: string } = {
   Like: "👍",
   Love: "❤️",
   Haha: "😀",

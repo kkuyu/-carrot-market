@@ -1,38 +1,88 @@
+import { useRouter } from "next/router";
 import { FocusEvent, useState } from "react";
+import useSWR from "swr";
+import { Kind } from "@prisma/client";
 // @libs
-import { getCategory } from "@libs/utils";
+import { getStoryCategory } from "@libs/utils";
+import useUser from "@libs/client/useUser";
+import useMutation from "@libs/client/useMutation";
+import useModal from "@libs/client/useModal";
 // @api
 import { GetStoriesResponse } from "@api/stories";
-import { FeelingIcon, FeelingKeys } from "@api/stories/types";
+import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
+// @components
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
 export interface FeedbackStoryProps {
   item?: FeedbackStoryItem;
-  curiosityItem: (item: FeedbackStoryItem) => void;
-  emotionItem: (item: FeedbackStoryItem, feeling: FeelingKeys) => void;
-  commentItem: (item: FeedbackStoryItem) => void;
 }
 
-const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: FeedbackStoryProps) => {
-  const [emotionOpen, setEmotionOpen] = useState(false);
+const FeedbackStory = ({ item }: FeedbackStoryProps) => {
+  const router = useRouter();
+  const isDetailPage = router.pathname === "/stories/[id]";
+
+  const { user, currentAddr } = useUser();
+  const { openModal } = useModal();
+
+  const [isVisibleBox, setIsVisibleBox] = useState(false);
+
+  const { data, error, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
+  const [updateLike, { loading: likeLoading }] = useMutation(item?.id ? `/api/stories/${item.id}/like` : "", {
+    onSuccess: (data) => {
+      boundMutate();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
 
   if (!item) return null;
 
-  const category = getCategory("story", item?.category);
-  const emotions = ["Like", "Love", "Haha", "Wow", "Sad", "Angry"] as FeelingKeys[];
+  const category = getStoryCategory(item?.category);
+  const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
+  const liked = likeRecords.find((record) => record.userId === user?.id);
 
-  // action curiosity
-  const curiosityClick = () => curiosityItem(item);
+  // toggle like
+  const toggleLike = (emotion?: EmotionKeys) => {
+    if (!data) return;
+    if (likeLoading) return;
 
-  // action emotion
-  const emotionClick = () => setEmotionOpen((prev) => !prev);
-  const emotionBlur = (e: FocusEvent<HTMLButtonElement, Element>) => {
+    boundMutate((prev) => {
+      let records = prev?.story?.records ? [...prev.story.records] : [];
+      const idx = records.findIndex((record) => record.kind === Kind.StoryLike && record.userId === user?.id);
+      const exists = idx !== -1;
+
+      if (!emotion) {
+        if (exists) records.splice(idx, 1);
+        if (!exists) records.push({ id: 0, kind: Kind.StoryLike, emotion: null, userId: user?.id! });
+        return prev && { ...prev, story: { ...prev.story, records: records } };
+      } else {
+        if (exists) records[idx].emotion !== emotion ? records.splice(idx, 1, { ...records[idx], emotion }) : records.splice(idx, 1);
+        if (!exists) records.push({ id: 0, kind: Kind.StoryLike, emotion: emotion, userId: user?.id! });
+      }
+      return prev && { ...prev, story: { ...prev.story, records: records } };
+    }, false);
+    updateLike({ emotion: emotion || null });
+  };
+
+  // click emotion
+  const emotionButtonClick = () => setIsVisibleBox((prev) => !prev);
+  const emotionButtonBlur = (e: FocusEvent<HTMLButtonElement, Element>) => {
     const boxEl = e.relatedTarget?.closest(".emotionBox");
     if (boxEl?.isSameNode(e.relatedTarget)) return;
     if (boxEl?.contains(e.relatedTarget)) return;
-    setEmotionOpen(false);
+    setIsVisibleBox(false);
+  };
+  const emotionBoxClick = (key: EmotionKeys) => {
+    user?.id === -1 ? openSignUpModal() : toggleLike(key);
+    setIsVisibleBox(false);
   };
   const emotionBoxBlur = (e: FocusEvent<HTMLDivElement, Element>) => {
     const boxEl = e.target.closest(".emotionBox");
@@ -40,72 +90,81 @@ const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: Feedba
     if (boxEl?.isSameNode(e.relatedTarget)) return;
     if (boxEl?.contains(e.relatedTarget)) return;
     prevEl?.focus();
-    setEmotionOpen(false);
+    setIsVisibleBox(false);
   };
 
-  // action comment
-  const commentClick = () => commentItem(item);
+  // click comment
+  const commentClick = () => {
+    if (isDetailPage) {
+      const target = document.querySelector(".container input#comment") as HTMLInputElement;
+      target?.focus();
+    } else {
+      router.push(`/stories/${item.id}`);
+    }
+  };
+
+  // modal: sign up
+  const openSignUpModal = () => {
+    openModal<MessageModalProps>(MessageModal, "signUpNow", {
+      type: "confirm",
+      message: "휴대폰 인증하고 회원가입하시겠어요?",
+      cancelBtn: "취소",
+      confirmBtn: "회원가입",
+      hasBackdrop: true,
+      onConfirm: () => {
+        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+      },
+    });
+  };
 
   return (
     <div className="relative px-5 border-t">
-      {/* 궁금해요 */}
-      {category?.feedback.includes("curiosity") && (
-        <button type="button" onClick={curiosityClick} className="py-2">
-          <svg className={`inline-block w-5 h-5 ${item?.curiosity ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      {/* 궁금해요: button */}
+      {!category?.isLikeWithEmotion && (
+        <button type="button" onClick={() => (user?.id === -1 ? openSignUpModal() : toggleLike())} className="py-2">
+          <svg className={`inline-block w-5 h-5 ${liked ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <span className={`ml-1 text-sm ${item?.curiosity ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {item?.curiosities?.count || item?._count?.curiosities || null}</span>
+          <span className={`ml-1 text-sm ${liked ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
         </button>
       )}
       {/* 공감하기: button */}
-      {category?.feedback.includes("emotion") && (
-        <button type="button" onClick={emotionClick} onBlur={emotionBlur} className="py-2">
-          {!item.emotion ? (
-            <>
-              <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="ml-1 text-sm text-gray-500">공감하기</span>
-            </>
+      {category?.isLikeWithEmotion && (
+        <button type="button" onClick={emotionButtonClick} onBlur={emotionButtonBlur} className="py-2">
+          {!liked ? (
+            <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
           ) : (
-            <>
-              <span className="inline-block w-5 h-5">{FeelingIcon[item.emotion]}</span>
-              <span className="ml-1 text-sm text-orange-500">공감했어요</span>
-            </>
+            <span className="inline-block w-5 h-5">{EmotionIcon?.[liked.emotion!]}</span>
           )}
+          {!liked ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
         </button>
       )}
       {/* 공감하기: box */}
-      {category?.feedback.includes("emotion") && (
-        <div onBlur={emotionBoxBlur} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${emotionOpen ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
+      {category?.isLikeWithEmotion && (
+        <div onBlur={emotionBoxBlur} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
-            {emotions.map((feeling) => {
-              const emotionBoxClick = () => {
-                emotionItem(item, feeling);
-                setEmotionOpen(false);
-              };
-              return (
-                <button key={feeling} type="button" onClick={emotionBoxClick} className="p-1">
-                  {FeelingIcon[feeling]}
-                </button>
-              );
-            })}
+            {Object.entries(EmotionIcon).map(([key, emotion]) => (
+              <button key={emotion} type="button" onClick={() => emotionBoxClick(key as EmotionKeys)} className="p-1">
+                {emotion}
+              </button>
+            ))}
           </div>
         </div>
       )}
       {/* 공감하기: result */}
-      {category?.feedback.includes("emotion") && Boolean(item?.emotions?.count || item?._count?.emotions) && (
+      {category?.isLikeWithEmotion && Boolean(likeRecords.length) && (
         <div className="absolute bottom-0 right-0 flex items-center h-10 pr-5">
-          <span className="text-xs">
-            {!item?.emotions?.feelings ? (
-              <svg className="inline-block w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-            ) : (
-              item?.emotions?.feelings.map((feeling) => FeelingIcon[feeling])
-            )}
+          <span className="text-sm">
+            {likeRecords
+              .map((record) => record.emotion)
+              .filter((emotion, index, array) => array.indexOf(emotion) === index)
+              .map((emotion) => (
+                <span key={emotion}>{EmotionIcon?.[emotion!]}</span>
+              ))}
           </span>
-          <span className="ml-1 block text-sm text-gray-500">{item?.emotions?.count || item?._count?.emotions || null}</span>
+          <span className="ml-1 block text-sm text-gray-500">{likeRecords.length}</span>
         </div>
       )}
       {/* 댓글 */}
@@ -120,9 +179,6 @@ const FeedbackStory = ({ item, curiosityItem, emotionItem, commentItem }: Feedba
         </svg>
         <span className="ml-1 text-sm text-gray-500">{item?._count?.comments ? `댓글 ${item._count.comments}` : "댓글쓰기"}</span>
       </button>
-      {/* todo: 좋아요 */}
-      {/* todo: 답글 */}
-      {/* todo: 수정, 삭제 */}
     </div>
   );
 };

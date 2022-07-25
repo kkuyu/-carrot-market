@@ -43,8 +43,6 @@ model User {
   chatMessages       ChatMessage[]
   stories            Story[]
   comments           Comment[]
-  curiosities        Curiosity[]
-  emotions           Emotion[]
   sellUserReview     Review[]      @relation(name: "sellUserReview")
   purchaseUserReview Review[]      @relation(name: "purchaseUserReview")
   manners            Manner[]
@@ -106,21 +104,20 @@ model ChatMessage {
 }
 
 model Story {
-  id          Int         @id @default(autoincrement())
-  photos      String      @default("") @db.Text
-  category    String
-  content     String      @db.MediumText
-  emdAddrNm   String
-  emdPosNm    String
-  emdPosX     Float
-  emdPosY     Float
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId      Int
-  comments    Comment[]
-  curiosities Curiosity[]
-  emotions    Emotion[]
+  id        Int       @id @default(autoincrement())
+  photos    String    @default("") @db.Text
+  category  String
+  content   String    @db.MediumText
+  emdAddrNm String
+  emdPosNm  String
+  emdPosX   Float
+  emdPosY   Float
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  comments  Comment[]
+  records   Record[]
 }
 
 model Comment {
@@ -130,36 +127,6 @@ model Comment {
   emdPosNm  String
   emdPosX   Float
   emdPosY   Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  storyId   Int
-}
-
-model Curiosity {
-  id        Int      @id @default(autoincrement())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  storyId   Int
-}
-
-enum Feeling {
-  Like
-  Love
-  Haha
-  Wow
-  Sad
-  Angry
-}
-
-model Emotion {
-  id        Int      @id @default(autoincrement())
-  feeling   Feeling
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -198,17 +165,30 @@ enum Kind {
   Favorite
   Sale
   Purchase
+  StoryLike
+}
+
+enum Emotion {
+  Like
+  Love
+  Haha
+  Wow
+  Sad
+  Angry
 }
 
 model Record {
   id        Int      @id @default(autoincrement())
   kind      Kind
+  emotion   Emotion?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
-  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId Int
+  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int?
+  story     Story?   @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  storyId   Int?
 }
 
 model Stream {

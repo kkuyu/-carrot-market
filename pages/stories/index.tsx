@@ -1,13 +1,12 @@
 import type { NextPage } from "next";
-import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
 import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
+import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
-import useModal from "@libs/client/useModal";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -15,14 +14,10 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users/my";
 import { GetStoriesResponse } from "@api/stories";
-import { FeelingKeys } from "@api/stories/types";
-import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
-import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
 // @components
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import StoryWithFeedbackList from "@components/lists/storyWithFeedbackList";
 import FloatingButtons from "@components/floatingButtons";
-import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
+import FeedbackStory from "@components/groups/feedbackStory";
 
 const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: string = "") => {
   if (pageIndex === 0) return `/api/stories?page=1&${query}`;
@@ -32,102 +27,19 @@ const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: 
 };
 
 const StoryHome: NextPage = () => {
-  const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user, currentAddr } = useUser();
-  const { openModal } = useModal();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
-  const { data, size, setSize, mutate } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) =>
+  const { data, size, setSize } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) =>
     getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
   );
 
   const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : [];
-
-  const curiosityItem = async (item: FeedbackStoryItem) => {
-    if (!data) return;
-    const mutateData = data.map((dataRow) => {
-      const stories = dataRow.stories.map((story) => {
-        if (story.id !== item.id) return story;
-        return {
-          ...story,
-          curiosity: !story.curiosity,
-          curiosities: {
-            ...story.curiosities,
-            count: story.curiosity ? story.curiosities.count - 1 : story.curiosities.count + 1,
-          },
-        };
-      });
-      return { ...dataRow, stories };
-    });
-    mutate(mutateData, false);
-    const updateCuriosity: PostStoriesCuriosityResponse = await (await fetch(`/api/stories/${item.id}/curiosity`, { method: "POST" })).json();
-    if (updateCuriosity.error) console.error(updateCuriosity.error);
-    mutate();
-  };
-
-  const emotionItem = async (item: FeedbackStoryItem, feeling: FeelingKeys) => {
-    if (!data) return;
-    const mutateData = data.map((dataRow) => {
-      const stories = dataRow.stories.map((story) => {
-        if (story.id !== item.id) return story;
-        const actionType = !story.emotion ? "create" : story.emotion !== feeling ? "update" : "delete";
-        return {
-          ...story,
-          emotion: (() => {
-            if (actionType === "create") return feeling;
-            if (actionType === "update") return feeling;
-            return null;
-          })(),
-          emotions: {
-            ...story.emotions,
-            count: (() => {
-              if (actionType === "create") return story.emotions.count + 1;
-              if (actionType === "update") return story.emotions.count;
-              return story.emotions.count - 1;
-            })(),
-            feelings: (() => {
-              if (story.emotions.count === 1) {
-                if (actionType === "create") return [feeling];
-                if (actionType === "update") return [feeling];
-                return [];
-              }
-              if (actionType === "create") return story.emotions.feelings.includes(feeling) ? story.emotions.feelings : [...story.emotions.feelings, feeling];
-              if (actionType === "update") return story.emotions.feelings.includes(feeling) ? story.emotions.feelings : [...story.emotions.feelings, feeling];
-              return story.emotions.feelings;
-            })(),
-          },
-        };
-      });
-      return { ...dataRow, stories };
-    });
-    mutate(mutateData, false);
-    const updateEmotion: PostStoriesEmotionResponse = await (await fetch(`/api/stories/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
-    if (updateEmotion.error) console.error(updateEmotion.error);
-    mutate();
-  };
-
-  const commentItem = (item: FeedbackStoryItem) => {
-    router.push(`/stories/${item?.id}`);
-  };
-
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
-      },
-    });
-  };
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
@@ -153,7 +65,7 @@ const StoryHome: NextPage = () => {
       {Boolean(stories.length) && (
         <div className="-mx-5">
           <StoryWithFeedbackList list={stories}>
-            <FeedbackStory curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
+            <FeedbackStory />
           </StoryWithFeedbackList>
           <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
@@ -238,10 +150,19 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
                 name: true,
               },
             },
+            records: {
+              where: {
+                kind: Kind.StoryLike,
+              },
+              select: {
+                id: true,
+                kind: true,
+                emotion: true,
+                userId: true,
+              },
+            },
             _count: {
               select: {
-                curiosities: true,
-                emotions: true,
                 comments: true,
               },
             },

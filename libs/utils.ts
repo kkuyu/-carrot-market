@@ -36,6 +36,14 @@ export const getCategory = (type: "product" | "story", categoryKey: string) => {
   return null;
 };
 
+export const getProductCategory = (categoryKey: string) => {
+  return ProductCategory.find((v) => v.value === categoryKey) || null;
+};
+
+export const getStoryCategory = (categoryKey: string) => {
+  return StoryCategory.find((v) => v.value === categoryKey) || null;
+};
+
 export const getReviewManners = (mannerKey: string) => {
   return ReviewManners.find((v) => v.value === mannerKey) || null;
 };

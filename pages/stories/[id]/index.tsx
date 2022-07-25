@@ -6,9 +6,10 @@ import { useEffect, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
+import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
-import { getCategory, getDiffTimeStr } from "@libs/utils";
+import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
@@ -16,9 +17,6 @@ import client from "@libs/server/client";
 // @api
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesCommentResponse } from "@api/stories/[id]/comment";
-import { FeelingKeys } from "@api/stories/types";
-import { PostStoriesCuriosityResponse } from "@api/stories/[id]/curiosity";
-import { PostStoriesEmotionResponse } from "@api/stories/[id]/emotion";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
@@ -52,7 +50,7 @@ const StoryDetail: NextPage<{
   // static data: story detail
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(staticProps?.story?.createdAt).getTime(), today.getTime());
-  const category = getCategory("story", staticProps?.story?.category);
+  const category = getStoryCategory(staticProps?.story?.category);
   const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
 
   const shortContent = !story?.content ? "" : story.content.length <= 15 ? story.content : story.content.substring(0, 15) + "...";
@@ -68,15 +66,6 @@ const StoryDetail: NextPage<{
 
   // fetch data: story detail
   const { data, error, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
-  const [updateCuriosity, { loading: curiosityLoading }] = useMutation(`/api/stories/${router.query.id}/curiosity`, {
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
 
   // new comment
   const { register, handleSubmit, setFocus, setValue } = useForm<CommentForm>();
@@ -107,67 +96,6 @@ const StoryDetail: NextPage<{
       }
     },
   });
-
-  const curiosityItem = async (item: FeedbackStoryItem) => {
-    if (!data) return;
-    const mutateData = {
-      ...data,
-      story: {
-        ...data.story,
-        curiosity: !data.story.curiosity,
-        curiosities: {
-          ...data.story.curiosities,
-          count: data.story.curiosity ? data.story.curiosities.count - 1 : data.story.curiosities.count + 1,
-        },
-      },
-    };
-    boundMutate(mutateData, false);
-    const updateCuriosity: PostStoriesCuriosityResponse = await (await fetch(`/api/stories/${item.id}/curiosity`, { method: "POST" })).json();
-    if (updateCuriosity.error) console.error(updateCuriosity.error);
-    boundMutate();
-  };
-
-  const emotionItem = async (item: FeedbackStoryItem, feeling: FeelingKeys) => {
-    if (!data) return;
-    const actionType = !data.story.emotion ? "create" : data.story.emotion !== feeling ? "update" : "delete";
-    const mutateData = {
-      ...data,
-      story: {
-        ...data.story,
-        emotion: (() => {
-          if (actionType === "create") return feeling;
-          if (actionType === "update") return feeling;
-          return null;
-        })(),
-        emotions: {
-          ...data.story.emotions,
-          count: (() => {
-            if (actionType === "create") return data.story.emotions.count + 1;
-            if (actionType === "update") return data.story.emotions.count;
-            return data.story.emotions.count - 1;
-          })(),
-          feelings: (() => {
-            if (data.story.emotions.count === 1) {
-              if (actionType === "create") return [feeling];
-              if (actionType === "update") return [feeling];
-              return [];
-            }
-            if (actionType === "create") return data.story.emotions.feelings.includes(feeling) ? data.story.emotions.feelings : [...data.story.emotions.feelings, feeling];
-            if (actionType === "update") return data.story.emotions.feelings.includes(feeling) ? data.story.emotions.feelings : [...data.story.emotions.feelings, feeling];
-            return data.story.emotions.feelings;
-          })(),
-        },
-      },
-    };
-    boundMutate(mutateData, false);
-    const updateEmotion: PostStoriesEmotionResponse = await (await fetch(`/api/stories/${item.id}/emotion?feeling=${feeling}`, { method: "POST" })).json();
-    if (updateEmotion.error) console.error(updateEmotion.error);
-    boundMutate();
-  };
-
-  const commentItem = (item: FeedbackStoryItem) => {
-    setFocus("comment");
-  };
 
   const submitComment = (data: CommentForm) => {
     if (!data) return;
@@ -286,9 +214,7 @@ const StoryDetail: NextPage<{
           </div>
         )}
         {/* 피드백 */}
-        {(viewModel.mode === "public" || viewModel.mode === "private") && (
-          <FeedbackStory item={story} curiosityItem={user?.id === -1 ? openSignUpModal : curiosityItem} emotionItem={user?.id === -1 ? openSignUpModal : emotionItem} commentItem={commentItem} />
-        )}
+        {(viewModel.mode === "public" || viewModel.mode === "private") && <FeedbackStory item={story} />}
       </section>
 
       {/* 댓글 목록: list */}
@@ -377,10 +303,19 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           avatar: true,
         },
       },
+      records: {
+        where: {
+          kind: Kind.StoryLike,
+        },
+        select: {
+          id: true,
+          kind: true,
+          emotion: true,
+          userId: true,
+        },
+      },
       _count: {
         select: {
-          curiosities: true,
-          emotions: true,
           comments: true,
         },
       },

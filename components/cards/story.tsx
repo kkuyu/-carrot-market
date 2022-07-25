@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 // @libs
-import { getCategory, getDiffTimeStr } from "@libs/utils";
+import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetStoriesResponse } from "@api/stories";
 
@@ -21,7 +21,7 @@ const Story = ({ item }: StoryProps) => {
 
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
-  const category = getCategory("story", item?.category);
+  const category = getStoryCategory(item?.category);
 
   return (
     <div className="relative">

@@ -43,6 +43,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
+    await client.record.deleteMany({
+      where: {
+        storyId: story.id,
+      },
+    });
+
+    await client.comment.deleteMany({
+      where: {
+        storyId: story.id,
+      },
+    });
+
     await client.story.delete({
       where: {
         id: story.id,
