@@ -46,15 +46,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            kind: Kind.Purchase,
+            OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
           },
           select: {
             id: true,
+            kind: true,
           },
         },
       },
     });
     if (!product) {
+      const error = new Error("NotFoundProduct");
+      error.name = "NotFoundProduct";
+      throw error;
+    }
+    if (product.records.find((record) => record.kind === Kind.Sale)) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;
@@ -80,7 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let recordPurchase = null;
-    const exists = product.records.length ? product.records[0] : null;
+    const exists = product.records.find((record) => record.kind === Kind.Purchase);
 
     if (exists && purchase === false) {
       // delete

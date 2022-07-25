@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Review } from "@prisma/client";
+import { Kind, Review } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -71,10 +71,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: productId,
       },
       include: {
+        records: {
+          where: {
+            OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+          },
+          select: {
+            id: true,
+            kind: true,
+          },
+        },
         reviews: true,
       },
     });
     if (!product) {
+      const error = new Error("NotFoundProduct");
+      error.name = "NotFoundProduct";
+      throw error;
+    }
+    if (product.records.find((record) => record.kind === Kind.Sale)) {
+      const error = new Error("NotFoundProduct");
+      error.name = "NotFoundProduct";
+      throw error;
+    }
+    if (!product.records.find((record) => record.kind === Kind.Purchase)) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;

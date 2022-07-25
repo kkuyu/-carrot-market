@@ -9,6 +9,7 @@ import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useModal from "@libs/client/useModal";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -17,26 +18,57 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 import { PostChatsMessageResponse } from "@api/chats/[id]/message";
+import { PostProductsSaleResponse } from "@api/products/[id]/sale";
+import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @components
+import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
-import ChatMessage from "@components/cards/chatMessage";
+import ChatMessageList from "@components/lists/chatMessageList";
 import Product from "@components/cards/product";
 import Buttons from "@components/buttons";
-import ChatMessageList from "@components/lists/chatMessageList";
 
 const ChatDetail: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user } = useUser();
+  const { openModal } = useModal();
 
   // fetch data: chat detail
   const { data, error, mutate: boundMutate } = useSWR<GetChatsDetailResponse>(router.query.id ? `/api/chats/${router.query.id}` : null, { refreshInterval: 1000, revalidateOnFocus: false });
+  const chatUsers = data?.chat?.users ? data.chat.users.filter((chatUser) => chatUser.id !== user?.id) : [];
 
   const role = user?.id === data?.chat?.product?.userId ? "sellUser" : "purchaseUser";
   const saleRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.Sale);
   const purchaseRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.Purchase);
   const existsReview = data?.chat?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
+
+  const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
+    onSuccess: (data) => {
+      router.push(`/products/${router.query.id}/review`);
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
+  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(data?.chat?.product?.id ? `/api/products/${data.chat.product.id}/sale` : "", {
+    onSuccess: (data) => {
+      if (updatePurchaseLoading) return;
+      const purchaseUserId = role === "sellUser" ? chatUsers[0].id : user?.id;
+      updatePurchase({ purchase: true, purchaseUserId });
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
 
   // chat message form
   const formData = useForm<SendMessageTypes>({});
@@ -53,6 +85,30 @@ const ChatDetail: NextPage = () => {
       }
     },
   });
+
+  const toggleSale = (value: boolean) => {
+    if (saleLoading) return;
+    if (updatePurchaseLoading) return;
+    updateSale({ sale: value, forced: true });
+  };
+
+  const openSoldProductModal = () => {
+    if (saleLoading) return;
+    if (updatePurchaseLoading) return;
+    openModal<MessageModalProps>(MessageModal, "SoldProduct", {
+      type: "confirm",
+      message:
+        role === "sellUser"
+          ? `${data?.chat?.product?.user.name}님에게 '${chatUsers[0].name}' 상품을 판매하셨나요?`
+          : `${data?.chat?.product?.name}님에게 '${data?.chat?.product?.name}' 상품을 구매하셨나요?`,
+      cancelBtn: "취소",
+      confirmBtn: role === "sellUser" ? "판매완료" : "구매완료",
+      hasBackdrop: true,
+      onConfirm: () => {
+        toggleSale(false);
+      },
+    });
+  };
 
   const submitChatMessage = (data: SendMessageTypes) => {
     if (!user || user.id === -1) return;
@@ -77,12 +133,7 @@ const ChatDetail: NextPage = () => {
 
   useEffect(() => {
     setLayout(() => ({
-      title: `${
-        data?.chat.users
-          .filter((chatUser) => chatUser.id !== user?.id)
-          .map((chatUser) => chatUser.name)
-          .join(", ") || "채팅"
-      }`,
+      title: `${chatUsers.map((chatUser) => chatUser.name).join(", ") || "채팅"}`,
       header: {
         headerUtils: ["back", "title"],
       },
@@ -90,7 +141,7 @@ const ChatDetail: NextPage = () => {
         navBarUtils: [],
       },
     }));
-  }, [data?.chat.users]);
+  }, [chatUsers]);
 
   if (!data) {
     return null;
@@ -105,12 +156,18 @@ const ChatDetail: NextPage = () => {
               <Product item={data.chat.product} size="tiny" />
             </a>
           </Link>
-          <div className="mt-2">
+          <div className="mt-2 empty:hidden">
+            {/* 판매완료, 구매완료 */}
+            {saleRecord && (
+              <Buttons type="button" text={role === "sellUser" ? "판매완료" : "구매완료"} size="sm" status="default" className="!inline-block !w-auto !text-left" onClick={openSoldProductModal} />
+            )}
+            {/* 후기 보내기 */}
             {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
               <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
                 <Buttons tag="a" text="후기 보내기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
               </Link>
             )}
+            {/* 보낸 후기 보기 */}
             {!saleRecord && purchaseRecord && existsReview && data?.chat.users.find((chatUser) => chatUser.id === existsReview?.[`${role === "sellUser" ? "purchaseUser" : "sellUser"}Id`]) && (
               <Link href={`/reviews/${existsReview.id}`} passHref>
                 <Buttons tag="a" text="보낸 후기 보기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
@@ -224,6 +281,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       product: {
         include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
           records: {
             where: {
               OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],

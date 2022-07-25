@@ -35,6 +35,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
     // find product detail
     const id = +_id.toString();
+    const isForcedHeader = /\/chats\/[0-9]*$/.test(req?.headers?.referer || "");
     const product = await client.product.findUnique({
       where: {
         id,
@@ -55,7 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (product.userId !== user?.id) {
+    if (!isForcedHeader && product.userId !== user?.id) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;

@@ -6,7 +6,7 @@ import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 type ChatMessages = (ChatMessage & { user: Pick<User, "id" | "name" | "avatar"> })[];
-type ChatProduct = (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Review[] }) | null;
+type ChatProduct = (Product & { user: Pick<User, "id" | "name"> } & { records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Review[] }) | null;
 
 export interface GetChatsDetailResponse {
   success: boolean;
@@ -60,6 +60,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
         product: {
           include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+              },
+            },
             records: {
               where: {
                 OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
