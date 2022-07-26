@@ -40,7 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const totalRecords = await client.record.count({
       where: {
         userId: user?.id,
-        kind: Kind.Purchase,
+        kind: Kind.ProductPurchase,
       },
     });
     const records = await client.record.findMany({
@@ -54,7 +54,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           include: {
             records: {
               where: {
-                OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
+                OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }, { kind: Kind.ProductPurchase }],
               },
               select: {
                 id: true,
@@ -84,7 +84,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
       where: {
         userId: user?.id,
-        kind: Kind.Purchase,
+        kind: Kind.ProductPurchase,
       },
     });
     const products = records.map((record) => record.product);

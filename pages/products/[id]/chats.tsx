@@ -149,7 +149,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     include: {
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }],
+          OR: [{ kind: Kind.ProductSale }],
         },
         select: {
           id: true,

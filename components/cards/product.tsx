@@ -28,8 +28,8 @@ const Product = ({ item, size = "base" }: ProductProps) => {
   const diffTime = getDiffTimeStr(new Date(item?.resumeAt).getTime(), today.getTime());
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
 
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
-  const favoriteRecords = item?.records?.filter((record) => record.kind === Kind.Favorite) || [];
+  const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
+  const likeRecords = item?.records?.filter((record) => record.kind === Kind.ProductLike) || [];
   const foundChats = item?.chats?.filter((chat) => chat._count.chatMessages > 0);
 
   if (size === "tiny") {
@@ -67,7 +67,7 @@ const Product = ({ item, size = "base" }: ProductProps) => {
         </div>
       </div>
       <div className="absolute bottom-0 right-0 flex items-center space-x-0.5 text-sm text-gray-400">
-        {Boolean(favoriteRecords?.length) && (
+        {Boolean(likeRecords?.length) && (
           <>
             <svg className="flex-none w-4 h-4 pl-1 box-content" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -77,7 +77,7 @@ const Product = ({ item, size = "base" }: ProductProps) => {
                 d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
               ></path>
             </svg>
-            <span>{favoriteRecords.length}</span>
+            <span>{likeRecords.length}</span>
           </>
         )}
         {Boolean(foundChats?.length) && (

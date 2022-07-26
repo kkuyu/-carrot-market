@@ -8,7 +8,7 @@ import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
-import { getCategory, getDiffTimeStr } from "@libs/utils";
+import { getProductCategory, getDiffTimeStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
@@ -16,7 +16,7 @@ import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
-import { PostProductsFavoriteResponse } from "@api/products/[id]/favorite";
+import { PostProductsLikeResponse } from "@api/products/[id]/like";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostChatsResponse } from "@api/chats";
 // @components
@@ -46,14 +46,14 @@ const ProductDetail: NextPage<{
   // static data: product detail
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(staticProps?.product?.createdAt).getTime(), today.getTime());
-  const category = getCategory("product", staticProps?.product?.category);
+  const category = getProductCategory(staticProps?.product?.category);
   const [product, setProduct] = useState<GetProductsDetailResponse["product"] | null>(staticProps?.product ? staticProps.product : null);
 
-  const saleRecord = product?.records?.find((record) => record.kind === Kind.Sale);
-  const favoriteRecords = product?.records?.filter((record) => record.kind === Kind.Favorite) || [];
+  const saleRecord = product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const likeRecords = product?.records?.filter((record) => record.kind === Kind.ProductLike) || [];
   const foundChats = product?.chats?.filter((chat) => chat._count.chatMessages > 0);
 
-  const isFavorite = Boolean(favoriteRecords.find((record) => record.userId === user?.id));
+  const liked = Boolean(likeRecords.find((record) => record.userId === user?.id));
   const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
   const thumbnails: PictureSliderItem[] = !product?.photos
     ? []
@@ -68,7 +68,7 @@ const ProductDetail: NextPage<{
   // fetch data: product detail
   const { data, error, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(router.query.id && product ? `/api/products/${router.query.id}` : null);
   const { data: othersData } = useSWR<GetProductsDetailOthersResponse>(router.query.id && product ? `/api/products/${router.query.id}/others` : null);
-  const [updateFavorite, { loading: favoriteLoading }] = useMutation<PostProductsFavoriteResponse>(`/api/products/${router.query.id}/favorite`, {
+  const [updateLike, { loading: likeLoading }] = useMutation<PostProductsLikeResponse>(`/api/products/${router.query.id}/like`, {
     onSuccess: (data) => {
       boundMutate();
     },
@@ -111,17 +111,17 @@ const ProductDetail: NextPage<{
     },
   });
 
-  // toggle favorite
-  const toggleFavorite = () => {
+  // toggle like
+  const toggleLike = () => {
     if (!product) return;
-    if (favoriteLoading) return;
+    if (likeLoading) return;
 
     boundMutate((prev) => {
-      let records = prev?.product.records || [];
-      const idx = records.findIndex((record) => record.kind === Kind.Favorite && record.userId === user?.id);
+      let records = prev?.product?.records ? [...prev.product.records] : [];
+      const idx = records.findIndex((record) => record.kind === Kind.ProductLike && record.userId === user?.id);
       const exists = idx !== -1;
       if (exists) records.splice(idx, 1);
-      if (!exists) records.push({ id: 0, kind: Kind.Favorite, userId: user?.id! });
+      if (!exists) records.push({ id: 0, kind: Kind.ProductLike, userId: user?.id! });
       return (
         prev && {
           ...prev,
@@ -129,7 +129,7 @@ const ProductDetail: NextPage<{
         }
       );
     }, false);
-    updateFavorite({});
+    updateLike({});
   };
 
   const toggleSale = (value: boolean) => {
@@ -137,11 +137,11 @@ const ProductDetail: NextPage<{
     if (saleLoading) return;
 
     boundMutate((prev) => {
-      let records = prev?.product.records || [];
-      const idx = records.findIndex((record) => record.kind === Kind.Sale);
+      let records = prev?.product?.records ? [...prev.product.records] : [];
+      const idx = records.findIndex((record) => record.kind === Kind.ProductSale);
       const exists = idx !== -1;
       if (exists) records.splice(idx, 1);
-      if (!exists) records.push({ id: 0, kind: Kind.Sale, userId: user?.id! });
+      if (!exists) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
       return (
         prev && {
           ...prev,
@@ -291,7 +291,7 @@ const ProductDetail: NextPage<{
           </span>
           <p className="mt-5 whitespace-pre-wrap">{product.description}</p>
           <div className="empty:hidden mt-5 text-sm text-gray-500">
-            {[favoriteRecords.length ? `관심 ${favoriteRecords.length}` : null, foundChats?.length ? `채팅 ${foundChats.length}` : null].filter((v) => !!v).join(" · ")}
+            {[likeRecords.length ? `관심 ${likeRecords.length}` : null, foundChats?.length ? `채팅 ${foundChats.length}` : null].filter((v) => !!v).join(" · ")}
           </div>
         </div>
 
@@ -304,7 +304,7 @@ const ProductDetail: NextPage<{
             </div>
             <div className="absolute top-1/2 left-3 -translate-y-1/2">
               {viewModel.mode === "preview" && (
-                <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={openWelcomeModal} disabled={favoriteLoading}>
+                <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={openWelcomeModal} disabled={likeLoading}>
                   <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path
                       strokeLinecap="round"
@@ -316,13 +316,13 @@ const ProductDetail: NextPage<{
                 </button>
               )}
               {(viewModel.mode === "public" || viewModel.mode === "private") && (
-                <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={user?.id === -1 ? openSignUpModal : toggleFavorite} disabled={favoriteLoading}>
-                  {isFavorite && (
+                <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={user?.id === -1 ? openSignUpModal : toggleLike} disabled={likeLoading}>
+                  {liked && (
                     <svg className="w-6 h-6" fill="currentColor" color="rgb(239 68 68)" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clipRule="evenodd"></path>
                     </svg>
                   )}
-                  {!isFavorite && (
+                  {!liked && (
                     <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                       <path
                         strokeLinecap="round"
@@ -417,7 +417,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       },
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
         },
         select: {
           id: true,

@@ -34,7 +34,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!(_filter === "ALL" || _filter === "SALE" || _filter === "SOLD")) {
+    if (!["ALL", "SALE", "SOLD"].includes(_filter.toString())) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -48,11 +48,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         ? {}
         : filter === "SALE"
         ? {
-            AND: { records: { some: { kind: Kind.Sale } } },
+            AND: { records: { some: { kind: Kind.ProductSale } } },
           }
         : filter === "SOLD"
         ? {
-            NOT: { records: { some: { kind: Kind.Sale } } },
+            NOT: { records: { some: { kind: Kind.ProductSale } } },
           }
         : {};
 
@@ -99,11 +99,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         ? {}
         : filter === "SALE"
         ? {
-            AND: { records: { some: { kind: Kind.Sale } } },
+            AND: { records: { some: { kind: Kind.ProductSale } } },
           }
         : filter === "SOLD"
         ? {
-            NOT: { records: { some: { kind: Kind.Sale } } },
+            NOT: { records: { some: { kind: Kind.ProductSale } } },
           }
         : {};
 
@@ -122,7 +122,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
+            OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }, { kind: Kind.ProductPurchase }],
           },
           select: {
             id: true,

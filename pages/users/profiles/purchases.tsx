@@ -138,14 +138,14 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         where: {
           userId: ssrUser.profile.id,
-          kind: Kind.Purchase,
+          kind: Kind.ProductPurchase,
         },
         include: {
           product: {
             include: {
               records: {
                 where: {
-                  OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
+                  OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }, { kind: Kind.ProductPurchase }],
                 },
                 select: {
                   id: true,

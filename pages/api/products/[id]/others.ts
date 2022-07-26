@@ -57,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         AND: {
           userId: user?.id,
           id: { not: product.id },
-          records: { some: { kind: Kind.Sale } },
+          records: { some: { kind: Kind.ProductSale } },
         },
       },
     });
@@ -89,7 +89,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         })),
         AND: {
           id: { not: product.id },
-          records: { some: { kind: Kind.Sale } },
+          records: { some: { kind: Kind.ProductSale } },
         },
       },
     });
@@ -118,7 +118,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         AND: {
           id: { not: product.id },
-          records: { some: { kind: Kind.Sale } },
+          records: { some: { kind: Kind.ProductSale } },
         },
       },
     });

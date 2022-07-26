@@ -28,7 +28,9 @@ npx prisma studio
 
 #### DB
 
-- [ ] Record Kind.Favorite -> Record Kind.ProductLike
+- [x] Record Kind.Favorite -> Record Kind.ProductLike
+- [x] Record Kind.Sale -> Record Kind.ProductSale
+- [x] Record Kind.Purchase -> Record Kind.ProductPurchase
 - [x] Curiosity, Emotion -> Record Kind.StoryLike
 - [ ] Review -> ProductReview
 - [ ] Comment -> StoryComment

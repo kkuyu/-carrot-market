@@ -46,7 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+            OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
           },
           select: {
             id: true,
@@ -60,7 +60,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (product.records.find((record) => record.kind === Kind.Sale)) {
+    if (product.records.find((record) => record.kind === Kind.ProductSale)) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;
@@ -86,7 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let recordPurchase = null;
-    const exists = product.records.find((record) => record.kind === Kind.Purchase);
+    const exists = product.records.find((record) => record.kind === Kind.ProductPurchase);
 
     if (exists && purchase === false) {
       // delete
@@ -112,7 +112,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: product.id,
             },
           },
-          kind: Kind.Purchase,
+          kind: Kind.ProductPurchase,
         },
       });
     } else if (!exists && purchase === true && purchaseUser) {
@@ -129,7 +129,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: product.id,
             },
           },
-          kind: Kind.Purchase,
+          kind: Kind.ProductPurchase,
         },
       });
     }

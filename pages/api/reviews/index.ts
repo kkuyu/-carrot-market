@@ -73,7 +73,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+            OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
           },
           select: {
             id: true,
@@ -88,12 +88,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (product.records.find((record) => record.kind === Kind.Sale)) {
+    if (product.records.find((record) => record.kind === Kind.ProductSale)) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (!product.records.find((record) => record.kind === Kind.Purchase)) {
+    if (!product.records.find((record) => record.kind === Kind.ProductPurchase)) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;

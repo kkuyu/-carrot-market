@@ -154,7 +154,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     include: {
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
         },
         select: {
           id: true,
@@ -185,8 +185,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   const role = ssrUser?.profile?.id === product.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = product.records.find((record) => record.kind === Kind.Sale);
-  const purchaseRecord = product.records.find((record) => record.kind === Kind.Purchase);
+  const saleRecord = product.records.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = product.records.find((record) => record.kind === Kind.ProductPurchase);
   const existsReview = product.reviews.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
 
   // invalid product: not my product

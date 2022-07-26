@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!(_filter === "ALL" || _filter === "SELL_USER" || _filter === "PURCHASE_USER")) {
+    if (!["ALL", "SELL_USER", "PURCHASE_USER"].includes(_filter.toString())) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;

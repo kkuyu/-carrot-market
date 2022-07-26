@@ -225,7 +225,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     include: {
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }],
+          OR: [{ kind: Kind.ProductSale }],
         },
         select: {
           id: true,
@@ -246,7 +246,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const saleRecord = product.records.find((record) => record.kind === Kind.Sale);
+  const saleRecord = product.records.find((record) => record.kind === Kind.ProductSale);
 
   // invalid product: not my product
   // redirect: /products/id

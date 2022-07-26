@@ -37,8 +37,8 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   if (!item) return null;
 
   const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
-  const purchaseRecord = item?.records?.find((record) => record.kind === Kind.Purchase);
+  const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = item?.records?.find((record) => record.kind === Kind.ProductPurchase);
   const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
   const toggleSale = (value: boolean) => {

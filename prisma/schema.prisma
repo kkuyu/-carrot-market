@@ -162,9 +162,9 @@ model Review {
 }
 
 enum Kind {
-  Favorite
-  Sale
-  Purchase
+  ProductLike
+  ProductSale
+  ProductPurchase
   StoryLike
 }
 

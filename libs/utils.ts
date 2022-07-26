@@ -30,12 +30,6 @@ export const getRandomName = () => {
   return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]}`;
 };
 
-export const getCategory = (type: "product" | "story", categoryKey: string) => {
-  if (type === "product") return ProductCategory.find((v) => v.value === categoryKey) || null;
-  if (type === "story") return StoryCategory.find((v) => v.value === categoryKey) || null;
-  return null;
-};
-
 export const getProductCategory = (categoryKey: string) => {
   return ProductCategory.find((v) => v.value === categoryKey) || null;
 };

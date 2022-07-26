@@ -68,7 +68,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
             records: {
               where: {
-                OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+                OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
               },
               select: {
                 id: true,

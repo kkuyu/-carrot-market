@@ -14,18 +14,18 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users/my";
-import { GetProfilesFavoritesResponse } from "@api/users/profiles/favorites";
+import { GetProfilesLikeResponse } from "@api/users/profiles/likes";
 // @components
 import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesFavoritesResponse) => {
-  if (pageIndex === 0) return `/api/users/profiles/favorites?page=1`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse) => {
+  if (pageIndex === 0) return `/api/users/profiles/likes?page=1`;
   if (previousPageData && !previousPageData.products.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/profiles/favorites?page=${pageIndex + 1}`;
+  return `/api/users/profiles/likes?page=${pageIndex + 1}`;
 };
 
-const ProfileFavorites: NextPage = () => {
+const ProfileLikes: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
@@ -34,7 +34,7 @@ const ProfileFavorites: NextPage = () => {
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesFavoritesResponse>(getKey);
+  const { data, size, setSize } = useSWRInfinite<GetProfilesLikeResponse>(getKey);
 
   const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
@@ -87,7 +87,7 @@ const ProfileFavorites: NextPage = () => {
 
 const Page: NextPage<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProfilesFavoritesResponse };
+  getProduct: { response: GetProfilesLikeResponse };
 }> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
@@ -98,7 +98,7 @@ const Page: NextPage<{
         },
       }}
     >
-      <ProfileFavorites />
+      <ProfileLikes />
     </SWRConfig>
   );
 };
@@ -137,14 +137,14 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         where: {
           userId: ssrUser.profile.id,
-          kind: Kind.Favorite,
+          kind: Kind.ProductLike,
         },
         include: {
           product: {
             include: {
               records: {
                 where: {
-                  OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
+                  OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }, { kind: Kind.ProductPurchase }],
                 },
                 select: {
                   id: true,

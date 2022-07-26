@@ -5,9 +5,9 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductsFavoriteResponse {
+export interface PostProductsLikeResponse {
   success: boolean;
-  recordFavorite: Record | null;
+  likeRecord: Record | null;
   error?: {
     timestamp: Date;
     name: string;
@@ -36,7 +36,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            kind: Kind.Favorite,
+            kind: Kind.ProductLike,
             userId: user?.id,
           },
         },
@@ -48,7 +48,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    let recordFavorite = null;
+    let likeRecord = null;
     const exists = product.records.length ? product.records[0] : null;
 
     if (exists) {
@@ -60,7 +60,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
     } else {
       // create
-      recordFavorite = await client.record.create({
+      likeRecord = await client.record.create({
         data: {
           user: {
             connect: {
@@ -72,15 +72,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: product.id,
             },
           },
-          kind: Kind.Favorite,
+          kind: Kind.ProductLike,
         },
       });
     }
 
     // result
-    const result: PostProductsFavoriteResponse = {
+    const result: PostProductsLikeResponse = {
       success: true,
-      recordFavorite,
+      likeRecord,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

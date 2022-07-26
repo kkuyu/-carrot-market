@@ -43,7 +43,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       include: {
         records: {
           where: {
-            kind: Kind.Sale,
+            kind: Kind.ProductSale,
           },
           select: {
             id: true,
@@ -73,11 +73,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
     } else if (!exists && sale === true) {
-      // delete record Kind.Purchase
+      // delete record Kind.ProductPurchase
       await client.record.deleteMany({
         where: {
           productId: product.id,
-          kind: Kind.Purchase,
+          kind: Kind.ProductPurchase,
         },
       });
 
@@ -101,7 +101,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: product.id,
             },
           },
-          kind: Kind.Sale,
+          kind: Kind.ProductSale,
         },
       });
     }

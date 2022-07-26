@@ -142,12 +142,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           where: {
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
-            AND: { records: { some: { kind: { in: Kind.Sale } } } },
+            AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
           },
           include: {
             records: {
               where: {
-                OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+                OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
               },
               select: {
                 id: true,

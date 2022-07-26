@@ -5,12 +5,12 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProfilesFavoritesResponse {
+export interface GetProfilesLikeResponse {
   success: boolean;
   products: (Product & {
     records: Pick<Record, "id" | "kind" | "userId">[];
-    chats?: (Chat & { _count: { chatMessages: number } })[];
     reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+    chats?: (Chat & { _count: { chatMessages: number } })[];
   })[];
   pages: number;
   total: number;
@@ -40,7 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const totalRecords = await client.record.count({
       where: {
         userId: user?.id,
-        kind: Kind.Purchase,
+        kind: Kind.ProductPurchase,
       },
     });
     const records = await client.record.findMany({
@@ -54,7 +54,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           include: {
             records: {
               where: {
-                OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }, { kind: Kind.Purchase }],
+                OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }, { kind: Kind.ProductPurchase }],
               },
               select: {
                 id: true,
@@ -84,13 +84,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
       where: {
         userId: user?.id,
-        kind: Kind.Favorite,
+        kind: Kind.ProductLike,
       },
     });
-    const products = records.map((record) => record.product);
+
+    const products = records.map((record) => (record.product ? record.product : [])) as GetProfilesLikeResponse["products"];
 
     // result
-    const result: GetProfilesFavoritesResponse = {
+    const result: GetProfilesLikeResponse = {
       success: true,
       products,
       pages: Math.ceil(totalRecords / displayRow),

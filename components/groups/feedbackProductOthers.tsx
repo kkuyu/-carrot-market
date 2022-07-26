@@ -45,7 +45,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   if (!item) return null;
 
   const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.Sale);
+  const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
 
   const toggleSale = (value: boolean) => {
     if (saleLoading) return;

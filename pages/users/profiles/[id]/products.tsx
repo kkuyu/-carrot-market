@@ -214,7 +214,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     include: {
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
         },
         select: {
           id: true,
@@ -243,13 +243,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     where: {
       userId: profile.id,
       AND: {
-        records: { some: { kind: Kind.Sale } },
+        records: { some: { kind: Kind.ProductSale } },
       },
     },
     include: {
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
         },
         select: {
           id: true,
@@ -278,13 +278,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     where: {
       userId: profile.id,
       NOT: {
-        records: { some: { kind: Kind.Sale } },
+        records: { some: { kind: Kind.ProductSale } },
       },
     },
     include: {
       records: {
         where: {
-          OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
         },
         select: {
           id: true,

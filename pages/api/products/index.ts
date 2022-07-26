@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Chat, Kind, Product, Record } from "@prisma/client";
 // @libs
-import { getCategory } from "@libs/utils";
+import { getProductCategory } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
@@ -62,7 +62,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const totalProducts = await client.product.count({
         where: {
           ...boundaryArea,
-          records: { some: { kind: Kind.Sale } },
+          records: { some: { kind: Kind.ProductSale } },
         },
       });
       const products = await client.product.findMany({
@@ -74,7 +74,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         include: {
           records: {
             where: {
-              OR: [{ kind: Kind.Sale }, { kind: Kind.Favorite }],
+              OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
             },
             select: {
               id: true,
@@ -95,7 +95,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         where: {
           ...boundaryArea,
           records: {
-            some: { kind: Kind.Sale },
+            some: { kind: Kind.ProductSale },
           },
         },
       });
@@ -133,7 +133,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (!getCategory("product", category)) {
+      if (!getProductCategory(category)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -178,7 +178,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: newProduct.id,
             },
           },
-          kind: Kind.Sale,
+          kind: Kind.ProductSale,
         },
       });
 
