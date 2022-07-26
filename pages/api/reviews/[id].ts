@@ -1,16 +1,16 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Product, User, Review, Manner } from "@prisma/client";
+import { Product, User, ProductReview, Manner } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 type ReviewUser = Pick<User, "id" | "name">;
-type ReviewProduct = Pick<Product, "id" | "name" | "userId"> & { reviews: Pick<Review, "id" | "role" | "satisfaction">[] };
+type ReviewProduct = Pick<Product, "id" | "name" | "userId"> & { reviews: Pick<ProductReview, "id" | "role" | "satisfaction">[] };
 
 export interface GetReviewsDetailResponse {
   success: boolean;
-  review: Review & { sellUser: ReviewUser; purchaseUser: ReviewUser; manners: Manner[] } & { product: ReviewProduct };
+  review: ProductReview & { sellUser: ReviewUser; purchaseUser: ReviewUser; manners: Manner[] } & { product: ReviewProduct };
   error?: {
     timestamp: Date;
     name: string;
@@ -32,7 +32,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
     // find chat detail
     const id = +_id.toString();
-    const review = await client.review.findUnique({
+    const review = await client.productReview.findUnique({
       where: {
         id,
       },

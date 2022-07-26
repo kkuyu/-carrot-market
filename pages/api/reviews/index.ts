@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Review } from "@prisma/client";
+import { Kind, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,7 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostReviewsResponse {
   success: boolean;
-  review: Review | null;
+  review: ProductReview | null;
   error?: {
     timestamp: Date;
     name: string;
@@ -109,7 +109,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // create
-    newReview = await client.review.create({
+    newReview = await client.productReview.create({
       data: {
         role,
         satisfaction,

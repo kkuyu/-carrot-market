@@ -184,7 +184,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // find review
-  const reviewsByAll = await client.review.findMany({
+  const reviewsByAll = await client.productReview.findMany({
     take: 10,
     skip: 0,
     orderBy: {
@@ -221,7 +221,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // find review by sell user
-  const reviewsBySellUser = await client.review.findMany({
+  const reviewsBySellUser = await client.productReview.findMany({
     take: 10,
     skip: 0,
     orderBy: {
@@ -255,7 +255,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // find review by purchase user
-  const reviewsByPurchaseUser = await client.review.findMany({
+  const reviewsByPurchaseUser = await client.productReview.findMany({
     take: 10,
     skip: 0,
     orderBy: {

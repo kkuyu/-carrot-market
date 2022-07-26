@@ -6,11 +6,11 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { EmotionKeys } from "@api/stories/types";
+import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 
 export interface PostStoriesLikeResponse {
   success: boolean;
-  recordLike: Record | null;
+  likeRecord: Record | null;
   error?: {
     timestamp: Date;
     name: string;
@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (_emotion && !(_emotion === "Like" || _emotion === "Love" || _emotion === "Haha" || _emotion === "Wow" || _emotion === "Sad" || _emotion === "Angry")) {
+    if (_emotion && !Object.keys(EmotionIcon).includes(_emotion.toString())) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -57,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    let recordLike = null;
+    let likeRecord = null;
     const exists = story.records.length ? story.records[0] : null;
 
     if (!_emotion) {
@@ -70,7 +70,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         });
       } else {
         // create
-        recordLike = await client.record.create({
+        likeRecord = await client.record.create({
           data: {
             kind: Kind.StoryLike,
             user: {
@@ -89,7 +89,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // result
       const result: PostStoriesLikeResponse = {
         success: true,
-        recordLike,
+        likeRecord,
       };
       return res.status(200).json(result);
     }
@@ -102,7 +102,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
     if (exists && exists?.emotion !== emotion) {
       // update
-      recordLike = await client.record.update({
+      likeRecord = await client.record.update({
         where: {
           id: exists.id,
         },
@@ -119,7 +119,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
     } else {
       // create
-      recordLike = await client.record.create({
+      likeRecord = await client.record.create({
         data: {
           kind: Kind.StoryLike,
           emotion,
@@ -140,7 +140,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // result
     const result: PostStoriesLikeResponse = {
       success: true,
-      recordLike,
+      likeRecord,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

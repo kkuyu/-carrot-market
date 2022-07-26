@@ -49,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
-    await client.comment.deleteMany({
+    await client.storyComment.deleteMany({
       where: {
         storyId: story.id,
       },

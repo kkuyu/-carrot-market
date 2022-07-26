@@ -32,8 +32,8 @@ npx prisma studio
 - [x] Record Kind.Sale -> Record Kind.ProductSale
 - [x] Record Kind.Purchase -> Record Kind.ProductPurchase
 - [x] Curiosity, Emotion -> Record Kind.StoryLike
-- [ ] Review -> ProductReview
-- [ ] Comment -> StoryComment
+- [x] Review -> ProductReview
+- [x] Comment -> StoryComment
 - [ ] Stream -> Streams
 - [ ] Message -> StreamsMessages
 - [ ] @relation(onDelete: Cascade)

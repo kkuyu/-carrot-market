@@ -82,7 +82,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
 
       // delete review
-      await client.review.deleteMany({
+      await client.productReview.deleteMany({
         where: {
           productId: product.id,
         },

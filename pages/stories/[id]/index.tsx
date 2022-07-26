@@ -236,7 +236,7 @@ const StoryDetail: NextPage<{
       )}
 
       {/* 댓글 입력 */}
-      {(viewModel.mode === "normal" || viewModel.mode === "private") && Boolean(story?.comments) && (
+      {(viewModel.mode === "public" || viewModel.mode === "private") && (
         <form onSubmit={handleSubmit(user?.id === -1 ? openSignUpModal : submitComment)} noValidate className="mt-5 space-y-4">
           <div className="space-y-1">
             <Inputs

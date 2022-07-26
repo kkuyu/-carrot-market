@@ -57,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           }
         : {};
 
-    const totalReviews = await client.review.count({
+    const totalReviews = await client.productReview.count({
       where: {
         satisfaction: {
           not: "dislike",
@@ -118,7 +118,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           }
         : {};
 
-    const totalReviews = await client.review.count({
+    const totalReviews = await client.productReview.count({
       where: {
         satisfaction: {
           not: "dislike",
@@ -129,7 +129,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         ...reviewsFilter,
       },
     });
-    const reviews = await client.review.findMany({
+    const reviews = await client.productReview.findMany({
       take: displayRow,
       skip: (page - 1) * displayRow,
       orderBy: {

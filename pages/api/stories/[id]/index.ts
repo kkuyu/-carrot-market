@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Comment, Kind, Record, Story, User } from "@prisma/client";
+import { StoryComment, Kind, Record, Story, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -10,7 +10,7 @@ export interface GetStoriesDetailResponse {
   story: Story & {
     user: Pick<User, "id" | "name" | "avatar">;
     records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments: (Pick<Comment, "id" | "comment" | "emdPosNm" | "createdAt" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
+    comments: (Pick<StoryComment, "id" | "comment" | "emdPosNm" | "createdAt" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
     _count: { comments: number };
   };
   error?: {

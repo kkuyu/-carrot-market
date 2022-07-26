@@ -39,8 +39,8 @@ const ChatDetail: NextPage = () => {
   const chatUsers = data?.chat?.users ? data.chat.users.filter((chatUser) => chatUser.id !== user?.id) : [];
 
   const role = user?.id === data?.chat?.product?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.Sale);
-  const purchaseRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.Purchase);
+  const saleRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
   const existsReview = data?.chat?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
   const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
@@ -293,7 +293,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           },
           records: {
             where: {
-              OR: [{ kind: Kind.Sale }, { kind: Kind.Purchase }],
+              OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
             },
             select: {
               id: true,

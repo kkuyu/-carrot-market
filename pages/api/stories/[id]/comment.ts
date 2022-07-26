@@ -53,7 +53,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // create comment
-    await client.comment.create({
+    await client.storyComment.create({
       data: {
         user: {
           connect: {

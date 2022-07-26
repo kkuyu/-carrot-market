@@ -146,7 +146,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // find review
-  const review = await client.review.findUnique({
+  const review = await client.productReview.findUnique({
     where: {
       id: +reviewId,
     },

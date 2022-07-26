@@ -69,7 +69,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     });
 
     // find reviews
-    const reviews = await client.review.findMany({
+    const reviews = await client.productReview.findMany({
       take: 3,
       orderBy: {
         createdAt: "desc",
