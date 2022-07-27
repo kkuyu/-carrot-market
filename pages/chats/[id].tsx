@@ -154,7 +154,7 @@ const ChatDetail: NextPage = () => {
         <div className="-mx-5 sticky top-12 left-0 block py-3 px-5 bg-gray-200">
           <Link href={`/products/${data.chat.product.id}`}>
             <a>
-              <Product item={data.chat.product} size="tiny" />
+              <Product item={data.chat.product} size="sm" />
             </a>
           </Link>
           <div className="mt-2 empty:hidden">

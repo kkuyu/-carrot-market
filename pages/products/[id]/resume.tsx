@@ -109,7 +109,7 @@ const ProductResume: NextPage<{
       {/* 제품정보 */}
       <Link href={`/products/${staticProps.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <Product item={staticProps.product} size="tiny" />
+          <Product item={staticProps.product} size="sm" />
         </a>
       </Link>
 

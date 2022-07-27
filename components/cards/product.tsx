@@ -12,7 +12,7 @@ export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProduc
 
 export interface ProductProps {
   item: ProductItem;
-  size?: "tiny" | "base";
+  size?: "tiny" | "sm" | "base";
 }
 
 const Product = ({ item, size = "base" }: ProductProps) => {
@@ -33,6 +33,25 @@ const Product = ({ item, size = "base" }: ProductProps) => {
   const foundChats = item?.chats?.filter((chat) => chat._count.chatMessages > 0);
 
   if (size === "tiny") {
+    return (
+      <div className="flex items-start">
+        <div className="flex-none">
+          <Images size="2.25rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
+        </div>
+        <div className="grow shrink basis-auto min-w-0 pl-2">
+          <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">
+            {!saleRecord && <span className="text-gray-500">판매완료 </span>}
+            {item.name}
+          </strong>
+          <div className="block">
+            <span className="text-sm font-semibold">₩{item.price}</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (size === "sm") {
     return (
       <div className="flex items-start">
         <div className="flex-none">

@@ -89,7 +89,7 @@ const ProductPurchase: NextPage = () => {
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <Product item={productData?.product!} size="tiny" />
+          <Product item={productData?.product!} size="sm" />
         </a>
       </Link>
 

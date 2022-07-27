@@ -64,7 +64,7 @@ const ProductDelete: NextPage<{
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${staticProps.product.id}`}>
           <a className="">
-            <Product item={staticProps.product} size="tiny" />
+            <Product item={staticProps.product} size="sm" />
           </a>
         </Link>
       </div>
