@@ -15,20 +15,16 @@ import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
+import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
-import { PostStoriesCommentResponse } from "@api/stories/[id]/comment";
+import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
+import PostComment, { PostCommentTypes } from "@components/forms/postComment";
 import CommentList from "@components/lists/commentList";
 import Profiles from "@components/profiles";
-import Buttons from "@components/buttons";
-import Inputs from "@components/inputs";
-
-interface CommentForm {
-  comment: string;
-}
 
 const StoryDetail: NextPage<{
   staticProps: {
@@ -65,13 +61,14 @@ const StoryDetail: NextPage<{
       }));
 
   // fetch data: story detail
-  const { data, error, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const { data, error } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const { data: commentData, mutate: boundMutate } = useSWR<GetStoriesCommentsResponse>(router.query.id ? `/api/stories/${router.query.id}/comments` : null);
 
   // new comment
-  const { register, handleSubmit, setFocus, setValue } = useForm<CommentForm>();
-  const [sendComment, { data: commentData, loading: commentLoading }] = useMutation<PostStoriesCommentResponse>(`/api/stories/${router.query.id}/comment`, {
+  const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: null } });
+  const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
     onSuccess: () => {
-      setValue("comment", "");
+      formData.setValue("comment", "");
       boundMutate();
     },
     onError: (data) => {
@@ -97,7 +94,7 @@ const StoryDetail: NextPage<{
     },
   });
 
-  const submitComment = (data: CommentForm) => {
+  const submitComment = (data: PostCommentTypes) => {
     if (!data) return;
     if (commentLoading) return;
     sendComment({
@@ -214,18 +211,20 @@ const StoryDetail: NextPage<{
           </div>
         )}
         {/* 피드백 */}
-        {(viewModel.mode === "public" || viewModel.mode === "private") && <FeedbackStory item={story} />}
+        {(viewModel.mode === "public" || viewModel.mode === "private") && <FeedbackStory item={story} commentCount={commentData?.total} />}
       </section>
 
       {/* 댓글 목록: list */}
-      {Boolean(story?.comments) && Boolean(story?.comments?.length) && (
+      {commentData && Boolean(commentData?.comments) && Boolean(commentData?.comments?.length) && (
         <div className="mt-5">
-          <CommentList list={story.comments} />
+          <CommentList list={commentData.comments}>
+            <CommentList />
+          </CommentList>
         </div>
       )}
 
       {/* 댓글 목록: empty */}
-      {Boolean(story?.comments) && !Boolean(story?.comments?.length) && (
+      {commentData && Boolean(commentData?.comments) && !Boolean(commentData?.comments?.length) && (
         <div className="pt-10 pb-5 text-center">
           <p className="text-gray-500">
             아직 댓글이 없어요.
@@ -237,33 +236,11 @@ const StoryDetail: NextPage<{
 
       {/* 댓글 입력 */}
       {(viewModel.mode === "public" || viewModel.mode === "private") && (
-        <form onSubmit={handleSubmit(user?.id === -1 ? openSignUpModal : submitComment)} noValidate className="mt-5 space-y-4">
-          <div className="space-y-1">
-            <Inputs
-              register={register("comment", {
-                required: true,
-              })}
-              name="comment"
-              type="text"
-              kind="text"
-              placeholder="댓글을 입력해주세요"
-              appendButtons={
-                <Buttons
-                  tag="button"
-                  type="submit"
-                  sort="icon-block"
-                  status="default"
-                  text={
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
-                    </svg>
-                  }
-                  aria-label="검색"
-                />
-              }
-            />
+        <div className="fixed bottom-0 left-0 w-full z-[50]">
+          <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
+            <PostComment formData={formData} onValid={user?.id === -1 ? openSignUpModal : submitComment} isLoading={commentLoading} className="w-full pl-5 pr-3" />
           </div>
-        </form>
+        </div>
       )}
     </article>
   );
@@ -314,9 +291,15 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           userId: true,
         },
       },
-      _count: {
+      comments: {
+        where: {
+          depth: {
+            gte: StoryCommentMinimumDepth,
+            lte: StoryCommentMaximumDepth,
+          },
+        },
         select: {
-          comments: true,
+          id: true,
         },
       },
     },

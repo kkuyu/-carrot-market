@@ -12,6 +12,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetUserResponse } from "@api/users/my";
 import { GetStoriesResponse } from "@api/stories";
 // @components
@@ -161,9 +162,15 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
                 userId: true,
               },
             },
-            _count: {
+            comments: {
+              where: {
+                depth: {
+                  gte: StoryCommentMinimumDepth,
+                  lte: StoryCommentMaximumDepth,
+                },
+              },
               select: {
-                comments: true,
+                id: true,
               },
             },
           },

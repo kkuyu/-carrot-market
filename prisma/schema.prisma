@@ -121,18 +121,23 @@ model Story {
 }
 
 model StoryComment {
-  id        Int      @id @default(autoincrement())
-  comment   String   @db.MediumText
-  emdAddrNm String
-  emdPosNm  String
-  emdPosX   Float
-  emdPosY   Float
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  story     Story    @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  storyId   Int
+  id             Int            @id @default(autoincrement())
+  depth          Int            @default(0)
+  comment        String         @db.MediumText
+  emdAddrNm      String
+  emdPosNm       String
+  emdPosX        Float
+  emdPosY        Float
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  user           User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  story          Story          @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  storyId        Int
+  records        Record[]
+  reComments     StoryComment[] @relation(name: "reComment")
+  reCommentRef   StoryComment?  @relation(name: "reComment", fields: [reCommentRefId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  reCommentRefId Int?
 }
 
 model Manner {
@@ -178,17 +183,19 @@ enum Emotion {
 }
 
 model Record {
-  id        Int      @id @default(autoincrement())
-  kind      Kind
-  emotion   Emotion?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  product   Product? @relation(fields: [productId], references: [id], onDelete: Cascade)
-  productId Int?
-  story     Story?   @relation(fields: [storyId], references: [id], onDelete: Cascade)
-  storyId   Int?
+  id             Int           @id @default(autoincrement())
+  kind           Kind
+  emotion        Emotion?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId         Int
+  product        Product?      @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId      Int?
+  story          Story?        @relation(fields: [storyId], references: [id], onDelete: Cascade)
+  storyId        Int?
+  StoryComment   StoryComment? @relation(fields: [storyCommentId], references: [id])
+  storyCommentId Int?
 }
 
 model Stream {

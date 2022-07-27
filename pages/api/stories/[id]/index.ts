@@ -1,5 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { StoryComment, Kind, Record, Story, User } from "@prisma/client";
+// @api
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -10,8 +12,7 @@ export interface GetStoriesDetailResponse {
   story: Story & {
     user: Pick<User, "id" | "name" | "avatar">;
     records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments: (Pick<StoryComment, "id" | "comment" | "emdPosNm" | "createdAt" | "updatedAt"> & { user: Pick<User, "id" | "name" | "avatar"> })[];
-    _count: { comments: number };
+    comments: Pick<StoryComment, "id">[];
   };
   error?: {
     timestamp: Date;
@@ -58,24 +59,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
         },
         comments: {
-          select: {
-            id: true,
-            comment: true,
-            createdAt: true,
-            updatedAt: true,
-            emdPosNm: true,
-            user: {
-              select: {
-                id: true,
-                name: true,
-                avatar: true,
-              },
+          where: {
+            depth: {
+              gte: StoryCommentMinimumDepth,
+              lte: StoryCommentMaximumDepth,
             },
           },
-        },
-        _count: {
           select: {
-            comments: true,
+            id: true,
           },
         },
       },

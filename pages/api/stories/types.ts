@@ -1,5 +1,8 @@
 import { Emotion } from "@prisma/client";
 
+export const StoryCommentMinimumDepth = 0;
+export const StoryCommentMaximumDepth = 2;
+
 export const StoryCategoryEnum = {
   ["동네질문"]: "question",
   ["동네사건사고"]: "incident",

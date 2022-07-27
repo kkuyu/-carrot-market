@@ -18,9 +18,10 @@ export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDet
 
 export interface FeedbackStoryProps {
   item?: FeedbackStoryItem;
+  commentCount?: number;
 }
 
-const FeedbackStory = ({ item }: FeedbackStoryProps) => {
+const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
   const router = useRouter();
   const isDetailPage = router.pathname === "/stories/[id]";
 
@@ -48,6 +49,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   const category = getStoryCategory(item?.category);
   const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
   const liked = likeRecords.find((record) => record.userId === user?.id);
+  const count = commentCount ? commentCount : item?.comments?.length;
 
   // toggle like
   const toggleLike = (emotion?: EmotionKeys) => {
@@ -177,7 +179,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
           ></path>
         </svg>
-        <span className="ml-1 text-sm text-gray-500">{item?._count?.comments ? `댓글 ${item._count.comments}` : "댓글쓰기"}</span>
+        <span className="ml-1 text-sm text-gray-500">{count ? `댓글 ${count}` : "댓글쓰기"}</span>
       </button>
     </div>
   );
