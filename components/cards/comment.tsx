@@ -3,12 +3,14 @@ import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
 // @api
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import Profiles, { ProfilesProps } from "@components/profiles";
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import FeedbackComment from "@components/groups/feedbackComment";
 
-export type CommentItem = GetStoriesCommentsResponse["comments"][0];
+export type CommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
 export interface CommentProps {
   item: CommentItem;
@@ -17,10 +19,6 @@ export interface CommentProps {
 const Comment = ({ item }: CommentProps) => {
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
   if (!item) return null;
   if (item.depth < StoryCommentMinimumDepth) null;
   if (item.depth > StoryCommentMaximumDepth) null;
@@ -28,6 +26,10 @@ const Comment = ({ item }: CommentProps) => {
   const today = new Date();
   const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
   const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="relative">
@@ -38,6 +40,7 @@ const Comment = ({ item }: CommentProps) => {
       </Link>
       <div className="mt-1 pl-11">
         <p>{item.comment}</p>
+        <FeedbackComment item={item} />
       </div>
     </div>
   );

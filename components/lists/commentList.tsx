@@ -1,3 +1,4 @@
+import { useRouter } from "next/router";
 import { Children, cloneElement, isValidElement } from "react";
 import { useForm } from "react-hook-form";
 import { mutate } from "swr";
@@ -18,20 +19,23 @@ interface CommentListProps {
 }
 
 const CommentList = ({ list, children }: CommentListProps) => {
+  const router = useRouter();
   const { user, currentAddr } = useUser();
 
-  if (!list) return null;
-  if (!list.length) return null;
-  if (list?.[0].depth < StoryCommentMinimumDepth) return null;
-  if (list?.[0].depth > StoryCommentMaximumDepth) return null;
+  const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: list?.[0]?.reCommentRefId } });
+  const isDetailPage = router.pathname === "/comments/[id]";
+  const isVisibleForm =
+    user?.id !== -1 &&
+    list &&
+    list?.[0]?.depth >= StoryCommentMinimumDepth + 1 &&
+    list?.[0]?.depth <= StoryCommentMaximumDepth &&
+    list?.[0]?.reCommentRefId?.toString() !== router?.query?.id?.toString();
 
-  const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: list?.[0].reCommentRefId } });
-  const isVisibleForm = user?.id && user?.id !== -1 && list?.[0].depth >= StoryCommentMinimumDepth + 1 && list?.[0].depth <= StoryCommentMaximumDepth;
-
-  const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${list?.[0].storyId}/comments`, {
+  const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${list?.[0]?.storyId}/comments`, {
     onSuccess: () => {
       formData.setValue("comment", "");
-      mutate(`/api/stories/${list?.[0].storyId}/comments`);
+      if (isDetailPage) mutate(`/api/comments/${router?.query?.id}?includeReComments=true`);
+      if (!isDetailPage) mutate(`/api/stories/${list?.[0].storyId}/comments`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -49,6 +53,11 @@ const CommentList = ({ list, children }: CommentListProps) => {
       ...currentAddr,
     });
   };
+
+  if (!list) return null;
+  if (!list.length) return null;
+  if (list?.[0].depth < StoryCommentMinimumDepth) return null;
+  if (list?.[0].depth > StoryCommentMaximumDepth) return null;
 
   return (
     <div className={`${list?.[0].depth !== 0 ? "pl-11" : ""}`}>
@@ -69,7 +78,7 @@ const CommentList = ({ list, children }: CommentListProps) => {
         })}
       </ul>
       {isVisibleForm && (
-        <div className="flex items-center mt-2">
+        <div className="flex items-center mt-2 -mr-2">
           <Images size="2.25rem" cloudId={user?.avatar} alt="" />
           <PostComment formData={formData} onValid={submitReComment} isLoading={false} className="grow pl-2" />
         </div>
