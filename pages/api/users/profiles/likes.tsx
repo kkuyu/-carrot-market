@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, Record, Review } from "@prisma/client";
+import { Chat, Kind, Product, Record, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -9,7 +9,7 @@ export interface GetProfilesLikeResponse {
   success: boolean;
   products: (Product & {
     records: Pick<Record, "id" | "kind" | "userId">[];
-    reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+    reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
     chats?: (Chat & { _count: { chatMessages: number } })[];
   })[];
   pages: number;

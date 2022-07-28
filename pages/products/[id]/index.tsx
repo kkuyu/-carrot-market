@@ -252,7 +252,7 @@ const ProductDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, product?.reviews, product?.records]);
+  }, [user?.id, product?.userId, product?.reviews, product?.records]);
 
   useEffect(() => {
     setMounted(true);

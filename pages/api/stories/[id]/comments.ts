@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Story, StoryComment, User } from "@prisma/client";
+import { Story, StoryComment, User, Record } from "@prisma/client";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @libs
@@ -7,7 +7,12 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-type StoryCommentItem = StoryComment & { user: Pick<User, "id" | "name" | "avatar">; story: Pick<Story, "id" | "userId">; reComments: StoryCommentItem[] };
+type StoryCommentItem = StoryComment & {
+  user: Pick<User, "id" | "name" | "avatar">;
+  story: Pick<Story, "id" | "userId">;
+  records: Pick<Record, "id" | "kind" | "userId">[];
+  reComments?: StoryCommentItem[];
+};
 
 export interface GetStoriesCommentsResponse {
   success: boolean;
@@ -69,7 +74,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           if (copyArr[index].reCommentRefId === null) continue;
           const [current] = copyArr.splice(index, 1);
           const refIndex = copyArr.findIndex((item) => current.reCommentRefId === item.id);
-          copyArr[refIndex].reComments.unshift(current);
+          copyArr[refIndex].reComments?.unshift(current);
         }
         return makeCommentTree(depth - 1, copyArr);
       };
@@ -85,10 +90,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           createdAt: "asc",
         },
         include: {
-          user: true,
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
           story: {
             select: {
               id: true,
+              userId: true,
+            },
+          },
+          records: {
+            select: {
+              id: true,
+              kind: true,
               userId: true,
             },
           },

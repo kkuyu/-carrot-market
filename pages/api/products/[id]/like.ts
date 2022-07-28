@@ -38,6 +38,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           where: {
             kind: Kind.ProductLike,
             userId: user?.id,
+            productId: id,
           },
         },
       },

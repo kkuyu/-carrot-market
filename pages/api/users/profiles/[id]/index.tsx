@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { User, Manner, Review } from "@prisma/client";
+import { User, Manner, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -8,8 +8,8 @@ import { withSessionRoute } from "@libs/server/withSession";
 export interface GetProfilesDetailResponse {
   success: boolean;
   profile: User & { _count?: { products: number } };
-  manners: (Manner & { reviews: Pick<Review, "id" | "satisfaction">[] })[];
-  reviews: (Review & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
+  manners: (Manner & { reviews: Pick<ProductReview, "id" | "satisfaction">[] })[];
+  reviews: (ProductReview & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
   error?: {
     timestamp: Date;
     name: string;

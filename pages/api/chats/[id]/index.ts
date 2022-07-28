@@ -1,12 +1,15 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, ChatMessage, Kind, Product, Record, User, Review } from "@prisma/client";
+import { Chat, ChatMessage, Kind, Product, Record, User, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 type ChatMessages = (ChatMessage & { user: Pick<User, "id" | "name" | "avatar"> })[];
-type ChatProduct = Product & { user: Pick<User, "id" | "name"> } & { records: Pick<Record, "id" | "kind" | "userId">[]; reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[] };
+type ChatProduct = Product & { user: Pick<User, "id" | "name"> } & {
+  records: Pick<Record, "id" | "kind" | "userId">[];
+  reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+};
 
 export interface GetChatsDetailResponse {
   success: boolean;

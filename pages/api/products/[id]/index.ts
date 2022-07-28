@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, Record, Review, User } from "@prisma/client";
+import { Chat, Kind, Product, Record, ProductReview, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -11,7 +11,7 @@ export interface GetProductsDetailResponse {
     user: Pick<User, "id" | "name" | "avatar">;
     records: Pick<Record, "id" | "kind" | "userId">[];
     chats: (Chat & { _count: { chatMessages: number } })[];
-    reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+    reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
   };
   error?: {
     timestamp: Date;

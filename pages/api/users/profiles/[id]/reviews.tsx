@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { User, Review } from "@prisma/client";
+import { User, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -9,7 +9,7 @@ export type ProfilesReviewsFilter = "ALL" | "SELL_USER" | "PURCHASE_USER";
 
 export interface GetProfilesReviewsResponse {
   success: boolean;
-  reviews: (Review & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
+  reviews: (ProductReview & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
   pages: number;
   total: number;
   error?: {

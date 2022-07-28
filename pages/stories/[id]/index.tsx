@@ -173,7 +173,7 @@ const StoryDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id]);
+  }, [user?.id, story?.userId]);
 
   useEffect(() => {
     setMounted(true);

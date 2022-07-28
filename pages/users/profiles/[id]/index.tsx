@@ -66,7 +66,7 @@ const ProfileDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id]);
+  }, [user?.id, profile?.id]);
 
   if (!profile) {
     return <NextError statusCode={404} />;

@@ -47,6 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           where: {
             kind: Kind.StoryLike,
             userId: user?.id,
+            storyId: id,
           },
         },
       },

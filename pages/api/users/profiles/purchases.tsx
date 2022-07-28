@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, Record, Review } from "@prisma/client";
+import { Chat, Kind, Product, Record, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,11 +7,14 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesPurchasesResponse {
   success: boolean;
-  products: (Product & {
-    records: Pick<Record, "id" | "kind" | "userId">[];
-    chats?: (Chat & { _count: { chatMessages: number } })[];
-    reviews: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
-  })[];
+  products: (
+    | (Product & {
+        records: Pick<Record, "id" | "kind" | "userId">[];
+        chats?: (Chat & { _count: { chatMessages: number } })[];
+        reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+      })
+    | null
+  )[];
   pages: number;
   total: number;
   error?: {
@@ -87,12 +90,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         kind: Kind.ProductPurchase,
       },
     });
-    const products = records.map((record) => record.product);
 
     // result
     const result: GetProfilesPurchasesResponse = {
       success: true,
-      products,
+      products: records.map((record) => record.product),
       pages: Math.ceil(totalRecords / displayRow),
       total: totalRecords,
     };

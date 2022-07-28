@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Manner, Review } from "@prisma/client";
+import { Manner, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
@@ -7,7 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesMannersResponse {
   success: boolean;
-  manners: (Manner & { reviews: Pick<Review, "id" | "satisfaction">[] })[];
+  manners: (Manner & { reviews: Pick<ProductReview, "id" | "satisfaction">[] })[];
   error?: {
     timestamp: Date;
     name: string;
