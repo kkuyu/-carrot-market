@@ -59,7 +59,7 @@ const ProductResume: NextPage<{
     },
   });
 
-  const [editProduct, { loading, data }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
       router.replace(`/users/profiles/${data.product.userId}/products`);
     },

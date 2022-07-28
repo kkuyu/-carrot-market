@@ -36,7 +36,7 @@ const StoryUpload: NextPage<{
       content: staticProps.story.content,
     },
   });
-  const [editStory, { loading, data }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
+  const [editStory, { loading }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: (data) => {
       router.replace(`/stories/${data.story.id}`);
     },

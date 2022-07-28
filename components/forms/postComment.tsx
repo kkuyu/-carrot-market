@@ -13,9 +13,10 @@ export interface PostCommentProps extends React.HTMLAttributes<HTMLFormElement> 
   onValid: (validForm: PostCommentTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
+  commentType?: "댓글" | "답변" | "답글";
 }
 
-const PostComment = ({ formData, onValid, isSuccess, isLoading, ...rest }: PostCommentProps) => {
+const PostComment = ({ formData, onValid, isSuccess, isLoading, commentType = "댓글", ...rest }: PostCommentProps) => {
   const { register, handleSubmit } = formData;
 
   return (
@@ -28,7 +29,7 @@ const PostComment = ({ formData, onValid, isSuccess, isLoading, ...rest }: PostC
           name="comment"
           type="text"
           kind="text"
-          placeholder="댓글을 입력해주세요"
+          placeholder={`${commentType}을 입력해주세요`}
           appendButtons={
             <Buttons
               tag="button"

@@ -35,7 +35,7 @@ const ProfileEdit: NextPage<{
   });
 
   const [photoLoading, setPhotoLoading] = useState(false);
-  const [updateUser, { loading: updateUserLoading, data }] = useMutation<PostUserResponse>(`/api/users/my`, {
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>(`/api/users/my`, {
     onSuccess: (data) => {
       router.replace(`/users/profiles`);
     },

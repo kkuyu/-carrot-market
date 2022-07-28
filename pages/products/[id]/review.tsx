@@ -36,7 +36,7 @@ const ProductReview: NextPage<{
       role: staticProps.role,
     },
   });
-  const [uploadReview, { loading, data }] = useMutation<PostReviewsResponse>("/api/reviews", {
+  const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
     onSuccess: (data) => {
       router.replace(`/reviews/${data.review?.id}`);
     },

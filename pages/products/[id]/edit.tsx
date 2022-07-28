@@ -38,7 +38,7 @@ const ProductUpload: NextPage<{
   });
 
   const [photoLoading, setPhotoLoading] = useState(false);
-  const [editProduct, { loading, data }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
       setPhotoLoading(false);
       router.replace(`/products/${data.product.id}`);

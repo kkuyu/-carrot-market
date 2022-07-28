@@ -24,7 +24,7 @@ const StoryUpload: NextPage = () => {
   const formData = useForm<EditStoryTypes>();
 
   const [photoLoading, setPhotoLoading] = useState(false);
-  const [uploadStory, { loading, data }] = useMutation<PostStoriesResponse>("/api/stories", {
+  const [uploadStory, { loading }] = useMutation<PostStoriesResponse>("/api/stories", {
     onSuccess: (data) => {
       router.replace(`/stories/${data.story.id}`);
     },

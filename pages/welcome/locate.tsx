@@ -71,7 +71,7 @@ const WelcomeLocate: NextPage = () => {
           {!keywordData && !keywordError ? (
             // 로딩중
             <div className="py-2 text-center">
-              <span className="text-gray-500">로딩중</span>
+              <span className="text-gray-500">검색 결과를 불러오고있어요</span>
             </div>
           ) : keywordData?.emdList.length ? (
             // 검색결과 목록
@@ -115,7 +115,7 @@ const WelcomeLocate: NextPage = () => {
           ) : !boundaryData && !boundaryError ? (
             // 로딩중
             <div className="py-2 text-center">
-              <span className="text-gray-500">로딩중</span>
+              <span className="text-gray-500">검색 결과를 불러오고있어요</span>
             </div>
           ) : boundaryData?.emdList.length ? (
             // 검색결과 목록

@@ -24,7 +24,7 @@ const ProductUpload: NextPage = () => {
   const formData = useForm<EditProductTypes>();
 
   const [photoLoading, setPhotoLoading] = useState(false);
-  const [uploadProduct, { loading, data }] = useMutation<PostProductsResponse>("/api/products", {
+  const [uploadProduct, { loading }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
       setPhotoLoading(false);
       router.replace(`/products/${data.product.id}`);
