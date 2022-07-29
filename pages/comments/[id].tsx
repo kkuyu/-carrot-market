@@ -1,24 +1,26 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import NextError from "next/error";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 // @libs
 import { PageLayout } from "@libs/states";
+import { getCommentTree } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-import { GetCommentsDetailResponse, StoryCommentItem } from "@api/comments/[id]";
+import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Comment from "@components/cards/comment";
 import CommentList from "@components/lists/commentList";
+import FeedbackComment from "@components/groups/feedbackComment";
 import PostComment, { PostCommentTypes } from "@components/forms/postComment";
 
 const CommentsDetail: NextPage<{
@@ -33,23 +35,26 @@ const CommentsDetail: NextPage<{
   const { openModal } = useModal();
 
   // view model
+  const [mounted, setMounted] = useState(false);
   const [viewModel, setViewModel] = useState({
     mode: !user?.id ? "preview" : user?.id !== staticProps?.comment?.userId ? "public" : "private",
   });
 
-  // static data: comment detail
+  // comment detail
   const [comment, setComment] = useState<GetCommentsDetailResponse["comment"] | null>(staticProps?.comment ? staticProps.comment : null);
-
-  // fetch data: comment detail
-  const { data, error, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(router.query.id && comment ? `/api/comments/${router.query.id}?reCommentFilter=ALL` : null);
+  const treeReComments = useMemo(() => {
+    if (!comment?.reComments?.length) return [];
+    return getCommentTree(Math.max(...comment?.reComments.map((v) => v.depth)), [{ ...comment, reComments: [] }, ...comment?.reComments.map((v) => ({ ...v, reComments: [] }))]);
+  }, [comment]);
+  const [commentsQuery, setCommentsQuery] = useState("");
+  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(mounted && router.query.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
 
   // new comment
-  const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: comment?.id } });
+  const formData = useForm<PostCommentTypes>();
   const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${comment?.storyId}/comments`, {
     onSuccess: (data) => {
-      console.log(data);
       formData.setValue("comment", "");
-      boundMutate();
+      setCommentsQuery(() => `exists=${JSON.stringify(comment?.reComments?.map((comment) => comment.id))}`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -60,13 +65,14 @@ const CommentsDetail: NextPage<{
     },
   });
 
-  const submitComment = (data: PostCommentTypes) => {
+  const moreReComments = (reCommentRefId: number, page: number) => {
+    setCommentsQuery(() => `exists=${JSON.stringify(comment?.reComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
+  };
+
+  const submitReComment = (data: PostCommentTypes) => {
     if (!data) return;
     if (commentLoading) return;
-    sendComment({
-      ...data,
-      ...currentAddr,
-    });
+    sendComment({ ...data, ...currentAddr });
   };
 
   // modal: sign up
@@ -113,8 +119,13 @@ const CommentsDetail: NextPage<{
 
   // focus
   useEffect(() => {
-    const target = document.querySelector(".container input#comment") as HTMLInputElement;
-    target?.focus();
+    if (!comment) return;
+    formData.setValue("reCommentRefId", comment.id);
+    (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
+  }, [comment?.id]);
+
+  useEffect(() => {
+    setMounted(true);
   }, []);
 
   if (!comment) {
@@ -124,10 +135,12 @@ const CommentsDetail: NextPage<{
   return (
     <article className="container pt-5 pb-20">
       <Comment item={comment} />
+      <FeedbackComment item={comment} />
       {/* 답글 목록: list */}
-      {Boolean(comment?.reComments?.length) && (
+      {Boolean(treeReComments?.[0]?.reComments?.length) && (
         <div className="mt-2">
-          <CommentList list={comment.reComments}>
+          <CommentList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
+            <FeedbackComment />
             <CommentList />
           </CommentList>
         </div>
@@ -136,7 +149,7 @@ const CommentsDetail: NextPage<{
       {(viewModel.mode === "public" || viewModel.mode === "private") && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
-            <PostComment formData={formData} onValid={user?.id === -1 ? openSignUpModal : submitComment} isLoading={commentLoading} commentType="답글" className="w-full pl-5 pr-3" />
+            <PostComment formData={formData} onValid={user?.id === -1 ? openSignUpModal : submitReComment} isLoading={commentLoading} commentType="답글" className="w-full pl-5 pr-3" />
           </div>
         </div>
       )}
@@ -170,56 +183,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     where: {
       id: +commentId,
     },
-    select: {
-      id: true,
-      depth: true,
-      storyId: true,
-    },
-  });
-
-  // not found comment
-  // 404
-  if (!comment) {
-    return {
-      notFound: true,
-    };
-  }
-  if (comment.depth < StoryCommentMinimumDepth) {
-    return {
-      notFound: true,
-    };
-  }
-  if (comment.depth > StoryCommentMaximumDepth) {
-    return {
-      notFound: true,
-    };
-  }
-
-  // find comment
-  const makeCommentTree: (depth: number, arr: StoryCommentItem[]) => StoryCommentItem[] | StoryCommentItem[] = (depth, arr) => {
-    if (depth === 0) return arr;
-    if (depth === comment.depth) return arr;
-    const copyArr = [...arr];
-    for (let index = copyArr.length - 1; index >= 0; index--) {
-      if (copyArr[index].depth !== depth) continue;
-      if (copyArr[index].reCommentRefId === null) continue;
-      const [current] = copyArr.splice(index, 1);
-      const refIndex = copyArr.findIndex((item) => current.reCommentRefId === item.id);
-      copyArr[refIndex]?.reComments?.unshift(current);
-    }
-    return makeCommentTree(depth - 1, copyArr);
-  };
-  const comments = await client.storyComment.findMany({
-    where: {
-      storyId: comment.storyId,
-      depth: {
-        gte: comment.depth,
-        lte: StoryCommentMaximumDepth,
-      },
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
     include: {
       user: {
         select: {
@@ -248,18 +211,54 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       },
     },
   });
-  const treeComments = comments.length
-    ? makeCommentTree(
-        Math.max(...comments.map((v) => v.depth)),
-        comments.map((v) => ({ ...v, reComments: [] }))
-      )
-    : [];
+
+  // not found comment
+  // 404
+  if (!comment) {
+    return {
+      notFound: true,
+    };
+  }
+  if (comment.depth < StoryCommentMinimumDepth) {
+    return {
+      notFound: true,
+    };
+  }
+  if (comment.depth > StoryCommentMaximumDepth) {
+    return {
+      notFound: true,
+    };
+  }
+
+  const reComments = await client.storyComment.findMany({
+    where: {
+      reCommentRefId: comment.id,
+      depth: comment.depth + 1,
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+      _count: {
+        select: {
+          reComments: true,
+        },
+      },
+    },
+  });
 
   // initial props
   return {
     props: {
       staticProps: {
-        comment: JSON.parse(JSON.stringify(treeComments.find((treeComment) => treeComment.id === comment.id) || {})),
+        comment: JSON.parse(JSON.stringify({ ...comment, reComments } || null)),
       },
     },
   };

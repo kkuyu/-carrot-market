@@ -5,6 +5,7 @@ import name from "@libs/name.json";
 import { StoryCategory } from "@api/stories/types";
 import { ProductCategory } from "@api/products/types";
 import { ReviewManners } from "@api/reviews/types";
+import { StoryCommentItem } from "@api/comments/[id]";
 
 export const isInstance = <T extends object>(value: string | number, type: T): type is T => {
   return Object.values(type).includes(value);
@@ -161,4 +162,19 @@ export const clearTimer = (ref: TimerRef) => {
     clearTimeout(ref.current);
     ref.current = null;
   }
+};
+
+export const getCommentTree: (depth: number, arr: StoryCommentItem[]) => StoryCommentItem[] | StoryCommentItem[] = (depth, arr = []) => {
+  if (depth === 0) return arr;
+  if (arr.length === 0) return arr;
+  if (arr.length === 1) return arr;
+  const copyArr = [...arr];
+  for (let index = copyArr.length - 1; index >= 0; index--) {
+    if (copyArr[index].depth !== depth) continue;
+    if (copyArr[index].reCommentRefId === null) continue;
+    const [current] = copyArr.splice(index, 1);
+    const refIndex = copyArr.findIndex((item) => current.reCommentRefId === item.id);
+    copyArr[refIndex]?.reComments?.unshift(current);
+  }
+  return getCommentTree(depth - 1, copyArr);
 };

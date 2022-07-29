@@ -4,92 +4,86 @@ import { Children, cloneElement, isValidElement, useState } from "react";
 import useUser from "@libs/client/useUser";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-import { CommentsMoreInfo } from "@api/stories/[id]/comments";
 // @components
 import Comment, { CommentItem } from "@components/cards/comment";
-import Images from "@components/images";
+import FeedbackComment, { FeedbackCommentProps } from "@components/groups/feedbackComment";
 
 interface CommentListProps {
   list?: CommentItem[];
-  reCommentRef?: CommentItem;
-  currentMoreInfo?: CommentsMoreInfo;
-  updateMoreInfo?: (moreInfo: CommentsMoreInfo) => void;
+  depth?: number;
+  reCommentRefId?: number;
+  countReComments?: number;
+  moreReComments?: (reCommentRefId: number, page: number) => void;
   children?: React.ReactNode;
 }
 
-const CommentList = ({ list, reCommentRef, currentMoreInfo, updateMoreInfo, children }: CommentListProps) => {
+const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments = 0, moreReComments, children }: CommentListProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const [page, setPage] = useState(1);
-  const isLoading = currentMoreInfo?.isLoading && currentMoreInfo.reCommentRefId === reCommentRef?.id;
-  const isDetailPage = router.pathname === "/comments/[id]";
-  const isVisibleReCommentButton = isDetailPage
-    ? list?.[0]?.reCommentRefId?.toString() !== router?.query?.id?.toString()
-    : user?.id !== -1 && list && list?.[0]?.depth >= StoryCommentMinimumDepth + 1 && list?.[0]?.depth <= StoryCommentMaximumDepth;
+  const [page, setPage] = useState(depth === 0 ? -1 : !Boolean(list.length) ? 0 : 1);
+  const takeLength = page === -1 ? list.length : page === 0 ? 0 : (page - 2) * 10 + 11 + 1;
+  const isVisibleReCommentButton = router.pathname === "/stories/[id]" && Boolean(list.length) && depth >= StoryCommentMinimumDepth + 1 && depth <= StoryCommentMaximumDepth;
 
   const clickMore = () => {
-    if (!updateMoreInfo) return;
-    if (currentMoreInfo?.isLoading) return;
+    if (!reCommentRefId) return;
+    if (!moreReComments) return;
     const newPage = page + 1;
     setPage(newPage);
-    updateMoreInfo({ reCommentRefId: reCommentRef?.id!, page: newPage, isLoading: true });
+    moreReComments(reCommentRefId, newPage);
   };
 
-  // click comment
   const clickComment = () => {
-    router.push(`/comments/${reCommentRef?.id}`);
+    router.push(`/comments/${reCommentRefId}`);
   };
 
-  if (!list) return null;
-  if (!list.length) return null;
-  if (list?.[0].depth < StoryCommentMinimumDepth) return null;
-  if (list?.[0].depth > StoryCommentMaximumDepth) return null;
+  if (!Boolean(list.length) && !countReComments) return null;
+  if (depth < StoryCommentMinimumDepth) return null;
+  if (depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <div className={`${list?.[0].depth !== 0 ? "pl-11" : ""}`}>
-      <ul className="space-y-2">
-        {list?.map((item) => {
-          const childrenWithProps = Children.map(children, (child, index) => {
-            if (isValidElement(child)) {
-              const { reComments, ...itemData } = item;
-              return cloneElement(child as React.ReactElement<CommentListProps>, {
-                list: reComments,
-                reCommentRef: itemData,
-                currentMoreInfo: currentMoreInfo,
-                updateMoreInfo: updateMoreInfo,
-                children: children,
-              });
-            }
-            return child;
-          });
-          return (
-            <li key={item.id} className="space-y-2">
-              <Comment item={item} />
-              {childrenWithProps}
-            </li>
-          );
-        })}
-      </ul>
-      {reCommentRef && reCommentRef?._count && reCommentRef?._count?.reComments > list.length && (
-        <div className="before:mt-1 before:mr-1 before:inline-block before:w-2 before:h-2 before:border-l before:border-b before:border-gray-400 before:align-top">
-          {isLoading ? (
+    <div className={`${depth !== 0 ? "pl-11" : ""}`}>
+      {/* 답글: list */}
+      {Boolean(list.length) && (
+        <ul className="mt-2 space-y-2">
+          {list?.map((item) => {
+            const { reComments: list, _count, ...itemData } = item;
+            const childInfo = { depth: item.depth + 1, reCommentRefId: item.id, countReComments: _count?.reComments };
+            const childrenWithProps = Children.map(children, (child, index) => {
+              if (isValidElement(child)) {
+                if (index === 0) return cloneElement(child as React.ReactElement<FeedbackCommentProps>, { item: itemData });
+                if (index === 1) return cloneElement(child as React.ReactElement<CommentListProps>, { list, moreReComments, children, ...childInfo });
+              }
+              return child;
+            });
+            return (
+              <li key={item.id}>
+                <Comment item={itemData} />
+                {childrenWithProps}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      {/* 답글: read more */}
+      {list.length < countReComments && (
+        <div className="mt-1">
+          <span className="mt-1 mr-1 inline-block w-2 h-2 border-l border-b border-gray-400 align-top" />
+          {page > 0 && list?.length < takeLength ? (
             <span className="text-sm text-gray-500">답글을 불러오고있어요</span>
           ) : (
-            <button type="button" onClick={clickMore} disabled={isLoading} className="text-sm text-gray-500">
-              {page === 1 ? `답글 ${reCommentRef?._count?.reComments - list.length}개 보기` : `이전 답글 더보기`}
+            <button type="button" onClick={clickMore} disabled={list?.length < takeLength} className="text-sm text-gray-500">
+              {page < 2 ? `답글 ${countReComments - list.length}개 보기` : `이전 답글 더보기`}
             </button>
           )}
         </div>
       )}
-      {isVisibleReCommentButton && (
-        <div className="mt-2 -mr-2">
+      {/* 답글: re-comment */}
+      {user?.id !== -1 && isVisibleReCommentButton && (
+        <div className="mt-1 -mr-2">
           <button type="button" className="flex items-center w-full text-left" onClick={clickComment}>
-            <div className="flex-none">
-              <Images size="2.25rem" cloudId={user?.avatar} alt="" />
-            </div>
-            <div className="ml-2 grow">
-              <p className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-400">답글을 입력해주세요</p>
+            <div className="grow shrink basis-auto min-w-0">
+              <p className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-400 overflow-hidden whitespace-nowrap overflow-ellipsis">답글을 입력해주세요</p>
             </div>
             <div className="ml-2 flex-none flex items-center justify-center rounded-md w-10 h-10 text-gray-500">
               <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

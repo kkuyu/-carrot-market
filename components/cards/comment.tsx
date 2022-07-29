@@ -8,7 +8,6 @@ import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import Profiles, { ProfilesProps } from "@components/profiles";
-import FeedbackComment from "@components/groups/feedbackComment";
 
 export type CommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
@@ -40,7 +39,6 @@ const Comment = ({ item }: CommentProps) => {
       </Link>
       <div className="mt-1 pl-11">
         <p>{item.comment}</p>
-        <FeedbackComment item={item} />
       </div>
     </div>
   );

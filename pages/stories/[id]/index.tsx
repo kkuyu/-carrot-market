@@ -2,27 +2,27 @@ import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSetRecoilState } from "recoil";
 import { useForm } from "react-hook-form";
-import useSWR, { mutate } from "swr";
+import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
-import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
+import { getStoryCategory, getDiffTimeStr, getCommentTree } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
-import { StoryCommentItem } from "@api/comments/[id]";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
-import { CommentsMoreInfo, GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
+import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
+import FeedbackComment from "@components/groups/feedbackComment";
 import PostComment, { PostCommentTypes } from "@components/forms/postComment";
 import CommentList from "@components/lists/commentList";
 import Profiles from "@components/profiles";
@@ -66,22 +66,20 @@ const StoryDetail: NextPage<{
   const { data, error } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
 
   // fetch data: story comments
-  const [comments, setComments] = useState<GetStoriesCommentsResponse["comments"]>(staticProps.comments);
-  const [moreInfo, setMoreInfo] = useState<CommentsMoreInfo>(null);
-  const [moreHistory, setMoreHistory] = useState<CommentsMoreInfo[]>([null]);
-  const [moreLoading, setMoreLoading] = useState<boolean>(false);
-  const { data: commentData, mutate: boundMutate } = useSWR<GetStoriesCommentsResponse>(
-    mounted && router.query.id
-      ? `/api/stories/${router.query.id}/comments?${moreInfo ? `reCommentRefId=${moreInfo.reCommentRefId}&page=${moreInfo.page}` : `moreHistory=${JSON.stringify(moreHistory)}`}`
-      : null
-  );
+  const [comments, setComments] = useState<GetStoriesCommentsResponse["comments"]>(staticProps?.comments ? staticProps.comments : []);
+  const [commentsQuery, setCommentsQuery] = useState("");
+  const { data: commentData, mutate: boundMutate } = useSWR<GetStoriesCommentsResponse>(mounted && router.query.id ? `/api/stories/${router.query.id}/comments?${commentsQuery}` : null);
+  const treeComments = useMemo(() => {
+    if (!comments?.length) return [];
+    return getCommentTree(Math.max(...comments.map((v) => v.depth)), [...comments.map((v) => ({ ...v, reComments: [] }))]);
+  }, [comments]);
 
   // new comment
   const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: null } });
   const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
     onSuccess: () => {
       formData.setValue("comment", "");
-      boundMutate();
+      setCommentsQuery(() => `exists=${JSON.stringify(comments.map((comment) => comment.id))}`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -106,63 +104,14 @@ const StoryDetail: NextPage<{
     },
   });
 
-  const updateMoreInfo = (moreInfo: CommentsMoreInfo) => {
-    setMoreLoading(() => true);
-    setMoreInfo(() => moreInfo);
+  const moreReComments = (reCommentRefId: number, page: number) => {
+    setCommentsQuery(() => `exists=${JSON.stringify(comments.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
   };
 
-  const mergeComments: (
-    data: { moreInfo: GetStoriesCommentsResponse["moreInfo"]; comments: GetStoriesCommentsResponse["comments"] },
-    arr: GetStoriesCommentsResponse["comments"]
-  ) => GetStoriesCommentsResponse["comments"] = ({ moreInfo, comments }, arr = []) => {
-    if (!moreInfo || !comments) return arr;
-    const index = arr.findIndex((v) => v.id === moreInfo?.reCommentRefId);
-    if (index !== -1) {
-      const { reComments: nextReComments = [] } = comments[0];
-      const prevReComments = arr?.[index]?.reComments || [];
-      const updateReComments = Array.from(new Set([...prevReComments, ...nextReComments]));
-      arr[index] = { ...arr[index], reComments: updateReComments };
-    }
-    return arr.map((v) => ({
-      ...v,
-      reComments: mergeComments({ moreInfo, comments }, v?.reComments || []),
-    }));
-  };
-
-  const makeDummyComment = (data: PostCommentTypes): GetStoriesCommentsResponse["comments"][0] => {
-    const time = new Date();
-    const commentData = { emdAddrNm: currentAddr?.emdAddrNm || "", emdPosNm: currentAddr?.emdPosNm || "", emdPosX: currentAddr?.emdPosX || 0, emdPosY: currentAddr?.emdPosY || 0 };
-    const userData = { id: user?.id || 0, name: user?.name || "", avatar: user?.avatar || "" };
-    const storyData = { id: story?.id || 0, userId: story?.userId || 0 };
-    return {
-      id: 0,
-      depth: 0,
-      comment: data.comment,
-      reCommentRefId: null,
-      createdAt: time,
-      updatedAt: time,
-      ...commentData,
-      userId: userData.id,
-      user: userData,
-      storyId: storyData.id,
-      story: storyData,
-    };
-  };
-
-  const submitComment = (data: PostCommentTypes) => {
+  const submitReComment = (data: PostCommentTypes) => {
     if (!data) return;
     if (commentLoading) return;
-    if (moreLoading) return;
-    setMoreLoading(() => true);
-    setMoreInfo(() => null);
-    boundMutate((prev) => {
-      const newComment = makeDummyComment(data);
-      return prev && { ...prev, comments: [...prev.comments, newComment] };
-    }, false);
-    sendComment({
-      ...data,
-      ...currentAddr,
-    });
+    sendComment({ ...data, ...currentAddr });
   };
 
   // modal: sign up
@@ -198,35 +147,14 @@ const StoryDetail: NextPage<{
   useEffect(() => {
     if (!data) return;
     if (!data.success) return;
-    setStory((prev) => ({
-      ...prev,
-      ...data.story,
-    }));
+    setStory((prev) => ({ ...prev, ...data.story }));
   }, [data]);
 
+  // merge comment data
   useEffect(() => {
     if (!commentData) return;
     if (!commentData?.success) return;
-    if (moreHistory.find((history) => JSON.stringify(history) === JSON.stringify(commentData.moreInfo))) return;
-
-    if (commentData.moreInfo) {
-      setMoreInfo(() => commentData.moreInfo);
-      setMoreHistory((prev) => [...prev, commentData.moreInfo]);
-    }
-
-    setComments((prev) => {
-      const { moreInfo, comments, historyComments } = commentData;
-      let result = !moreInfo ? [...comments] : mergeComments({ moreInfo, comments }, prev);
-      for (let index = 0; index < historyComments.length; index++) {
-        const { moreInfo, comments } = historyComments[index];
-        result = mergeComments({ moreInfo, comments }, [...result]);
-      }
-      return result;
-    });
-    setMoreLoading(() => {
-      console.log(commentData.comments[commentData.comments.length - 1].id === 0, commentData.comments[commentData.comments.length - 1].id);
-      return commentData.comments[commentData.comments.length - 1].id === 0;
-    });
+    setComments(() => [...commentData.comments]);
   }, [commentData]);
 
   // setting layout
@@ -302,34 +230,35 @@ const StoryDetail: NextPage<{
       </section>
 
       {/* 댓글/답변 목록: list */}
-      {comments && Boolean(comments?.length) && (
+      {treeComments && Boolean(treeComments?.length) && (
         <div className="mt-5">
-          <CommentList list={comments} updateMoreInfo={updateMoreInfo} currentMoreInfo={moreInfo}>
+          <CommentList list={treeComments} moreReComments={moreReComments}>
+            <FeedbackComment />
             <CommentList />
           </CommentList>
         </div>
       )}
 
       {/* 댓글/답변 목록: empty */}
-      {comments && !Boolean(comments?.length) && (
+      {treeComments && !Boolean(treeComments?.length) && (
         <div className="pt-10 pb-5 text-center">
           <p className="text-gray-500">
-            아직 {category?.isLikeWithEmotion ? "댓글" : "답변"}이 없어요.
+            아직 {category?.commentType}이 없어요.
             <br />
-            가장 먼저 {category?.isLikeWithEmotion ? "댓글" : "답변"}을 남겨보세요.
+            가장 먼저 {category?.commentType}을 남겨보세요.
           </p>
         </div>
       )}
 
-      {/* 댓글 입력 */}
+      {/* 댓글/답변 입력 */}
       {(viewModel.mode === "public" || viewModel.mode === "private") && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
             <PostComment
               formData={formData}
-              onValid={user?.id === -1 ? openSignUpModal : submitComment}
-              isLoading={commentLoading || moreLoading}
-              commentType={category?.isLikeWithEmotion ? "댓글" : "답변"}
+              onValid={user?.id === -1 ? openSignUpModal : submitReComment}
+              isLoading={commentLoading}
+              commentType={category?.commentType}
               className="w-full pl-5 pr-3"
             />
           </div>
@@ -384,17 +313,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           userId: true,
         },
       },
-      comments: {
-        where: {
-          depth: {
-            gte: StoryCommentMinimumDepth,
-            lte: StoryCommentMaximumDepth,
-          },
-        },
-        select: {
-          id: true,
-        },
-      },
     },
   });
 
@@ -406,27 +324,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
-  // find comment
-  const makeCommentTree: (depth: number, arr: StoryCommentItem[]) => StoryCommentItem[] | StoryCommentItem[] = (depth, arr) => {
-    if (depth === 0) return arr;
-    const copyArr = [...arr];
-    for (let index = copyArr.length - 1; index >= 0; index--) {
-      if (copyArr[index].depth !== depth) continue;
-      if (copyArr[index].reCommentRefId === null) continue;
-      const [current] = copyArr.splice(index, 1);
-      const refIndex = copyArr.findIndex((item) => current.reCommentRefId === item.id);
-      copyArr[refIndex]?.reComments?.unshift(current);
-      if ((copyArr[refIndex]?.reComments?.length || 0) > 2) copyArr[refIndex]?.reComments?.pop();
-    }
-    return makeCommentTree(depth - 1, copyArr);
-  };
   const comments = await client.storyComment.findMany({
     where: {
       storyId: story.id,
-      depth: {
-        gte: StoryCommentMinimumDepth,
-        lte: StoryCommentMaximumDepth,
-      },
+      OR: [{ depth: StoryCommentMinimumDepth }, { depth: StoryCommentMinimumDepth + 1, order: { gte: 0, lte: 1 } }],
     },
     orderBy: {
       createdAt: "asc",
@@ -445,13 +346,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           userId: true,
         },
       },
-      records: {
-        select: {
-          id: true,
-          kind: true,
-          userId: true,
-        },
-      },
       _count: {
         select: {
           reComments: true,
@@ -459,19 +353,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       },
     },
   });
-  const treeComments = comments.length
-    ? makeCommentTree(
-        Math.max(...comments.map((v) => v.depth)),
-        comments.map((v) => ({ ...v, reComments: [] }))
-      )
-    : [];
 
   // initial props
   return {
     props: {
       staticProps: {
         story: JSON.parse(JSON.stringify(story || {})),
-        comments: JSON.parse(JSON.stringify(treeComments || {})),
+        comments: JSON.parse(JSON.stringify(comments || {})),
       },
     },
   };

@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import React from "react";
 import { Kind } from "@prisma/client";
 // @libs
 import useUser from "@libs/client/useUser";
@@ -88,4 +89,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   );
 };
 
-export default FeedbackProduct;
+export default React.memo(FeedbackProduct, (prev, next) => {
+  if (prev?.item?.id !== next?.item?.id) return true;
+  return false;
+});

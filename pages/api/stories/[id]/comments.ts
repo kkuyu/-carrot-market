@@ -1,22 +1,17 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Story, StoryComment, User, Record } from "@prisma/client";
+import { StoryComment } from "@prisma/client";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { getAbsoluteUrl } from "@libs/utils";
-import { GetCommentsDetailResponse, StoryCommentItem } from "@api/comments/[id]";
-
-export type CommentsMoreInfo = { reCommentRefId: number; page: number; isLoading: boolean } | null;
+import { StoryCommentItem } from "@api/comments/[id]";
 
 export interface GetStoriesCommentsResponse {
   success: boolean;
   total: number;
-  moreInfo: CommentsMoreInfo;
   comments: StoryCommentItem[];
-  historyComments: { moreInfo: CommentsMoreInfo; comments: StoryCommentItem[] }[];
   error?: {
     timestamp: Date;
     name: string;
@@ -37,7 +32,7 @@ export interface PostStoriesCommentsResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
     try {
-      const { id: _id, reCommentRefId: _reCommentRefId, page: _page, moreHistory: _moreHistory } = req.query;
+      const { id: _id, exists: _exists, page: _page, reCommentRefId: _reCommentRefId } = req.query;
       const { user } = req.session;
 
       // request valid
@@ -46,39 +41,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (_reCommentRefId && !_page) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
-      if (_page && !_reCommentRefId) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
 
       // find story detail
       const id = +_id.toString();
-      const moreInfo = _reCommentRefId && _page ? { reCommentRefId: +_reCommentRefId?.toString(), page: +_page?.toString(), isLoading: true } : null;
-      const moreHistory: CommentsMoreInfo[] = _moreHistory ? JSON.parse(_moreHistory.toString()) : [];
       const story = await client.story.findUnique({
         where: {
           id,
         },
         select: {
           id: true,
-          comments: {
-            where: {
-              storyId: id,
-              ...(moreInfo ? { id: moreInfo.reCommentRefId } : { depth: 0 }),
-            },
-            orderBy: {
-              createdAt: "asc",
-            },
-            select: {
-              id: true,
-            },
-          },
         },
       });
       if (!story) {
@@ -98,52 +69,47 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
 
-      const getReCommentResponse: (reCommentRefId: number, page: number) => Promise<Response> = async (reCommentRefId, page) => {
-        const reCommentFilter = page === 1 ? "ALL" : "ONLY_CHILDREN";
-        const reCommentTakeLength = page === 1 ? 2 : 3;
-        const reCommentSkipLength = page === 1 ? 0 : 3 * (page - 2) + 2;
-        const reCommentQuery = `reCommentFilter=${reCommentFilter}&reCommentTakeLength=${reCommentTakeLength}&reCommentSkipLength=${reCommentSkipLength}`;
-        const reCommentResponse = await fetch(`${originUrl}/api/comments/${reCommentRefId}?${reCommentQuery}`);
-        return reCommentResponse;
-      };
-
       // comments data
-      const comments = [];
-      const { origin: originUrl } = getAbsoluteUrl(req);
-      for (let index = 0; index < story.comments.length; index++) {
-        const { reCommentRefId = story.comments[index].id, page = 1 } = moreInfo || {};
-        const reCommentResponse: GetCommentsDetailResponse = await (await getReCommentResponse(reCommentRefId, page)).json();
-        if (!reCommentResponse.success) {
-          const error = new Error("ReCommentResponseError");
-          error.name = "ReCommentResponseError";
-          throw error;
-        }
-        comments.push(reCommentResponse.comment);
-      }
-
-      const historyComments = [];
-      for (let index = 0; index < moreHistory.length; index++) {
-        if (!moreHistory[index]) continue;
-        const { reCommentRefId, page } = moreHistory[index]!;
-        const reCommentResponse: GetCommentsDetailResponse = await (await getReCommentResponse(reCommentRefId, page)).json();
-        if (!reCommentResponse.success) {
-          const error = new Error("ReCommentResponseError");
-          error.name = "ReCommentResponseError";
-          throw error;
-        }
-        historyComments.push({
-          moreInfo: moreHistory[index],
-          comments: [reCommentResponse.comment],
-        });
-      }
+      const exists = _exists ? JSON.parse(_exists?.toString()).map((id: number) => ({ id })) : [];
+      const page = _page ? +_page?.toString() : null;
+      const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : null;
+      const comments = await client.storyComment.findMany({
+        where: {
+          storyId: story.id,
+          ...(reCommentRefId && page
+            ? { OR: [...exists, { reCommentRefId, order: { gte: (page - 2) * 10 + 2, lte: (page - 2) * 10 + 11 } }] }
+            : { OR: [...exists, { depth: StoryCommentMinimumDepth }, { depth: StoryCommentMinimumDepth + 1, order: { gte: 0, lte: 1 } }] }),
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          story: {
+            select: {
+              id: true,
+              userId: true,
+            },
+          },
+          _count: {
+            select: {
+              reComments: true,
+            },
+          },
+        },
+      });
 
       // result
       const result: GetStoriesCommentsResponse = {
         success: true,
         total,
-        moreInfo: moreInfo ? { ...moreInfo, isLoading: false } : null,
         comments,
-        historyComments,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
@@ -192,6 +158,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
         select: {
           id: true,
+          comments: {
+            where: {
+              depth: 0,
+            },
+            select: {
+              id: true,
+            },
+          },
         },
       });
       if (!story) {
@@ -211,6 +185,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               id: true,
               depth: true,
               storyId: true,
+              _count: {
+                select: {
+                  reComments: true,
+                },
+              },
             },
           })
         : null;
@@ -246,13 +225,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           ...(reCommentRef
             ? {
                 depth: reCommentRef.depth + 1,
+                order: reCommentRef._count.reComments,
                 reCommentRef: {
                   connect: {
                     id: reCommentRef.id,
                   },
                 },
               }
-            : {}),
+            : {
+                depth: 0,
+                order: story.comments.length,
+              }),
         },
       });
 

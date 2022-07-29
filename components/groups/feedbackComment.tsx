@@ -1,4 +1,5 @@
 import { useRouter } from "next/router";
+import React from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
@@ -20,7 +21,6 @@ export interface FeedbackCommentProps {
 
 const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const router = useRouter();
-  const isDetailPage = router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString();
 
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
@@ -64,9 +64,8 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
 
   // click comment
   const commentClick = () => {
-    if (isDetailPage) {
-      const target = document.querySelector(".container input#comment") as HTMLInputElement;
-      target?.focus();
+    if (router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString()) {
+      (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
     } else {
       router.push(`/comments/${item.id}`);
     }
@@ -87,12 +86,12 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   };
 
   return (
-    <div className="space-x-2">
+    <div className="pl-11 space-x-2">
       {/* 좋아요: button */}
       <button type="button" onClick={() => (user?.id === -1 ? openSignUpModal() : toggleLike())}>
         <span className={`text-sm ${liked ? "text-orange-500" : "text-gray-500"}`}>좋아요 {likeRecords.length || null}</span>
       </button>
-      {/* 댓글: button */}
+      {/* 답글: button */}
       {item.depth < StoryCommentMaximumDepth && (
         <button type="button" onClick={commentClick}>
           <span className="text-sm text-gray-500">답글쓰기</span>
@@ -102,4 +101,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   );
 };
 
-export default FeedbackComment;
+export default React.memo(FeedbackComment, (prev, next) => {
+  if (prev?.item?.id !== next?.item?.id) return true;
+  return false;
+});

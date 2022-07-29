@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { FocusEvent, useState } from "react";
+import React, { FocusEvent, useState } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
@@ -169,7 +169,7 @@ const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
           <span className="ml-1 block text-sm text-gray-500">{likeRecords.length}</span>
         </div>
       )}
-      {/* 댓글 */}
+      {/* 댓글/답변 */}
       <button type="button" className="ml-4 py-2" onClick={commentClick}>
         <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path
@@ -179,10 +179,13 @@ const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
           ></path>
         </svg>
-        <span className="ml-1 text-sm text-gray-500">{count ? `댓글 ${count}` : "댓글쓰기"}</span>
+        <span className="ml-1 text-sm text-gray-500">{count ? `${category?.commentType} ${count}` : `${category?.commentType}쓰기`}</span>
       </button>
     </div>
   );
 };
 
-export default FeedbackStory;
+export default React.memo(FeedbackStory, (prev, next) => {
+  if (prev?.item?.id !== next?.item?.id) return true;
+  return false;
+});
