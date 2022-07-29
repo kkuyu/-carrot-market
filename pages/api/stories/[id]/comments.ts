@@ -6,18 +6,17 @@ import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories
 import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { getAbsoluteUrl } from "@libs/utils";
+import { GetCommentsDetailResponse, StoryCommentItem } from "@api/comments/[id]";
 
-type StoryCommentItem = StoryComment & {
-  user: Pick<User, "id" | "name" | "avatar">;
-  story: Pick<Story, "id" | "userId">;
-  records: Pick<Record, "id" | "kind" | "userId">[];
-  reComments?: StoryCommentItem[];
-};
+export type CommentsMoreInfo = { reCommentRefId: number; page: number; isLoading: boolean } | null;
 
 export interface GetStoriesCommentsResponse {
   success: boolean;
-  comments: StoryCommentItem[];
   total: number;
+  moreInfo: CommentsMoreInfo;
+  comments: StoryCommentItem[];
+  historyComments: { moreInfo: CommentsMoreInfo; comments: StoryCommentItem[] }[];
   error?: {
     timestamp: Date;
     name: string;
@@ -38,8 +37,7 @@ export interface PostStoriesCommentsResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
     try {
-      const { id: _id } = req.query;
-      const { reCommentRefId: _reCommentRefId } = req.body;
+      const { id: _id, reCommentRefId: _reCommentRefId, page: _page, moreHistory: _moreHistory } = req.query;
       const { user } = req.session;
 
       // request valid
@@ -48,15 +46,39 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         error.name = "InvalidRequestBody";
         throw error;
       }
+      if (_reCommentRefId && !_page) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+      if (_page && !_reCommentRefId) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
 
       // find story detail
       const id = +_id.toString();
+      const moreInfo = _reCommentRefId && _page ? { reCommentRefId: +_reCommentRefId?.toString(), page: +_page?.toString(), isLoading: true } : null;
+      const moreHistory: CommentsMoreInfo[] = _moreHistory ? JSON.parse(_moreHistory.toString()) : [];
       const story = await client.story.findUnique({
         where: {
           id,
         },
         select: {
           id: true,
+          comments: {
+            where: {
+              storyId: id,
+              ...(moreInfo ? { id: moreInfo.reCommentRefId } : { depth: 0 }),
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            select: {
+              id: true,
+            },
+          },
         },
       });
       if (!story) {
@@ -65,20 +87,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // find comment
-      const makeCommentTree: (depth: number, arr: StoryCommentItem[]) => any | StoryCommentItem[] = (depth, arr) => {
-        if (depth === 0) return arr;
-        const copyArr = [...arr];
-        for (let index = copyArr.length - 1; index >= 0; index--) {
-          if (copyArr[index].depth !== depth) continue;
-          if (copyArr[index].reCommentRefId === null) continue;
-          const [current] = copyArr.splice(index, 1);
-          const refIndex = copyArr.findIndex((item) => current.reCommentRefId === item.id);
-          copyArr[refIndex].reComments?.unshift(current);
-        }
-        return makeCommentTree(depth - 1, copyArr);
-      };
-      const comments = await client.storyComment.findMany({
+      // comments count
+      const total = await client.storyComment.count({
         where: {
           storyId: id,
           depth: {
@@ -86,42 +96,54 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             lte: StoryCommentMaximumDepth,
           },
         },
-        orderBy: {
-          createdAt: "asc",
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          story: {
-            select: {
-              id: true,
-              userId: true,
-            },
-          },
-          records: {
-            select: {
-              id: true,
-              kind: true,
-              userId: true,
-            },
-          },
-        },
       });
-      const treeComments = makeCommentTree(
-        Math.max(...comments.map((v) => v.depth)),
-        comments.map((v) => ({ ...v, reComments: [] }))
-      );
+
+      const getReCommentResponse: (reCommentRefId: number, page: number) => Promise<Response> = async (reCommentRefId, page) => {
+        const reCommentFilter = page === 1 ? "ALL" : "ONLY_CHILDREN";
+        const reCommentTakeLength = page === 1 ? 2 : 3;
+        const reCommentSkipLength = page === 1 ? 0 : 3 * (page - 2) + 2;
+        const reCommentQuery = `reCommentFilter=${reCommentFilter}&reCommentTakeLength=${reCommentTakeLength}&reCommentSkipLength=${reCommentSkipLength}`;
+        const reCommentResponse = await fetch(`${originUrl}/api/comments/${reCommentRefId}?${reCommentQuery}`);
+        return reCommentResponse;
+      };
+
+      // comments data
+      const comments = [];
+      const { origin: originUrl } = getAbsoluteUrl(req);
+      for (let index = 0; index < story.comments.length; index++) {
+        const { reCommentRefId = story.comments[index].id, page = 1 } = moreInfo || {};
+        const reCommentResponse: GetCommentsDetailResponse = await (await getReCommentResponse(reCommentRefId, page)).json();
+        if (!reCommentResponse.success) {
+          const error = new Error("ReCommentResponseError");
+          error.name = "ReCommentResponseError";
+          throw error;
+        }
+        comments.push(reCommentResponse.comment);
+      }
+
+      const historyComments = [];
+      for (let index = 0; index < moreHistory.length; index++) {
+        if (!moreHistory[index]) continue;
+        const { reCommentRefId, page } = moreHistory[index]!;
+        const reCommentResponse: GetCommentsDetailResponse = await (await getReCommentResponse(reCommentRefId, page)).json();
+        if (!reCommentResponse.success) {
+          const error = new Error("ReCommentResponseError");
+          error.name = "ReCommentResponseError";
+          throw error;
+        }
+        historyComments.push({
+          moreInfo: moreHistory[index],
+          comments: [reCommentResponse.comment],
+        });
+      }
 
       // result
       const result: GetStoriesCommentsResponse = {
         success: true,
-        comments: treeComments,
-        total: comments.length,
+        total,
+        moreInfo: moreInfo ? { ...moreInfo, isLoading: false } : null,
+        comments,
+        historyComments,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
