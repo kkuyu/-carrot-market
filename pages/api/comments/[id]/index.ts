@@ -9,7 +9,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export type StoryCommentItem = StoryComment & {
   user: Pick<User, "id" | "name" | "avatar">;
-  story?: Story & { user: Pick<User, "id" | "name" | "avatar"> };
+  story?: (Pick<Story, "id" | "userId" | "category"> & Partial<Story>) & { user?: Pick<User, "id" | "name" | "avatar"> };
   records?: Pick<Record, "id" | "kind" | "userId">[];
   _count?: { reComments: number };
   reComments?: StoryCommentItem[];
@@ -105,8 +105,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : null;
     const reComments = await client.storyComment.findMany({
       where: {
-        ...(reCommentRefId && page
-          ? { OR: [...exists, { reCommentRefId, order: { gte: (page - 2) * 10 + 2, lte: (page - 2) * 10 + 11 } }] }
+        ...(reCommentRefId && page !== null
+          ? { OR: [...exists, { reCommentRefId, order: { lte: (page - 1) * 10 + 1 } }] }
           : { OR: [...exists, { storyId: comment.storyId, reCommentRefId: comment.id, depth: comment.depth + 1 }] }),
       },
       orderBy: {

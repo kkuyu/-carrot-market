@@ -68,7 +68,9 @@ const CommentsDetail: NextPage<{
   });
 
   const moreReComments = (reCommentRefId: number, page: number) => {
-    setCommentsQuery(() => `exists=${JSON.stringify(comment?.reComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
+    const existComments = page !== 0 ? comment?.reComments : comment?.reComments?.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+    setComment((prev) => prev && { ...prev, reComments: existComments?.length ? [...existComments] : [] });
+    setCommentsQuery(() => `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
   };
 
   const submitReComment = (data: PostCommentTypes) => {

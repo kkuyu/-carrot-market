@@ -2,8 +2,9 @@
 import { getStoryCategory } from "@libs/utils";
 // @api
 import { GetStoriesResponse } from "@api/stories";
+import { GetCommentsDetailResponse } from "@api/comments/[id]";
 
-export type StorySummaryItem = GetStoriesResponse["stories"][0];
+export type StorySummaryItem = GetStoriesResponse["stories"][0] | GetCommentsDetailResponse["comment"]["story"];
 
 export interface StorySummaryProps {
   item: StorySummaryItem;

@@ -76,8 +76,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const comments = await client.storyComment.findMany({
         where: {
           storyId: story.id,
-          ...(reCommentRefId && page
-            ? { OR: [...exists, { reCommentRefId, order: { gte: (page - 2) * 10 + 2, lte: (page - 2) * 10 + 11 } }] }
+          ...(reCommentRefId && page !== null
+            ? { OR: [...exists, { reCommentRefId, order: { lte: (page - 1) * 10 + 1 } }] }
             : { OR: [...exists, { depth: StoryCommentMinimumDepth }, { depth: StoryCommentMinimumDepth + 1, order: { gte: 0, lte: 1 } }] }),
         },
         orderBy: {
@@ -95,6 +95,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             select: {
               id: true,
               userId: true,
+              category: true,
             },
           },
           _count: {
@@ -104,7 +105,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
         },
       });
-
       // result
       const result: GetStoriesCommentsResponse = {
         success: true,

@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { Children, cloneElement, isValidElement, useState } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
 // @libs
 import useUser from "@libs/client/useUser";
 // @api
@@ -22,20 +22,32 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
   const { user } = useUser();
 
   const [page, setPage] = useState(depth === 0 ? -1 : !Boolean(list.length) ? 0 : 1);
-  const takeLength = page === -1 ? list.length : page === 0 ? 0 : (page - 2) * 10 + 11 + 1;
+  const [moreInfo, setMoreInfo] = useState({ read: false, page });
+
+  const takeLength = (() => {
+    if (page === 0) return 0;
+    if (page === -1) return list.length;
+    if (!countReComments) return list.length;
+    const result = (page - 1) * 10 + 1 + 1;
+    return countReComments < result ? countReComments : result;
+  })();
   const isVisibleReCommentButton = router.pathname === "/stories/[id]" && Boolean(list.length) && depth >= StoryCommentMinimumDepth + 1 && depth <= StoryCommentMaximumDepth;
 
-  const clickMore = () => {
+  const updatePage = (page: number) => {
     if (!reCommentRefId) return;
     if (!moreReComments) return;
-    const newPage = page + 1;
-    setPage(newPage);
-    moreReComments(reCommentRefId, newPage);
+    setPage(page);
+    moreReComments(reCommentRefId, page);
   };
 
   const clickComment = () => {
     router.push(`/comments/${reCommentRefId}`);
   };
+
+  useEffect(() => {
+    if (moreInfo.read) return;
+    if (takeLength === countReComments) setMoreInfo({ read: true, page });
+  }, [takeLength]);
 
   if (!Boolean(list.length) && !countReComments) return null;
   if (depth < StoryCommentMinimumDepth) return null;
@@ -66,18 +78,19 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
         </ul>
       )}
       {/* 답글: read more */}
-      {list.length < countReComments && (
-        <div className="mt-1">
-          <span className="mt-1 mr-1 inline-block w-2 h-2 border-l border-b border-gray-400 align-top" />
-          {page > 0 && list?.length < takeLength ? (
-            <span className="text-sm text-gray-500">답글을 불러오고있어요</span>
-          ) : (
-            <button type="button" onClick={clickMore} disabled={list?.length < takeLength} className="text-sm text-gray-500">
-              {page < 2 ? `답글 ${countReComments - list.length}개 보기` : `이전 답글 더보기`}
-            </button>
-          )}
-        </div>
-      )}
+      <div className="mt-1 empty:hidden before:mt-1 before:mr-1 before:inline-block before:w-2 before:h-2 before:border-l before:border-b before:border-gray-400 before:align-top">
+        {list?.length < takeLength && page > 0 ? (
+          <span className="text-sm text-gray-500">답글을 불러오고있어요</span>
+        ) : list.length < countReComments ? (
+          <button type="button" onClick={() => updatePage(moreInfo.read ? moreInfo.page : page + 1)} disabled={list?.length < takeLength} className="text-sm text-gray-500">
+            {page < 2 ? `답글 ${countReComments - list.length}개 보기` : `이전 답글 더보기`}
+          </button>
+        ) : list?.length === countReComments && page > 1 ? (
+          <button type="button" onClick={() => updatePage(0)} disabled={list?.length < takeLength} className="text-sm text-gray-500">
+            답글 숨기기
+          </button>
+        ) : null}
+      </div>
       {/* 답글: re-comment */}
       {user?.id !== -1 && isVisibleReCommentButton && (
         <div className="mt-1 -mr-2">

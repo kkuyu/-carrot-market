@@ -105,7 +105,9 @@ const StoryDetail: NextPage<{
   });
 
   const moreReComments = (reCommentRefId: number, page: number) => {
-    setCommentsQuery(() => `exists=${JSON.stringify(comments.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
+    const existComments = page !== 0 ? comments : comments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+    setComments(() => [...existComments]);
+    setCommentsQuery(() => `exists=${JSON.stringify(existComments.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
   };
 
   const submitReComment = (data: PostCommentTypes) => {
