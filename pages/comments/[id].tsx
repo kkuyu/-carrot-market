@@ -22,6 +22,8 @@ import Comment from "@components/cards/comment";
 import CommentList from "@components/lists/commentList";
 import FeedbackComment from "@components/groups/feedbackComment";
 import PostComment, { PostCommentTypes } from "@components/forms/postComment";
+import StorySummary from "@components/cards/storySummary";
+import Link from "next/link";
 
 const CommentsDetail: NextPage<{
   staticProps: {
@@ -133,9 +135,18 @@ const CommentsDetail: NextPage<{
   }
 
   return (
-    <article className="container pt-5 pb-20">
-      <Comment item={comment} />
-      <FeedbackComment item={comment} />
+    <article className="container pb-20">
+      {comment?.story && (
+        <Link href={`/stories/${comment.story.id}`}>
+          <a className="block -mx-5 px-5 py-3 bg-gray-200">
+            <StorySummary item={comment?.story} />
+          </a>
+        </Link>
+      )}
+      <div className="mt-5">
+        <Comment item={comment} />
+        <FeedbackComment item={comment} />
+      </div>
       {/* 답글 목록: list */}
       {Boolean(treeReComments?.[0]?.reComments?.length) && (
         <div className="mt-2">
@@ -192,9 +203,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         },
       },
       story: {
-        select: {
-          id: true,
-          userId: true,
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
         },
       },
       records: {

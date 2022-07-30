@@ -9,7 +9,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export type StoryCommentItem = StoryComment & {
   user: Pick<User, "id" | "name" | "avatar">;
-  story?: Pick<Story, "id" | "userId">;
+  story?: Story & { user: Pick<User, "id" | "name" | "avatar"> };
   records?: Pick<Record, "id" | "kind" | "userId">[];
   _count?: { reComments: number };
   reComments?: StoryCommentItem[];
@@ -52,9 +52,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
         },
         story: {
-          select: {
-            id: true,
-            userId: true,
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
           },
         },
         records: {

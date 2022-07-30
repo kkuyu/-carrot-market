@@ -24,7 +24,7 @@ import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
 import ChatMessageList from "@components/lists/chatMessageList";
-import Product from "@components/cards/product";
+import ProductSummary from "@components/cards/productSummary";
 import Buttons from "@components/buttons";
 
 const ChatDetail: NextPage = () => {
@@ -154,7 +154,7 @@ const ChatDetail: NextPage = () => {
         <div className="-mx-5 sticky top-12 left-0 block py-3 px-5 bg-gray-200">
           <Link href={`/products/${data.chat.product.id}`}>
             <a>
-              <Product item={data.chat.product} size="sm" />
+              <ProductSummary item={data.chat.product} />
             </a>
           </Link>
           <div className="mt-2 empty:hidden">

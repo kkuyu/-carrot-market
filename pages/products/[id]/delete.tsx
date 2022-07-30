@@ -15,7 +15,7 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
 // @components
 import Buttons from "@components/buttons";
-import Product from "@components/cards/product";
+import ProductSummary from "@components/cards/productSummary";
 
 const ProductDelete: NextPage<{
   staticProps: {
@@ -64,7 +64,7 @@ const ProductDelete: NextPage<{
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${staticProps.product.id}`}>
           <a className="">
-            <Product item={staticProps.product} size="sm" />
+            <ProductSummary item={staticProps.product} />
           </a>
         </Link>
       </div>

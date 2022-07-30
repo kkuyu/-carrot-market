@@ -17,7 +17,7 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 // @components
 import Buttons from "@components/buttons";
-import Product from "@components/cards/product";
+import ProductSummary from "@components/cards/productSummary";
 import ReviewProduct, { ReviewProductTypes } from "@components/forms/reviewProduct";
 
 const ProductReview: NextPage<{
@@ -77,7 +77,7 @@ const ProductReview: NextPage<{
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${staticProps.product.id}`}>
           <a className="">
-            <Product item={staticProps.product} size="sm" />
+            <ProductSummary item={staticProps.product} />
           </a>
         </Link>
         {staticProps.role === "sellUser" && !staticProps.product.reviews.length && (

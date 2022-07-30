@@ -18,7 +18,7 @@ import { GetChatsResponse } from "@api/chats";
 import { GetUserResponse } from "@api/users/my";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 // @components
-import Product from "@components/cards/product";
+import ProductSummary from "@components/cards/productSummary";
 import ChatList from "@components/lists/chatList";
 
 const getKey = (pageIndex: number, previousPageData: GetChatsResponse, query: string = "") => {
@@ -68,7 +68,7 @@ const ProductChats: NextPage = () => {
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <Product item={productData?.product!} size="tiny" />
+          <ProductSummary item={productData?.product!} />
         </a>
       </Link>
 

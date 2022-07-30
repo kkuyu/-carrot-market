@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Children, cloneElement, isValidElement } from "react";
-import Product, { ProductItem, ProductProps } from "@components/cards/product";
+import Product, { ProductItem } from "@components/cards/product";
 import { FeedbackProductProps } from "@components/groups/feedbackProduct";
 
 interface ProductWithFeedbackListProps {

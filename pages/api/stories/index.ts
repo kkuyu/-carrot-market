@@ -11,8 +11,8 @@ export interface GetStoriesResponse {
   success: boolean;
   stories: (Story & {
     user: Pick<User, "id" | "name">;
-    records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments: Pick<StoryComment, "id">[];
+    records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
+    comments?: Pick<StoryComment, "id">[];
   })[];
   pages: number;
   error?: {

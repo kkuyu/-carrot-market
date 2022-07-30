@@ -1,6 +1,6 @@
 import Link from "next/link";
 // @components
-import Product, { ProductItem, ProductProps } from "@components/cards/product";
+import Product, { ProductItem } from "@components/cards/product";
 
 interface ProductListProps {
   list: ProductItem[];

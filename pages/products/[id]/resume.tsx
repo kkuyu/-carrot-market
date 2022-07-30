@@ -18,7 +18,7 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @components
 import Buttons from "@components/buttons";
-import Product from "@components/cards/product";
+import ProductSummary from "@components/cards/productSummary";
 import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
 
 const ProductResume: NextPage<{
@@ -109,7 +109,7 @@ const ProductResume: NextPage<{
       {/* 제품정보 */}
       <Link href={`/products/${staticProps.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <Product item={staticProps.product} size="sm" />
+          <ProductSummary item={staticProps.product} />
         </a>
       </Link>
 
