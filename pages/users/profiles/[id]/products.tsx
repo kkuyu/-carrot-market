@@ -19,8 +19,8 @@ import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/[id]/products";
 // @components
 import FeedbackProduct from "@components/groups/feedbackProduct";
-import FeedbackProductOthers from "@components/groups/feedbackProductOthers";
-import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
+import HandleProduct from "@components/groups/handleProduct";
+import ProductList from "@components/lists/productList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string = "") => {
   if (!id) return null;
@@ -112,10 +112,10 @@ const ProfileProducts: NextPage = () => {
       {/* 판매상품: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductWithFeedbackList list={products}>
-            {profileData?.profile.id === user?.id && <FeedbackProduct />}
-            {profileData?.profile.id === user?.id && <FeedbackProductOthers />}
-          </ProductWithFeedbackList>
+          <ProductList list={products}>
+            {profileData?.profile.id === user?.id && <FeedbackProduct key="FeedbackProduct" />}
+            {profileData?.profile.id === user?.id && <HandleProduct key="HandleProduct" className="p-3" />}
+          </ProductList>
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}을 불러오고있어요` : isReachingEnd ? `${activeTab?.name}을 모두 확인하였어요` : ""}</span>
           </div>

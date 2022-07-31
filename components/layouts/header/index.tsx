@@ -94,10 +94,7 @@ const Header = ({}: HeaderProps) => {
             onClick={() => {
               openPanel<ActionPanelProps>(ActionPanel, name, {
                 hasBackdrop: true,
-                actions:
-                  kebabActions?.map((item) => {
-                    return { ...item, onClick: item?.onClick ? item.onClick : () => console.log(item.key) };
-                  }) || [],
+                actions: kebabActions || [],
                 cancelBtn: "취소",
               });
             }}

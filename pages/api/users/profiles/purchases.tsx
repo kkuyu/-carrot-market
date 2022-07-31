@@ -5,16 +5,15 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
+type ProfilesPurchasesProduct = Product & {
+  records: Pick<Record, "id" | "kind" | "userId">[];
+  chats: (Chat & { _count: { chatMessages: number } })[];
+  reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+};
+
 export interface GetProfilesPurchasesResponse {
   success: boolean;
-  products: (
-    | (Product & {
-        records: Pick<Record, "id" | "kind" | "userId">[];
-        chats?: (Chat & { _count: { chatMessages: number } })[];
-        reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
-      })
-    | null
-  )[];
+  products: ProfilesPurchasesProduct[];
   pages: number;
   total: number;
   error?: {
@@ -94,7 +93,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // result
     const result: GetProfilesPurchasesResponse = {
       success: true,
-      products: records.map((record) => record.product),
+      products: records.map((record) => record.product).filter((product): product is ProfilesPurchasesProduct => !!product),
       pages: Math.ceil(totalRecords / displayRow),
       total: totalRecords,
     };

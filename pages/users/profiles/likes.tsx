@@ -16,7 +16,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesLikeResponse } from "@api/users/profiles/likes";
 // @components
-import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
+import ProductList from "@components/lists/productList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse) => {
   if (pageIndex === 0) return `/api/users/profiles/likes?page=1`;
@@ -63,9 +63,9 @@ const ProfileLikes: NextPage = () => {
       {/* 관심목록: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductWithFeedbackList list={products}>
+          <ProductList list={products}>
             <></>
-          </ProductWithFeedbackList>
+          </ProductList>
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? `관심목록을 불러오고있어요` : isReachingEnd ? `관심목록을 모두 확인하였어요` : ""}</span>
           </div>

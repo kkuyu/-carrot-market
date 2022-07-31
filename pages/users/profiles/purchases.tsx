@@ -17,7 +17,7 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesPurchasesResponse } from "@api/users/profiles/purchases";
 // @components
 import FeedbackProduct from "@components/groups/feedbackProduct";
-import ProductWithFeedbackList from "@components/lists/productWithFeedbackList";
+import ProductList from "@components/lists/productList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse) => {
   if (pageIndex === 0) return `/api/users/profiles/purchases?page=1`;
@@ -64,9 +64,9 @@ const ProfilePurchase: NextPage = () => {
       {/* 구매내역: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductWithFeedbackList list={products}>
-            <FeedbackProduct />
-          </ProductWithFeedbackList>
+          <ProductList list={products}>
+            <FeedbackProduct key="FeedbackProduct" />
+          </ProductList>
           <div className="px-5 py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? `구매내역을 불러오고있어요` : isReachingEnd ? `구매내역을 모두 확인하였어요` : ""}</span>
           </div>

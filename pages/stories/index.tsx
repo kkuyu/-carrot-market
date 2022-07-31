@@ -16,7 +16,7 @@ import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories
 import { GetUserResponse } from "@api/users/my";
 import { GetStoriesResponse } from "@api/stories";
 // @components
-import StoryWithFeedbackList from "@components/lists/storyWithFeedbackList";
+import StoryList from "@components/lists/storyList";
 import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
 
@@ -65,9 +65,9 @@ const StoryHome: NextPage = () => {
       {/* 동네생활: List */}
       {Boolean(stories.length) && (
         <div className="-mx-5">
-          <StoryWithFeedbackList list={stories}>
-            <FeedbackStory />
-          </StoryWithFeedbackList>
+          <StoryList list={stories}>
+            <FeedbackStory key="FeedbackStory" />
+          </StoryList>
           <div className="py-6 text-center border-t">
             <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
           </div>

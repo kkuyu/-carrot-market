@@ -13,13 +13,13 @@ import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
 
-export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
+export type HandleProductItem = GetProfilesProductsResponse["products"][0];
 
-export interface FeedbackProductProps {
-  item?: FeedbackProductItem;
+export interface HandleProductProps extends React.HTMLAttributes<HTMLButtonElement> {
+  item?: HandleProductItem;
 }
 
-const FeedbackProduct = ({ item }: FeedbackProductProps) => {
+const HandleProduct = ({ item, className }: HandleProductProps) => {
   const router = useRouter();
   const { user } = useUser();
 
@@ -81,7 +81,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   };
 
   return (
-    <button type="button" className="absolute top-0 right-0 p-3" onClick={openOthersPanel} disabled={saleLoading}>
+    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openOthersPanel} disabled={saleLoading}>
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
       </svg>
@@ -89,7 +89,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   );
 };
 
-export default React.memo(FeedbackProduct, (prev, next) => {
+export default React.memo(HandleProduct, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return true;
   return false;
 });
