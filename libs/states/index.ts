@@ -28,7 +28,7 @@ export interface PageLayoutTypes {
   header: {
     headerUtils: HeaderUtils[];
     headerColor?: string;
-    kebabActions?: { key: string; text: string; onClick?: () => void }[];
+    kebabActions?: { key: string; text: string; onClick: () => void }[];
     submitId?: string;
   };
   navBar: {

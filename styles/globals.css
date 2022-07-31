@@ -9,7 +9,12 @@ body {
 
 body.panel-open,
 body.modal-open {
-  overflow: hidden;
+  overflow-y: hidden;
+}
+
+body.panel-open #__next > div,
+body.modal-open #__next > div {
+  overflow-y: scroll;
 }
 
 button,

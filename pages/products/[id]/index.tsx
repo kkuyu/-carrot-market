@@ -229,8 +229,8 @@ const ProductDetail: NextPage<{
             ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
             : mode === "public"
             ? [
-                { key: "report", text: "신고" },
-                { key: "block", text: "이 사용자의 글 보지 않기" },
+                { key: "report", text: "신고", onClick: () => console.log("신고") },
+                { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
               ]
             : mode === "private" && saleRecord
             ? [
