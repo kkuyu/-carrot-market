@@ -23,9 +23,9 @@ export const middleware: NextMiddleware = (req) => {
       case "/verification/phone":
         return NextResponse.next();
       default:
-        if (/^\/products\/[0-9]*$/.test(url.pathname)) return NextResponse.next();
-        if (/^\/stories\/[0-9]*$/.test(url.pathname)) return NextResponse.next();
-        if (/^\/users\/profiles\/[0-9]*$/.test(url.pathname)) return NextResponse.next();
+        if (/^\/products\/\w*$/.test(url.pathname)) return NextResponse.next();
+        if (/^\/stories\/\w*$/.test(url.pathname)) return NextResponse.next();
+        if (/^\/users\/profiles\/\w*$/.test(url.pathname)) return NextResponse.next();
         url.pathname = "/welcome";
         return NextResponse.redirect(url);
     }

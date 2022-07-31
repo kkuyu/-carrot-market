@@ -162,13 +162,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const profileId = params?.id?.toString();
 
   // invalid params: profileId
-  // redirect: /
+  // 404
   if (!profileId || isNaN(+profileId)) {
     return {
-      redirect: {
-        permanent: false,
-        destination: `/`,
-      },
+      notFound: true,
     };
   }
 

@@ -97,12 +97,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const profileId = params?.id?.toString();
 
   // invalid params: profileId
-  // redirect: /
+  // redirect: /users/profiles/[id]
   if (!profileId || isNaN(+profileId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/`,
+        destination: `/users/profiles/${profileId}`,
       },
     };
   }
@@ -122,7 +122,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // not found profile
-  // 404
+  // redirect: /users/profiles/[id]
   if (!profile) {
     return {
       redirect: {

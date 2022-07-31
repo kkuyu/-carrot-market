@@ -153,12 +153,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const storyId = params?.id?.toString();
 
   // invalid params: storyId
-  // redirect: stories
+  // redirect: stories/[id]
   if (!storyId || isNaN(+storyId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/stories`,
+        destination: `/stories/${storyId}`,
       },
     };
   }

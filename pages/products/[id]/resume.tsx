@@ -208,11 +208,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const productId = params?.id?.toString();
 
   // invalid params: productId
+  // redirect: /products/[id]
   if (!productId || isNaN(+productId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/`,
+        destination: `/products/${productId}`,
       },
     };
   }
@@ -237,6 +238,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // invalid product: not found
+  // redirect: /products/[id]
   if (!product) {
     return {
       redirect: {

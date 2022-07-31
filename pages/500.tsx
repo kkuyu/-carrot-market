@@ -12,13 +12,13 @@ const Error500: NextPage = () => {
   const [message, setMessage] = useState("");
 
   const makeMessage = () => {
-    if (/^\/products\/[0-9]*$/.test(router.asPath)) {
+    if (/^\/products\/\w*$/.test(router.asPath)) {
       return "게시글을 불러올 수 없습니다.";
     }
-    if (/^\/stories\/[0-9]*$/.test(router.asPath)) {
+    if (/^\/stories\/\w*$/.test(router.asPath)) {
       return "게시글을 불러올 수 없습니다.";
     }
-    if (/^\/users\/profiles\/[0-9]*$/.test(router.asPath)) {
+    if (/^\/users\/profiles\/\w*$/.test(router.asPath)) {
       return "프로필을 불러올 수 없습니다.";
     }
     return "500";

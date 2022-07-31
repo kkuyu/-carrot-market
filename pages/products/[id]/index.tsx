@@ -392,13 +392,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const productId = params?.id?.toString();
 
   // invalid params: productId
-  // redirect: /
+  // 404
   if (!productId || isNaN(+productId)) {
     return {
-      redirect: {
-        permanent: false,
-        destination: `/`,
-      },
+      notFound: true,
     };
   }
 
