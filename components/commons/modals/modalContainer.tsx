@@ -55,8 +55,8 @@ const ModalContainer = ({ children, onClose }: ModalContainerProps) => {
   }, []);
 
   return (
-    <section ref={container} id="layout-modal" className="fixed top-0 left-0 right-0 bottom-0 w-full z-[200] overflow-y-scroll">
-      <div className="relative mx-auto w-full max-w-xl h-full">{children}</div>
+    <section ref={container} id="layout-modal" className="fixed-container top-0 bottom-0 z-[200]">
+      <div className="fixed-inner h-full">{children}</div>
     </section>
   );
 };

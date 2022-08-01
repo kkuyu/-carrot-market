@@ -107,8 +107,8 @@ const NavBar = ({}: NavBarProps) => {
   }
 
   return (
-    <div id="layout-nav-bar" className="fixed bottom-0 left-0 w-full z-[100]">
-      <nav className="mx-auto w-full h-16 max-w-xl border-t bg-white">
+    <div id="layout-nav-bar" className="fixed-container bottom-0 z-[100]">
+      <nav className="fixed-inner h-16 border-t bg-white">
         <div className="-mb-1 flex w-full h-full">
           {navBarUtils.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
           {navBarUtils.includes(NavBarUtils["Story"]) && <>{getUtils(NavBarUtils["Story"])}</>}

@@ -296,8 +296,8 @@ const ProductDetail: NextPage<{
         </div>
 
         {/* 가격, 채팅 */}
-        <div className="fixed bottom-0 left-0 w-full z-[50]">
-          <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
+        <div className="fixed-container bottom-0 z-[50]">
+          <div className="fixed-inner flex items-center h-16 border-t bg-white">
             <div className="relative grow pl-16 before:absolute before:top-1/2 before:left-16 before:-mt-2.5 before:-ml-2.5 before:w-[1px] before:h-5 before:bg-gray-300">
               {/* todo: 가격 제안 가능 여부 */}
               <strong>₩{product.price}</strong>

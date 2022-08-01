@@ -254,8 +254,8 @@ const StoryDetail: NextPage<{
 
       {/* 댓글/답변 입력 */}
       {(viewModel.mode === "public" || viewModel.mode === "private") && (
-        <div className="fixed bottom-0 left-0 w-full z-[50]">
-          <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
+        <div className="fixed-container bottom-0 z-[50]">
+          <div className="fixed-inner flex items-center h-16 border-t bg-white">
             <PostComment
               formData={formData}
               onValid={user?.id === -1 ? openSignUpModal : submitReComment}

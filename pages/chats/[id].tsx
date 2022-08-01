@@ -193,8 +193,8 @@ const ChatDetail: NextPage = () => {
         </div>
       )}
       {/* 채팅 입력 */}
-      <div className="fixed bottom-0 left-0 w-full z-[50]">
-        <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
+      <div className="fixed-container bottom-0 z-[50]">
+        <div className="fixed-inner flex items-center h-16 border-t bg-white">
           <SendMessage formData={formData} onValid={submitChatMessage} isLoading={sendChatMessageLoading} className="w-full pl-5 pr-3" />
         </div>
       </div>

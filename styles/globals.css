@@ -9,12 +9,36 @@ body {
 
 body.panel-open,
 body.modal-open {
-  overflow-y: hidden;
+  @apply overflow-y-hidden;
 }
 
-body.panel-open #__next > div,
-body.modal-open #__next > div {
-  overflow-y: scroll;
+body.panel-open .main,
+body.modal-open .main,
+body.panel-open .fixed-container .fixed-inner,
+body.modal-open .fixed-container .fixed-inner {
+  @apply overflow-y-scroll;
+}
+
+@screen sm {
+  body.panel-open .main,
+  body.modal-open .main,
+  body.panel-open .fixed-container .fixed-inner,
+  body.modal-open .fixed-container .fixed-inner {
+    @apply overflow-y-visible;
+  }
+  body.panel-open #__next,
+  body.modal-open #__next,
+  body.panel-open .fixed-container,
+  body.modal-open .fixed-container {
+    @apply overflow-y-scroll;
+  }
+}
+
+.fixed-container {
+  @apply fixed left-0 right-0 w-full;
+}
+.fixed-inner {
+  @apply relative mx-auto w-full max-w-screen-sm;
 }
 
 button,
@@ -45,7 +69,7 @@ strong {
 }
 
 .main {
-  @apply relative mx-auto w-full max-w-xl;
+  @apply relative mx-auto max-w-screen-sm;
   box-shadow: -1px 0px 0px 0px #e5e7eb, 1px 0px 0px 0px #e5e7eb;
 }
 .main:not(:first-child) {
@@ -86,8 +110,8 @@ strong {
   @apply indent-0;
 }
 .text-notice:before {
-  @apply inline-block -indent-1  w-5 h-5 align-text-top;
-  content: url("data:image/svg+xml; utf8, <svg fill='none' stroke='currentColor' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>");
+  @apply inline-block -indent-1 w-5 h-5 align-text-top;
+  content: url("data:image/svg+xml; utf8, <svg fill='none' stroke='rgb(0 0 0)' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'></path></svg>");
 }
 
 .block-arrow {

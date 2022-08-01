@@ -134,8 +134,8 @@ const Header = ({}: HeaderProps) => {
         <title>{seoTitle || title ? `${seoTitle || title}  | Carrot Market` : "Carrot Market"}</title>
       </Head>
       {Boolean(headerUtils.length) && (
-        <div id="layout-header" className={`fixed top-0 left-0 w-full z-[100] ${headerColor !== "transparent" ? "" : "is-transparent"}`}>
-          <header className={`relative mx-auto w-full max-w-xl h-12 ${headerColor !== "transparent" ? `bg-${headerColor} border-b text-black` : "bg-gradient-to-b from-black/20  text-white"}`}>
+        <div id="layout-header" className={`fixed-container top-0 z-[100] ${headerColor !== "transparent" ? "" : "is-transparent"}`}>
+          <header className={`fixed-inner h-12 ${headerColor !== "transparent" ? `bg-${headerColor} border-b text-black` : "bg-gradient-to-b from-black/20  text-white"}`}>
             {/* left utils */}
             <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
               {headerUtils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}

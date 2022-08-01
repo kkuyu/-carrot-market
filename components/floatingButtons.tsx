@@ -32,8 +32,8 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
   };
 
   return (
-    <div className="fixed bottom-0 left-0 w-full">
-      <div className="relative mx-auto w-full max-w-xl">
+    <div className="fixed-container bottom-0">
+      <div className="fixed-inner">
         {user?.id === -1 ? (
           // dummy user
           <button
