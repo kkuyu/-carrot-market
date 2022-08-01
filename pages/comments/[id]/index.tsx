@@ -37,7 +37,6 @@ const CommentsDetail: NextPage<{
   const { openModal } = useModal();
 
   // view model
-  const [mounted, setMounted] = useState(false);
   const [viewModel, setViewModel] = useState({
     mode: !user?.id ? "preview" : user?.id !== staticProps?.comment?.userId ? "public" : "private",
   });
@@ -49,7 +48,7 @@ const CommentsDetail: NextPage<{
     return getCommentTree(Math.max(...comment?.reComments.map((v) => v.depth)), [{ ...comment, reComments: [] }, ...comment?.reComments.map((v) => ({ ...v, reComments: [] }))]);
   }, [comment]);
   const [commentsQuery, setCommentsQuery] = useState("");
-  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(mounted && router.query.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
+  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
 
   // new comment
   const formData = useForm<PostCommentTypes>();
@@ -67,10 +66,10 @@ const CommentsDetail: NextPage<{
     },
   });
 
-  const moreReComments = (reCommentRefId: number, page: number) => {
+  const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
     const existComments = page !== 0 ? comment?.reComments : comment?.reComments?.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setComment((prev) => prev && { ...prev, reComments: existComments?.length ? [...existComments] : [] });
-    setCommentsQuery(() => `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
+    setCommentsQuery(() => `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}${cursorId !== -1 ? `&cursorId=${cursorId}` : ""}`);
   };
 
   const submitReComment = (data: PostCommentTypes) => {
@@ -112,6 +111,7 @@ const CommentsDetail: NextPage<{
 
     setLayout(() => ({
       title: "답글쓰기",
+      seoTitle: `${comment?.comment || ""} | 답글쓰기`,
       header: {
         headerUtils: ["back", "title"],
       },
@@ -119,7 +119,7 @@ const CommentsDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, comment?.userId]);
+  }, [user?.id, comment?.comment, comment?.userId]);
 
   // focus
   useEffect(() => {
@@ -128,9 +128,11 @@ const CommentsDetail: NextPage<{
     (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
   }, [comment?.id]);
 
+  // reset query
   useEffect(() => {
-    setMounted(true);
-  }, []);
+    if (router?.query?.id?.toString() === comment?.id?.toString()) return;
+    setCommentsQuery(() => "");
+  }, [router?.query?.id, comment?.id]);
 
   if (!comment) {
     return <NextError statusCode={404} />;
@@ -145,23 +147,19 @@ const CommentsDetail: NextPage<{
           </a>
         </Link>
       )}
-      <div className="mt-5">
-        <Comment item={comment} />
         <FeedbackComment item={comment} />
       </div>
       {/* 답글 목록: list */}
       {Boolean(treeReComments?.[0]?.reComments?.length) && (
         <div className="mt-2">
           <CommentList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
-            <FeedbackComment />
-            <CommentList />
           </CommentList>
         </div>
       )}
       {/* 답글 입력 */}
       {(viewModel.mode === "public" || viewModel.mode === "private") && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
-          <div className="relative flex items-center mx-auto w-full h-16 max-w-xl border-t bg-white">
+          <div className="relative flex items-center mx-auto w-full h-16 max-w-screen-sm border-t bg-white">
             <PostComment formData={formData} onValid={user?.id === -1 ? openSignUpModal : submitReComment} isLoading={commentLoading} commentType="답글" className="w-full pl-5 pr-3" />
           </div>
         </div>
@@ -181,13 +179,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const commentId = params?.id?.toString();
 
   // invalid params: commentId
-  // redirect: /
   if (!commentId || isNaN(+commentId)) {
     return {
-      redirect: {
-        permanent: false,
-        destination: `/`,
-      },
+      notFound: true,
     };
   }
 
@@ -250,6 +244,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
 
   const reComments = await client.storyComment.findMany({
     where: {
+      storyId: comment.storyId,
       reCommentRefId: comment.id,
       depth: comment.depth + 1,
     },
@@ -264,9 +259,43 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           avatar: true,
         },
       },
+      story: {
+        select: {
+          id: true,
+          userId: true,
+          category: true,
+        },
+      },
       _count: {
         select: {
           reComments: true,
+        },
+      },
+      reComments: {
+        take: 2,
+        orderBy: {
+          createdAt: "asc",
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          story: {
+            select: {
+              id: true,
+              userId: true,
+              category: true,
+            },
+          },
+          _count: {
+            select: {
+              reComments: true,
+            },
+          },
         },
       },
     },
@@ -276,7 +305,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       staticProps: {
-        comment: JSON.parse(JSON.stringify({ ...comment, reComments } || null)),
+        comment: JSON.parse(JSON.stringify({ ...comment, reComments: reComments.map(({ reComments, ...o }) => o).concat(reComments.flatMap((o) => o.reComments)) } || null)),
       },
     },
   };

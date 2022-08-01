@@ -27,7 +27,7 @@ export interface GetCommentsDetailResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
-    const { id: _id, includeReComments: _includeReComments, exists: _exists, page: _page, reCommentRefId: _reCommentRefId } = req.query;
+    const { id: _id, includeReComments: _includeReComments, exists: _exists, page: _page, reCommentRefId: _reCommentRefId, cursorId: _cursorId } = req.query;
 
     // request valid
     if (!_id) {
@@ -103,11 +103,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const exists = _exists ? JSON.parse(_exists?.toString()).map((id: number) => ({ id })) : [];
     const page = _page ? +_page?.toString() : null;
     const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : null;
-    const reComments = await client.storyComment.findMany({
+    const cursorId = _cursorId ? +_cursorId?.toString() : null;
+
+    const existComments = await client.storyComment.findMany({
       where: {
-        ...(reCommentRefId && page !== null
-          ? { OR: [...exists, { reCommentRefId, order: { lte: (page - 1) * 10 + 1 } }] }
-          : { OR: [...exists, { storyId: comment.storyId, reCommentRefId: comment.id, depth: comment.depth + 1 }] }),
+        storyId: comment.storyId,
+        OR: [...exists],
       },
       orderBy: {
         createdAt: "asc",
@@ -120,6 +121,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             avatar: true,
           },
         },
+        story: {
+          select: {
+            id: true,
+            userId: true,
+            category: true,
+          },
+        },
         _count: {
           select: {
             reComments: true,
@@ -128,10 +136,119 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
+    const pageComments = !(page !== null && reCommentRefId)
+      ? []
+      : await client.storyComment.findMany({
+          skip: cursorId ? 1 : 0,
+          ...(cursorId && { cursor: { id: cursorId } }),
+          ...(!cursorId && page > 1 ? {} : { take: page === 0 ? 0 : page === 1 ? 2 : 10 }),
+          where: {
+            storyId: comment.storyId,
+            reCommentRefId,
+          },
+          orderBy: {
+            createdAt: "asc",
+          },
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+            story: {
+              select: {
+                id: true,
+                userId: true,
+                category: true,
+              },
+            },
+            _count: {
+              select: {
+                reComments: true,
+              },
+            },
+          },
+        });
+
+    const defaultComments =
+      page !== null && reCommentRefId
+        ? []
+        : await client.storyComment.findMany({
+            where: {
+              storyId: comment.storyId,
+              reCommentRefId: comment.id,
+              depth: comment.depth + 1,
+              NOT: [...exists],
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                },
+              },
+              story: {
+                select: {
+                  id: true,
+                  userId: true,
+                  category: true,
+                },
+              },
+              _count: {
+                select: {
+                  reComments: true,
+                },
+              },
+              reComments: {
+                take: 2,
+                where: {
+                  NOT: [...exists],
+                },
+                orderBy: {
+                  createdAt: "asc",
+                },
+                include: {
+                  user: {
+                    select: {
+                      id: true,
+                      name: true,
+                      avatar: true,
+                    },
+                  },
+                  story: {
+                    select: {
+                      id: true,
+                      userId: true,
+                      category: true,
+                    },
+                  },
+                  _count: {
+                    select: {
+                      reComments: true,
+                    },
+                  },
+                },
+              },
+            },
+          });
+
     // result
     const result: GetCommentsDetailResponse = {
       success: true,
-      comment: { ...comment, reComments },
+      comment: {
+        ...comment,
+        reComments: existComments.concat(
+          pageComments,
+          defaultComments.map(({ reComments, ...o }) => o),
+          defaultComments.flatMap((o) => o.reComments)
+        ),
+      },
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

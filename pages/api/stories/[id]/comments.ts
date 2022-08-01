@@ -32,7 +32,7 @@ export interface PostStoriesCommentsResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
     try {
-      const { id: _id, exists: _exists, page: _page, reCommentRefId: _reCommentRefId } = req.query;
+      const { id: _id, exists: _exists, page: _page, reCommentRefId: _reCommentRefId, cursorId: _cursorId } = req.query;
       const { user } = req.session;
 
       // request valid
@@ -73,12 +73,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const exists = _exists ? JSON.parse(_exists?.toString()).map((id: number) => ({ id })) : [];
       const page = _page ? +_page?.toString() : null;
       const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : null;
-      const comments = await client.storyComment.findMany({
+      const cursorId = _cursorId ? +_cursorId?.toString() : null;
+
+      const existComments = await client.storyComment.findMany({
         where: {
           storyId: story.id,
-          ...(reCommentRefId && page !== null
-            ? { OR: [...exists, { reCommentRefId, order: { lte: (page - 1) * 10 + 1 } }] }
-            : { OR: [...exists, { depth: StoryCommentMinimumDepth }, { depth: StoryCommentMinimumDepth + 1, order: { gte: 0, lte: 1 } }] }),
+          OR: [...exists],
         },
         orderBy: {
           createdAt: "asc",
@@ -105,11 +105,117 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
         },
       });
+
+      const pageComments = !(page !== null && reCommentRefId)
+        ? []
+        : await client.storyComment.findMany({
+            skip: cursorId ? 1 : 0,
+            ...(cursorId && { cursor: { id: cursorId } }),
+            ...(!cursorId && page > 1 ? {} : { take: page === 0 ? 0 : page === 1 ? 2 : 10 }),
+            where: {
+              storyId: story.id,
+              reCommentRefId,
+            },
+            orderBy: {
+              createdAt: "asc",
+            },
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatar: true,
+                },
+              },
+              story: {
+                select: {
+                  id: true,
+                  userId: true,
+                  category: true,
+                },
+              },
+              _count: {
+                select: {
+                  reComments: true,
+                },
+              },
+            },
+          });
+
+      const defaultComments =
+        page !== null && reCommentRefId
+          ? []
+          : await client.storyComment.findMany({
+              where: {
+                storyId: story.id,
+                depth: StoryCommentMinimumDepth,
+                NOT: [...exists],
+              },
+              orderBy: {
+                createdAt: "asc",
+              },
+              include: {
+                user: {
+                  select: {
+                    id: true,
+                    name: true,
+                    avatar: true,
+                  },
+                },
+                story: {
+                  select: {
+                    id: true,
+                    userId: true,
+                    category: true,
+                  },
+                },
+                _count: {
+                  select: {
+                    reComments: true,
+                  },
+                },
+                reComments: {
+                  take: 2,
+                  where: {
+                    NOT: [...exists],
+                  },
+                  orderBy: {
+                    createdAt: "asc",
+                  },
+                  include: {
+                    user: {
+                      select: {
+                        id: true,
+                        name: true,
+                        avatar: true,
+                      },
+                    },
+                    story: {
+                      select: {
+                        id: true,
+                        userId: true,
+                        category: true,
+                      },
+                    },
+                    _count: {
+                      select: {
+                        reComments: true,
+                      },
+                    },
+                  },
+                },
+              },
+            });
+
       // result
       const result: GetStoriesCommentsResponse = {
         success: true,
         total,
-        comments,
+        comments: existComments.concat(
+          pageComments,
+          defaultComments.map(({ reComments, ...o }) => o),
+          defaultComments.flatMap((o) => o.reComments)
+        ),
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
@@ -225,7 +331,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           ...(reCommentRef
             ? {
                 depth: reCommentRef.depth + 1,
-                order: reCommentRef._count.reComments,
                 reCommentRef: {
                   connect: {
                     id: reCommentRef.id,
@@ -234,7 +339,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               }
             : {
                 depth: 0,
-                order: story.comments.length,
               }),
         },
       });

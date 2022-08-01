@@ -104,10 +104,10 @@ const StoryDetail: NextPage<{
     },
   });
 
-  const moreReComments = (reCommentRefId: number, page: number) => {
+  const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
     const existComments = page !== 0 ? comments : comments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setComments(() => [...existComments]);
-    setCommentsQuery(() => `exists=${JSON.stringify(existComments.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}`);
+    setCommentsQuery(() => `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}${cursorId !== -1 ? `&cursorId=${cursorId}` : ""}`);
   };
 
   const submitReComment = (data: PostCommentTypes) => {
@@ -158,6 +158,11 @@ const StoryDetail: NextPage<{
     if (!commentData?.success) return;
     setComments(() => [...commentData.comments]);
   }, [commentData]);
+
+  useEffect(() => {
+    if (router?.query?.id?.toString() === story?.id?.toString()) return;
+    setCommentsQuery(() => "");
+  }, [router?.query?.id, story?.id]);
 
   // setting layout
   useEffect(() => {
@@ -326,7 +331,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const comments = await client.storyComment.findMany({
     where: {
       storyId: story.id,
-      OR: [{ depth: StoryCommentMinimumDepth }, { depth: StoryCommentMinimumDepth + 1, order: { gte: 0, lte: 1 } }],
+      depth: StoryCommentMinimumDepth,
     },
     orderBy: {
       createdAt: "asc",
@@ -343,11 +348,39 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         select: {
           id: true,
           userId: true,
+          category: true,
         },
       },
       _count: {
         select: {
           reComments: true,
+        },
+      },
+      reComments: {
+        take: 2,
+        orderBy: {
+          createdAt: "asc",
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          story: {
+            select: {
+              id: true,
+              userId: true,
+              category: true,
+            },
+          },
+          _count: {
+            select: {
+              reComments: true,
+            },
+          },
         },
       },
     },
@@ -358,7 +391,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     props: {
       staticProps: {
         story: JSON.parse(JSON.stringify(story || {})),
-        comments: JSON.parse(JSON.stringify(comments || {})),
+        comments: JSON.parse(JSON.stringify(comments.map(({ reComments, ...o }) => o).concat(comments.flatMap((o) => o.reComments)) || {})),
       },
     },
   };

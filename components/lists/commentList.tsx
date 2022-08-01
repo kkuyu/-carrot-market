@@ -13,7 +13,7 @@ interface CommentListProps {
   depth?: number;
   reCommentRefId?: number;
   countReComments?: number;
-  moreReComments?: (reCommentRefId: number, page: number) => void;
+  moreReComments?: (page: number, reCommentRefId: number, cursorId: number) => void;
   children?: React.ReactNode;
 }
 
@@ -37,7 +37,7 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
     if (!reCommentRefId) return;
     if (!moreReComments) return;
     setPage(page);
-    moreReComments(reCommentRefId, page);
+    moreReComments(page, reCommentRefId, !list.length ? -1 : list[list.length - 1].id);
   };
 
   const clickComment = () => {
