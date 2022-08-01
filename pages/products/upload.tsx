@@ -26,7 +26,6 @@ const ProductUpload: NextPage = () => {
   const [photoLoading, setPhotoLoading] = useState(false);
   const [uploadProduct, { loading }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
-      setPhotoLoading(false);
       router.replace(`/products/${data.product.id}`);
     },
     onError: (data) => {
@@ -43,7 +42,7 @@ const ProductUpload: NextPage = () => {
     if (loading || photoLoading) return;
 
     if (!_photos || !_photos.length) {
-      uploadProduct({ ...data, photos: "", ...currentAddr });
+      uploadProduct({ ...data, photos: [], ...currentAddr });
       return;
     }
 
@@ -73,7 +72,7 @@ const ProductUpload: NextPage = () => {
       photos.push(imageResponse.result.id);
     }
 
-    uploadProduct({ ...data, photos: photos.join(","), ...currentAddr });
+    uploadProduct({ ...data, photos, ...currentAddr });
   };
 
   useEffect(() => {

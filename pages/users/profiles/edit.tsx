@@ -3,43 +3,37 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import { SWRConfig } from "swr";
 // @libs
 import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
+import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { PostUserResponse } from "@api/users/my";
+import { GetUserResponse, PostUserResponse } from "@api/users/my";
 import { PostDummyResponse } from "@api/users/dummy";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
 import EditProfile, { EditProfileTypes } from "@components/forms/editProfile";
 
-const ProfileEdit: NextPage<{
-  staticProps: {
-    profile: GetProfilesDetailResponse["profile"];
-  };
-}> = ({ staticProps }) => {
+const ProfileEdit: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const isDummyProfile = staticProps.profile.id === -1;
+  const { user, mutate: mutateUser } = useUser();
 
-  const formData = useForm<EditProfileTypes>({
-    defaultValues: {
-      name: staticProps?.profile?.name,
-      concerns: !staticProps?.profile?.concerns ? [] : (staticProps.profile.concerns.split(",") as EditProfileTypes["concerns"]),
-    },
-  });
+  const formData = useForm<EditProfileTypes>();
 
-  const [photoLoading, setPhotoLoading] = useState(false);
+  const [photoLoading, setPhotoLoading] = useState(true);
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>(`/api/users/my`, {
-    onSuccess: (data) => {
-      router.replace(`/users/profiles`);
+    onSuccess: async (data) => {
+      await mutateUser();
+      router.replace(`/users/profiles/${user?.id}`);
     },
     onError: (data) => {
+      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -52,6 +46,7 @@ const ProfileEdit: NextPage<{
       router.replace(`/users/profiles`);
     },
     onError: (data) => {
+      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -61,45 +56,45 @@ const ProfileEdit: NextPage<{
   });
 
   const setDefaultPhotos = async () => {
-    if (!staticProps?.profile || !staticProps?.profile?.avatar) return;
+    if (!user || !user?.avatar) {
+      setPhotoLoading(false);
+    }
 
     const transfer = new DataTransfer();
-    const photos = staticProps.profile.avatar.length ? staticProps.profile.avatar.split(",") : [];
+    const photos = user?.avatar?.length ? user?.avatar?.split(",") : [];
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       if (file !== null) transfer.items.add(file);
     }
 
     formData.setValue("photos", transfer.files);
+    setPhotoLoading(false);
   };
 
   const submitProfileUpdate = async ({ photos: _photos, ...data }: EditProfileTypes) => {
-    const concerns = !data?.concerns || !data?.concerns?.length ? "" : data.concerns.join(",");
-
-    if (isDummyProfile) {
+    if (user?.id === -1) {
       if (updateDummyLoading || photoLoading) return;
-      updateDummy({ ...data, concerns });
+      updateDummy({ ...data });
       return;
     }
 
     if (updateUserLoading || photoLoading) return;
     if (!_photos || !_photos.length) {
-      updateUser({ ...data, photos: "", concerns });
+      updateUser({ ...data, photos: [] });
       return;
     }
 
     let photos = [];
     setPhotoLoading(true);
-
     for (let index = 0; index < _photos.length; index++) {
       // same photo
-      if (staticProps?.profile?.avatar && staticProps.profile.avatar.includes(_photos[index].name)) {
+      if (user?.avatar && user.avatar.includes(_photos[index].name)) {
         photos.push(_photos[index].name);
         continue;
       }
       // new photo
       const form = new FormData();
-      form.append("file", _photos[index], `${staticProps.profile.id}-${index}-${_photos[index].name}`);
+      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
       // get cloudflare file data
       const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
       if (!fileResponse.success) {
@@ -119,16 +114,18 @@ const ProfileEdit: NextPage<{
       photos.push(imageResponse.result.id);
     }
 
-    updateUser({
-      ...data,
-      photos: photos.join(","),
-      concerns,
-    });
+    updateUser({ ...data, photos });
   };
 
   useEffect(() => {
+    if (!user) return;
+    setPhotoLoading(true);
+    formData.setValue("name", user?.name);
+    formData.setValue("concerns", !user?.concerns ? [] : (user.concerns.split(",") as EditProfileTypes["concerns"]));
     setDefaultPhotos();
+  }, [user?.id]);
 
+  useEffect(() => {
     setLayout(() => ({
       title: "프로필 수정",
       header: {
@@ -147,10 +144,26 @@ const ProfileEdit: NextPage<{
         formId="edit-profile"
         formData={formData}
         onValid={submitProfileUpdate}
-        isDummyProfile={isDummyProfile}
-        isLoading={isDummyProfile ? updateDummyLoading : updateUserLoading || photoLoading}
+        isDummyProfile={user?.id === -1}
+        isLoading={user?.id === -1 ? updateDummyLoading : updateUserLoading || photoLoading}
       />
     </div>
+  );
+};
+
+const Page: NextPage<{
+  getUser: { response: GetUserResponse };
+}> = ({ getUser }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          "/api/users/my": getUser.response,
+        },
+      }}
+    >
+      <ProfileEdit />
+    </SWRConfig>
   );
 };
 
@@ -170,11 +183,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      staticProps: {
-        profile: JSON.parse(JSON.stringify(ssrUser.profile || ssrUser.dummyProfile || {})),
+      getUser: {
+        response: {
+          success: true,
+          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
+          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
+          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
+        },
       },
     },
   };
 });
 
-export default ProfileEdit;
+export default Page;

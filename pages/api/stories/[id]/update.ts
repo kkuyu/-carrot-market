@@ -18,11 +18,16 @@ export interface PostStoriesUpdateResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
-    const { photos = "", category, content } = req.body;
+    const { photos = [], category, content } = req.body;
     const { user } = req.session;
 
     // request valid
     if (!_id) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (photos && !Array.isArray(photos)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -51,7 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         id: story.id,
       },
       data: {
-        photos,
+        photos: photos.join(","),
         category,
         content,
       },

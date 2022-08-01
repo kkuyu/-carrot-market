@@ -4,9 +4,11 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
+import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -20,22 +22,23 @@ import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ReviewProduct, { ReviewProductTypes } from "@components/forms/reviewProduct";
 
-const ProductReview: NextPage<{
-  staticProps: {
-    product: GetProductsDetailResponse["product"];
-    role: "sellUser" | "purchaseUser";
-    sellUser: GetProfilesDetailResponse["profile"];
-    purchaseUser: GetProfilesDetailResponse["profile"];
-  };
-}> = ({ staticProps }) => {
+const ProductReview: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const formData = useForm<ReviewProductTypes>({
-    defaultValues: {
-      role: staticProps.role,
-    },
-  });
+  const { user } = useUser();
+
+  const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+
+  const role = user?.id === productData?.product.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = productData?.product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = productData?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
+  const existsReview = productData?.product?.reviews.find((review) => review.role === role && review[`${role}Id`] === user?.id);
+
+  const { data: sellUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/users/profiles/${role === "sellUser" ? user?.id : productData?.product?.userId}` : null);
+  const { data: purchaseUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/users/profiles/${role === "sellUser" ? purchaseRecord?.userId : user?.id}` : null);
+
+  const formData = useForm<ReviewProductTypes>();
   const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
     onSuccess: (data) => {
       router.replace(`/reviews/${data.review?.id}`);
@@ -53,11 +56,22 @@ const ProductReview: NextPage<{
     if (loading) return;
     uploadReview({
       ...data,
-      purchaseUserId: staticProps?.purchaseUser.id,
-      sellUserId: staticProps?.sellUser.id,
-      productId: staticProps.product.id,
+      purchaseUserId: purchaseUser?.profile?.id,
+      sellUserId: sellUser?.profile?.id,
+      productId: productData?.product?.id,
     });
   };
+
+  useEffect(() => {
+    if (!role) return;
+    formData.setValue("role", role);
+  }, [role]);
+
+  useEffect(() => {
+    if (saleRecord) router.replace(`/reviews/${productData?.product?.id}`);
+    if (!purchaseRecord) router.replace(`/products/${productData?.product?.id}/purchase`);
+    if (purchaseRecord && existsReview) router.replace(`/reviews/${existsReview.id}`);
+  }, [saleRecord, purchaseRecord, existsReview]);
 
   useEffect(() => {
     setLayout(() => ({
@@ -71,36 +85,41 @@ const ProductReview: NextPage<{
     }));
   }, []);
 
+  if (!productData?.product) {
+    return null;
+  }
+
   return (
     <div className="container pb-5">
       {/* 제품정보 */}
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
-        <Link href={`/products/${staticProps.product.id}`}>
+        <Link href={`/products/${productData?.product?.id}`}>
           <a className="">
-            <ProductSummary item={staticProps.product} />
+            <ProductSummary item={productData?.product} />
           </a>
         </Link>
-        {staticProps.role === "sellUser" && !staticProps.product.reviews.length && (
+        {role === "sellUser" && !productData?.product?.reviews.length && (
           <div className="mt-2">
-            <Link href={`/products/${staticProps.product.id}/purchase`} passHref>
+            <Link href={`/products/${productData?.product?.id}/purchase`} passHref>
               <Buttons tag="a" status="default" size="sm" text="구매자 변경하기" className="!inline-block !w-auto" />
             </Link>
           </div>
         )}
       </div>
 
+      {/* 안내 */}
       <div className="mt-5">
-        {staticProps.role === "sellUser" ? (
+        {role === "sellUser" ? (
           <strong className="text-lg">
-            {`${staticProps?.sellUser?.name}님,`}
+            {`${sellUser?.profile?.name}님,`}
             <br />
-            {`${staticProps?.purchaseUser?.name}님과 거래가 어떠셨나요?`}
+            {`${purchaseUser?.profile?.name}님과 거래가 어떠셨나요?`}
           </strong>
-        ) : staticProps.role === "purchaseUser" ? (
+        ) : role === "purchaseUser" ? (
           <strong className="text-lg">
-            {`${staticProps?.purchaseUser?.name}님,`}
+            {`${purchaseUser?.profile?.name}님,`}
             <br />
-            {`${staticProps?.sellUser?.name}님과 거래가 어떠셨나요?`}
+            {`${sellUser?.profile?.name}님과 거래가 어떠셨나요?`}
           </strong>
         ) : null}
         <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
@@ -111,6 +130,26 @@ const ProductReview: NextPage<{
         <ReviewProduct formData={formData} onValid={submitReviewProduct} />
       </div>
     </div>
+  );
+};
+
+const Page: NextPage<{
+  getProduct: { response: GetProductsDetailResponse };
+  getProfile: { response: GetProfilesDetailResponse };
+  getOtherProfile: { response: GetProfilesDetailResponse };
+}> = ({ getProduct, getProfile, getOtherProfile }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+          [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
+          [`/api/users/profiles/${getOtherProfile.response.profile.id}`]: getOtherProfile.response,
+        },
+      }}
+    >
+      <ProductReview />
+    </SWRConfig>
   );
 };
 
@@ -215,7 +254,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // not purchase product
-  // redirect: /products/id/review
+  // redirect: /products/id/purchase
   if (!purchaseRecord) {
     return {
       redirect: {
@@ -236,7 +275,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // purchase user
+  // other user
   const findUser = await client.user.findUnique({
     where: {
       id: role === "sellUser" ? purchaseRecord.userId : product.userId,
@@ -245,14 +284,26 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      staticProps: {
-        product: JSON.parse(JSON.stringify(product || {})),
-        role: role,
-        sellUser: JSON.parse(JSON.stringify(role === "sellUser" ? ssrUser.profile : findUser || {})),
-        purchaseUser: JSON.parse(JSON.stringify(role === "sellUser" ? findUser : ssrUser.profile || {})),
+      getProduct: {
+        response: {
+          success: true,
+          product: JSON.parse(JSON.stringify(product || [])),
+        },
+      },
+      getProfile: {
+        response: {
+          success: true,
+          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
+        },
+      },
+      getOtherProfile: {
+        response: {
+          success: true,
+          profile: JSON.parse(JSON.stringify(findUser || {})),
+        },
       },
     },
   };
 });
 
-export default ProductReview;
+export default Page;

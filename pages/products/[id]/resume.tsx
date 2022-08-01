@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
@@ -21,29 +22,29 @@ import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
 
-const ProductResume: NextPage<{
-  staticProps: {
-    product: GetProductsDetailResponse["product"];
-  };
-}> = ({ staticProps }) => {
+const ProductResume: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user } = useUser();
 
   const [state, setState] = useState<"HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null>(null);
+  const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
   const today = new Date();
   const targetDate = (() => {
     let target: Date | null = null;
     let nextTarget: Date | null = null;
-    if (staticProps.product.resumeCount < 15) {
-      target = new Date(staticProps.product.resumeAt);
-      target.setDate(target.getDate() + (2 + staticProps.product.resumeCount));
+    if (!productData?.product) {
+      return [target, nextTarget];
     }
-    if (target && staticProps.product.resumeCount + 1 < 15) {
-      nextTarget = new Date(target);
-      nextTarget.setDate(nextTarget.getDate() + (2 + staticProps.product.resumeCount));
+    if (productData?.product?.resumeCount < 15) {
+      target = new Date(productData?.product?.resumeAt);
+      target.setDate(target.getDate() + (2 + productData?.product?.resumeCount));
+    }
+    if (target && productData?.product?.resumeCount + 1 < 15) {
+      nextTarget = target.toISOString().replace(/T.*$/, "") > today.toISOString().replace(/T.*$/, "") ? new Date(target) : new Date(today);
+      nextTarget.setDate(nextTarget.getDate() + (2 + productData?.product?.resumeCount));
     }
     return [target, nextTarget];
   })();
@@ -53,12 +54,7 @@ const ProductResume: NextPage<{
     return [target, nextTarget];
   })();
 
-  const formData = useForm<ResumeProductTypes>({
-    defaultValues: {
-      price: staticProps.product.price,
-    },
-  });
-
+  const formData = useForm<ResumeProductTypes>();
   const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
       router.replace(`/users/profiles/${data.product.userId}/products`);
@@ -81,14 +77,18 @@ const ProductResume: NextPage<{
   };
 
   useEffect(() => {
-    if (targetDate[0] === null) {
-      setState("MaxCount");
-      return;
-    }
+    if (!productData?.product) return;
 
-    if (today > targetDate[0]) setState(staticProps.product.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct");
-    if (today < targetDate[0]) setState("HoldOff");
+    setState(() => {
+      if (targetDate[0] === null) return "MaxCount";
+      if (today > targetDate[0]) return productData?.product?.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct";
+      if (today < targetDate[0]) return "HoldOff";
+      return null;
+    });
+    formData.setValue("price", productData?.product?.price);
+  }, [productData?.product?.id]);
 
+  useEffect(() => {
     setLayout(() => ({
       title: "끌어올리기",
       header: {
@@ -100,6 +100,10 @@ const ProductResume: NextPage<{
     }));
   }, []);
 
+  if (!productData?.product) {
+    return null;
+  }
+
   if (state === null) {
     return null;
   }
@@ -107,9 +111,9 @@ const ProductResume: NextPage<{
   return (
     <div className="container pb-5">
       {/* 제품정보 */}
-      <Link href={`/products/${staticProps.product.id}`}>
+      <Link href={`/products/${productData?.product?.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <ProductSummary item={staticProps.product} />
+          <ProductSummary item={productData?.product} />
         </a>
       </Link>
 
@@ -183,11 +187,27 @@ const ProductResume: NextPage<{
             가격을 낮춰보세요
           </strong>
           <div className="mt-5">
-            <ResumeProduct formData={formData} onValid={submitResumeProduct} isLoading={loading} originalPrice={staticProps.product.price} targetDate={targetDate} diffTime={diffTime} />
+            <ResumeProduct formData={formData} onValid={submitResumeProduct} isLoading={loading} originalPrice={productData?.product?.price} targetDate={targetDate} diffTime={diffTime} />
           </div>
         </div>
       )}
     </div>
+  );
+};
+
+const Page: NextPage<{
+  getProduct: { response: GetProductsDetailResponse };
+}> = ({ getProduct }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+        },
+      }}
+    >
+      <ProductResume />
+    </SWRConfig>
   );
 };
 
@@ -273,11 +293,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      staticProps: {
-        product: JSON.parse(JSON.stringify(product || {})),
+      getProduct: {
+        response: {
+          success: true,
+          product: JSON.parse(JSON.stringify(product || [])),
+        },
       },
     },
   };
 });
 
-export default ProductResume;
+export default Page;

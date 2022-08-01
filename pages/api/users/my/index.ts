@@ -99,6 +99,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         error.name = "InvalidRequestBody";
         throw error;
       }
+      if (photos && !Array.isArray(photos)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+      if (concerns && !Array.isArray(concerns)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
       if (emdType && !isInstance(emdType, EmdType)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
@@ -121,8 +131,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
       let userPayload: Partial<User> = {
         ...(name && { name }),
-        ...((photos || photos === "") && { avatar: photos }),
-        ...((concerns || concerns === "") && { concerns }),
+        ...(photos && { avatar: photos.join(",") }),
+        ...(concerns && { concerns: concerns.join(",") }),
       };
 
       // check data: email

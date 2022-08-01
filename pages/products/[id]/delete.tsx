@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
@@ -17,20 +18,18 @@ import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 
-const ProductDelete: NextPage<{
-  staticProps: {
-    product: GetProductsDetailResponse["product"];
-  };
-}> = ({ staticProps }) => {
+const ProductDelete: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
-  const foundChat = staticProps.product?.chats?.filter((chat) => chat._count.chatMessages > 0);
-  const foundReview = staticProps.product.reviews;
+  const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+
+  const foundChat = productData?.product?.chats?.filter((chat) => chat._count.chatMessages > 0) || [];
+  const foundReview = productData?.product?.reviews || [];
 
   const [deleteProduct, { loading: deleteLoading }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
     onSuccess: (data) => {
-      router.replace(`/users/profiles/${staticProps.product.userId}/products`);
+      router.replace(`/users/profiles/${productData?.product?.userId}/products`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -58,13 +57,17 @@ const ProductDelete: NextPage<{
     }));
   }, []);
 
+  if (!productData?.product) {
+    return null;
+  }
+
   return (
     <div className="container pb-5">
       {/* 제품정보 */}
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
-        <Link href={`/products/${staticProps.product.id}`}>
+        <Link href={`/products/${productData?.product?.id}`}>
           <a className="">
-            <ProductSummary item={staticProps.product} />
+            <ProductSummary item={productData?.product} />
           </a>
         </Link>
       </div>
@@ -105,6 +108,22 @@ const ProductDelete: NextPage<{
 
       <Buttons type="button" text="삭제하기" className="mt-5" disabled={false} onClick={clickDelete} />
     </div>
+  );
+};
+
+const Page: NextPage<{
+  getProduct: { response: GetProductsDetailResponse };
+}> = ({ getProduct }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+        },
+      }}
+    >
+      <ProductDelete />
+    </SWRConfig>
   );
 };
 
@@ -200,11 +219,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      staticProps: {
-        product: JSON.parse(JSON.stringify(product || {})),
+      getProduct: {
+        response: {
+          success: true,
+          product: JSON.parse(JSON.stringify(product || [])),
+        },
       },
     },
   };
 });
 
-export default ProductDelete;
+export default Page;

@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
 // @libs
 import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
@@ -18,29 +19,23 @@ import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
 import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
-const StoryUpload: NextPage<{
-  staticProps: {
-    story: GetStoriesDetailResponse["story"];
-  };
-}> = ({ staticProps }) => {
+const StoryUpload: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user } = useUser();
 
-  const [photoLoading, setPhotoLoading] = useState(false);
+  const { data: storyData, mutate } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
 
-  const formData = useForm<EditStoryTypes>({
-    defaultValues: {
-      category: staticProps.story.category as EditStoryTypes["category"],
-      content: staticProps.story.content,
-    },
-  });
+  const formData = useForm<EditStoryTypes>();
+  const [photoLoading, setPhotoLoading] = useState(true);
   const [editStory, { loading }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      await mutate((prev) => prev && { ...prev, story: { ...prev?.story, ...data?.story } });
       router.replace(`/stories/${data.story.id}`);
     },
     onError: (data) => {
+      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -50,23 +45,28 @@ const StoryUpload: NextPage<{
   });
 
   const setDefaultPhotos = async () => {
-    if (!staticProps?.story || staticProps?.story?.photos) return;
+    if (!storyData?.story || !storyData?.story?.photos) {
+      setPhotoLoading(false);
+      return;
+    }
 
     const transfer = new DataTransfer();
-    const photos = staticProps.story.photos.length ? staticProps.story.photos.split(",") : [];
+    const photos = storyData?.story?.photos?.length ? storyData?.story.photos.split(",") : [];
+    console.log(photos);
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       if (file !== null) transfer.items.add(file);
     }
 
     formData.setValue("photos", transfer.files);
+    setPhotoLoading(false);
   };
 
   const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
     if (loading || photoLoading) return;
 
     if (!_photos || !_photos.length) {
-      editStory({ ...data });
+      editStory({ ...data, photos: [] });
       return;
     }
 
@@ -75,7 +75,7 @@ const StoryUpload: NextPage<{
 
     for (let index = 0; index < _photos.length; index++) {
       // same photo
-      if (staticProps?.story?.photos && staticProps.story.photos.includes(_photos[index].name)) {
+      if (storyData?.story?.photos && storyData?.story.photos.includes(_photos[index].name)) {
         photos.push(_photos[index].name);
         continue;
       }
@@ -101,12 +101,18 @@ const StoryUpload: NextPage<{
       photos.push(imageResponse.result.id);
     }
 
-    editStory({ photos: photos.join(","), ...data });
+    editStory({ photos, ...data });
   };
 
   useEffect(() => {
+    if (!storyData?.story) return;
+    setPhotoLoading(true);
+    formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
+    formData.setValue("content", storyData?.story?.content);
     setDefaultPhotos();
+  }, [storyData?.story?.id]);
 
+  useEffect(() => {
     setLayout(() => ({
       title: "동네생활 글 수정",
       header: {
@@ -121,8 +127,24 @@ const StoryUpload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="edit-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={staticProps?.story?.emdPosNm || ""} />
+      <EditStory formId="edit-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
     </div>
+  );
+};
+
+const Page: NextPage<{
+  getStory: { response: GetStoriesDetailResponse };
+}> = ({ getStory }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/stories/${getStory.response.story.id}`]: getStory.response,
+        },
+      }}
+    >
+      <StoryUpload />
+    </SWRConfig>
   );
 };
 
@@ -194,11 +216,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      staticProps: {
-        story: JSON.parse(JSON.stringify(story || {})),
+      getStory: {
+        response: {
+          success: true,
+          story: JSON.parse(JSON.stringify(story || [])),
+        },
       },
     },
   };
 });
 
-export default StoryUpload;
+export default Page;

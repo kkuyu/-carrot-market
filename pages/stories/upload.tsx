@@ -29,6 +29,7 @@ const StoryUpload: NextPage = () => {
       router.replace(`/stories/${data.story.id}`);
     },
     onError: (data) => {
+      setPhotoLoading(false);
       switch (data?.error?.name) {
         default:
           console.error(data.error);
@@ -41,7 +42,7 @@ const StoryUpload: NextPage = () => {
     if (loading || photoLoading) return;
 
     if (!_photos || !_photos.length) {
-      uploadStory({ ...data, photos: "", ...currentAddr });
+      uploadStory({ ...data, photos: [], ...currentAddr });
       return;
     }
 
@@ -71,7 +72,7 @@ const StoryUpload: NextPage = () => {
       photos.push(imageResponse.result.id);
     }
 
-    uploadStory({ photos: photos.join(","), ...data, ...currentAddr });
+    uploadStory({ photos, ...data, ...currentAddr });
   };
 
   useEffect(() => {

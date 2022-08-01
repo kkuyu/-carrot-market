@@ -3,6 +3,7 @@ import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
 // @libs
 import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
@@ -18,29 +19,19 @@ import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
-const ProductUpload: NextPage<{
-  staticProps: {
-    product: GetProductsDetailResponse["product"];
-  };
-}> = ({ staticProps }) => {
+const ProductUpload: NextPage = () => {
   const router = useRouter();
   const setLayout = useSetRecoilState(PageLayout);
 
   const { user } = useUser();
 
-  const formData = useForm<EditProductTypes>({
-    defaultValues: {
-      category: staticProps?.product?.category as EditProductTypes["category"],
-      name: staticProps?.product?.name,
-      description: staticProps?.product?.description,
-      price: staticProps?.product?.price,
-    },
-  });
+  const { data: productData, mutate } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
-  const [photoLoading, setPhotoLoading] = useState(false);
+  const formData = useForm<EditProductTypes>();
+  const [photoLoading, setPhotoLoading] = useState(true);
   const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
-    onSuccess: (data) => {
-      setPhotoLoading(false);
+    onSuccess: async (data) => {
+      await mutate((prev) => prev && { ...prev, product: { ...prev?.product, ...data?.product } });
       router.replace(`/products/${data.product.id}`);
     },
     onError: (data) => {
@@ -54,33 +45,36 @@ const ProductUpload: NextPage<{
   });
 
   const setDefaultPhotos = async () => {
-    if (!staticProps?.product || !staticProps?.product?.photos) return;
+    if (!productData?.product || !productData?.product?.photos) {
+      setPhotoLoading(false);
+      return;
+    }
 
     const transfer = new DataTransfer();
-    const photos = staticProps.product.photos.length ? staticProps.product.photos.split(",") : [];
+    const photos = productData?.product?.photos.length ? productData?.product.photos.split(",") : [];
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       if (file !== null) transfer.items.add(file);
     }
 
     formData.setValue("photos", transfer.files);
+    setPhotoLoading(false);
   };
 
   const submitEditProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (loading || photoLoading) return;
 
     if (!_photos || !_photos.length) {
-      editProduct({ ...data, photos: "" });
+      editProduct({ ...data, photos: [] });
       return;
     }
 
     let photos = [];
     setPhotoLoading(true);
-
     for (let index = 0; index < _photos.length; index++) {
       try {
         // same photo
-        if (staticProps?.product?.photos && staticProps.product.photos.includes(_photos[index].name)) {
+        if (productData?.product?.photos && productData?.product.photos.includes(_photos[index].name)) {
           photos.push(_photos[index].name);
           continue;
         }
@@ -109,12 +103,20 @@ const ProductUpload: NextPage<{
       }
     }
 
-    editProduct({ photos: photos.join(","), ...data });
+    editProduct({ photos, ...data });
   };
 
   useEffect(() => {
+    if (!productData?.product) return;
+    setPhotoLoading(true);
+    formData.setValue("category", productData?.product?.category as EditProductTypes["category"]);
+    formData.setValue("name", productData?.product?.name);
+    formData.setValue("description", productData?.product?.description);
+    formData.setValue("price", productData?.product?.price);
     setDefaultPhotos();
+  }, [productData?.product?.id]);
 
+  useEffect(() => {
     setLayout(() => ({
       title: "중고거래 글 수정",
       header: {
@@ -129,8 +131,24 @@ const ProductUpload: NextPage<{
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="edit-product" formData={formData} onValid={submitEditProduct} isLoading={loading || photoLoading} emdPosNm={staticProps?.product?.emdPosNm || ""} />
+      <EditProduct formId="edit-product" formData={formData} onValid={submitEditProduct} isLoading={loading || photoLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
+  );
+};
+
+const Page: NextPage<{
+  getProduct: { response: GetProductsDetailResponse };
+}> = ({ getProduct }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+        },
+      }}
+    >
+      <ProductUpload />
+    </SWRConfig>
   );
 };
 
@@ -201,11 +219,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
-      staticProps: {
-        product: JSON.parse(JSON.stringify(product || {})),
+      getProduct: {
+        response: {
+          success: true,
+          product: JSON.parse(JSON.stringify(product || [])),
+        },
       },
     },
   };
 });
 
-export default ProductUpload;
+export default Page;
