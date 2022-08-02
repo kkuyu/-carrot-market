@@ -11,11 +11,11 @@ import Profiles, { ProfilesProps } from "@components/profiles";
 
 export type CommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
-export interface CommentProps {
+export interface CommentProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: CommentItem;
 }
 
-const Comment = ({ item }: CommentProps) => {
+const Comment = ({ item, ...rest }: CommentProps) => {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -25,16 +25,17 @@ const Comment = ({ item }: CommentProps) => {
   if (!item) return null;
   if (item.depth < StoryCommentMinimumDepth) null;
   if (item.depth > StoryCommentMaximumDepth) null;
+  if (!item?.comment) return <p className="text-notice opacity-60">댓글 작성자가 삭제한 댓글이에요</p>;
 
   const today = new Date();
   const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
   const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
 
   return (
-    <div className="relative">
+    <div className="relative" {...rest}>
       <Link href={`/users/profiles/${item?.user?.id}`}>
         <a className="block">
-          <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item.emdPosNm} diffTime={mounted ? diffTime : ""} size="tiny" />
+          <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item?.emdPosNm} diffTime={mounted ? diffTime : ""} size="tiny" />
         </a>
       </Link>
       <div className="mt-1 pl-11">

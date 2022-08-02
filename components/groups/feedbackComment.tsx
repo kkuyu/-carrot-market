@@ -42,6 +42,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   if (!item) return null;
   if (item.depth < StoryCommentMinimumDepth) null;
   if (item.depth > StoryCommentMaximumDepth) null;
+  if (!item?.comment) return null;
 
   const likeRecords = data?.comment?.records?.filter((record) => record.kind === Kind.CommentLike) || [];
   const liked = likeRecords.find((record) => record.userId === user?.id);

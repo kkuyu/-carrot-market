@@ -6,7 +6,8 @@ import useUser from "@libs/client/useUser";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @components
 import Comment, { CommentItem } from "@components/cards/comment";
-import FeedbackComment, { FeedbackCommentProps } from "@components/groups/feedbackComment";
+import { HandleCommentProps } from "@components/groups/handleComment";
+import { FeedbackCommentProps } from "@components/groups/feedbackComment";
 
 interface CommentListProps {
   list?: CommentItem[];
@@ -59,18 +60,21 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
       {Boolean(list.length) && (
         <ul className="mt-2 space-y-2">
           {list?.map((item) => {
+            let includeHandleComment = false;
             const { reComments: list, _count, ...itemData } = item;
             const childInfo = { depth: item.depth + 1, reCommentRefId: item.id, countReComments: _count?.reComments };
-            const childrenWithProps = Children.map(children, (child, index) => {
+            const childrenWithProps = Children.map(children, (child) => {
               if (isValidElement(child)) {
-                if (index === 0) return cloneElement(child as React.ReactElement<FeedbackCommentProps>, { item: itemData });
-                if (index === 1) return cloneElement(child as React.ReactElement<CommentListProps>, { list, moreReComments, children, ...childInfo });
+                if (child.key === "HandleComment") includeHandleComment = true;
+                if (child.key === "HandleComment") return cloneElement(child as React.ReactElement<HandleCommentProps>, { item: itemData });
+                if (child.key === "FeedbackComment") return cloneElement(child as React.ReactElement<FeedbackCommentProps>, { item: itemData });
+                if (child.key === "CommentList") return cloneElement(child as React.ReactElement<CommentListProps>, { list, moreReComments, children, ...childInfo });
               }
               return child;
             });
             return (
-              <li key={item.id}>
-                <Comment item={itemData} />
+              <li key={item.id} className="relative">
+                <Comment item={itemData} className={includeHandleComment ? "pr-8" : ""} />
                 {childrenWithProps}
               </li>
             );
@@ -92,7 +96,7 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
         ) : null}
       </div>
       {/* 답글: re-comment */}
-      {user?.id !== -1 && isVisibleReCommentButton && (
+      {user?.id && isVisibleReCommentButton && (
         <div className="mt-1 -mr-2">
           <button type="button" className="flex items-center w-full text-left" onClick={clickComment}>
             <div className="grow shrink basis-auto min-w-0">

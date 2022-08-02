@@ -23,6 +23,7 @@ import MessageModal, { MessageModalProps } from "@components/commons/modals/case
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
+import HandleComment from "@components/groups/handleComment";
 import PostComment, { PostCommentTypes } from "@components/forms/postComment";
 import CommentList from "@components/lists/commentList";
 import Profiles from "@components/profiles";
@@ -195,7 +196,7 @@ const StoryDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, story?.userId]);
+  }, [user?.id, story?.content, story?.userId]);
 
   useEffect(() => {
     setMounted(true);
@@ -240,8 +241,9 @@ const StoryDetail: NextPage<{
       {treeComments && Boolean(treeComments?.length) && (
         <div className="mt-5">
           <CommentList list={treeComments} moreReComments={moreReComments}>
-            <FeedbackComment />
-            <CommentList />
+            <FeedbackComment key="FeedbackComment" />
+            {user?.id && <HandleComment key="HandleComment" mutateComment={boundMutate} className="p-1" />}
+            <CommentList key="CommentList" />
           </CommentList>
         </div>
       )}

@@ -21,6 +21,7 @@ import MessageModal, { MessageModalProps } from "@components/commons/modals/case
 import Comment from "@components/cards/comment";
 import CommentList from "@components/lists/commentList";
 import FeedbackComment from "@components/groups/feedbackComment";
+import HandleComment from "@components/groups/handleComment";
 import PostComment, { PostCommentTypes } from "@components/forms/postComment";
 import StorySummary from "@components/cards/storySummary";
 import Link from "next/link";
@@ -147,12 +148,18 @@ const CommentsDetail: NextPage<{
           </a>
         </Link>
       )}
+      <div className="relative mt-5">
+        <Comment item={comment} className={user?.id ? "pr-8" : ""} />
         <FeedbackComment item={comment} />
+        {user?.id && <HandleComment item={comment} mutateComment={boundMutate} />}
       </div>
       {/* 답글 목록: list */}
       {Boolean(treeReComments?.[0]?.reComments?.length) && (
         <div className="mt-2">
           <CommentList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
+            <FeedbackComment key="FeedbackComment" />
+            {user?.id && <HandleComment key="HandleComment" mutateComment={boundMutate} />}
+            <CommentList key="CommentList" />
           </CommentList>
         </div>
       )}
