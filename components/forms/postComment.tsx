@@ -5,7 +5,7 @@ import Buttons from "@components/buttons";
 
 export interface PostCommentTypes {
   comment: string;
-  reCommentRefId?: number | null;
+  reCommentRefId: number | null;
 }
 
 export interface PostCommentProps extends React.HTMLAttributes<HTMLFormElement> {

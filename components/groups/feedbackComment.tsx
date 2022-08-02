@@ -25,8 +25,8 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
 
-  const { data, error, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id ? `/api/comments/${item.id}` : null);
-  const [updateLike, { loading: likeLoading }] = useMutation(item?.id ? `/api/comments/${item.id}/like` : "", {
+  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.createdAt === "string" ? `/api/comments/${item.id}` : null);
+  const [updateLike, { loading: likeLoading }] = useMutation(data ? `/api/comments/${item?.id}/like` : "", {
     onSuccess: (data) => {
       boundMutate();
     },
@@ -38,11 +38,6 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
       }
     },
   });
-
-  if (!item) return null;
-  if (item.depth < StoryCommentMinimumDepth) null;
-  if (item.depth > StoryCommentMaximumDepth) null;
-  if (!item?.comment) return null;
 
   const likeRecords = data?.comment?.records?.filter((record) => record.kind === Kind.CommentLike) || [];
   const liked = likeRecords.find((record) => record.userId === user?.id);
@@ -68,7 +63,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
     if (router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString()) {
       (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
     } else {
-      router.push(`/comments/${item.id}`);
+      router.push(`/comments/${item?.id}`);
     }
   };
 
@@ -85,6 +80,11 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
       },
     });
   };
+
+  if (!item) return null;
+  if (!item.comment) return null;
+  if (item.depth < StoryCommentMinimumDepth) null;
+  if (item.depth > StoryCommentMaximumDepth) null;
 
   return (
     <div className="pl-11 space-x-2">
@@ -103,6 +103,8 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
 };
 
 export default React.memo(FeedbackComment, (prev, next) => {
-  if (prev?.item?.id !== next?.item?.id) return true;
-  return false;
+  if (prev?.item?.id !== next?.item?.id) return false;
+  if (prev?.item?.comment !== next?.item?.comment) return false;
+  if (prev?.item?.createdAt !== next?.item?.createdAt) return false;
+  return true;
 });

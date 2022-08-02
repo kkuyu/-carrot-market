@@ -68,6 +68,7 @@ const StoryDetail: NextPage<{
 
   // fetch data: story comments
   const [comments, setComments] = useState<GetStoriesCommentsResponse["comments"]>(staticProps?.comments ? staticProps.comments : []);
+  const [commentLoading, setCommentLoading] = useState(false);
   const [commentsQuery, setCommentsQuery] = useState("");
   const { data: commentData, mutate: boundMutate } = useSWR<GetStoriesCommentsResponse>(mounted && router.query.id ? `/api/stories/${router.query.id}/comments?${commentsQuery}` : null);
   const treeComments = useMemo(() => {
@@ -77,10 +78,11 @@ const StoryDetail: NextPage<{
 
   // new comment
   const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: null } });
-  const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
-    onSuccess: () => {
-      formData.setValue("comment", "");
-      setCommentsQuery(() => `exists=${JSON.stringify(comments.map((comment) => comment.id))}`);
+  const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
+    onSuccess: (successData) => {
+      setComments((prev) => prev && prev.map((comment) => (comment.id !== 0 ? comment : { ...comment, id: successData.comment.id })));
+      setCommentsQuery(() => `exists=${JSON.stringify(comments?.map((comment) => comment.id))}`);
+      setCommentLoading(() => false);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -108,12 +110,27 @@ const StoryDetail: NextPage<{
   const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
     const existComments = page !== 0 ? comments : comments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setComments(() => [...existComments]);
-    setCommentsQuery(() => `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}${cursorId !== -1 ? `&cursorId=${cursorId}` : ""}`);
+    setCommentsQuery(() => {
+      let result = "";
+      result += `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}`;
+      result += `&page=${page}&reCommentRefId=${reCommentRefId}`;
+      result += cursorId !== -1 ? `&cursorId=${cursorId}` : "";
+      return result;
+    });
   };
 
   const submitReComment = (data: PostCommentTypes) => {
-    if (!data) return;
-    if (commentLoading) return;
+    if (commentLoading || sendCommentLoading) return;
+    if (!user) return;
+    if (!story) return;
+    setCommentLoading(() => true);
+    boundMutate((prev) => {
+      const time = new Date();
+      const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
+      const dummyComment = { ...data, id: 0, depth: 0, userId: user?.id, storyId: story?.id, createdAt: time, updatedAt: time };
+      return prev && { ...prev, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
+    }, false);
+    formData.setValue("comment", "");
     sendComment({ ...data, ...currentAddr });
   };
 
@@ -161,7 +178,7 @@ const StoryDetail: NextPage<{
   }, [commentData]);
 
   useEffect(() => {
-    if (router?.query?.id?.toString() === story?.id?.toString()) return;
+    if (router?.query?.id === story?.id?.toString()) return;
     setCommentsQuery(() => "");
   }, [router?.query?.id, story?.id]);
 
@@ -242,7 +259,7 @@ const StoryDetail: NextPage<{
         <div className="mt-5">
           <CommentList list={treeComments} moreReComments={moreReComments}>
             <FeedbackComment key="FeedbackComment" />
-            {user?.id && <HandleComment key="HandleComment" mutateComment={boundMutate} className="p-1" />}
+            {user?.id && <HandleComment key="HandleComment" mutateStory={boundMutate} className="p-1" />}
             <CommentList key="CommentList" />
           </CommentList>
         </div>
@@ -266,7 +283,7 @@ const StoryDetail: NextPage<{
             <PostComment
               formData={formData}
               onValid={user?.id === -1 ? openSignUpModal : submitReComment}
-              isLoading={commentLoading}
+              isLoading={sendCommentLoading}
               commentType={category?.commentType}
               className="w-full pl-5 pr-3"
             />

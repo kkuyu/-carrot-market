@@ -44,6 +44,7 @@ const CommentsDetail: NextPage<{
 
   // comment detail
   const [comment, setComment] = useState<GetCommentsDetailResponse["comment"] | null>(staticProps?.comment ? staticProps.comment : null);
+  const [commentLoading, setCommentLoading] = useState(false);
   const treeReComments = useMemo(() => {
     if (!comment?.reComments?.length) return [];
     return getCommentTree(Math.max(...comment?.reComments.map((v) => v.depth)), [{ ...comment, reComments: [] }, ...comment?.reComments.map((v) => ({ ...v, reComments: [] }))]);
@@ -53,10 +54,11 @@ const CommentsDetail: NextPage<{
 
   // new comment
   const formData = useForm<PostCommentTypes>();
-  const [sendComment, { loading: commentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${comment?.storyId}/comments`, {
-    onSuccess: (data) => {
-      formData.setValue("comment", "");
+  const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${comment?.storyId}/comments`, {
+    onSuccess: (successData) => {
+      setComment((prev) => prev && { ...prev, reComments: prev?.reComments?.map((comment) => (comment.id !== 0 ? comment : { ...comment, id: successData.comment.id })) || [] });
       setCommentsQuery(() => `exists=${JSON.stringify(comment?.reComments?.map((comment) => comment.id))}`);
+      setCommentLoading(() => false);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -70,12 +72,27 @@ const CommentsDetail: NextPage<{
   const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
     const existComments = page !== 0 ? comment?.reComments : comment?.reComments?.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setComment((prev) => prev && { ...prev, reComments: existComments?.length ? [...existComments] : [] });
-    setCommentsQuery(() => `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}&page=${page}&reCommentRefId=${reCommentRefId}${cursorId !== -1 ? `&cursorId=${cursorId}` : ""}`);
+    setCommentsQuery(() => {
+      let result = "";
+      result += `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}`;
+      result += `&page=${page}&reCommentRefId=${reCommentRefId}`;
+      result += cursorId !== -1 ? `&cursorId=${cursorId}` : "";
+      return result;
+    });
   };
 
   const submitReComment = (data: PostCommentTypes) => {
-    if (!data) return;
-    if (commentLoading) return;
+    if (commentLoading || sendCommentLoading) return;
+    if (!user) return;
+    if (!comment) return;
+    setCommentLoading(() => true);
+    boundMutate((prev) => {
+      const time = new Date();
+      const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
+      const dummyComment = { ...data, id: 0, depth: comment?.depth + 1, userId: user?.id, storyId: comment?.storyId, createdAt: time, updatedAt: time };
+      return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
+    }, false);
+    formData.setValue("comment", "");
     sendComment({ ...data, ...currentAddr });
   };
 
@@ -96,15 +113,24 @@ const CommentsDetail: NextPage<{
   // merge data
   useEffect(() => {
     if (!data) return;
-    if (!data.success) return;
+    if (!data.success) {
+      router.push(`/stories/${comment?.storyId}`);
+      return;
+    }
     setComment((prev) => ({
       ...prev,
       ...data.comment,
     }));
   }, [data]);
 
+  useEffect(() => {
+    if (router?.query?.id === comment?.id?.toString()) return;
+    setCommentsQuery(() => "");
+  }, [router?.query?.id, comment?.id]);
+
   // setting layout
   useEffect(() => {
+    console.log("comment", comment);
     if (!comment) return;
 
     const mode = !user?.id ? "preview" : user?.id !== comment?.userId ? "public" : "private";
@@ -128,12 +154,6 @@ const CommentsDetail: NextPage<{
     formData.setValue("reCommentRefId", comment.id);
     (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
   }, [comment?.id]);
-
-  // reset query
-  useEffect(() => {
-    if (router?.query?.id?.toString() === comment?.id?.toString()) return;
-    setCommentsQuery(() => "");
-  }, [router?.query?.id, comment?.id]);
 
   if (!comment) {
     return <NextError statusCode={404} />;
@@ -167,7 +187,13 @@ const CommentsDetail: NextPage<{
       {(viewModel.mode === "public" || viewModel.mode === "private") && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-screen-sm border-t bg-white">
-            <PostComment formData={formData} onValid={user?.id === -1 ? openSignUpModal : submitReComment} isLoading={commentLoading} commentType="답글" className="w-full pl-5 pr-3" />
+            <PostComment
+              formData={formData}
+              onValid={user?.id === -1 ? openSignUpModal : submitReComment}
+              isLoading={commentLoading || sendCommentLoading}
+              commentType="답글"
+              className="w-full pl-5 pr-3"
+            />
           </div>
         </div>
       )}

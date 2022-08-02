@@ -18,6 +18,10 @@ export interface CommentProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
 const Comment = ({ item, ...rest }: CommentProps) => {
   const [mounted, setMounted] = useState(false);
 
+  const today = new Date();
+  const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
+  const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -26,10 +30,6 @@ const Comment = ({ item, ...rest }: CommentProps) => {
   if (item.depth < StoryCommentMinimumDepth) null;
   if (item.depth > StoryCommentMaximumDepth) null;
   if (!item?.comment) return <p className="text-notice opacity-60">댓글 작성자가 삭제한 댓글이에요</p>;
-
-  const today = new Date();
-  const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
-  const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
 
   return (
     <div className="relative" {...rest}>
