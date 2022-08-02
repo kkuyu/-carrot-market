@@ -31,6 +31,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         id,
       },
+      select: {
+        id: true,
+        userId: true,
+      },
     });
     if (!story) {
       const error = new Error("NotFoundStory");
@@ -43,18 +47,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
+    // remove record
     await client.record.deleteMany({
       where: {
         storyId: story.id,
       },
     });
 
+    // remove comment
     await client.storyComment.deleteMany({
       where: {
         storyId: story.id,
       },
     });
 
+    // remove story
     await client.story.delete({
       where: {
         id: story.id,

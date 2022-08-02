@@ -31,6 +31,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         id,
       },
+      select: {
+        id: true,
+        userId: true,
+      },
     });
     if (!product) {
       const error = new Error("NotFoundProduct");

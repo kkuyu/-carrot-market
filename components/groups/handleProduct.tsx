@@ -90,6 +90,6 @@ const HandleProduct = ({ item, className }: HandleProductProps) => {
 };
 
 export default React.memo(HandleProduct, (prev, next) => {
-  if (prev?.item?.id !== next?.item?.id) return true;
-  return false;
+  if (prev?.item?.id !== next?.item?.id) return false;
+  return true;
 });

@@ -86,6 +86,6 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
 };
 
 export default React.memo(FeedbackProduct, (prev, next) => {
-  if (prev?.item?.id !== next?.item?.id) return true;
-  return false;
+  if (prev?.item?.id !== next?.item?.id) return false;
+  return true;
 });

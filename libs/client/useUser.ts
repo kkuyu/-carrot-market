@@ -6,7 +6,7 @@ import { GetUserResponse } from "@api/users/my";
 export interface UserProfile {
   mutate: KeyedMutator<GetUserResponse>;
   loading: boolean;
-  user: (Pick<User, "id" | "name"> & Partial<User>) | null;
+  user: (Pick<User, "id" | "name" | "avatar"> & Partial<User>) | null;
   currentAddr: GetUserResponse["currentAddr"];
 }
 

@@ -124,11 +124,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     try {
-      const { photos = "", name, category, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { photos = [], name, category, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
       // request valid
       if (!name && !category && !price && !description) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+      if (photos && !Array.isArray(photos)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -147,7 +152,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // create new product
       const newProduct = await client.product.create({
         data: {
-          photos,
+          photos: photos.join(","),
           name,
           category,
           price,

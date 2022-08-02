@@ -131,12 +131,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   }
   if (req.method === "POST") {
     try {
-      const { photos = "", category, content, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { photos = [], category, content, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
       // request valid
       if (!content && !category) {
         const error = new Error("Invalid request body");
+        throw error;
+      }
+      if (photos && !Array.isArray(photos)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
         throw error;
       }
       if (!getStoryCategory(category)) {
@@ -153,7 +158,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // create new story
       const newStory = await client.story.create({
         data: {
-          photos,
+          photos: photos.join(","),
           content,
           category,
           emdAddrNm,

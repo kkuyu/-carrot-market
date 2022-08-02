@@ -186,6 +186,6 @@ const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
 };
 
 export default React.memo(FeedbackStory, (prev, next) => {
-  if (prev?.item?.id !== next?.item?.id) return true;
-  return false;
+  if (prev?.item?.id !== next?.item?.id) return false;
+  return true;
 });

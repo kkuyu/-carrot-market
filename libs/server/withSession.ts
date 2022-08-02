@@ -9,6 +9,7 @@ declare module "iron-session" {
     dummyUser?: {
       id: number;
       name: string;
+      avatar: "";
       emdType: "MAIN";
       MAIN_emdAddrNm: string;
       MAIN_emdPosNm: string;
