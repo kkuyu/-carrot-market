@@ -64,13 +64,13 @@ const StoryDetail: NextPage<{
       }));
 
   // fetch data: story detail
-  const { data, error } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const { data, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
 
   // fetch data: story comments
   const [comments, setComments] = useState<GetStoriesCommentsResponse["comments"]>(staticProps?.comments ? staticProps.comments : []);
   const [commentLoading, setCommentLoading] = useState(false);
   const [commentsQuery, setCommentsQuery] = useState("");
-  const { data: commentData, mutate: boundMutate } = useSWR<GetStoriesCommentsResponse>(mounted && router.query.id ? `/api/stories/${router.query.id}/comments?${commentsQuery}` : null);
+  const { data: commentData, mutate: mutateStoryComments } = useSWR<GetStoriesCommentsResponse>(mounted && router.query.id ? `/api/stories/${router.query.id}/comments?${commentsQuery}` : null);
   const treeComments = useMemo(() => {
     if (!comments?.length) return [];
     return getCommentTree(Math.max(...comments.map((v) => v.depth)), [...comments.map((v) => ({ ...v, reComments: [] }))]);
@@ -79,9 +79,9 @@ const StoryDetail: NextPage<{
   // new comment
   const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: null } });
   const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
-    onSuccess: (successData) => {
-      setComments((prev) => prev && prev.map((comment) => (comment.id !== 0 ? comment : { ...comment, id: successData.comment.id })));
-      setCommentsQuery(() => `exists=${JSON.stringify(comments?.map((comment) => comment.id))}`);
+    onSuccess: () => {
+      mutateStoryDetail();
+      mutateStoryComments();
       setCommentLoading(() => false);
     },
     onError: (data) => {
@@ -124,11 +124,14 @@ const StoryDetail: NextPage<{
     if (!user) return;
     if (!story) return;
     setCommentLoading(() => true);
-    boundMutate((prev) => {
+    mutateStoryDetail((prev) => {
+      return prev && { ...prev, story: { ...prev.story, comments: [...prev.story.comments, { id: 0 }] } };
+    }, false);
+    mutateStoryComments((prev) => {
       const time = new Date();
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
       const dummyComment = { ...data, id: 0, depth: 0, userId: user?.id, storyId: story?.id, createdAt: time, updatedAt: time };
-      return prev && { ...prev, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
+      return prev && { ...prev, total: prev.total + 1, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
     formData.setValue("comment", "");
     sendComment({ ...data, ...currentAddr });
@@ -251,7 +254,7 @@ const StoryDetail: NextPage<{
           </div>
         )}
         {/* 피드백 */}
-        {(viewModel.mode === "public" || viewModel.mode === "private") && <FeedbackStory item={story} commentCount={commentData?.total} />}
+        <FeedbackStory item={story} />
       </section>
 
       {/* 댓글/답변 목록: list */}
@@ -259,7 +262,7 @@ const StoryDetail: NextPage<{
         <div className="mt-5">
           <CommentList list={treeComments} moreReComments={moreReComments}>
             <FeedbackComment key="FeedbackComment" />
-            {user?.id && <HandleComment key="HandleComment" mutateStory={boundMutate} className="p-1" />}
+            {user?.id && <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" />}
             <CommentList key="CommentList" />
           </CommentList>
         </div>

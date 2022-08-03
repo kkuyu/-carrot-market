@@ -78,7 +78,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           id: comment.id,
         },
         data: {
-          comment: null,
+          comment: "",
         },
       });
     }

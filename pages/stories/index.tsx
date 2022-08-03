@@ -168,6 +168,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
                   gte: StoryCommentMinimumDepth,
                   lte: StoryCommentMaximumDepth,
                 },
+                NOT: [{ comment: "" }],
               },
               select: {
                 id: true,

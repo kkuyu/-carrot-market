@@ -52,7 +52,6 @@ const StoryUpload: NextPage = () => {
 
     const transfer = new DataTransfer();
     const photos = storyData?.story?.photos?.length ? storyData?.story.photos.split(",") : [];
-    console.log(photos);
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       if (file !== null) transfer.items.add(file);

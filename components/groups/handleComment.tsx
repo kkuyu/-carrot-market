@@ -8,6 +8,7 @@ import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsDeleteResponse } from "@api/comments/[id]/delete";
@@ -19,22 +20,23 @@ export type HandleCommentItem = GetStoriesCommentsResponse["comments"][0] | GetC
 
 export interface HandleCommentProps extends React.HTMLAttributes<HTMLButtonElement> {
   item?: HandleCommentItem;
-  mutateStory?: KeyedMutator<GetStoriesCommentsResponse>;
-  mutateComment?: KeyedMutator<GetCommentsDetailResponse>;
+  mutateStoryDetail?: KeyedMutator<GetStoriesDetailResponse>;
+  mutateStoryComments?: KeyedMutator<GetStoriesCommentsResponse>;
+  mutateCommentDetail?: KeyedMutator<GetCommentsDetailResponse>;
 }
 
-const HandleComment = ({ item, mutateStory, mutateComment, className }: HandleCommentProps) => {
+const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCommentDetail, className }: HandleCommentProps) => {
   const router = useRouter();
 
   const { user } = useUser();
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
-  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.createdAt === "string" ? `/api/comments/${item.id}` : null);
   const [deleteComment, { loading: deleteLoading }] = useMutation<PostCommentsDeleteResponse>(item?.id && typeof item?.createdAt === "string" ? `/api/comments/${item?.id}/delete` : "", {
     onSuccess: () => {
-      if (mutateStory) mutateStory();
-      if (mutateComment) mutateComment();
+      if (mutateStoryDetail) mutateStoryDetail();
+      if (mutateStoryComments) mutateStoryComments();
+      if (mutateCommentDetail) mutateCommentDetail();
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -74,18 +76,16 @@ const HandleComment = ({ item, mutateStory, mutateComment, className }: HandleCo
       onConfirm: () => {
         if (!item) return;
         if (deleteLoading) return;
-        // item boundMutate
-        boundMutate((prev) => prev && { ...prev, comment: { ...prev.comment, comment: "" } }, false);
         // story boundMutate
-        if (mutateStory) {
-          mutateStory((prev) => {
+        if (mutateStoryComments) {
+          mutateStoryComments((prev) => {
             if (!prev) return prev;
-            return { ...prev, comments: prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, comment: "" })) };
+            return { ...prev, total: prev.total - 1, comments: prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, comment: "" })) };
           }, false);
         }
         // comment boundMutate
-        if (mutateComment) {
-          mutateComment((prev) => {
+        if (mutateCommentDetail) {
+          mutateCommentDetail((prev) => {
             if (!prev) return prev;
             if (router?.query?.id?.toString() === item?.id?.toString()) return { ...prev, comment: { ...prev.comment, comment: "" } };
             return { ...prev, comment: { ...prev.comment, reComments: (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, comment: "" })) } };

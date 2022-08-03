@@ -50,7 +50,7 @@ const CommentsDetail: NextPage<{
     return getCommentTree(Math.max(...comment?.reComments.map((v) => v.depth)), [{ ...comment, reComments: [] }, ...comment?.reComments.map((v) => ({ ...v, reComments: [] }))]);
   }, [comment]);
   const [commentsQuery, setCommentsQuery] = useState("");
-  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
+  const { data, mutate: mutateCommentDetail } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
 
   // new comment
   const formData = useForm<PostCommentTypes>();
@@ -86,7 +86,7 @@ const CommentsDetail: NextPage<{
     if (!user) return;
     if (!comment) return;
     setCommentLoading(() => true);
-    boundMutate((prev) => {
+    mutateCommentDetail((prev) => {
       const time = new Date();
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
       const dummyComment = { ...data, id: 0, depth: comment?.depth + 1, userId: user?.id, storyId: comment?.storyId, createdAt: time, updatedAt: time };
@@ -130,7 +130,6 @@ const CommentsDetail: NextPage<{
 
   // setting layout
   useEffect(() => {
-    console.log("comment", comment);
     if (!comment) return;
 
     const mode = !user?.id ? "preview" : user?.id !== comment?.userId ? "public" : "private";
@@ -171,14 +170,14 @@ const CommentsDetail: NextPage<{
       <div className="relative mt-5">
         <Comment item={comment} className={user?.id ? "pr-8" : ""} />
         <FeedbackComment item={comment} />
-        {user?.id && <HandleComment item={comment} mutateComment={boundMutate} />}
+        {user?.id && <HandleComment item={comment} mutateCommentDetail={mutateCommentDetail} />}
       </div>
       {/* 답글 목록: list */}
       {Boolean(treeReComments?.[0]?.reComments?.length) && (
         <div className="mt-2">
           <CommentList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
             <FeedbackComment key="FeedbackComment" />
-            {user?.id && <HandleComment key="HandleComment" mutateComment={boundMutate} />}
+            {user?.id && <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} />}
             <CommentList key="CommentList" />
           </CommentList>
         </div>

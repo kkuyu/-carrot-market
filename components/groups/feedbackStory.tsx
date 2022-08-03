@@ -18,10 +18,9 @@ export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDet
 
 export interface FeedbackStoryProps {
   item?: FeedbackStoryItem;
-  commentCount?: number;
 }
 
-const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
+const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   const router = useRouter();
   const isDetailPage = router.pathname === "/stories/[id]";
 
@@ -30,9 +29,9 @@ const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
 
   const [isVisibleBox, setIsVisibleBox] = useState(false);
 
-  const { data, error, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
+  const { data, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
   const [updateLike, { loading: likeLoading }] = useMutation(item?.id ? `/api/stories/${item.id}/like` : "", {
-    onSuccess: (data) => {
+    onSuccess: () => {
       boundMutate();
     },
     onError: (data) => {
@@ -49,7 +48,7 @@ const FeedbackStory = ({ item, commentCount }: FeedbackStoryProps) => {
   const category = getStoryCategory(item?.category);
   const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
   const liked = likeRecords.find((record) => record.userId === user?.id);
-  const count = commentCount ? commentCount : item?.comments?.length;
+  const count = data?.story?.comments?.length || item?.comments?.length;
 
   // toggle like
   const toggleLike = (emotion?: EmotionKeys) => {
