@@ -50,11 +50,13 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   const liked = likeRecords.find((record) => record.userId === user?.id);
   const count = data?.story?.comments?.length || item?.comments?.length;
 
-  // toggle like
+  // like
+  const clickLike = () => {
+    !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike();
+  };
   const toggleLike = (emotion?: EmotionKeys) => {
     if (!data) return;
     if (likeLoading) return;
-
     boundMutate((prev) => {
       let records = prev?.story?.records ? [...prev.story.records] : [];
       const idx = records.findIndex((record) => record.kind === Kind.StoryLike && record.userId === user?.id);
@@ -73,19 +75,19 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     updateLike({ emotion: emotion || null });
   };
 
-  // click emotion
-  const emotionButtonClick = () => setIsVisibleBox((prev) => !prev);
-  const emotionButtonBlur = (e: FocusEvent<HTMLButtonElement, Element>) => {
+  // emotion
+  const clickEmotionButton = () => setIsVisibleBox((prev) => !prev);
+  const blurEmotionButton = (e: FocusEvent<HTMLButtonElement, Element>) => {
     const boxEl = e.relatedTarget?.closest(".emotionBox");
     if (boxEl?.isSameNode(e.relatedTarget)) return;
     if (boxEl?.contains(e.relatedTarget)) return;
     setIsVisibleBox(false);
   };
-  const emotionBoxClick = (key: EmotionKeys) => {
-    user?.id === -1 ? openSignUpModal() : toggleLike(key);
+  const clickEmotionBox = (key: EmotionKeys) => {
+    !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike(key);
     setIsVisibleBox(false);
   };
-  const emotionBoxBlur = (e: FocusEvent<HTMLDivElement, Element>) => {
+  const blurEmotionBox = (e: FocusEvent<HTMLDivElement, Element>) => {
     const boxEl = e.target.closest(".emotionBox");
     const prevEl = boxEl?.previousElementSibling as HTMLElement;
     if (boxEl?.isSameNode(e.relatedTarget)) return;
@@ -94,14 +96,28 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     setIsVisibleBox(false);
   };
 
-  // click comment
-  const commentClick = () => {
+  // comment
+  const clickComment = () => {
     if (isDetailPage) {
       const target = document.querySelector(".container input#comment") as HTMLInputElement;
       target?.focus();
     } else {
       router.push(`/stories/${item.id}`);
     }
+  };
+
+  // modal: welcome
+  const openWelcomeModal = () => {
+    openModal<MessageModalProps>(MessageModal, "welcome", {
+      type: "confirm",
+      message: "당근마켓 첫 방문이신가요?",
+      cancelBtn: "취소",
+      confirmBtn: "당근마켓 시작하기",
+      hasBackdrop: true,
+      onConfirm: () => {
+        router.push("/welcome");
+      },
+    });
   };
 
   // modal: sign up
@@ -122,7 +138,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     <div className="relative px-5 border-t">
       {/* 궁금해요: button */}
       {!category?.isLikeWithEmotion && (
-        <button type="button" onClick={() => (user?.id === -1 ? openSignUpModal() : toggleLike())} className="py-2">
+        <button type="button" onClick={clickLike} className="py-2">
           <svg className={`inline-block w-5 h-5 ${liked ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
@@ -131,7 +147,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
       )}
       {/* 공감하기: button */}
       {category?.isLikeWithEmotion && (
-        <button type="button" onClick={emotionButtonClick} onBlur={emotionButtonBlur} className="py-2">
+        <button type="button" onClick={clickEmotionButton} onBlur={blurEmotionButton} className="py-2">
           {!liked ? (
             <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -144,10 +160,10 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
       )}
       {/* 공감하기: box */}
       {category?.isLikeWithEmotion && (
-        <div onBlur={emotionBoxBlur} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
+        <div onBlur={blurEmotionBox} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
             {Object.entries(EmotionIcon).map(([key, emotion]) => (
-              <button key={emotion} type="button" onClick={() => emotionBoxClick(key as EmotionKeys)} className="p-1">
+              <button key={emotion} type="button" onClick={() => clickEmotionBox(key as EmotionKeys)} className="p-1">
                 {emotion}
               </button>
             ))}
@@ -169,7 +185,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
         </div>
       )}
       {/* 댓글/답변 */}
-      <button type="button" className="ml-4 py-2" onClick={commentClick}>
+      <button type="button" className="ml-4 py-2" onClick={clickComment}>
         <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path
             strokeLinecap="round"

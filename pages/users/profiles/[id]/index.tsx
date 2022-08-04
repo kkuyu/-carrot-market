@@ -28,11 +28,6 @@ const ProfileDetail: NextPage<{
 
   const { user } = useUser();
 
-  // view model
-  const [viewModel, setViewModel] = useState({
-    mode: !user?.id ? "preview" : user?.id !== staticProps?.profile?.id ? "public" : "private",
-  });
-
   // static data: profile detail
   const [profile, setProfile] = useState<GetProfilesDetailResponse["profile"] | null>(staticProps?.profile ? staticProps.profile : null);
 
@@ -53,9 +48,6 @@ const ProfileDetail: NextPage<{
   useEffect(() => {
     if (!profile) return;
 
-    const mode = !user?.id ? "preview" : user?.id !== profile?.id ? "public" : "private";
-    setViewModel({ mode });
-
     setLayout(() => ({
       title: "프로필",
       seoTitle: `${profile?.name || ""} | 프로필`,
@@ -66,7 +58,7 @@ const ProfileDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, profile?.id]);
+  }, [user?.id, profile?.id, profile?.name]);
 
   if (!profile) {
     return <NextError statusCode={404} />;
@@ -79,9 +71,9 @@ const ProfileDetail: NextPage<{
       </h1>
 
       {/* 관심사 */}
-      {(viewModel.mode === "private" || profile?.concerns) && (
+      {(profile?.concerns || user?.id === staticProps?.profile?.id) && (
         <div className="mt-3">
-          <strong className="block">{viewModel.mode === "private" ? "나의 관심사" : "관심사"}</strong>
+          <strong className="block">{user?.id === staticProps?.profile?.id ? "나의 관심사" : "관심사"}</strong>
           {profile?.concerns && (
             <div>
               {ProfilesConcern.filter((concern) => profile?.concerns?.includes(concern.value)).map((concern) => (
@@ -96,7 +88,7 @@ const ProfileDetail: NextPage<{
       )}
 
       {/* 프로필 수정 */}
-      {viewModel.mode === "private" && (
+      {user?.id === staticProps?.profile?.id && (
         <Link href="/users/profiles/edit" passHref>
           <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mt-3" />
         </Link>

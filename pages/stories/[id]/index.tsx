@@ -42,9 +42,6 @@ const StoryDetail: NextPage<{
 
   // view model
   const [mounted, setMounted] = useState(false);
-  const [viewModel, setViewModel] = useState({
-    mode: !user?.id ? "preview" : user?.id !== staticProps?.story?.userId ? "public" : "private",
-  });
 
   // static data: story detail
   const today = new Date();
@@ -189,34 +186,32 @@ const StoryDetail: NextPage<{
   useEffect(() => {
     if (!story) return;
 
-    const mode = !user?.id ? "preview" : user?.id !== story?.userId ? "public" : "private";
-    setViewModel({ mode });
-
     setLayout(() => ({
       title: story?.content || "",
       seoTitle: `${story?.content || ""} | 게시글 상세`,
       header: {
         headerUtils: ["back", "home", "share", "kebab"],
-        kebabActions:
-          mode === "preview"
-            ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
-            : mode === "public"
-            ? [
-                { key: "report", text: "신고", onClick: () => console.log("신고") },
-                { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
-              ]
-            : mode === "private"
-            ? [
-                { key: "edit", text: "수정", onClick: () => router.push(`/stories/${story?.id}/edit`) },
-                { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
-              ]
-            : [],
+        kebabActions: (() => {
+          if (!user?.id) {
+            return [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }];
+          }
+          if (user?.id !== staticProps?.story?.userId) {
+            return [
+              { key: "report", text: "신고", onClick: () => console.log("신고") },
+              { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
+            ];
+          }
+          return [
+            { key: "edit", text: "수정", onClick: () => router.push(`/stories/${story?.id}/edit`) },
+            { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+          ];
+        })(),
       },
       navBar: {
         navBarUtils: [],
       },
     }));
-  }, [user?.id, story?.content, story?.userId]);
+  }, [user?.id, story?.id, story?.userId, story?.content]);
 
   useEffect(() => {
     setMounted(true);
@@ -227,7 +222,7 @@ const StoryDetail: NextPage<{
   }
 
   return (
-    <article className="container pb-20">
+    <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
       {/* 게시글 정보 */}
       <section className="-mx-5 border-b">
         {/* 제목 */}
@@ -280,7 +275,7 @@ const StoryDetail: NextPage<{
       )}
 
       {/* 댓글/답변 입력 */}
-      {(viewModel.mode === "public" || viewModel.mode === "private") && (
+      {user?.id && (
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-16 border-t bg-white">
             <PostComment

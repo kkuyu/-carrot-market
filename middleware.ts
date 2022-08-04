@@ -25,7 +25,8 @@ export const middleware: NextMiddleware = (req) => {
       default:
         if (/^\/products\/\w*$/.test(url.pathname)) return NextResponse.next();
         if (/^\/stories\/\w*$/.test(url.pathname)) return NextResponse.next();
-        if (/^\/users\/profiles\/\w*$/.test(url.pathname)) return NextResponse.next();
+        if (/^\/comments\/\w*$/.test(url.pathname)) return NextResponse.next();
+        if (/^\/users\/profiles\/\w*/.test(url.pathname)) return NextResponse.next();
         url.pathname = "/welcome";
         return NextResponse.redirect(url);
     }

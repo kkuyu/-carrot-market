@@ -39,9 +39,6 @@ const ProductDetail: NextPage<{
 
   // view model
   const [mounted, setMounted] = useState(false);
-  const [viewModel, setViewModel] = useState({
-    mode: !user?.id ? "preview" : user?.id !== staticProps?.product?.userId ? "public" : "private",
-  });
 
   // static data: product detail
   const today = new Date();
@@ -215,38 +212,36 @@ const ProductDetail: NextPage<{
   useEffect(() => {
     if (!product) return;
 
-    const mode = !user?.id ? "preview" : user?.id !== product?.userId ? "public" : "private";
-    setViewModel({ mode });
-
     setLayout(() => ({
       title: product?.name || "",
       seoTitle: `${product?.name || ""} | 판매 상품 상세`,
       header: {
         headerUtils: ["back", "home", "share", "kebab"],
         headerColor: Boolean(thumbnails.length) ? "transparent" : "white",
-        kebabActions:
-          mode === "preview"
-            ? [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }]
-            : mode === "public"
-            ? [
-                { key: "report", text: "신고", onClick: () => console.log("신고") },
-                { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
-              ]
-            : mode === "private" && saleRecord
+        kebabActions: (() => {
+          if (!user?.id) {
+            return [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }];
+          }
+          if (user?.id !== staticProps?.product?.userId) {
+            return [
+              { key: "report", text: "신고", onClick: () => console.log("신고") },
+              { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
+            ];
+          }
+          return saleRecord
             ? [
                 { key: "sold", text: "판매완료", onClick: () => toggleSale(false) },
                 { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
                 { key: "resume", text: "끌어올리기", onClick: () => router.push(`/products/${product.id}/resume`) },
                 { key: "delete", text: "삭제", onClick: () => router.push(`/products/${product.id}/delete`) },
               ]
-            : mode === "private" && !saleRecord
-            ? [
+            : [
                 { key: "sale", text: "판매중", onClick: () => (product?.reviews?.length ? openSaleModal() : toggleSale(true)) },
                 { key: "review", text: "거래 후기 보내기", onClick: () => router.push(`/products/${product.id}/review`) },
                 { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${product.id}/edit`) },
                 { key: "delete", text: "삭제", onClick: () => router.push(`/products/${product.id}/delete`) },
-              ]
-            : [],
+              ];
+        })(),
       },
       navBar: {
         navBarUtils: [],
@@ -303,7 +298,7 @@ const ProductDetail: NextPage<{
               <strong>₩{product.price}</strong>
             </div>
             <div className="absolute top-1/2 left-3 -translate-y-1/2">
-              {viewModel.mode === "preview" && (
+              {!user?.id ? (
                 <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={openWelcomeModal} disabled={likeLoading}>
                   <svg className="h-6 w-6 " xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
                     <path
@@ -314,8 +309,7 @@ const ProductDetail: NextPage<{
                     />
                   </svg>
                 </button>
-              )}
-              {(viewModel.mode === "public" || viewModel.mode === "private") && (
+              ) : (
                 <button className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" onClick={user?.id === -1 ? openSignUpModal : toggleLike} disabled={likeLoading}>
                   {liked && (
                     <svg className="w-6 h-6" fill="currentColor" color="rgb(239 68 68)" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -336,13 +330,15 @@ const ProductDetail: NextPage<{
               )}
             </div>
             <div className="flex-none px-5">
-              {viewModel.mode === "preview" && (
+              {!user?.id ? (
                 <Link href="/welcome" passHref>
                   <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
                 </Link>
+              ) : user?.id !== staticProps?.product?.userId ? (
+                <Buttons tag="button" text="채팅하기" size="sm" onClick={user?.id === -1 ? openSignUpModal : goChat} />
+              ) : (
+                <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${product.id}/chats`)} />
               )}
-              {viewModel.mode === "public" && <Buttons tag="button" text="채팅하기" size="sm" onClick={user?.id === -1 ? openSignUpModal : goChat} />}
-              {viewModel.mode === "private" && <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${product.id}/chats`)} />}
             </div>
           </div>
         </div>

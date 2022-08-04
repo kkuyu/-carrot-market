@@ -35,29 +35,23 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
     },
   });
 
-  if (!item) return null;
-
   const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
   const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
   const purchaseRecord = item?.records?.find((record) => record.kind === Kind.ProductPurchase);
   const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
   const toggleSale = (value: boolean) => {
+    if (!item) return;
     if (saleLoading) return;
     updateSale({ sale: value });
   };
 
   const clickReview = () => {
-    if (!existsReview && !purchaseRecord) {
-      router.push(`/products/${item.id}/purchase`);
-      return;
-    }
-    if (!existsReview && purchaseRecord) {
-      router.push(`/products/${item.id}/review`);
-      return;
-    }
-    router.push(`/reviews/${existsReview?.id}`);
+    if (!item) return;
+    router.push(existsReview ? `/reviews/${existsReview?.id}` : purchaseRecord ? `/products/${item.id}/review` : `/products/${item.id}/purchase`);
   };
+
+  if (!item) return null;
 
   return (
     <div className="flex border-t divide-x empty:pt-9">

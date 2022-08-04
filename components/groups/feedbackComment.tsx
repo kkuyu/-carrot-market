@@ -42,7 +42,10 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const likeRecords = data?.comment?.records?.filter((record) => record.kind === Kind.CommentLike) || [];
   const liked = likeRecords.find((record) => record.userId === user?.id);
 
-  // toggle like
+  // like
+  const clickLike = () => {
+    !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike();
+  };
   const toggleLike = () => {
     if (!data) return;
     if (likeLoading) return;
@@ -58,13 +61,27 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
     updateLike({});
   };
 
-  // click comment
-  const commentClick = () => {
+  // comment
+  const clickComment = () => {
     if (router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString()) {
       (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
     } else {
       router.push(`/comments/${item?.id}`);
     }
+  };
+
+  // modal: welcome
+  const openWelcomeModal = () => {
+    openModal<MessageModalProps>(MessageModal, "welcome", {
+      type: "confirm",
+      message: "당근마켓 첫 방문이신가요?",
+      cancelBtn: "취소",
+      confirmBtn: "당근마켓 시작하기",
+      hasBackdrop: true,
+      onConfirm: () => {
+        router.push("/welcome");
+      },
+    });
   };
 
   // modal: sign up
@@ -89,12 +106,12 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   return (
     <div className="pl-11 space-x-2">
       {/* 좋아요: button */}
-      <button type="button" onClick={() => (user?.id === -1 ? openSignUpModal() : toggleLike())}>
+      <button type="button" onClick={clickLike}>
         <span className={`text-sm ${liked ? "text-orange-500" : "text-gray-500"}`}>좋아요 {likeRecords.length || null}</span>
       </button>
       {/* 답글: button */}
       {item.depth < StoryCommentMaximumDepth && (
-        <button type="button" onClick={commentClick}>
+        <button type="button" onClick={clickComment}>
           <span className="text-sm text-gray-500">답글쓰기</span>
         </button>
       )}

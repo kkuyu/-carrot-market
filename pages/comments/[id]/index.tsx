@@ -37,11 +37,6 @@ const CommentsDetail: NextPage<{
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
 
-  // view model
-  const [viewModel, setViewModel] = useState({
-    mode: !user?.id ? "preview" : user?.id !== staticProps?.comment?.userId ? "public" : "private",
-  });
-
   // comment detail
   const [comment, setComment] = useState<GetCommentsDetailResponse["comment"] | null>(staticProps?.comment ? staticProps.comment : null);
   const [commentLoading, setCommentLoading] = useState(false);
@@ -132,9 +127,6 @@ const CommentsDetail: NextPage<{
   useEffect(() => {
     if (!comment) return;
 
-    const mode = !user?.id ? "preview" : user?.id !== comment?.userId ? "public" : "private";
-    setViewModel({ mode });
-
     setLayout(() => ({
       title: "답글쓰기",
       seoTitle: `${comment?.comment || ""} | 답글쓰기`,
@@ -145,7 +137,7 @@ const CommentsDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, comment?.comment, comment?.userId]);
+  }, [user?.id, comment?.id, comment?.comment]);
 
   // focus
   useEffect(() => {
@@ -159,7 +151,7 @@ const CommentsDetail: NextPage<{
   }
 
   return (
-    <article className="container pb-20">
+    <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
       {comment?.story && (
         <Link href={`/stories/${comment.story.id}`}>
           <a className="block -mx-5 px-5 py-3 bg-gray-200">
@@ -183,7 +175,7 @@ const CommentsDetail: NextPage<{
         </div>
       )}
       {/* 답글 입력 */}
-      {(viewModel.mode === "public" || viewModel.mode === "private") && (
+      {user?.id && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-screen-sm border-t bg-white">
             <PostComment
