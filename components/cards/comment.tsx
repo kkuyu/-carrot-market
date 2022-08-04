@@ -27,9 +27,12 @@ const Comment = ({ item, ...rest }: CommentProps) => {
   }, []);
 
   if (!item) return null;
-  if (item.depth < StoryCommentMinimumDepth) null;
-  if (item.depth > StoryCommentMaximumDepth) null;
-  if (!item?.comment) return <p className="text-notice opacity-60">댓글 작성자가 삭제한 댓글이에요</p>;
+  if (item.depth < StoryCommentMinimumDepth) return null;
+  if (item.depth > StoryCommentMaximumDepth) return null;
+  if (!item?.content) {
+    if (typeof item?.updatedAt !== "string") return <p className="text-notice opacity-60">삭제중이에요</p>;
+    return <p className="text-notice opacity-60">댓글 작성자가 삭제한 댓글이에요</p>;
+  }
 
   return (
     <div className="relative" {...rest}>
@@ -39,7 +42,7 @@ const Comment = ({ item, ...rest }: CommentProps) => {
         </a>
       </Link>
       <div className="mt-1 pl-11">
-        <p>{item.comment}</p>
+        <p>{item.content}</p>
       </div>
     </div>
   );

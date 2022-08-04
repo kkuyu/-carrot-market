@@ -24,7 +24,7 @@ import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
-import PostComment, { PostCommentTypes } from "@components/forms/postComment";
+import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 import CommentList from "@components/lists/commentList";
 import Profiles from "@components/profiles";
 
@@ -74,7 +74,7 @@ const StoryDetail: NextPage<{
   }, [comments]);
 
   // new comment
-  const formData = useForm<PostCommentTypes>({ defaultValues: { reCommentRefId: null } });
+  const formData = useForm<EditCommentTypes>({ defaultValues: { reCommentRefId: null } });
   const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
     onSuccess: () => {
       mutateStoryDetail();
@@ -116,7 +116,7 @@ const StoryDetail: NextPage<{
     });
   };
 
-  const submitReComment = (data: PostCommentTypes) => {
+  const submitReComment = (data: EditCommentTypes) => {
     if (commentLoading || sendCommentLoading) return;
     if (!user) return;
     if (!story) return;
@@ -126,11 +126,12 @@ const StoryDetail: NextPage<{
     }, false);
     mutateStoryComments((prev) => {
       const time = new Date();
+      const { content, reCommentRefId = null } = data;
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
-      const dummyComment = { ...data, id: 0, depth: 0, userId: user?.id, storyId: story?.id, createdAt: time, updatedAt: time };
+      const dummyComment = { ...data, id: 0, depth: 0, content, reCommentRefId, userId: user?.id, storyId: story?.id, createdAt: time, updatedAt: time };
       return prev && { ...prev, total: prev.total + 1, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
-    formData.setValue("comment", "");
+    formData.setValue("content", "");
     sendComment({ ...data, ...currentAddr });
   };
 
@@ -278,10 +279,11 @@ const StoryDetail: NextPage<{
       {user?.id && (
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-16 border-t bg-white">
-            <PostComment
+            <EditComment
+              type="post"
               formData={formData}
               onValid={user?.id === -1 ? openSignUpModal : submitReComment}
-              isLoading={sendCommentLoading}
+              isLoading={commentLoading || sendCommentLoading}
               commentType={category?.commentType}
               className="w-full pl-5 pr-3"
             />

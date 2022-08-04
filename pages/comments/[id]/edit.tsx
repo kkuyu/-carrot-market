@@ -1,0 +1,164 @@
+import type { NextPage } from "next";
+import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useSetRecoilState } from "recoil";
+import useSWR, { SWRConfig } from "swr";
+// @libs
+import { PageLayout } from "@libs/states";
+import useMutation from "@libs/client/useMutation";
+import { withSsrSession } from "@libs/server/withSession";
+import client from "@libs/server/client";
+import getSsrUser from "@libs/server/getUser";
+// @api
+import { GetCommentsDetailResponse } from "@api/comments/[id]";
+import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
+// @components
+import EditComment, { EditCommentTypes } from "@components/forms/editComment";
+
+const CommentEdit: NextPage = () => {
+  const router = useRouter();
+  const setLayout = useSetRecoilState(PageLayout);
+
+  const { data: commentData, mutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}` : null);
+
+  const formData = useForm<EditCommentTypes>();
+  const [editComment, { loading }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
+    onSuccess: async (data) => {
+      await mutate((prev) => prev && { ...prev, comment: { ...prev?.comment } });
+      router.replace(`/comments/${data.comment.id}`);
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
+  const submitUploadComment = async ({ ...data }: EditCommentTypes) => {
+    if (loading) return;
+    editComment({ ...data });
+  };
+
+  useEffect(() => {
+    if (!commentData?.comment) return;
+    formData.setValue("content", commentData?.comment?.content);
+  }, [commentData?.comment]);
+
+  useEffect(() => {
+    setLayout(() => ({
+      title: "댓글 수정",
+      header: {
+        headerUtils: ["back", "title", "submit"],
+        submitId: "edit-comment",
+      },
+      navBar: {
+        navBarUtils: [],
+      },
+    }));
+  }, []);
+
+  return (
+    <div className="container pt-5 pb-5">
+      <EditComment type="edit" formId="edit-comment" formData={formData} onValid={submitUploadComment} isLoading={loading} />
+    </div>
+  );
+};
+
+const Page: NextPage<{
+  getComment: { response: GetCommentsDetailResponse };
+}> = ({ getComment }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/comments/${getComment.response.comment.id}`]: getComment.response,
+        },
+      }}
+    >
+      <CommentEdit />
+    </SWRConfig>
+  );
+};
+
+export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // getUser
+  const ssrUser = await getSsrUser(req);
+
+  // redirect: welcome
+  if (!ssrUser.profile && !ssrUser.dummyProfile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/welcome`,
+      },
+    };
+  }
+
+  // redirect: join
+  if (ssrUser.dummyProfile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/join?addrNm=${ssrUser?.currentAddr?.emdAddrNm}`,
+      },
+    };
+  }
+
+  const commentId = params?.id?.toString();
+
+  // invalid params: commentId
+  // redirect: comments/[id]
+  if (!commentId || isNaN(+commentId)) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/comments/${commentId}`,
+      },
+    };
+  }
+
+  // find comment
+  const comment = await client.storyComment.findUnique({
+    where: {
+      id: +commentId,
+    },
+  });
+
+  // invalid comment: not found
+  // redirect: comments/[id]
+  if (!comment) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/comments/${commentId}`,
+      },
+    };
+  }
+
+  // invalid comment: not my comment
+  // redirect: stories/[id]
+  if (comment.userId !== ssrUser?.profile?.id) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/stories/${commentId}`,
+      },
+    };
+  }
+
+  return {
+    props: {
+      getComment: {
+        response: {
+          success: true,
+          comment: JSON.parse(JSON.stringify(comment || [])),
+        },
+      },
+    },
+  };
+});
+
+export default Page;

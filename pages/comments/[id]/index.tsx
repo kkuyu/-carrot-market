@@ -22,7 +22,7 @@ import Comment from "@components/cards/comment";
 import CommentList from "@components/lists/commentList";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
-import PostComment, { PostCommentTypes } from "@components/forms/postComment";
+import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 import StorySummary from "@components/cards/storySummary";
 import Link from "next/link";
 
@@ -48,7 +48,7 @@ const CommentsDetail: NextPage<{
   const { data, mutate: mutateCommentDetail } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
 
   // new comment
-  const formData = useForm<PostCommentTypes>();
+  const formData = useForm<EditCommentTypes>();
   const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${comment?.storyId}/comments`, {
     onSuccess: (successData) => {
       setComment((prev) => prev && { ...prev, reComments: prev?.reComments?.map((comment) => (comment.id !== 0 ? comment : { ...comment, id: successData.comment.id })) || [] });
@@ -76,18 +76,19 @@ const CommentsDetail: NextPage<{
     });
   };
 
-  const submitReComment = (data: PostCommentTypes) => {
+  const submitReComment = (data: EditCommentTypes) => {
     if (commentLoading || sendCommentLoading) return;
     if (!user) return;
     if (!comment) return;
     setCommentLoading(() => true);
     mutateCommentDetail((prev) => {
       const time = new Date();
+      const { content, reCommentRefId = null } = data;
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
-      const dummyComment = { ...data, id: 0, depth: comment?.depth + 1, userId: user?.id, storyId: comment?.storyId, createdAt: time, updatedAt: time };
+      const dummyComment = { id: 0, depth: comment?.depth + 1, content, reCommentRefId, userId: user?.id, storyId: comment?.storyId, createdAt: time, updatedAt: time };
       return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
     }, false);
-    formData.setValue("comment", "");
+    formData.setValue("content", "");
     sendComment({ ...data, ...currentAddr });
   };
 
@@ -129,7 +130,7 @@ const CommentsDetail: NextPage<{
 
     setLayout(() => ({
       title: "답글쓰기",
-      seoTitle: `${comment?.comment || ""} | 답글쓰기`,
+      seoTitle: `${comment?.content || ""} | 답글쓰기`,
       header: {
         headerUtils: ["back", "title"],
       },
@@ -137,7 +138,7 @@ const CommentsDetail: NextPage<{
         navBarUtils: [],
       },
     }));
-  }, [user?.id, comment?.id, comment?.comment]);
+  }, [user?.id, comment?.id, comment?.content]);
 
   // focus
   useEffect(() => {
@@ -178,7 +179,8 @@ const CommentsDetail: NextPage<{
       {user?.id && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-screen-sm border-t bg-white">
-            <PostComment
+            <EditComment
+              type="post"
               formData={formData}
               onValid={user?.id === -1 ? openSignUpModal : submitReComment}
               isLoading={commentLoading || sendCommentLoading}

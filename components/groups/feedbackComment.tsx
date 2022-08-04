@@ -25,7 +25,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
 
-  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.createdAt === "string" ? `/api/comments/${item.id}` : null);
+  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item.id}` : null);
   const [updateLike, { loading: likeLoading }] = useMutation(data ? `/api/comments/${item?.id}/like` : "", {
     onSuccess: (data) => {
       boundMutate();
@@ -99,9 +99,9 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   };
 
   if (!item) return null;
-  if (!item.comment) return null;
-  if (item.depth < StoryCommentMinimumDepth) null;
-  if (item.depth > StoryCommentMaximumDepth) null;
+  if (!item.content) return null;
+  if (item.depth < StoryCommentMinimumDepth) return null;
+  if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
     <div className="pl-11 space-x-2">
@@ -121,7 +121,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
 
 export default React.memo(FeedbackComment, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
-  if (prev?.item?.comment !== next?.item?.comment) return false;
-  if (prev?.item?.createdAt !== next?.item?.createdAt) return false;
+  if (prev?.item?.content !== next?.item?.content) return false;
+  if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;
   return true;
 });

@@ -32,7 +32,7 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
-  const [deleteComment, { loading: deleteLoading }] = useMutation<PostCommentsDeleteResponse>(item?.id && typeof item?.createdAt === "string" ? `/api/comments/${item?.id}/delete` : "", {
+  const [deleteComment, { loading: deleteLoading }] = useMutation<PostCommentsDeleteResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item?.id}/delete` : "", {
     onSuccess: () => {
       if (mutateStoryDetail) mutateStoryDetail();
       if (mutateStoryComments) mutateStoryComments();
@@ -54,7 +54,7 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
         user?.id === item?.userId
           ? [
               { key: "place", text: "장소추가", onClick: () => console.log("장소추가") },
-              { key: "update", text: "수정", onClick: () => console.log("수정") },
+              { key: "update", text: "수정", onClick: () => router.push(`/comments/${item?.id}/edit`) },
               { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
             ]
           : [
@@ -76,19 +76,23 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
       onConfirm: () => {
         if (!item) return;
         if (deleteLoading) return;
+        const time = new Date();
         // story boundMutate
         if (mutateStoryComments) {
           mutateStoryComments((prev) => {
             if (!prev) return prev;
-            return { ...prev, total: prev.total - 1, comments: prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, comment: "" })) };
+            return { ...prev, total: prev.total - 1, comments: prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time })) };
           }, false);
         }
         // comment boundMutate
         if (mutateCommentDetail) {
           mutateCommentDetail((prev) => {
             if (!prev) return prev;
-            if (router?.query?.id?.toString() === item?.id?.toString()) return { ...prev, comment: { ...prev.comment, comment: "" } };
-            return { ...prev, comment: { ...prev.comment, reComments: (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, comment: "" })) } };
+            if (router?.query?.id?.toString() === item?.id?.toString()) return { ...prev, comment: { ...prev.comment, content: "", updatedAt: time } };
+            return {
+              ...prev,
+              comment: { ...prev.comment, reComments: (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time })) },
+            };
           }, false);
         }
         deleteComment({});
@@ -97,9 +101,9 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
   };
 
   if (!item) return null;
-  if (!item.comment) return null;
-  if (item.depth < StoryCommentMinimumDepth) null;
-  if (item.depth > StoryCommentMaximumDepth) null;
+  if (!item.content) return null;
+  if (item.depth < StoryCommentMinimumDepth) return null;
+  if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
     <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openOthersPanel}>
@@ -112,7 +116,7 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
 
 export default React.memo(HandleComment, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
-  if (prev?.item?.comment !== next?.item?.comment) return false;
-  if (prev?.item?.createdAt !== next?.item?.createdAt) return false;
+  if (prev?.item?.content !== next?.item?.content) return false;
+  if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;
   return true;
 });

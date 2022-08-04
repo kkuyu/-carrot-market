@@ -5,9 +5,9 @@ import client from "@libs/server/client";
 import withHandler, { ResponseType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostCommentsDeleteResponse {
+export interface PostCommentsUpdateResponse {
   success: boolean;
-  comment: StoryComment | null;
+  comment: StoryComment;
   error?: {
     timestamp: Date;
     name: string;
@@ -18,6 +18,7 @@ export interface PostCommentsDeleteResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
     const { id: _id } = req.query;
+    const { content } = req.body;
     const { user } = req.session;
 
     // request valid
@@ -33,17 +34,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       where: {
         id,
       },
-      select: {
-        id: true,
-        userId: true,
-        storyId: true,
-        reCommentRefId: true,
-        _count: {
-          select: {
-            reComments: true,
-          },
-        },
-      },
     });
     if (!comment) {
       const error = new Error("NotFoundComment");
@@ -56,63 +46,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // remove record
-    await client.record.deleteMany({
+    const updateComment = await client.storyComment.update({
       where: {
-        commentId: comment.id,
+        id: comment.id,
+      },
+      data: {
+        content,
       },
     });
 
-    let newComment = null;
-    if (!comment._count.reComments) {
-      // delete comment
-      await client.storyComment.delete({
-        where: {
-          id: comment.id,
-        },
-      });
-    } else {
-      // update comment
-      newComment = await client.storyComment.update({
-        where: {
-          id: comment.id,
-        },
-        data: {
-          content: "",
-        },
-      });
-    }
-
-    const reCommentRef = !comment?.reCommentRefId
-      ? null
-      : await client.storyComment.findUnique({
-          where: {
-            id: comment?.reCommentRefId,
-          },
-          select: {
-            id: true,
-            content: true,
-            _count: {
-              select: {
-                reComments: true,
-              },
-            },
-          },
-        });
-
-    if (!newComment && reCommentRef?.id && !reCommentRef?.content && !reCommentRef?._count.reComments) {
-      // delete reCommentRef
-      await client.storyComment.delete({
-        where: {
-          id: reCommentRef?.id,
-        },
-      });
-    }
-
     // result
-    const result: PostCommentsDeleteResponse = {
+    const result: PostCommentsUpdateResponse = {
       success: true,
-      comment: newComment,
+      comment: updateComment,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

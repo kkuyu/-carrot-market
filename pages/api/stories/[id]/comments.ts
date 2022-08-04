@@ -66,7 +66,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             gte: StoryCommentMinimumDepth,
             lte: StoryCommentMaximumDepth,
           },
-          NOT: [{ comment: "" }],
+          NOT: [{ content: "" }],
         },
       });
 
@@ -235,7 +235,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     try {
       const { id: _id } = req.query;
       const { user } = req.session;
-      const { comment, reCommentRefId: _reCommentRefId, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
+      const { content, reCommentRefId: _reCommentRefId, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
 
       // request valid
       if (!_id) {
@@ -243,7 +243,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (!comment) {
+      if (!content) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -311,7 +311,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       // create comment
       const newComment = await client.storyComment.create({
         data: {
-          comment,
+          content,
           emdAddrNm,
           emdPosNm,
           emdPosX,

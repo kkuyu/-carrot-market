@@ -64,7 +64,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
               gte: StoryCommentMinimumDepth,
               lte: StoryCommentMaximumDepth,
             },
-            NOT: [{ comment: "" }],
+            NOT: [{ content: "" }],
           },
           select: {
             id: true,
