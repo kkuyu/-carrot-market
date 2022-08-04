@@ -122,21 +122,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
     };
   }
-  // redirect: /
-  if (ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/`,
-      },
-    };
-  }
 
   const reviewId = params?.id?.toString();
 
   // invalid params: reviewId
   // redirect: /users/profiles
-  if (!reviewId || isNaN(+reviewId)) {
+  if (!ssrUser.profile || !reviewId || isNaN(+reviewId)) {
     return {
       redirect: {
         permanent: false,

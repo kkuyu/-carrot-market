@@ -233,21 +233,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
     };
   }
-  // redirect: chats
-  if (ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/chats`,
-      },
-    };
-  }
 
   const chatId = params?.id?.toString();
 
+  // !ssrUser.profile
   // invalid params: chatId
   // redirect: chats
-  if (!chatId || isNaN(+chatId)) {
+  if (!ssrUser.profile || !chatId || isNaN(+chatId)) {
     return {
       redirect: {
         permanent: false,

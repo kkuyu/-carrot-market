@@ -97,21 +97,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect: join
-  if (ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/join?addrNm=${ssrUser?.currentAddr?.emdAddrNm}`,
-      },
-    };
-  }
-
   const commentId = params?.id?.toString();
 
+  // !ssrUser.profile
   // invalid params: commentId
   // redirect: comments/[id]
-  if (!commentId || isNaN(+commentId)) {
+  if (!ssrUser.profile || !commentId || isNaN(+commentId)) {
     return {
       redirect: {
         permanent: false,

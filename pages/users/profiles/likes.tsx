@@ -117,8 +117,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
+  // !ssrUser.profile
   // redirect: /users/profiles
-  if (ssrUser.dummyProfile) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,

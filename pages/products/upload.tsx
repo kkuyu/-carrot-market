@@ -109,12 +109,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
-  // redirect: join
-  if (ssrUser.dummyProfile) {
+  // redirect: /
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/join?addrNm=${ssrUser?.currentAddr?.emdAddrNm}`,
+        destination: `/`,
       },
     };
   }

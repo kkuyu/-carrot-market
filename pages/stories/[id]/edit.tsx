@@ -161,21 +161,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect: join
-  if (ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/join?addrNm=${ssrUser?.currentAddr?.emdAddrNm}`,
-      },
-    };
-  }
-
   const storyId = params?.id?.toString();
 
+  // !ssrUser.profile
   // invalid params: storyId
   // redirect: stories/[id]
-  if (!storyId || isNaN(+storyId)) {
+  if (!ssrUser.profile || !storyId || isNaN(+storyId)) {
     return {
       redirect: {
         permanent: false,
