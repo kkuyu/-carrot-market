@@ -2,12 +2,11 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -17,13 +16,13 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
+import CustomHead from "@components/custom/head";
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
 const ProductUpload: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const { data: productData, mutate } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
@@ -117,20 +116,22 @@ const ProductUpload: NextPage = () => {
   }, [productData?.product?.id]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "중고거래 글 수정",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title", "submit"],
+        title: "중고거래 글 수정",
+        titleTag: "h1",
+        utils: ["back", "title", "submit"],
         submitId: "edit-product",
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
+      <CustomHead title="글 수정 | 중고거래" />
       <EditProduct formId="edit-product" formData={formData} onValid={submitEditProduct} isLoading={loading || photoLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
   );

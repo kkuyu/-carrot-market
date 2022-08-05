@@ -1,18 +1,12 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useRecoilValue } from "recoil";
 // @libs
-import { NavBarUtils, PageLayout } from "@libs/states";
+import { NavBarOptions, NavBarUtils } from "@components/layouts";
 
-export interface NavBarProps {
-  navBarUtils?: NavBarUtils[];
-}
+export interface NavBarProps extends NavBarOptions {}
 
-const NavBar = ({}: NavBarProps) => {
+const NavBar = ({ utils }: NavBarProps) => {
   const router = useRouter();
-  const {
-    navBar: { navBarUtils },
-  } = useRecoilValue(PageLayout);
 
   const classNames = {
     default: `basis-full h-full pt-2 space-y-1`,
@@ -102,7 +96,7 @@ const NavBar = ({}: NavBarProps) => {
     }
   };
 
-  if (!navBarUtils.length) {
+  if (!utils.length) {
     return null;
   }
 
@@ -110,11 +104,11 @@ const NavBar = ({}: NavBarProps) => {
     <div id="layout-nav-bar" className="fixed-container bottom-0 z-[100]">
       <nav className="fixed-inner h-16 border-t bg-white">
         <div className="-mb-1 flex w-full h-full">
-          {navBarUtils.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
-          {navBarUtils.includes(NavBarUtils["Story"]) && <>{getUtils(NavBarUtils["Story"])}</>}
-          {navBarUtils.includes(NavBarUtils["Chat"]) && <>{getUtils(NavBarUtils["Chat"])}</>}
-          {navBarUtils.includes(NavBarUtils["Streams"]) && <>{getUtils(NavBarUtils["Streams"])}</>}
-          {navBarUtils.includes(NavBarUtils["Profile"]) && <>{getUtils(NavBarUtils["Profile"])}</>}
+          {utils.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
+          {utils.includes(NavBarUtils["Story"]) && <>{getUtils(NavBarUtils["Story"])}</>}
+          {utils.includes(NavBarUtils["Chat"]) && <>{getUtils(NavBarUtils["Chat"])}</>}
+          {utils.includes(NavBarUtils["Streams"]) && <>{getUtils(NavBarUtils["Streams"])}</>}
+          {utils.includes(NavBarUtils["Profile"]) && <>{getUtils(NavBarUtils["Profile"])}</>}
         </div>
       </nav>
     </div>

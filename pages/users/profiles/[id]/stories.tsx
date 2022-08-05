@@ -1,13 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -18,6 +17,7 @@ import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesStoriesResponse, ProfilesStoriesFilter } from "@api/users/profiles/[id]/stories";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @components
+import CustomHead from "@components/custom/head";
 import StoryList from "@components/lists/storyList";
 import CommentSummaryList from "@components/lists/commentSummaryList";
 
@@ -33,9 +33,9 @@ type FilterTab = { index: number; value: ProfilesStoriesFilter; text: string; na
 
 const ProfileStories: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
+
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
 
   // profile story paging
@@ -53,10 +53,12 @@ const ProfileStories: NextPage = () => {
     getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
   );
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const stories = data ? data.flatMap((item) => item.stories) : [];
-  const comments = data ? data.flatMap((item) => item.comments) : [];
+  const results = {
+    stories: data && activeTab.value === "STORY" ? data.flatMap((item) => item.stories) : [],
+    comments: data && activeTab.value === "COMMENT" ? data.flatMap((item) => item.comments) : [],
+  };
 
   const changeFilter = (tab: FilterTab) => {
     setFilter(tab.value);
@@ -70,15 +72,16 @@ const ProfileStories: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: user?.id === profileData?.profile?.id ? "내 글 목록" : `${profileData?.profile.name}님의 글 목록`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}동네생활`,
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   if (!profileData?.profile) {
@@ -87,6 +90,8 @@ const ProfileStories: NextPage = () => {
 
   return (
     <div className="container">
+      <CustomHead title={`동네생활 | ${profileData?.profile.name}님의 당근`} />
+
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
           return (
@@ -103,25 +108,23 @@ const ProfileStories: NextPage = () => {
       </div>
 
       {/* 게시글: List */}
-      {Boolean(activeTab.value === "STORY" ? stories.length : activeTab.value === "COMMENT" ? comments.length : 0) && (
+      {Boolean(activeTab.value === "STORY" ? results.stories.length : activeTab.value === "COMMENT" ? results.comments.length : 0) && (
         <div className="-mx-5">
-          {activeTab.value === "STORY" && <StoryList list={stories} />}
-          {activeTab.value === "COMMENT" && <CommentSummaryList list={comments} />}
+          {activeTab.value === "STORY" && <StoryList list={results.stories} />}
+          {activeTab.value === "COMMENT" && <CommentSummaryList list={results.comments} />}
+          <div ref={infiniteRef} />
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}을 불러오고있어요` : isReachingEnd ? `${activeTab?.name}을 모두 확인하였어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}을 모두 확인하였어요` : isReachingEnd ? `${activeTab?.name}을 불러오고있어요` : ""}</span>
           </div>
         </div>
       )}
 
       {/* 게시글: Empty */}
-      {!Boolean(activeTab.value === "STORY" ? stories.length : activeTab.value === "COMMENT" ? comments.length : 0) && (
+      {!Boolean(activeTab.value === "STORY" ? results.stories.length : activeTab.value === "COMMENT" ? results.comments.length : 0) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${activeTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };

@@ -1,11 +1,10 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -14,12 +13,13 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesMannersResponse } from "@api/users/profiles/[id]/manners";
 // @components
+import CustomHead from "@components/custom/head";
 import MannerList from "@components/lists/mannerList";
 import Buttons from "@components/buttons";
 
 const ProfileManners: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   const { user } = useUser();
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
@@ -30,26 +30,29 @@ const ProfileManners: NextPage = () => {
   const badManners = manners?.filter((manner) => manner.reviews.length > 1 && manner.reviews.find((review) => review.satisfaction === "dislike"));
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "매너 상세",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}받은 매너 후기`,
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pb-5">
-      <h1 className="mt-5">받은 매너</h1>
+      <CustomHead title={`받은 매너 평가 | ${profileData?.profile.name}님의 당근`} />
+
+      <h2 className="mt-5">받은 매너</h2>
       <div className="mt-2">
         {Boolean(goodManners.length) && <MannerList list={goodManners} />}
         {!Boolean(goodManners.length) && <p>받은 매너 칭찬이 아직 없어요</p>}
       </div>
 
-      <h1 className="mt-5 pt-5 border-t">받은 비매너</h1>
+      <h2 className="mt-5 pt-5 border-t">받은 비매너</h2>
       <div className="mt-2">
         {user?.id !== profileData?.profile.id && <p>받은 비매너는 본인에게만 보여요</p>}
         {user?.id === profileData?.profile.id && Boolean(badManners.length) && <MannerList list={badManners}></MannerList>}

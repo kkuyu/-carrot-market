@@ -3,14 +3,13 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
 import { useEffect, useState } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
 import { getProductCategory, getDiffTimeStr, truncateStr } from "@libs/utils";
-import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
+import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
@@ -20,6 +19,7 @@ import { PostProductsLikeResponse } from "@api/products/[id]/like";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostChatsResponse } from "@api/chats";
 // @components
+import CustomHead from "@components/custom/head";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
@@ -32,9 +32,8 @@ const ProductDetail: NextPage<{
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, currentAddr } = useUser();
+  const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
   // view model
@@ -211,12 +210,12 @@ const ProductDetail: NextPage<{
   useEffect(() => {
     if (!product) return;
 
-    setLayout(() => ({
-      title: product?.name || "",
-      seoTitle: `${product?.name || ""} | 판매 상품 상세`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "home", "share", "kebab"],
-        headerColor: Boolean(thumbnails.length) ? "transparent" : "white",
+        title: "",
+        titleTag: "strong",
+        bgColor: Boolean(thumbnails.length) ? "transparent" : "white",
+        utils: ["back", "title", "home", "share", "kebab"],
         kebabActions: (() => {
           if (!user?.id) {
             return [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }];
@@ -243,9 +242,9 @@ const ProductDetail: NextPage<{
         })(),
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, [user?.id, product?.userId, product?.reviews, product?.records]);
 
   useEffect(() => {
@@ -258,6 +257,8 @@ const ProductDetail: NextPage<{
 
   return (
     <article className="container pb-20">
+      <CustomHead title={`${truncateStr(product?.name, 15)} | 중고거래`} />
+
       {/* 썸네일 */}
       {Boolean(thumbnails.length) && (
         <div className="-mx-5">
@@ -265,7 +266,7 @@ const ProductDetail: NextPage<{
         </div>
       )}
 
-      {/* 판매 상품 정보 */}
+      {/* 중고거래 정보 */}
       <section className="block">
         {/* 판매자 */}
         <Link href={`/users/profiles/${product?.user?.id}`}>

@@ -2,13 +2,11 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
-import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
@@ -20,6 +18,7 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @components
+import CustomHead from "@components/custom/head";
 import ProductSummary from "@components/cards/productSummary";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
@@ -33,9 +32,7 @@ const getKey = (pageIndex: number, previousPageData: GetChatsResponse, query: st
 
 const ProductPurchase: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
-  const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
@@ -57,7 +54,7 @@ const ProductPurchase: NextPage = () => {
     },
   });
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : [];
 
@@ -73,19 +70,22 @@ const ProductPurchase: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "구매자 선택",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "구매자 선택",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title="구매자 선택 | 중고거래" />
+
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
@@ -105,8 +105,9 @@ const ProductPurchase: NextPage = () => {
       {Boolean(chats.length) && (
         <div className="-mx-5 mt-5 border-t">
           <ChatList type="button" list={chats} content="timestamp" isVisibleOnlyOneUser={true} selectItem={purchaseItem} />
+          <div ref={infiniteRef} />
           <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? "대화 중인 채팅방을 불러오고있어요" : isReachingEnd ? "대화 중인 채팅방을 모두 확인하였어요" : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? "대화 중인 채팅방을 모두 확인하였어요" : isLoading ? "대화 중인 채팅방을 불러오고있어요" : ""}</span>
           </div>
         </div>
       )}
@@ -117,9 +118,6 @@ const ProductPurchase: NextPage = () => {
           <p className="text-gray-500">대화 중인 이웃이 없어요.</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
 
       {(!Boolean(chats.length) || isReachingEnd) && (
         <div className="text-center">

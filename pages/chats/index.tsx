@@ -1,12 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @libs
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -15,6 +14,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetChatsResponse } from "@api/chats";
 // @components
+import CustomHead from "@components/custom/head";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
@@ -27,9 +27,8 @@ const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
 
 const ChatHome: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, currentAddr } = useUser();
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
@@ -46,20 +45,23 @@ const ChatHome: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "채팅",
+    changeLayout({
       header: {
-        headerUtils: ["title"],
+        title: "채팅",
+        titleTag: "h1",
+        utils: ["title"],
       },
       navBar: {
-        navBarUtils: ["home", "chat", "profile", "story", "streams"],
+        utils: ["home", "chat", "profile", "story", "streams"],
       },
-    }));
+    });
   }, []);
 
   if (user?.id === -1) {
     return (
       <div className="container">
+        <CustomHead title="채팅" />
+
         <div className="py-10 text-center">
           <p className="text-notice inline-block">
             이웃과의 채팅은
@@ -72,12 +74,15 @@ const ChatHome: NextPage = () => {
 
   return (
     <div className="container">
+      <CustomHead title="채팅" />
+
       {/* 채팅: List */}
       {Boolean(chats.length) && (
         <div className="-mx-5">
           <ChatList type="link" list={chats} content="message" isVisibleOnlyOneUser={false} />
+          <div ref={infiniteRef} />
           <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? "채팅을 불러오고있어요" : isReachingEnd ? "채팅을 모두 확인하였어요" : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : ""}</span>
           </div>
         </div>
       )}
@@ -88,9 +93,6 @@ const ChatHome: NextPage = () => {
           <p className="text-gray-500">채팅한 이웃이 없어요.</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };

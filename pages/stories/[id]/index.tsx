@@ -3,15 +3,14 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
 import { useEffect, useMemo, useState } from "react";
-import { useSetRecoilState } from "recoil";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
 import { getStoryCategory, getDiffTimeStr, getCommentTree, truncateStr } from "@libs/utils";
-import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
+import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
@@ -19,6 +18,7 @@ import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
+import CustomHead from "@components/custom/head";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
@@ -35,9 +35,8 @@ const StoryDetail: NextPage<{
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, currentAddr } = useUser();
+  const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
   // view model
@@ -185,11 +184,11 @@ const StoryDetail: NextPage<{
   useEffect(() => {
     if (!story) return;
 
-    setLayout(() => ({
-      title: story?.content || "",
-      seoTitle: `${story?.content || ""} | 게시글 상세`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "home", "share", "kebab"],
+        title: "",
+        titleTag: "strong",
+        utils: ["back", 'title', "home", "share", "kebab"],
         kebabActions: (() => {
           if (!user?.id) {
             return [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }];
@@ -207,9 +206,9 @@ const StoryDetail: NextPage<{
         })(),
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, [user?.id, story?.id, story?.userId, story?.content]);
 
   useEffect(() => {
@@ -222,10 +221,11 @@ const StoryDetail: NextPage<{
 
   return (
     <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
+      <CustomHead title={`${truncateStr(story?.content, 15)} | 동네생활`} />
+      <h1 className="sr-only">{truncateStr(story.content, 15)} | 동네생활</h1>
+
       {/* 게시글 정보 */}
       <section className="-mx-5 border-b">
-        {/* 제목 */}
-        <h1 className="sr-only">{truncateStr(story.content, 15)}</h1>
         {/* 내용 */}
         <div className="pt-5 pb-4 px-5">
           {/* 카테고리 */}

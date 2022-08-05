@@ -2,10 +2,9 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 // @libs
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -13,13 +12,13 @@ import getSsrUser from "@libs/server/getUser";
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
+import CustomHead from "@components/custom/head";
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
 const ProductUpload: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, currentAddr } = useUser();
+  const { changeLayout } = useLayouts();
 
   const formData = useForm<EditProductTypes>();
 
@@ -76,20 +75,22 @@ const ProductUpload: NextPage = () => {
   };
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "중고거래 글 쓰기",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title", "submit"],
+        title: "중고거래 글 쓰기",
+        titleTag: "h1",
+        utils: ["back", "title", "submit"],
         submitId: "upload-product",
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
+      <CustomHead title="글 쓰기 | 중고거래" />
       <EditProduct formId="upload-product" formData={formData} onValid={submitUploadProduct} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );

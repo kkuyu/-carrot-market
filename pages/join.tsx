@@ -3,10 +3,9 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
@@ -16,6 +15,7 @@ import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostDummyResponse } from "@api/users/dummy";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
@@ -23,10 +23,8 @@ import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const Join: NextPage = () => {
   const router = useRouter();
+  const { changeLayout } = useLayouts();
   const { hasQuery, query } = useQuery();
-  const setLayout = useSetRecoilState(PageLayout);
-
-  // common toast
   const { openToast } = useToast();
 
   // check query data
@@ -109,19 +107,22 @@ const Join: NextPage = () => {
   }, [addrData]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "회원가입",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "회원가입",
+        titleTag: "strong",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <section className="container py-5">
+      <CustomHead title="회원가입" />
+
       <h1 className="text-2xl font-bold">
         안녕하세요!
         <br />

@@ -3,16 +3,16 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
 import { useEffect, useState } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
 // @api
 import { ProfilesConcern } from "@api/users/profiles/types";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 // @components
+import CustomHead from "@components/custom/head";
 import Profiles from "@components/profiles";
 import MannerList from "@components/lists/mannerList";
 import ReviewList from "@components/lists/reviewList";
@@ -24,9 +24,8 @@ const ProfileDetail: NextPage<{
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   // static data: profile detail
   const [profile, setProfile] = useState<GetProfilesDetailResponse["profile"] | null>(staticProps?.profile ? staticProps.profile : null);
@@ -47,17 +46,16 @@ const ProfileDetail: NextPage<{
   // setting layout
   useEffect(() => {
     if (!profile) return;
-
-    setLayout(() => ({
-      title: "프로필",
-      seoTitle: `${profile?.name || ""} | 프로필`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "title", "home", "share"],
+        title: `${user?.id !== profile?.id ? `${profile.name}님의 ` : ""}프로필`,
+        titleTag: "h1",
+        utils: ["back", "title", "home", "share"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, [user?.id, profile?.id, profile?.name]);
 
   if (!profile) {
@@ -66,9 +64,9 @@ const ProfileDetail: NextPage<{
 
   return (
     <article className="container pt-5 pb-5">
-      <h1>
-        <Profiles user={profile} uuid={profile?.id === -1 ? "" : `#${profile?.id}`} />
-      </h1>
+      <CustomHead title={`프로필 | ${profile.name}님의 당근`} />
+
+      <Profiles user={profile} uuid={profile?.id === -1 ? "" : `#${profile?.id}`} />
 
       {/* 관심사 */}
       {(profile?.concerns || user?.id === staticProps?.profile?.id) && (

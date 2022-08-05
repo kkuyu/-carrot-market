@@ -3,12 +3,12 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
+import { truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useModal from "@libs/client/useModal";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
@@ -21,6 +21,7 @@ import { PostChatsMessageResponse } from "@api/chats/[id]/message";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @components
+import CustomHead from "@components/custom/head";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
 import ChatMessageList from "@components/lists/chatMessageList";
@@ -29,9 +30,8 @@ import Buttons from "@components/buttons";
 
 const ChatDetail: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
   // fetch data: chat detail
@@ -132,15 +132,16 @@ const ChatDetail: NextPage = () => {
   };
 
   useEffect(() => {
-    setLayout(() => ({
-      title: `${chatUsers.map((chatUser) => chatUser.name).join(", ") || "채팅"}`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15),
+        titleTag: "strong",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, [chatUsers]);
 
   if (!data) {
@@ -149,6 +150,9 @@ const ChatDetail: NextPage = () => {
 
   return (
     <article className="container pb-20">
+      <CustomHead title={`${truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15)} | 채팅`} />
+      <h1 className="sr-only">{truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15)} | 채팅</h1>
+
       {/* 상품 정보 */}
       {data.chat.product && (
         <div className="-mx-5 sticky top-12 left-0 block py-3 px-5 bg-gray-200">

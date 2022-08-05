@@ -1,26 +1,22 @@
 import type { AppProps } from "next/app";
 import Script from "next/script";
-import { RecoilRoot } from "recoil";
 import { SWRConfig } from "swr";
 import "../styles/globals.css";
 // @components
 import CommonProvider from "@components/commons/commonProvider";
-import Header from "@components/layouts/header";
-import NavBar from "@components/layouts/navBar";
+import LayoutProvider from "@components/layouts/layoutProvider";
 
 function MyApp({ Component, pageProps }: AppProps) {
   return (
     <>
       <SWRConfig value={{ fetcher: (url: string) => fetch(url).then((response) => response.json()) }}>
-        <RecoilRoot>
-          <CommonProvider>
-            <Header />
+        <CommonProvider>
+          <LayoutProvider>
             <div className="main h-min-full-screen">
               <Component {...pageProps} />
             </div>
-            <NavBar />
-          </CommonProvider>
-        </RecoilRoot>
+          </LayoutProvider>
+        </CommonProvider>
       </SWRConfig>
       {/* todo: remove */}
       <Script src="https://www.jsdelivr.com/package/npm/vanillajs" strategy="lazyOnload" />

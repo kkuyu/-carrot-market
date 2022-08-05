@@ -2,15 +2,15 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import CustomHead from "@components/custom/head";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
 // @components
@@ -18,7 +18,7 @@ import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 
 const CommentEdit: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   const { data: commentData, mutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}` : null);
 
@@ -48,20 +48,22 @@ const CommentEdit: NextPage = () => {
   }, [commentData?.comment]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "댓글 수정",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title", "submit"],
+        title: "댓글 수정",
+        titleTag: 'h1',
+        utils: ["back", "title", "submit"],
         submitId: "edit-comment",
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
+      <CustomHead title="댓글 수정 | 댓글" />
       <EditComment type="edit" formId="edit-comment" formData={formData} onValid={submitUploadComment} isLoading={loading} />
     </div>
   );

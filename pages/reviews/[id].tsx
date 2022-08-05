@@ -2,12 +2,11 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @libs
 import { getReviewManners } from "@libs/utils";
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
@@ -15,13 +14,13 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetReviewsDetailResponse } from "@api/reviews/[id]";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 
 const ReviewsDetail: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   // fetch data: chat detail
   const { data, error } = useSWR<GetReviewsDetailResponse>(router.query.id ? `/api/reviews/${router.query.id}` : null);
@@ -30,15 +29,16 @@ const ReviewsDetail: NextPage = () => {
   const senderProfile = role === "sellUser" ? data?.review?.purchaseUser : data?.review?.sellUser;
 
   useEffect(() => {
-    setLayout(() => ({
-      title: `${data?.review?.role === role ? "보낸" : "받은"} 거래 후기`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: `${data?.review?.role === role ? "보낸" : "받은"} 거래 후기`,
+        titleTag: "strong",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, [data?.review?.role]);
 
   if (!data) {
@@ -47,6 +47,8 @@ const ReviewsDetail: NextPage = () => {
 
   return (
     <article className="container pt-5 pb-5">
+      <CustomHead title="거래 후기" />
+
       {data?.review?.role === role && (
         <h1 className="text-xl font-bold">
           {senderProfile?.name}님에게

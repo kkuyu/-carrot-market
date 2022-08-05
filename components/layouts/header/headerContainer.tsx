@@ -1,8 +1,6 @@
-import Head from "next/head";
 import { useRouter } from "next/router";
-import { useRecoilValue } from "recoil";
 // @libs
-import { HeaderUtils, PageLayout } from "@libs/states";
+import { HeaderOptions, HeaderUtils } from "@components/layouts";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
@@ -13,17 +11,11 @@ import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/a
 import HometownDropdown from "@components/commons/modals/hometown/dropdown";
 import HometownUpdate from "@components/commons/modals/hometown/update";
 
-export interface HeaderProps {}
+export interface HeaderProps extends HeaderOptions {}
 
-const Header = ({}: HeaderProps) => {
+const Header = ({ title = "", titleTag = "h1", bgColor = "white", utils, kebabActions, submitId }: HeaderProps) => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
-
-  const {
-    title,
-    seoTitle,
-    header: { headerColor = "white", headerUtils, kebabActions, submitId },
-  } = useRecoilValue(PageLayout);
 
   const { openModal } = useModal();
   const { openPanel } = usePanel();
@@ -122,41 +114,36 @@ const Header = ({}: HeaderProps) => {
           </button>
         );
       case "title":
-        return <strong className="text-base font-semibold truncate">{`${title ? title : "title"}`}</strong>;
+        const Tag = titleTag;
+        if (!title) return null;
+        return <Tag className="text-base font-semibold truncate">{title}</Tag>;
       default:
         return null;
     }
   };
 
   return (
-    <>
-      <Head>
-        <title>{seoTitle || title ? `${seoTitle || title}  | Carrot Market` : "Carrot Market"}</title>
-      </Head>
-      {Boolean(headerUtils.length) && (
-        <div id="layout-header" className={`fixed-container top-0 z-[100] ${headerColor !== "transparent" ? "" : "is-transparent"}`}>
-          <header className={`fixed-inner h-12 ${headerColor !== "transparent" ? `bg-${headerColor} border-b text-black` : "bg-gradient-to-b from-black/20  text-white"}`}>
-            {/* left utils */}
-            <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
-              {headerUtils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
-              {headerUtils.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
-            </div>
-
-            {/* center utils */}
-            <div className="flex justify-center items-center w-full h-full px-20">{headerUtils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
-
-            {/* right utils */}
-            <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
-              {headerUtils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
-              {headerUtils.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
-              {headerUtils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
-              {headerUtils.includes(HeaderUtils["Kebab"]) && <>{getUtils(HeaderUtils["Kebab"])}</>}
-              {headerUtils.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
-            </div>
-          </header>
+    <div id="layout-header" className={`fixed-container top-0 z-[100] ${bgColor !== "transparent" ? "" : "is-transparent"}`}>
+      <header className={`fixed-inner h-12 ${bgColor !== "transparent" ? `bg-${bgColor} border-b text-black` : "bg-gradient-to-b from-black/20  text-white"}`}>
+        {/* left utils */}
+        <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
+          {utils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
+          {utils.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
         </div>
-      )}
-    </>
+
+        {/* center utils */}
+        <div className="flex justify-center items-center w-full h-full px-20">{utils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
+
+        {/* right utils */}
+        <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
+          {utils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
+          {utils.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
+          {utils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
+          {utils.includes(HeaderUtils["Kebab"]) && <>{getUtils(HeaderUtils["Kebab"])}</>}
+          {utils.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
+        </div>
+      </header>
+    </div>
   );
 };
 

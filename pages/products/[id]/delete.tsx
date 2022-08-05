@@ -2,11 +2,10 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -15,12 +14,13 @@ import client from "@libs/server/client";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 
 const ProductDelete: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
@@ -46,15 +46,16 @@ const ProductDelete: NextPage = () => {
   };
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "중고거래 글 삭제",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "중고거래 글 삭제",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   if (!productData?.product) {
@@ -63,6 +64,8 @@ const ProductDelete: NextPage = () => {
 
   return (
     <div className="container pb-5">
+      <CustomHead title="글 삭제 | 중고거래" />
+
       {/* 제품정보 */}
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${productData?.product?.id}`}>

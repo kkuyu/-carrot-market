@@ -28,6 +28,7 @@ export const middleware: NextMiddleware = (req) => {
         if (/^\/comments\/\w*$/.test(url.pathname)) return NextResponse.next();
         if (/^\/users\/profiles\/\w*/.test(url.pathname)) return NextResponse.next();
         url.pathname = "/welcome";
+        url.search = "";
         return NextResponse.redirect(url);
     }
   }
@@ -37,7 +38,11 @@ export const middleware: NextMiddleware = (req) => {
       case "/welcome":
       case "/welcome/locate":
       case "/login":
+      case "/join":
+      case "/verification/email":
+      case "/verification/phone":
         url.pathname = "/";
+        url.search = "";
         return NextResponse.redirect(url);
       default:
         return NextResponse.next();

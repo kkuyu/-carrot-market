@@ -2,21 +2,21 @@ import { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useCoords from "@libs/client/useCoords";
 // @api
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 
 const WelcomeLocate: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   const [keyword, setKeyword] = useState("");
 
@@ -40,19 +40,22 @@ const WelcomeLocate: NextPage = () => {
   };
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "내 동네 설정하기",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "내 동네 설정하기",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pb-5">
+      <CustomHead title="내 동네 설정하기" />
+
       {/* 읍면동 검색 폼 */}
       <div className="sticky top-[calc(3rem+1px)] left-0 -mx-5 px-5 pt-5 pb-3 bg-white">
         <SearchAddress

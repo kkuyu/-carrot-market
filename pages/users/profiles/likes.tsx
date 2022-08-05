@@ -1,13 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -16,6 +15,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesLikeResponse } from "@api/users/profiles/likes";
 // @components
+import CustomHead from "@components/custom/head";
 import ProductList from "@components/lists/productList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse) => {
@@ -27,7 +27,7 @@ const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse) =>
 
 const ProfileLikes: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   const { user } = useUser();
 
@@ -36,7 +36,7 @@ const ProfileLikes: NextPage = () => {
 
   const { data, size, setSize } = useSWRInfinite<GetProfilesLikeResponse>(getKey);
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : [];
 
@@ -47,27 +47,29 @@ const ProfileLikes: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "관심목록",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "관심목록",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title="관심목록 | 나의 당근" />
+
       {/* 관심목록: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductList list={products}>
-            <></>
-          </ProductList>
+          <ProductList list={products}></ProductList>
+          <div ref={infiniteRef} />
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? `관심목록을 불러오고있어요` : isReachingEnd ? `관심목록을 모두 확인하였어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? `관심목록을 모두 확인하였어요` : isLoading ? `관심목록을 불러오고있어요` : ""}</span>
           </div>
         </div>
       )}
@@ -78,9 +80,6 @@ const ProfileLikes: NextPage = () => {
           <p className="text-gray-500">{`관심목록이 존재하지 않아요`}</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };

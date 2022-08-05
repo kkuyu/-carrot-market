@@ -2,12 +2,11 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
 import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -16,13 +15,13 @@ import { GetUserResponse, PostUserResponse } from "@api/users/my";
 import { PostDummyResponse } from "@api/users/dummy";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
+import CustomHead from "@components/custom/head";
 import EditProfile, { EditProfileTypes } from "@components/forms/editProfile";
 
 const ProfileEdit: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, mutate: mutateUser } = useUser();
+  const { changeLayout } = useLayouts();
 
   const formData = useForm<EditProfileTypes>();
 
@@ -126,20 +125,23 @@ const ProfileEdit: NextPage = () => {
   }, [user?.id]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "프로필 수정",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title", "submit"],
+        title: "프로필 수정",
+        titleTag: "h1",
+        utils: ["back", "title", "submit"],
         submitId: "edit-profile",
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
+      <CustomHead title="프로필 수정 | 나의 당근" />
+
       <EditProfile
         formId="edit-profile"
         formData={formData}

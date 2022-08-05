@@ -3,9 +3,8 @@ import { useRouter } from "next/router";
 
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
@@ -14,15 +13,15 @@ import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 import { PostVerificationUpdateResponse } from "@api/users/verification-update";
 // @components
+import CustomHead from "@components/custom/head";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const VerificationPhone: NextPage = () => {
   const router = useRouter();
+  const { changeLayout } = useLayouts();
   const { hasQuery, query } = useQuery();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { openToast } = useToast();
 
   // phone
@@ -113,19 +112,22 @@ const VerificationPhone: NextPage = () => {
   }, [hasQuery, query]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "휴대폰 번호 변경",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "휴대폰 번호 변경",
+        titleTag: "strong",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <section className="container py-5">
+      <CustomHead title="휴대폰 번호 변경" />
+
       <h1 className="text-2xl font-bold">
         변경된 휴대폰 번호를
         <br />

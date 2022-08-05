@@ -1,13 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
@@ -18,6 +17,7 @@ import { GetChatsResponse } from "@api/chats";
 import { GetUserResponse } from "@api/users/my";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @components
+import CustomHead from "@components/custom/head";
 import ChatList from "@components/lists/chatList";
 
 const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
@@ -29,9 +29,8 @@ const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
 
 const ProductPurchase: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
@@ -50,7 +49,7 @@ const ProductPurchase: NextPage = () => {
     },
   });
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : [];
 
@@ -66,25 +65,29 @@ const ProductPurchase: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "구매자 선택",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "구매자 선택",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title="구매자 선택 | 중고거래" />
+
       {/* 최근 채팅 목록: List */}
       {Boolean(chats.length) && (
         <div className="-mx-5">
           <ChatList type="button" list={chats} content="timestamp" isVisibleOnlyOneUser={true} selectItem={purchaseItem} />
+          <div ref={infiniteRef} />
           <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? "채팅을 불러오고있어요" : isReachingEnd ? "채팅을 모두 확인하였어요" : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : ""}</span>
           </div>
         </div>
       )}
@@ -95,9 +98,6 @@ const ProductPurchase: NextPage = () => {
           <p className="text-gray-500">채팅한 이웃이 없어요.</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };

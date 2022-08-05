@@ -1,11 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
-import { PageLayout } from "@libs/states";
+import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -15,6 +15,7 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesReviewsResponse, ProfilesReviewsFilter } from "@api/users/profiles/[id]/reviews";
 // @components
+import CustomHead from "@components/custom/head";
 import ReviewList from "@components/lists/reviewList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesReviewsResponse, query: string = "", id: string = "") => {
@@ -29,7 +30,8 @@ type FilterTab = { index: number; value: ProfilesReviewsFilter; text: string; na
 
 const ProfileProducts: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   // profile review paging
   const tabs: FilterTab[] = [
@@ -43,14 +45,12 @@ const ProfileProducts: NextPage = () => {
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
   const { data, size, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) =>
     getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
   );
-  const { data: allData } = useSWR<GetProfilesReviewsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/reviews?filter=ALL&type=ONLY_COUNT` : null);
-  const { data: sellUserData } = useSWR<GetProfilesReviewsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/reviews?filter=SELL_USER&type=ONLY_COUNT` : null);
-  const { data: purchaseUserData } = useSWR<GetProfilesReviewsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/reviews?filter=PURCHASE_USER&type=ONLY_COUNT` : null);
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const reviews = data ? data.flatMap((item) => item.reviews) : [];
 
@@ -66,27 +66,27 @@ const ProfileProducts: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "거래 후기 상세",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}받은 매너 후기`,
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title={`받은 매너 후기 | ${profileData?.profile.name}님의 당근`} />
+
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
           return (
             <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
               {tab.text}
-              {tab.value === "ALL" && allData && allData?.total > 0 ? ` ${allData.total}` : null}
-              {tab.value === "SELL_USER" && sellUserData && sellUserData?.total > 0 ? ` ${sellUserData.total}` : null}
-              {tab.value === "PURCHASE_USER" && purchaseUserData && purchaseUserData?.total > 0 ? ` ${purchaseUserData.total}` : null}
             </button>
           );
         })}
@@ -101,8 +101,9 @@ const ProfileProducts: NextPage = () => {
       {Boolean(reviews.length) && (
         <div className="mt-3">
           <ReviewList list={reviews} />
+          <div ref={infiniteRef} />
           <div className="py-6 text-center">
-            <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}를 불러오고있어요` : isReachingEnd ? `${activeTab?.name}를 모두 확인하였어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? `${activeTab?.name}를 모두 확인하였어요` : isLoading ? `${activeTab?.name}를 불러오고있어요` : ""}</span>
           </div>
         </div>
       )}
@@ -113,23 +114,22 @@ const ProfileProducts: NextPage = () => {
           <p className="text-gray-500">{`${activeTab?.name}가 존재하지 않아요`}</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };
 
 const Page: NextPage<{
+  getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
   getReviewsByAll: { query: string; response: GetProfilesReviewsResponse };
   getReviewsBySellUser: { query: string; response: GetProfilesReviewsResponse };
   getReviewsByPurchaseUser: { query: string; response: GetProfilesReviewsResponse };
-}> = ({ getProfile, getReviewsByAll, getReviewsBySellUser, getReviewsByPurchaseUser }) => {
+}> = ({ getUser, getProfile, getReviewsByAll, getReviewsBySellUser, getReviewsByPurchaseUser }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/users/my": getUser.response,
           [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(arg[0], arg[1], getReviewsByAll.query, `${getProfile.response.profile.id}`))]: [
             getReviewsByAll.response,
@@ -290,6 +290,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   return {
     props: {
+      getUser: {
+        response: {
+          success: true,
+          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
+          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
+          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
+        },
+      },
       getProfile: {
         response: {
           success: true,

@@ -1,29 +1,32 @@
 import { NextPage } from "next";
 import Link from "next/link";
 import { useEffect } from "react";
-import { useSetRecoilState } from "recoil";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 
 const WelcomeHome: NextPage = () => {
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "",
+    changeLayout({
       header: {
-        headerUtils: [],
+        title: "",
+        titleTag: 'strong',
+        utils: [],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <section className="container">
+      <CustomHead title="" />
+
       <div className="flex flex-col items-center w-full h-min-full-screen text-center">
         <div className="grow flex flex-col justify-center">
           <svg className="mx-auto w-16 h-16" role="img" aria-hidden fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

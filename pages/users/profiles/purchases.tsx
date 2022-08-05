@@ -1,13 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -16,6 +15,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users/my";
 import { GetProfilesPurchasesResponse } from "@api/users/profiles/purchases";
 // @components
+import CustomHead from "@components/custom/head";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import ProductList from "@components/lists/productList";
 
@@ -28,16 +28,15 @@ const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesRespons
 
 const ProfilePurchase: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
   const { data, size, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>(getKey);
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : [];
 
@@ -48,27 +47,31 @@ const ProfilePurchase: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "구매내역",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "구매내역",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title="구매내역 | 나의 당근" />
+
       {/* 구매내역: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products}>
             <FeedbackProduct key="FeedbackProduct" />
           </ProductList>
+          <div ref={infiniteRef} />
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? `구매내역을 불러오고있어요` : isReachingEnd ? `구매내역을 모두 확인하였어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? `구매내역을 모두 확인하였어요` : isLoading ? `구매내역을 불러오고있어요` : ""}</span>
           </div>
         </div>
       )}
@@ -76,12 +79,9 @@ const ProfilePurchase: NextPage = () => {
       {/* 구매내역: Empty */}
       {!Boolean(products.length) && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">{`구매내역이 존재하지 않아요`}</p>
+          <p className="text-gray-500">구매내역이 존재하지 않아요</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };

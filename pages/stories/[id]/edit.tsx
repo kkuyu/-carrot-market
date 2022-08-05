@@ -2,10 +2,9 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import { convertPhotoToFile } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
@@ -17,13 +16,13 @@ import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
+import CustomHead from "@components/custom/head";
 import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
 const StoryUpload: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const { data: storyData, mutate } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
 
@@ -112,20 +111,22 @@ const StoryUpload: NextPage = () => {
   }, [storyData?.story?.id]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "동네생활 글 수정",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title", "submit"],
+        title: "동네생활 글 수정",
+        titleTag: "h1",
+        utils: ["back", "title", "submit"],
         submitId: "edit-story",
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
+      <CustomHead title={`글 수정 | 동네생활`} />
       <EditStory formId="edit-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
     </div>
   );

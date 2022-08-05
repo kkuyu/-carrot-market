@@ -1,12 +1,11 @@
 import type { NextPage } from "next";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -15,6 +14,7 @@ import getSsrUser from "@libs/server/getUser";
 import { GetProductsResponse } from "@api/products";
 import { GetUserResponse } from "@api/users/my";
 // @components
+import CustomHead from "@components/custom/head";
 import FloatingButtons from "@components/floatingButtons";
 import ProductList from "@components/lists/productList";
 
@@ -27,7 +27,7 @@ const getKey = (pageIndex: number, previousPageData: GetProductsResponse, query:
 
 const ProductHome: NextPage = () => {
   const { currentAddr } = useUser();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
@@ -35,7 +35,7 @@ const ProductHome: NextPage = () => {
     getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
   );
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : [];
 
@@ -46,25 +46,30 @@ const ProductHome: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      seoTitle: "홈",
+    changeLayout({
       header: {
-        headerUtils: ["address", "search"],
+        title: "",
+        titleTag: "strong",
+        utils: ["address", "title", "search"],
       },
       navBar: {
-        navBarUtils: ["home", "chat", "profile", "story", "streams"],
+        utils: ["home", "chat", "profile", "story", "streams"],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title="판매상품 | 중고거래" />
+      <h1 className="sr-only">판매상품</h1>
+
       {/* 판매상품: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} />
+          <div ref={infiniteRef} />
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? "판매 상품을 불러오고있어요" : isReachingEnd ? "판매 상품을 모두 확인하였어요" : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? "판매 상품을 모두 확인하였어요" : isLoading ? "판매 상품을 불러오고있어요" : ""}</span>
           </div>
         </div>
       )}
@@ -79,9 +84,6 @@ const ProductHome: NextPage = () => {
           </p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
 
       {/* 글쓰기 */}
       <FloatingButtons href="/products/upload">

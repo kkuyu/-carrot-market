@@ -1,12 +1,11 @@
 import type { NextPage } from "next";
 import { useEffect, useRef } from "react";
-import { useSetRecoilState } from "recoil";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -16,6 +15,7 @@ import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories
 import { GetUserResponse } from "@api/users/my";
 import { GetStoriesResponse } from "@api/stories";
 // @components
+import CustomHead from "@components/custom/head";
 import StoryList from "@components/lists/storyList";
 import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
@@ -28,9 +28,8 @@ const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: 
 };
 
 const StoryHome: NextPage = () => {
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, currentAddr } = useUser();
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
@@ -38,7 +37,7 @@ const StoryHome: NextPage = () => {
     getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
   );
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : [];
 
@@ -49,27 +48,30 @@ const StoryHome: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      seoTitle: "동네생활",
+    changeLayout({
       header: {
-        headerUtils: ["address", "search"],
+        utils: ["address", "search"],
       },
       navBar: {
-        navBarUtils: ["home", "chat", "profile", "story", "streams"],
+        utils: ["home", "chat", "profile", "story", "streams"],
       },
-    }));
+    });
   }, []);
 
   return (
     <div className="container">
+      <CustomHead title="동네생활" />
+      <h1 className="sr-only">동네생활</h1>
+
       {/* 동네생활: List */}
       {Boolean(stories.length) && (
         <div className="-mx-5">
           <StoryList list={stories}>
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
+          <div ref={infiniteRef} />
           <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? "게시글을 불러오고있어요" : isReachingEnd ? "게시글을 모두 확인하였어요" : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? "게시글을 모두 확인하였어요" : isLoading ? "게시글을 불러오고있어요" : ""}</span>
           </div>
         </div>
       )}
@@ -84,9 +86,6 @@ const StoryHome: NextPage = () => {
           </p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
 
       {/* 글쓰기 */}
       <FloatingButtons href="/stories/upload">

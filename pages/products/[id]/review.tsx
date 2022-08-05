@@ -3,12 +3,11 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -18,15 +17,15 @@ import { PostReviewsResponse } from "@api/reviews";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ReviewProduct, { ReviewProductTypes } from "@components/forms/reviewProduct";
 
 const ProductReview: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
@@ -74,15 +73,16 @@ const ProductReview: NextPage = () => {
   }, [saleRecord, purchaseRecord, existsReview]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "거래 후기 보내기",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "거래 후기 보내기",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   if (!productData?.product) {
@@ -91,6 +91,8 @@ const ProductReview: NextPage = () => {
 
   return (
     <div className="container pb-5">
+      <CustomHead title="거래 후기 보내기 | 중고거래" />
+
       {/* 제품정보 */}
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${productData?.product?.id}`}>

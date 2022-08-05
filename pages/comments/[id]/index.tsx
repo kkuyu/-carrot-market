@@ -3,13 +3,12 @@ import { useRouter } from "next/router";
 import NextError from "next/error";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR from "swr";
 // @libs
-import { PageLayout } from "@libs/states";
-import { getCommentTree } from "@libs/utils";
-import useMutation from "@libs/client/useMutation";
+import { getCommentTree, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
+import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
@@ -17,6 +16,7 @@ import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
+import CustomHead from "@components/custom/head";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Comment from "@components/cards/comment";
 import CommentTreeList from "@components/lists/commentTreeList";
@@ -32,9 +32,8 @@ const CommentsDetail: NextPage<{
   };
 }> = ({ staticProps }) => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user, currentAddr } = useUser();
+  const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
   // comment detail
@@ -128,16 +127,16 @@ const CommentsDetail: NextPage<{
   useEffect(() => {
     if (!comment) return;
 
-    setLayout(() => ({
-      title: "답글쓰기",
-      seoTitle: `${comment?.content || ""} | 답글쓰기`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "댓글",
+        titleTag: 'strong',
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, [user?.id, comment?.id, comment?.content]);
 
   // focus
@@ -153,6 +152,9 @@ const CommentsDetail: NextPage<{
 
   return (
     <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
+      <CustomHead title={`${truncateStr(comment?.content, 15)} | 댓글`} />
+      <h1 className="sr-only">{truncateStr(comment?.content, 15)} | 댓글</h1>
+
       {comment?.story && (
         <Link href={`/stories/${comment.story.id}`}>
           <a className="block -mx-5 px-5 py-3 bg-gray-200">

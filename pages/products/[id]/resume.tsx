@@ -3,13 +3,12 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { PageLayout } from "@libs/states";
 import { getDiffTimeStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -18,15 +17,15 @@ import getSsrUser from "@libs/server/getUser";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
 
 const ProductResume: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const [state, setState] = useState<"HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null>(null);
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
@@ -89,15 +88,16 @@ const ProductResume: NextPage = () => {
   }, [productData?.product?.id]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "끌어올리기",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "끌어올리기",
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   if (!productData?.product) {
@@ -110,6 +110,8 @@ const ProductResume: NextPage = () => {
 
   return (
     <div className="container pb-5">
+      <CustomHead title="끌어올리기 | 중고거래" />
+
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product?.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">

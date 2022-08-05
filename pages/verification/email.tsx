@@ -3,21 +3,21 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { useSetRecoilState } from "recoil";
 // @libs
-import { PageLayout } from "@libs/states";
+import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { PostVerificationEmailResponse } from "@api/users/verification-email";
 import { PostConfirmTokenResponse } from "@api/users/confirm-token";
 // @components
+import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
 const VerificationEmail: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
+  const { changeLayout } = useLayouts();
 
   // Email
   const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
@@ -63,19 +63,22 @@ const VerificationEmail: NextPage = () => {
   });
 
   useEffect(() => {
-    setLayout(() => ({
-      title: "이메일로 계정 찾기",
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: "이메일로 계정 찾기",
+        titleTag: "strong",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   return (
     <section className="container py-5">
+      <CustomHead title="이메일로 계정 찾기" />
+
       <h1 className="text-2xl font-bold">
         등록하신 이메일 주소를
         <br />

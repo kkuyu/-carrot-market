@@ -1,14 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useSetRecoilState } from "recoil";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { PageLayout } from "@libs/states";
 import useUser from "@libs/client/useUser";
+import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -18,6 +16,7 @@ import { GetUserResponse } from "@api/users/my";
 import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/users/profiles/[id]/products";
 // @components
+import CustomHead from "@components/custom/head";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import HandleProduct from "@components/groups/handleProduct";
 import ProductList from "@components/lists/productList";
@@ -34,9 +33,9 @@ type FilterTab = { index: number; value: ProfilesProductsFilter; text: string; n
 
 const ProfileProducts: NextPage = () => {
   const router = useRouter();
-  const setLayout = useSetRecoilState(PageLayout);
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
+
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
 
   // profile product paging
@@ -54,11 +53,8 @@ const ProfileProducts: NextPage = () => {
   const { data, size, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) =>
     getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
   );
-  const { data: allData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=ALL&type=ONLY_COUNT` : null);
-  const { data: saleData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SALE&type=ONLY_COUNT` : null);
-  const { data: soldData } = useSWR<GetProfilesProductsResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/products?filter=SOLD&type=ONLY_COUNT` : null);
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : [];
 
@@ -74,15 +70,16 @@ const ProfileProducts: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    setLayout(() => ({
-      title: user?.id === profileData?.profile?.id ? "판매내역" : `${profileData?.profile.name}님의 판매상품`,
+    changeLayout({
       header: {
-        headerUtils: ["back", "title"],
+        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}판매 상품`,
+        titleTag: "h1",
+        utils: ["back", "title"],
       },
       navBar: {
-        navBarUtils: [],
+        utils: [],
       },
-    }));
+    });
   }, []);
 
   if (!profileData?.profile) {
@@ -91,14 +88,13 @@ const ProfileProducts: NextPage = () => {
 
   return (
     <div className="container">
+      <CustomHead title={`판매상품 | ${profileData?.profile.name}님의 당근`} />
+
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
           return (
             <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
               {tab.text}
-              {tab.value === "ALL" && allData && allData?.total > 0 ? ` ${allData.total}` : null}
-              {tab.value === "SALE" && saleData && saleData?.total > 0 ? ` ${saleData.total}` : null}
-              {tab.value === "SOLD" && soldData && soldData?.total > 0 ? ` ${soldData.total}` : null}
             </button>
           );
         })}
@@ -116,8 +112,9 @@ const ProfileProducts: NextPage = () => {
             {profileData?.profile.id === user?.id && <FeedbackProduct key="FeedbackProduct" />}
             {profileData?.profile.id === user?.id && <HandleProduct key="HandleProduct" className="p-3" />}
           </ProductList>
+          <div ref={infiniteRef} />
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}을 불러오고있어요` : isReachingEnd ? `${activeTab?.name}을 모두 확인하였어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? `${activeTab?.name}을 모두 확인하였어요` : isLoading ? `${activeTab?.name}을 불러오고있어요` : ""}</span>
           </div>
         </div>
       )}
@@ -128,9 +125,6 @@ const ProfileProducts: NextPage = () => {
           <p className="text-gray-500">{`${activeTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}
-
-      {/* infiniteRef */}
-      <div ref={infiniteRef} />
     </div>
   );
 };
