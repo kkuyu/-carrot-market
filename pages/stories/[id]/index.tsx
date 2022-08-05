@@ -9,7 +9,7 @@ import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
-import { getStoryCategory, getDiffTimeStr, getCommentTree } from "@libs/utils";
+import { getStoryCategory, getDiffTimeStr, getCommentTree, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
@@ -25,7 +25,7 @@ import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackSto
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
 import EditComment, { EditCommentTypes } from "@components/forms/editComment";
-import CommentList from "@components/lists/commentList";
+import CommentTreeList from "@components/lists/commentTreeList";
 import Profiles from "@components/profiles";
 
 const StoryDetail: NextPage<{
@@ -48,8 +48,6 @@ const StoryDetail: NextPage<{
   const diffTime = getDiffTimeStr(new Date(staticProps?.story?.createdAt).getTime(), today.getTime());
   const category = getStoryCategory(staticProps?.story?.category);
   const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
-
-  const shortContent = !story?.content ? "" : story.content.length <= 15 ? story.content : story.content.substring(0, 15) + "...";
   const thumbnails: PictureListItem[] = !story?.photos
     ? []
     : story.photos.split(",").map((src, index, array) => ({
@@ -57,7 +55,7 @@ const StoryDetail: NextPage<{
         index,
         key: `thumbnails-slider-${index + 1}`,
         label: `${index + 1}/${array.length}`,
-        name: `게시글 이미지 ${index + 1}/${array.length} (${shortContent})`,
+        name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(story.content, 15)})`,
       }));
 
   // fetch data: story detail
@@ -227,7 +225,7 @@ const StoryDetail: NextPage<{
       {/* 게시글 정보 */}
       <section className="-mx-5 border-b">
         {/* 제목 */}
-        <h1 className="sr-only">{shortContent}</h1>
+        <h1 className="sr-only">{truncateStr(story.content, 15)}</h1>
         {/* 내용 */}
         <div className="pt-5 pb-4 px-5">
           {/* 카테고리 */}
@@ -256,11 +254,11 @@ const StoryDetail: NextPage<{
       {/* 댓글/답변 목록: list */}
       {treeComments && Boolean(treeComments?.length) && (
         <div className="mt-5">
-          <CommentList list={treeComments} moreReComments={moreReComments}>
+          <CommentTreeList list={treeComments} moreReComments={moreReComments}>
             <FeedbackComment key="FeedbackComment" />
             {user?.id && <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" />}
-            <CommentList key="CommentList" />
-          </CommentList>
+            <CommentTreeList key="CommentTreeList" />
+          </CommentTreeList>
         </div>
       )}
 

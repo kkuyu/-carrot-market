@@ -25,6 +25,11 @@ export const getAbsoluteUrl: (req?: IncomingMessage) => { protocol: string; host
   };
 };
 
+export const truncateStr = (str: string = "", count: number = 0) => {
+  if (!str.length) return "";
+  return str.length > count ? str.slice(0, count - 1) + "..." : str;
+};
+
 export const getRandomName = () => {
   const adjectiveIndex = Math.floor(Math.random() * name.adjective.length);
   const animalIndex = Math.floor(Math.random() * name.animal.length);

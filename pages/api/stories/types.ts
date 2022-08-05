@@ -30,11 +30,11 @@ export const StoryCategory: { text: keyof typeof StoryCategoryEnum; value: Story
 ];
 
 export type EmotionKeys = Emotion;
-export const EmotionIcon: { [key in EmotionKeys]: string } = {
-  Like: "👍",
-  Love: "❤️",
-  Haha: "😀",
-  Wow: "😲",
-  Sad: "😢",
-  Angry: "😠",
+export const EmotionIcon: { [key in EmotionKeys]: { text: string; index: number } } = {
+  Like: { text: "👍", index: 0 },
+  Love: { text: "❤️", index: 1 },
+  Haha: { text: "😀", index: 2 },
+  Wow: { text: "😲", index: 3 },
+  Sad: { text: "😢", index: 4 },
+  Angry: { text: "😠", index: 5 },
 };

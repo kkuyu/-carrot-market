@@ -9,7 +9,7 @@ import Comment, { CommentItem } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
 import { FeedbackCommentProps } from "@components/groups/feedbackComment";
 
-interface CommentListProps {
+interface CommentTreeListProps {
   list?: CommentItem[];
   depth?: number;
   reCommentRefId?: number;
@@ -18,7 +18,7 @@ interface CommentListProps {
   children?: React.ReactNode;
 }
 
-const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments = 0, moreReComments, children }: CommentListProps) => {
+const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments = 0, moreReComments, children = [] }: CommentTreeListProps) => {
   const router = useRouter();
   const { user } = useUser();
 
@@ -68,13 +68,15 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
                 if (child.key === "HandleComment") includeHandleComment = true;
                 if (child.key === "HandleComment") return cloneElement(child as React.ReactElement<HandleCommentProps>, { item: itemData });
                 if (child.key === "FeedbackComment") return cloneElement(child as React.ReactElement<FeedbackCommentProps>, { item: itemData });
-                if (child.key === "CommentList") return cloneElement(child as React.ReactElement<CommentListProps>, { list, moreReComments, children, ...childInfo });
+                if (child.key === "CommentTreeList") return cloneElement(child as React.ReactElement<CommentTreeListProps>, { list, moreReComments, children, ...childInfo });
               }
               return child;
             });
             return (
               <li key={item.id} className="relative">
-                <Comment item={itemData} className={includeHandleComment ? "pr-8" : ""} />
+                <div className={includeHandleComment ? "pr-8" : ""}>
+                  <Comment item={itemData} />
+                </div>
                 {childrenWithProps}
               </li>
             );
@@ -114,4 +116,4 @@ const CommentList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments
   );
 };
 
-export default CommentList;
+export default CommentTreeList;

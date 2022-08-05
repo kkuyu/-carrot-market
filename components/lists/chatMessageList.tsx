@@ -8,6 +8,10 @@ interface ChatMessageListProps {
 const ChatMessageList = ({ list }: ChatMessageListProps) => {
   const { user } = useUser();
 
+  if (!Boolean(list.length)) {
+    return null;
+  }
+
   return (
     <div className="space-y-2.5">
       {list.map((item, index) => {

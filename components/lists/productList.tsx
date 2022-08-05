@@ -9,25 +9,29 @@ interface ProductListProps {
   children?: React.ReactNode;
 }
 
-const ProductList = ({ list, children }: ProductListProps) => {
+const ProductList = ({ list, children = [] }: ProductListProps) => {
+  if (!Boolean(list.length)) {
+    return null;
+  }
+
   return (
     <ul className="divide-y">
       {list.map((item) => {
-        const childrenWithProps = !children
-          ? null
-          : Children.map(children, (child, index) => {
-              if (isValidElement(child)) {
-                return cloneElement(child as React.ReactElement<FeedbackProductProps>, { item });
-              }
-              return child;
-            });
+        const childrenWithProps = Children.map(children, (child) => {
+          if (isValidElement(child)) {
+            if (child.key === "FeedbackProduct") return cloneElement(child as React.ReactElement<FeedbackProductProps>, { item });
+          }
+          return child;
+        });
         return (
           <li key={item?.id} className="relative">
-            <Link href={`/products/${item?.id}`}>
-              <a className="block p-5">
-                <Product item={item} />
-              </a>
-            </Link>
+            <div>
+              <Link href={`/products/${item?.id}`}>
+                <a className="block p-5">
+                  <Product item={item} />
+                </a>
+              </Link>
+            </div>
             {childrenWithProps}
           </li>
         );

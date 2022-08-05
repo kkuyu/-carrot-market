@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { Children, cloneElement, isValidElement } from "react";
+// @libs
+import { truncateStr } from "@libs/utils";
 // @components
 import Story, { StoryItem, StoryProps } from "@components/cards/story";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
@@ -10,19 +12,22 @@ interface StoryListProps {
   children?: React.ReactNode;
 }
 
-const StoryList = ({ list, children }: StoryListProps) => {
+const StoryList = ({ list, children = [] }: StoryListProps) => {
+  if (!Boolean(list.length)) {
+    return null;
+  }
+
   return (
     <ul className="divide-y-8">
       {list.map((item) => {
-        const childrenWithProps = !children
-          ? null
-          : Children.map(children, (child, index) => {
-              if (isValidElement(child)) {
-                if (child.key === "FeedbackStory") return cloneElement(child as React.ReactElement<FeedbackStoryProps>, { item });
-              }
-              return child;
-            });
-        const shortContent = !item?.content ? "" : item.content.length <= 15 ? item.content : item.content.substring(0, 15) + "...";
+        let includeFeedbackStory = false;
+        const childrenWithProps = Children.map(children, (child) => {
+          if (isValidElement(child)) {
+            if (child.key === "FeedbackStory") includeFeedbackStory = true;
+            if (child.key === "FeedbackStory") return cloneElement(child as React.ReactElement<FeedbackStoryProps>, { item });
+          }
+          return child;
+        });
         const thumbnails: PictureListItem[] = !item?.photos
           ? []
           : item.photos.split(",").map((src, index, array) => ({
@@ -30,20 +35,27 @@ const StoryList = ({ list, children }: StoryListProps) => {
               index,
               key: `thumbnails-list-${index + 1}`,
               label: `${index + 1}/${array.length}`,
-              name: `게시글 이미지 ${index + 1}/${array.length} (${shortContent})`,
+              name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(item.content, 15)})`,
             }));
         return (
           <li key={item?.id} className="relative">
-            <Link href={`/stories/${item?.id}`}>
-              <a className="block pt-5 pb-4 px-5">
-                <Story item={item} />
-              </a>
-            </Link>
-            {Boolean(thumbnails.length) && (
-              <div className="pb-5 px-5">
-                <PictureList list={thumbnails || []} />
-              </div>
-            )}
+            <div>
+              <Link href={`/stories/${item?.id}`}>
+                <a className="block pt-5 px-5 pb-3 last:pb-5">
+                  <Story item={item} isVisibleInfo={includeFeedbackStory} />
+                </a>
+              </Link>
+              {Boolean(thumbnails.length) && (
+                <div className="empty:hidden px-5 pb-3 last:pb-5">
+                  <PictureList list={thumbnails} />
+                </div>
+              )}
+              {!includeFeedbackStory && (
+                <div className="empty:hidden px-5 pb-3 last:pb-5 text-sm text-gray-500">
+                  {[item?.records?.length ? `관심 ${item?.records?.length}` : null, item.comments?.length ? `댓글 ${item.comments.length}` : null].filter((v) => !!v).join(" · ")}
+                </div>
+              )}
+            </div>
             {childrenWithProps}
           </li>
         );

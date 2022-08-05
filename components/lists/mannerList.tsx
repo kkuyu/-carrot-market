@@ -11,6 +11,10 @@ interface MannerListProps {
 }
 
 const MannerList = ({ list }: MannerListProps) => {
+  if (!Boolean(list.length)) {
+    return null;
+  }
+
   return (
     <ul className="space-y-2">
       {list.map((item) => {

@@ -8,7 +8,7 @@ import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { PageLayout } from "@libs/states";
-import { getProductCategory, getDiffTimeStr } from "@libs/utils";
+import { getProductCategory, getDiffTimeStr, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
@@ -51,7 +51,6 @@ const ProductDetail: NextPage<{
   const foundChats = product?.chats?.filter((chat) => chat._count.chatMessages > 0);
 
   const liked = Boolean(likeRecords.find((record) => record.userId === user?.id));
-  const shortName = !product?.name ? "" : product.name.length <= 15 ? product.name : product.name.substring(0, 15) + "...";
   const thumbnails: PictureSliderItem[] = !product?.photos
     ? []
     : product.photos.split(",").map((src, index, array) => ({
@@ -59,7 +58,7 @@ const ProductDetail: NextPage<{
         index,
         key: `thumbnails-slider-${index + 1}`,
         label: `${index + 1}/${array.length}`,
-        name: `게시글 이미지 ${index + 1}/${array.length} (${shortName})`,
+        name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(product?.name, 15)})`,
       }));
 
   // fetch data: product detail

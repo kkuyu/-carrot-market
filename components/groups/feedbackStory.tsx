@@ -153,7 +153,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <span className="inline-block w-5 h-5">{EmotionIcon?.[liked.emotion!]}</span>
+            <span className="inline-block w-5 h-5">{EmotionIcon?.[liked.emotion!].text}</span>
           )}
           {!liked ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
         </button>
@@ -162,11 +162,13 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
       {category?.isLikeWithEmotion && (
         <div onBlur={blurEmotionBox} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
-            {Object.entries(EmotionIcon).map(([key, emotion]) => (
-              <button key={emotion} type="button" onClick={() => clickEmotionBox(key as EmotionKeys)} className="p-1">
-                {emotion}
-              </button>
-            ))}
+            {Object.entries(EmotionIcon)
+              .sort(([, a], [, b]) => a.index - b.index)
+              .map(([key, emotion]) => (
+                <button key={key} type="button" onClick={() => clickEmotionBox(key as EmotionKeys)} className="p-1">
+                  {emotion.text}
+                </button>
+              ))}
           </div>
         </div>
       )}
@@ -174,11 +176,11 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
       {category?.isLikeWithEmotion && Boolean(likeRecords.length) && (
         <div className="absolute bottom-0 right-0 flex items-center h-10 pr-5">
           <span className="text-sm">
-            {likeRecords
-              .map((record) => record.emotion)
-              .filter((emotion, index, array) => array.indexOf(emotion) === index)
-              .map((emotion) => (
-                <span key={emotion}>{EmotionIcon?.[emotion!]}</span>
+            {Object.entries(EmotionIcon)
+              .sort(([, a], [, b]) => a.index - b.index)
+              .filter(([key]) => likeRecords.find((i) => i.emotion === key))
+              .map(([key, emotion]) => (
+                <span key={key}>{emotion.text}</span>
               ))}
           </span>
           <span className="ml-1 block text-sm text-gray-500">{likeRecords.length}</span>

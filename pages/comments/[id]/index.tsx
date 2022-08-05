@@ -19,7 +19,7 @@ import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Comment from "@components/cards/comment";
-import CommentList from "@components/lists/commentList";
+import CommentTreeList from "@components/lists/commentTreeList";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
 import EditComment, { EditCommentTypes } from "@components/forms/editComment";
@@ -168,11 +168,11 @@ const CommentsDetail: NextPage<{
       {/* 답글 목록: list */}
       {Boolean(treeReComments?.[0]?.reComments?.length) && (
         <div className="mt-2">
-          <CommentList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
+          <CommentTreeList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
             <FeedbackComment key="FeedbackComment" />
             {user?.id && <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} />}
-            <CommentList key="CommentList" />
-          </CommentList>
+            <CommentTreeList key="CommentTreeList" />
+          </CommentTreeList>
         </div>
       )}
       {/* 답글 입력 */}

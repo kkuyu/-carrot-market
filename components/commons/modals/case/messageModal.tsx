@@ -14,7 +14,7 @@ const MessageModal = (props: MessageModalProps & ModalComponentProps) => {
   const { name, type, hasBackdrop = true, message = "message", cancelBtn = "취소", confirmBtn = "확인", onConfirm, onOpen, onClose } = props;
 
   const clickConfirm = async () => {
-    if (typeof onConfirm === "function") await onConfirm();
+    if (onConfirm) await onConfirm();
     onClose();
   };
 

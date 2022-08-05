@@ -26,6 +26,10 @@ const ReviewList = ({ list }: ReviewListProps) => {
     setMounted(true);
   }, []);
 
+  if (!Boolean(list.length)) {
+    return null;
+  }
+
   return (
     <ul className="space-y-3">
       {list.map((item) => {

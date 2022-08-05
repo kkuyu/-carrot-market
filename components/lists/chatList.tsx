@@ -37,6 +37,10 @@ const ChatList = ({ list, content, type = "link", isVisibleOnlyOneUser = false, 
     }
   };
 
+  if (!Boolean(list.length)) {
+    return null;
+  }
+
   return (
     <ul className="divide-y">
       {list

@@ -107,7 +107,7 @@ const ProfileDetail: NextPage<{
             </Link>
           </li>
           <li>
-            <Link href="">
+            <Link href={`/users/profiles/${profile.id}/stories`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">동네생활</span>
               </a>

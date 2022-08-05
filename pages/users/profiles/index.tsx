@@ -143,7 +143,7 @@ const ProfileHome: NextPage = () => {
           <h2 className="px-5">나의 동네생활</h2>
           <ul className="mt-2">
             <li>
-              <Link href="">
+              <Link href={`/users/profiles/${user?.id}/stories`}>
                 <a className="relative block py-2 pl-14 pr-5">
                   <svg className="absolute top-1/2 left-5 -mt-3 w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                     <path
