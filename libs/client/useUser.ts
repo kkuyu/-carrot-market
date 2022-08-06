@@ -1,7 +1,7 @@
 import useSWR, { KeyedMutator } from "swr";
 import { User } from "@prisma/client";
 // @api
-import { GetUserResponse } from "@api/users/my";
+import { GetUserResponse } from "@api/users";
 
 export interface UserProfile {
   mutate: KeyedMutator<GetUserResponse>;
@@ -11,7 +11,7 @@ export interface UserProfile {
 }
 
 const useUser = (): UserProfile => {
-  const { data, error, mutate } = useSWR<GetUserResponse>("/api/users/my");
+  const { data, error, mutate } = useSWR<GetUserResponse>("/api/users");
 
   return {
     mutate,

@@ -4,7 +4,7 @@ import { Kind } from "@prisma/client";
 import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetProductsResponse } from "@api/products";
-import { GetProfilesProductsResponse } from "@api/users/profiles/[id]/products";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 // @components
 import Images from "@components/images";
 

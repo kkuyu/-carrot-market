@@ -9,9 +9,9 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users/my";
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { GetProfilesMannersResponse } from "@api/users/profiles/[id]/manners";
+import { GetUserResponse } from "@api/users";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
+import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
 // @components
 import CustomHead from "@components/custom/head";
 import MannerList from "@components/lists/mannerList";
@@ -22,8 +22,8 @@ const ProfileManners: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const { user } = useUser();
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
-  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/users/profiles/${router.query.id}/manners?includeDislike=${profileData?.profile.id === user?.id}` : null);
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
+  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/profiles/${router.query.id}/manners?includeDislike=${profileData?.profile.id === user?.id}` : null);
 
   const manners = mannerData?.manners.length ? mannerData?.manners : [];
   const goodManners = manners?.filter((manner) => manner.reviews.length > 0 && !manner.reviews.find((review) => review.satisfaction === "dislike"));
@@ -81,9 +81,9 @@ const Page: NextPage<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}/manners?${getManners.query}`]: getManners.response,
+          "/api/users": getUser.response,
+          [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
+          [`/api/profiles/${getProfile.response.profile.id}/manners?${getManners.query}`]: getManners.response,
         },
       }}
     >
@@ -100,12 +100,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const profileId = params?.id?.toString();
 
   // invalid params: profileId
-  // redirect: /users/profiles/[id]
+  // redirect: /profiles/[id]
   if (!profileId || isNaN(+profileId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles/${profileId}`,
+        destination: `/profiles/${profileId}`,
       },
     };
   }
@@ -125,12 +125,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // not found profile
-  // redirect: /users/profiles/[id]
+  // redirect: /profiles/[id]
   if (!profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles/${profileId}`,
+        destination: `/profiles/${profileId}`,
       },
     };
   }

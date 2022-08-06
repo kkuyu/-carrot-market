@@ -8,7 +8,7 @@ import useToast from "@libs/client/useToast";
 import useCoords from "@libs/client/useCoords";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostUserRequestBody, PostUserResponse } from "@api/users/my";
+import { PostUserRequestBody, PostUserResponse } from "@api/users";
 import { PostDummyResponse } from "@api/users/dummy";
 import { GetBoundarySearchResponse } from "@api/address/boundary-search";
 import { GetKeywordSearchResponse } from "@api/address/keyword-search";
@@ -29,7 +29,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
 
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users", {
     onSuccess: () => {
       mutateUser();
       closeModal(LayerModal, "HometownLocate");

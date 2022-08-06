@@ -1,8 +1,8 @@
 // @libs
 import { getReviewManners } from "@libs/utils";
 // @api
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { GetProfilesMannersResponse } from "@api/users/profiles/[id]/manners";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
+import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
 
 type MannerListItem = GetProfilesMannersResponse["manners"][0] | GetProfilesDetailResponse["manners"][0];
 

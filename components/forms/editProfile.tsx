@@ -2,7 +2,7 @@ import { UseFormReturn } from "react-hook-form";
 // @libs
 import { getRandomName } from "@libs/utils";
 // @api
-import { ProfilesConcernEnum, ProfilesConcern } from "@api/users/profiles/types";
+import { ProfilesConcernEnum, ProfilesConcern } from "@api/profiles/types";
 // @components
 import Labels from "@components/labels";
 import Files from "@components/files";

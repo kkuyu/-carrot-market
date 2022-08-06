@@ -37,7 +37,7 @@ const Comment = ({ item, ...rest }: CommentProps) => {
 
   return (
     <div className="relative" {...rest}>
-      <Link href={`/users/profiles/${item?.user?.id}`}>
+      <Link href={`/profiles/${item?.user?.id}`}>
         <a className="block">
           <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item?.emdPosNm} diffTime={mounted ? diffTime : ""} size="tiny" />
         </a>

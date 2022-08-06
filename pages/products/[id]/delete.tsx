@@ -29,7 +29,7 @@ const ProductDelete: NextPage = () => {
 
   const [deleteProduct, { loading: deleteLoading }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
     onSuccess: (data) => {
-      router.replace(`/users/profiles/${productData?.product?.userId}/products`);
+      router.replace(`/profiles/${productData?.product?.userId}/products`);
     },
     onError: (data) => {
       switch (data?.error?.name) {

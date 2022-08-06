@@ -15,7 +15,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users/my";
+import { GetUserResponse } from "@api/users";
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 import { PostChatsMessageResponse } from "@api/chats/[id]/message";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
@@ -43,7 +43,7 @@ const ChatDetail: NextPage = () => {
   const purchaseRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
   const existsReview = data?.chat?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
-  const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
+  const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(data?.chat?.product?.id ? `/api/products/${data.chat.product.id}/purchase` : "", {
     onSuccess: (data) => {
       router.push(`/products/${router.query.id}/review`);
     },
@@ -214,7 +214,7 @@ const Page: NextPage<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
+          "/api/users": getUser.response,
           [`/api/chats/${getChat.id}`]: getChat.response,
         },
       }}

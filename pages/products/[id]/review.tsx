@@ -15,7 +15,7 @@ import client from "@libs/server/client";
 // @api
 import { PostReviewsResponse } from "@api/reviews";
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 // @components
 import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
@@ -34,8 +34,8 @@ const ProductReview: NextPage = () => {
   const purchaseRecord = productData?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
   const existsReview = productData?.product?.reviews.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
-  const { data: sellUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/users/profiles/${role === "sellUser" ? user?.id : productData?.product?.userId}` : null);
-  const { data: purchaseUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/users/profiles/${role === "sellUser" ? purchaseRecord?.userId : user?.id}` : null);
+  const { data: sellUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? user?.id : productData?.product?.userId}` : null);
+  const { data: purchaseUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? purchaseRecord?.userId : user?.id}` : null);
 
   const formData = useForm<ReviewProductTypes>();
   const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
@@ -145,8 +145,8 @@ const Page: NextPage<{
       value={{
         fallback: {
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [`/api/users/profiles/${getOtherProfile.response.profile.id}`]: getOtherProfile.response,
+          [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
+          [`/api/profiles/${getOtherProfile.response.profile.id}`]: getOtherProfile.response,
         },
       }}
     >

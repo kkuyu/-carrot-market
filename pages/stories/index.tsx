@@ -12,7 +12,7 @@ import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-import { GetUserResponse } from "@api/users/my";
+import { GetUserResponse } from "@api/users";
 import { GetStoriesResponse } from "@api/stories";
 // @components
 import CustomHead from "@components/custom/head";
@@ -105,7 +105,7 @@ const Page: NextPage<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
+          "/api/users": getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetStoriesResponse]) => getKey(arg[0], arg[1], getStories.query))]: [getStories.response],
         },
       }}

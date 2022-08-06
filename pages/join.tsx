@@ -12,7 +12,7 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
-import { PostConfirmTokenResponse } from "@api/users/confirm-token";
+import { PostConfirmTokenResponse } from "@api/verification/token";
 import { PostDummyResponse } from "@api/users/dummy";
 // @components
 import CustomHead from "@components/custom/head";
@@ -48,7 +48,7 @@ const Join: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-user", {
         placement: "bottom",

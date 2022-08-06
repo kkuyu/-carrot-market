@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getDiffTimeStr, truncateStr } from "@libs/utils";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-import { GetProfilesStoriesResponse } from "@api/users/profiles/[id]/stories";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 
 export type CommentSummaryItem = GetProfilesStoriesResponse["comments"][0];
 

@@ -5,7 +5,7 @@ import { Kind } from "@prisma/client";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { GetProfilesProductsResponse } from "@api/users/profiles/[id]/products";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];

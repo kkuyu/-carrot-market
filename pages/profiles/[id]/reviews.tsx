@@ -11,19 +11,19 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users/my";
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { GetProfilesReviewsResponse, ProfilesReviewsFilter } from "@api/users/profiles/[id]/reviews";
+import { GetUserResponse } from "@api/users";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
+import { GetProfilesReviewsResponse, ProfilesReviewsFilter } from "@api/profiles/[id]/reviews";
 // @components
 import CustomHead from "@components/custom/head";
 import ReviewList from "@components/lists/reviewList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesReviewsResponse, query: string = "", id: string = "") => {
   if (!id) return null;
-  if (pageIndex === 0) return `/api/users/profiles/${id}/reviews?page=1&${query}`;
+  if (pageIndex === 0) return `/api/profiles/${id}/reviews?page=1&${query}`;
   if (previousPageData && !previousPageData.reviews.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/profiles/${id}/reviews?page=${pageIndex + 1}&${query}`;
+  return `/api/profiles/${id}/reviews?page=${pageIndex + 1}&${query}`;
 };
 
 type FilterTab = { index: number; value: ProfilesReviewsFilter; text: string; name: string };
@@ -45,7 +45,7 @@ const ProfileProducts: NextPage = () => {
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, size, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) =>
     getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
   );
@@ -129,8 +129,8 @@ const Page: NextPage<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
+          "/api/users": getUser.response,
+          [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(arg[0], arg[1], getReviewsByAll.query, `${getProfile.response.profile.id}`))]: [
             getReviewsByAll.response,
           ],
@@ -155,12 +155,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const profileId = params?.id?.toString();
 
   // invalid params: profileId
-  // redirect: /users/profiles/[id]
+  // redirect: /profiles/[id]
   if (!profileId || isNaN(+profileId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles/${profileId}`,
+        destination: `/profiles/${profileId}`,
       },
     };
   }
@@ -173,12 +173,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // not found profile
-  // redirect: /users/profiles/[id]
+  // redirect: /profiles/[id]
   if (!profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles/${profileId}`,
+        destination: `/profiles/${profileId}`,
       },
     };
   }

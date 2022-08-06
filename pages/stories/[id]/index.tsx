@@ -231,7 +231,7 @@ const StoryDetail: NextPage<{
           {/* 카테고리 */}
           <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
           {/* 판매자 */}
-          <Link href={`/users/profiles/${story?.user?.id}`}>
+          <Link href={`/profiles/${story?.user?.id}`}>
             <a className="block py-3">
               <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} />
             </a>

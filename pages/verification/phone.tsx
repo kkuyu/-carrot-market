@@ -9,9 +9,9 @@ import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostVerificationPhoneResponse } from "@api/users/verification-phone";
-import { PostConfirmTokenResponse } from "@api/users/confirm-token";
-import { PostVerificationUpdateResponse } from "@api/users/verification-update";
+import { PostVerificationPhoneResponse } from "@api/verification/phone";
+import { PostConfirmTokenResponse } from "@api/verification/token";
+import { PostVerificationUpdateResponse } from "@api/verification/update";
 // @components
 import CustomHead from "@components/custom/head";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -27,7 +27,7 @@ const VerificationPhone: NextPage = () => {
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
   const { setError: verifyPhoneError, setFocus: verifyPhoneFocus, setValue: verifyPhoneSetValue, getValues: verifyPhoneGetValue } = verifyPhoneForm;
-  const [confirmPhone, { loading: phoneLoading, data: phoneData }] = useMutation<PostVerificationPhoneResponse>("/api/users/verification-phone", {
+  const [confirmPhone, { loading: phoneLoading, data: phoneData }] = useMutation<PostVerificationPhoneResponse>("/api/verification/phone", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -38,7 +38,7 @@ const VerificationPhone: NextPage = () => {
             placement: "bottom",
             message: data.error.message,
           });
-          router.replace("/verification-email");
+          router.replace("/verification/email");
           return;
         case "SameExistingAccount":
         case "AlreadySubscribedAccount":
@@ -55,7 +55,7 @@ const VerificationPhone: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       updateUser({
         originData: { email: verifyPhoneGetValue("targetEmail") },
@@ -76,7 +76,7 @@ const VerificationPhone: NextPage = () => {
   });
 
   // update user data
-  const [updateUser] = useMutation<PostVerificationUpdateResponse>("/api/users/verification-update", {
+  const [updateUser] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "update-user", {
         placement: "bottom",
@@ -99,13 +99,13 @@ const VerificationPhone: NextPage = () => {
         placement: "bottom",
         message: "이메일 주소를 다시 확인해주세요",
       });
-      router.replace("/verification-email");
+      router.replace("/verification/email");
     } else if (!query?.targetEmail || !query.targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       openToast<MessageToastProps>(MessageToast, "invalid-targetEmail", {
         placement: "bottom",
         message: "이메일 주소를 다시 확인해주세요",
       });
-      router.replace("/verification-email");
+      router.replace("/verification/email");
     } else {
       verifyPhoneSetValue("targetEmail", query.targetEmail);
     }

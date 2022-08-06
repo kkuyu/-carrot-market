@@ -11,7 +11,7 @@ import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse, PostUserResponse } from "@api/users/my";
+import { GetUserResponse, PostUserResponse } from "@api/users";
 import { PostDummyResponse } from "@api/users/dummy";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @components
@@ -26,10 +26,10 @@ const ProfileEdit: NextPage = () => {
   const formData = useForm<EditProfileTypes>();
 
   const [photoLoading, setPhotoLoading] = useState(true);
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>(`/api/users/my`, {
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>(`/api/users`, {
     onSuccess: async (data) => {
       await mutateUser();
-      router.replace(`/users/profiles/${user?.id}`);
+      router.replace(`/profiles/${user?.id}`);
     },
     onError: (data) => {
       setPhotoLoading(false);
@@ -42,7 +42,7 @@ const ProfileEdit: NextPage = () => {
   });
   const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
     onSuccess: () => {
-      router.replace(`/users/profiles`);
+      router.replace(`/users`);
     },
     onError: (data) => {
       setPhotoLoading(false);
@@ -160,7 +160,7 @@ const Page: NextPage<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
+          "/api/users": getUser.response,
         },
       }}
     >

@@ -12,29 +12,29 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users/my";
-import { GetProfilesLikeResponse } from "@api/users/profiles/likes";
+import { GetUserResponse } from "@api/users";
+import { GetProfilesPurchasesResponse } from "@api/users/purchases";
 // @components
 import CustomHead from "@components/custom/head";
+import FeedbackProduct from "@components/groups/feedbackProduct";
 import ProductList from "@components/lists/productList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse) => {
-  if (pageIndex === 0) return `/api/users/profiles/likes?page=1`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse) => {
+  if (pageIndex === 0) return `/api/users/purchases?page=1`;
   if (previousPageData && !previousPageData.products.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/profiles/likes?page=${pageIndex + 1}`;
+  return `/api/users/purchases?page=${pageIndex + 1}`;
 };
 
-const ProfileLikes: NextPage = () => {
+const ProfilePurchase: NextPage = () => {
   const router = useRouter();
-  const { changeLayout } = useLayouts();
-
   const { user } = useUser();
+  const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesLikeResponse>(getKey);
+  const { data, size, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>(getKey);
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
@@ -49,7 +49,7 @@ const ProfileLikes: NextPage = () => {
   useEffect(() => {
     changeLayout({
       header: {
-        title: "관심목록",
+        title: "구매내역",
         titleTag: "h1",
         utils: ["back", "title"],
       },
@@ -61,23 +61,25 @@ const ProfileLikes: NextPage = () => {
 
   return (
     <div className="container">
-      <CustomHead title="관심목록 | 나의 당근" />
+      <CustomHead title="구매내역 | 나의 당근" />
 
-      {/* 관심목록: List */}
+      {/* 구매내역: List */}
       {Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductList list={products}></ProductList>
+          <ProductList list={products}>
+            <FeedbackProduct key="FeedbackProduct" />
+          </ProductList>
           <div ref={infiniteRef} />
           <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? `관심목록을 모두 확인하였어요` : isLoading ? `관심목록을 불러오고있어요` : ""}</span>
+            <span className="text-sm text-gray-500">{isReachingEnd ? `구매내역을 모두 확인하였어요` : isLoading ? `구매내역을 불러오고있어요` : ""}</span>
           </div>
         </div>
       )}
 
-      {/* 관심목록: Empty */}
+      {/* 구매내역: Empty */}
       {!Boolean(products.length) && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">{`관심목록이 존재하지 않아요`}</p>
+          <p className="text-gray-500">구매내역이 존재하지 않아요</p>
         </div>
       )}
     </div>
@@ -86,18 +88,18 @@ const ProfileLikes: NextPage = () => {
 
 const Page: NextPage<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProfilesLikeResponse };
+  getProduct: { response: GetProfilesPurchasesResponse };
 }> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
+          "/api/users": getUser.response,
           [unstable_serialize(getKey)]: [getProduct.response],
         },
       }}
     >
-      <ProfileLikes />
+      <ProfilePurchase />
     </SWRConfig>
   );
 };
@@ -117,12 +119,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   }
 
   // !ssrUser.profile
-  // redirect: /users/profiles
+  // redirect: /users
   if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles`,
+        destination: `/users`,
       },
     };
   }
@@ -137,7 +139,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         where: {
           userId: ssrUser.profile.id,
-          kind: Kind.ProductLike,
+          kind: Kind.ProductPurchase,
         },
         include: {
           product: {

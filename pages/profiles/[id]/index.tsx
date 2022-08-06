@@ -9,8 +9,8 @@ import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import client from "@libs/server/client";
 // @api
-import { ProfilesConcern } from "@api/users/profiles/types";
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
+import { ProfilesConcern } from "@api/profiles/types";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 // @components
 import CustomHead from "@components/custom/head";
 import Profiles from "@components/profiles";
@@ -31,7 +31,7 @@ const ProfileDetail: NextPage<{
   const [profile, setProfile] = useState<GetProfilesDetailResponse["profile"] | null>(staticProps?.profile ? staticProps.profile : null);
 
   // fetch data: profile detail
-  const { data, error } = useSWR<GetProfilesDetailResponse>(router.query.id && profile ? `/api/users/profiles/${router.query.id}` : null);
+  const { data, error } = useSWR<GetProfilesDetailResponse>(router.query.id && profile ? `/api/profiles/${router.query.id}` : null);
 
   // merge data
   useEffect(() => {
@@ -87,7 +87,7 @@ const ProfileDetail: NextPage<{
 
       {/* 프로필 수정 */}
       {user?.id === staticProps?.profile?.id && (
-        <Link href="/users/profiles/edit" passHref>
+        <Link href="/users/edit" passHref>
           <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mt-3" />
         </Link>
       )}
@@ -98,21 +98,21 @@ const ProfileDetail: NextPage<{
       <div className="-mx-5 mt-5 border-t">
         <ul className="divide-y">
           <li>
-            <Link href={`/users/profiles/${profile.id}/products`}>
+            <Link href={`/profiles/${profile.id}/products`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">판매상품{data?.profile?._count?.products ? ` ${data.profile._count.products}개` : ""}</span>
               </a>
             </Link>
           </li>
           <li>
-            <Link href={`/users/profiles/${profile.id}/stories`}>
+            <Link href={`/profiles/${profile.id}/stories`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">동네생활</span>
               </a>
             </Link>
           </li>
           <li>
-            <Link href={`/users/profiles/${profile.id}/manners`}>
+            <Link href={`/profiles/${profile.id}/manners`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 평가</span>
                 {data && Boolean(data?.manners?.length) && (
@@ -124,7 +124,7 @@ const ProfileDetail: NextPage<{
             </Link>
           </li>
           <li>
-            <Link href={`/users/profiles/${profile.id}/reviews`}>
+            <Link href={`/profiles/${profile.id}/reviews`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 후기</span>
               </a>

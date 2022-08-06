@@ -7,8 +7,8 @@ import { useForm } from "react-hook-form";
 import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostVerificationEmailResponse } from "@api/users/verification-email";
-import { PostConfirmTokenResponse } from "@api/users/confirm-token";
+import { PostVerificationEmailResponse } from "@api/verification/email";
+import { PostConfirmTokenResponse } from "@api/verification/token";
 // @components
 import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
@@ -22,7 +22,7 @@ const VerificationEmail: NextPage = () => {
   // Email
   const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
   const { setError: verifyEmailError, setFocus: verifyEmailFocus, getValues: verifyEmailGetValue } = verifyEmailForm;
-  const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostVerificationEmailResponse>("/api/users/verification-email", {
+  const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostVerificationEmailResponse>("/api/verification/email", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -42,10 +42,10 @@ const VerificationEmail: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       router.push({
-        pathname: "/verification-phone",
+        pathname: "/verification/phone",
         query: { targetEmail: verifyEmailGetValue("email") },
       });
     },

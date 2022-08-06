@@ -269,7 +269,7 @@ const ProductDetail: NextPage<{
       {/* 중고거래 정보 */}
       <section className="block">
         {/* 판매자 */}
-        <Link href={`/users/profiles/${product?.user?.id}`}>
+        <Link href={`/profiles/${product?.user?.id}`}>
           <a className="block py-3">
             <Profiles user={product?.user} emdPosNm={product?.emdPosNm} />
           </a>

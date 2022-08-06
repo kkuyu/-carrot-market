@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetStoriesResponse } from "@api/stories";
-import { GetProfilesStoriesResponse } from "@api/users/profiles/[id]/stories";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 
 export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0];
 

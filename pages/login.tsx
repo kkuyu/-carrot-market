@@ -9,7 +9,7 @@ import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { PostLoginResponse } from "@api/users/login";
-import { PostConfirmTokenResponse } from "@api/users/confirm-token";
+import { PostConfirmTokenResponse } from "@api/verification/token";
 // @components
 import CustomHead from "@components/custom/head";
 import Buttons from "@components/buttons";
@@ -45,7 +45,7 @@ const Login: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/users/confirm-token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-user", {
         placement: "bottom",

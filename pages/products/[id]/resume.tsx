@@ -56,7 +56,7 @@ const ProductResume: NextPage = () => {
   const formData = useForm<ResumeProductTypes>();
   const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
-      router.replace(`/users/profiles/${data.product.userId}/products`);
+      router.replace(`/profiles/${data.product.userId}/products`);
     },
     onError: (data) => {
       switch (data?.error?.name) {

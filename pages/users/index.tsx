@@ -28,7 +28,7 @@ const ProfileHome: NextPage = () => {
             links: [
               {
                 key: "products",
-                href: `/users/profiles/${user?.id}/products`,
+                href: `/profiles/${user?.id}/products`,
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -45,7 +45,7 @@ const ProfileHome: NextPage = () => {
               },
               {
                 key: "purchases",
-                href: "/users/profiles/purchases",
+                href: "/users/purchases",
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -57,7 +57,7 @@ const ProfileHome: NextPage = () => {
               },
               {
                 key: "likes",
-                href: "/users/profiles/likes",
+                href: "/users/likes",
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -80,7 +80,7 @@ const ProfileHome: NextPage = () => {
             links: [
               {
                 key: "stories",
-                href: `/users/profiles/${user?.id}/stories`,
+                href: `/profiles/${user?.id}/stories`,
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -107,7 +107,7 @@ const ProfileHome: NextPage = () => {
           ? [
               {
                 key: "revise",
-                href: "/users/profiles/revise",
+                href: "/users/revise",
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -127,7 +127,7 @@ const ProfileHome: NextPage = () => {
           : []),
         {
           key: "edit",
-          href: "/users/profiles/edit",
+          href: "/users/edit",
           content: (
             <div className="relative block py-1 pl-12 pr-5">
               <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -192,7 +192,7 @@ const ProfileHome: NextPage = () => {
             <Profiles user={user} uuid={user?.id === -1 ? "" : `#${user?.id}`} emdPosNm={currentAddr?.emdPosNm || ""} />
           </div>
         ) : (
-          <Link href={`/users/profiles/${user?.id}`}>
+          <Link href={`/profiles/${user?.id}`}>
             <a className="block-arrow py-5">
               <Profiles user={user} uuid={user?.id === -1 ? "" : `#${user?.id}`} emdPosNm={currentAddr?.emdPosNm || ""} />
             </a>

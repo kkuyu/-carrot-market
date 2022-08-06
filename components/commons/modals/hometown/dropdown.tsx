@@ -4,7 +4,7 @@ import useModal from "@libs/client/useModal";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostUserRequestBody, PostUserResponse } from "@api/users/my";
+import { PostUserRequestBody, PostUserResponse } from "@api/users";
 import { PostDummyResponse } from "@api/users/dummy";
 // @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
@@ -20,7 +20,7 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
 
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users/my", {
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users", {
     onSuccess: () => {
       mutateUser();
       closeModal(CustomModal, "HometownDropdown");

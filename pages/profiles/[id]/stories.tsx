@@ -12,9 +12,9 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users/my";
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { GetProfilesStoriesResponse, ProfilesStoriesFilter } from "@api/users/profiles/[id]/stories";
+import { GetUserResponse } from "@api/users";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
+import { GetProfilesStoriesResponse, ProfilesStoriesFilter } from "@api/profiles/[id]/stories";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @components
 import CustomHead from "@components/custom/head";
@@ -23,10 +23,10 @@ import CommentSummaryList from "@components/lists/commentSummaryList";
 
 const getKey = (pageIndex: number, previousPageData: GetProfilesStoriesResponse, query: string = "", id: string = "") => {
   if (!id) return null;
-  if (pageIndex === 0) return `/api/users/profiles/${id}/stories?page=1&${query}`;
+  if (pageIndex === 0) return `/api/profiles/${id}/stories?page=1&${query}`;
   if (previousPageData && !previousPageData.stories.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/profiles/${id}/stories?page=${pageIndex + 1}&${query}`;
+  return `/api/profiles/${id}/stories?page=${pageIndex + 1}&${query}`;
 };
 
 type FilterTab = { index: number; value: ProfilesStoriesFilter; text: string; name: string };
@@ -36,7 +36,7 @@ const ProfileStories: NextPage = () => {
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/users/profiles/${router.query.id}` : null);
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
 
   // profile story paging
   const tabs: FilterTab[] = [
@@ -139,8 +139,8 @@ const Page: NextPage<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users/my": getUser.response,
-          [`/api/users/profiles/${getProfile.response.profile.id}`]: getProfile.response,
+          "/api/users": getUser.response,
+          [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(arg[0], arg[1], getStories.query, `${getProfile.response.profile.id}`))]: [
             getStories.response,
           ],
@@ -163,12 +163,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const profileId = params?.id?.toString();
 
   // invalid params: profileId
-  // redirect: /users/profiles/[id]
+  // redirect: /profiles/[id]
   if (!profileId || isNaN(+profileId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles/${profileId}`,
+        destination: `/profiles/${profileId}`,
       },
     };
   }
@@ -181,12 +181,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // not found profile
-  // redirect: /users/profiles/[id]
+  // redirect: /profiles/[id]
   if (!profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users/profiles/${profileId}`,
+        destination: `/profiles/${profileId}`,
       },
     };
   }

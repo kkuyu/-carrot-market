@@ -5,8 +5,8 @@ import { useEffect, useState } from "react";
 import { getDiffTimeStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 // @api
-import { GetProfilesDetailResponse } from "@api/users/profiles/[id]";
-import { GetProfilesReviewsResponse } from "@api/users/profiles/[id]/reviews";
+import { GetProfilesDetailResponse } from "@api/profiles/[id]";
+import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
 // @components
 import Profiles from "@components/profiles";
 
@@ -47,7 +47,7 @@ const ReviewList = ({ list }: ReviewListProps) => {
         if (user?.id?.toString() !== router.query.id) {
           return (
             <li key={item?.id}>
-              <Link href={`/users/profiles/${profile?.id}`}>
+              <Link href={`/profiles/${profile?.id}`}>
                 <a className="block">
                   <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
                   <p className="pt-1 pl-14">{item.text}</p>
@@ -59,7 +59,7 @@ const ReviewList = ({ list }: ReviewListProps) => {
 
         return (
           <li key={item?.id}>
-            <Link href={`/users/profiles/${profile?.id}`}>
+            <Link href={`/profiles/${profile?.id}`}>
               <a className="block">
                 <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
               </a>
