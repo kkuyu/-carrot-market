@@ -22,7 +22,6 @@ export interface HandleProductProps extends React.HTMLAttributes<HTMLButtonEleme
 const HandleProduct = ({ item, className }: HandleProductProps) => {
   const router = useRouter();
   const { user } = useUser();
-
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
@@ -43,28 +42,26 @@ const HandleProduct = ({ item, className }: HandleProductProps) => {
     },
   });
 
-  if (!item) return null;
-
   const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
   const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
 
-  const toggleSale = (value: boolean) => {
+  const toggleSale = () => {
     if (saleLoading) return;
-    updateSale({ sale: value });
+    updateSale({ sale: !Boolean(saleRecord) });
   };
 
-  const openOthersPanel = () => {
-    openPanel<ActionPanelProps>(ActionPanel, "others", {
+  const openHandlePanel = () => {
+    openPanel<ActionPanelProps>(ActionPanel, "handleProduct", {
       hasBackdrop: true,
       actions: saleRecord
         ? [
-            { key: "update", text: "수정", onClick: () => router.push(`/products/${item.id}/edit`) },
-            { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item.id}/delete`) },
+            { key: "update", text: "수정", onClick: () => router.push(`/products/${item?.id}/edit`) },
+            { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item?.id}/delete`) },
           ]
         : [
-            { key: "sale", text: "판매중", onClick: () => (item?.reviews?.length ? openSaleModal() : toggleSale(true)) },
-            { key: "update", text: "수정", onClick: () => router.push(`/products/${item.id}/edit`) },
-            { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item.id}/delete`) },
+            { key: "sale", text: "판매중", onClick: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
+            { key: "update", text: "수정", onClick: () => router.push(`/products/${item?.id}/edit`) },
+            { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item?.id}/delete`) },
           ],
       cancelBtn: "닫기",
     });
@@ -76,12 +73,14 @@ const HandleProduct = ({ item, className }: HandleProductProps) => {
       hasBackdrop: true,
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
       confirmBtn: "변경",
-      onConfirm: () => toggleSale(true),
+      onConfirm: () => toggleSale(),
     });
   };
 
+  if (!item) return null;
+
   return (
-    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openOthersPanel} disabled={saleLoading}>
+    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandlePanel} disabled={saleLoading}>
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
       </svg>

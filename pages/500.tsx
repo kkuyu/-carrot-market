@@ -1,10 +1,12 @@
-import { NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 
 const Error500: NextPage = () => {
   const router = useRouter();
@@ -24,23 +26,46 @@ const Error500: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "",
-        titleTag: "strong",
-        utils: ["back", "title", "home"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title="500" />
       <h1>Error: {message}</h1>
     </div>
   );
 };
 
-export default Error500;
+const Page: NextPageWithLayout = () => {
+  return <Error500 />;
+};
+
+Page.getLayout = getLayout;
+
+export const getStaticProps: GetStaticProps = async () => {
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "ERROR 500",
+    },
+    header: {
+      title: "",
+      titleTag: "strong",
+      utils: ["back", "title", "home"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
+  return {
+    props: {
+      defaultLayout,
+    },
+  };
+};
+
+export default Page;

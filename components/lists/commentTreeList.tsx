@@ -1,5 +1,5 @@
 import { useRouter } from "next/router";
-import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
+import { Children, cloneElement, isValidElement, useEffect, useMemo, useState } from "react";
 // @libs
 import useUser from "@libs/client/useUser";
 // @api
@@ -18,11 +18,11 @@ interface CommentTreeListProps {
   children?: React.ReactNode;
 }
 
-const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments = 0, moreReComments, children = [] }: CommentTreeListProps) => {
+const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments = 0, moreReComments, children }: CommentTreeListProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const [page, setPage] = useState(depth === 0 ? -1 : !Boolean(list.length) ? 0 : 1);
+  const [page, setPage] = useState(depth === 0 ? -1 : 1);
   const [moreInfo, setMoreInfo] = useState({ read: false, page });
 
   const takeLength = (() => {
@@ -74,9 +74,7 @@ const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComm
             });
             return (
               <li key={item.id} className="relative">
-                <div className={includeHandleComment ? "pr-8" : ""}>
-                  <Comment item={itemData} />
-                </div>
+                <Comment item={itemData} className={includeHandleComment ? "pr-8" : ""} />
                 {childrenWithProps}
               </li>
             );
@@ -91,7 +89,7 @@ const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComm
           <button type="button" onClick={() => updatePage(moreInfo.read ? moreInfo.page : page + 1)} disabled={list?.length < takeLength} className="text-sm text-gray-500">
             {page < 2 ? `답글 ${countReComments - list.length}개 보기` : `이전 답글 더보기`}
           </button>
-        ) : list?.length === countReComments && page > 1 ? (
+        ) : list?.length === countReComments && page > 0 ? (
           <button type="button" onClick={() => updatePage(0)} disabled={list?.length < takeLength} className="text-sm text-gray-500">
             답글 숨기기
           </button>

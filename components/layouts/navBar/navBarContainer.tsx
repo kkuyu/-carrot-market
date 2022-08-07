@@ -1,11 +1,11 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 // @libs
-import { NavBarOptions, NavBarUtils } from "@components/layouts";
+import { NavBarOptions, NavBarUtils } from "@components/layouts/navBar/navBarWrapper";
 
 export interface NavBarProps extends NavBarOptions {}
 
-const NavBar = ({ utils }: NavBarProps) => {
+const NavBar = ({ utils = [] }: NavBarProps) => {
   const router = useRouter();
 
   const classNames = {
@@ -96,7 +96,7 @@ const NavBar = ({ utils }: NavBarProps) => {
     }
   };
 
-  if (!utils.length) {
+  if (!utils?.length) {
     return null;
   }
 
@@ -104,11 +104,11 @@ const NavBar = ({ utils }: NavBarProps) => {
     <div id="layout-nav-bar" className="fixed-container bottom-0 z-[100]">
       <nav className="fixed-inner h-16 border-t bg-white">
         <div className="-mb-1 flex w-full h-full">
-          {utils.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
-          {utils.includes(NavBarUtils["Story"]) && <>{getUtils(NavBarUtils["Story"])}</>}
-          {utils.includes(NavBarUtils["Chat"]) && <>{getUtils(NavBarUtils["Chat"])}</>}
-          {utils.includes(NavBarUtils["Streams"]) && <>{getUtils(NavBarUtils["Streams"])}</>}
-          {utils.includes(NavBarUtils["Profile"]) && <>{getUtils(NavBarUtils["Profile"])}</>}
+          {utils?.includes(NavBarUtils["Home"]) && <>{getUtils(NavBarUtils["Home"])}</>}
+          {utils?.includes(NavBarUtils["Story"]) && <>{getUtils(NavBarUtils["Story"])}</>}
+          {utils?.includes(NavBarUtils["Chat"]) && <>{getUtils(NavBarUtils["Chat"])}</>}
+          {utils?.includes(NavBarUtils["Streams"]) && <>{getUtils(NavBarUtils["Streams"])}</>}
+          {utils?.includes(NavBarUtils["Profile"]) && <>{getUtils(NavBarUtils["Profile"])}</>}
         </div>
       </nav>
     </div>

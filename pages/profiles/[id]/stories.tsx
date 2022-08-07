@@ -16,17 +16,19 @@ import { GetUserResponse } from "@api/users";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesStoriesResponse, ProfilesStoriesFilter } from "@api/profiles/[id]/stories";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
 import CommentSummaryList from "@components/lists/commentSummaryList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesStoriesResponse, query: string = "", id: string = "") => {
-  if (!id) return null;
-  if (pageIndex === 0) return `/api/profiles/${id}/stories?page=1&${query}`;
-  if (previousPageData && !previousPageData.stories.length) return null;
+const getKey = (pageIndex: number, previousPageData: GetProfilesStoriesResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/profiles/[id]/stories", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
+  if (previousPageData && !previousPageData.stories.length && !previousPageData.comments.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/profiles/${id}/stories?page=${pageIndex + 1}&${query}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 type FilterTab = { index: number; value: ProfilesStoriesFilter; text: string; name: string };
@@ -38,7 +40,6 @@ const ProfileStories: NextPage = () => {
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
 
-  // profile story paging
   const tabs: FilterTab[] = [
     { index: 0, value: "STORY", text: "게시글", name: "등록된 게시글" },
     { index: 1, value: "COMMENT", text: "댓글", name: "등록된 댓글" },
@@ -47,18 +48,21 @@ const ProfileStories: NextPage = () => {
   const activeTab = tabs.find((tab) => tab.value === filter)!;
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) =>
-    getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
-  );
+  const { data, size, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => {
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/stories` : "", query: `filter=${filter}` };
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const results = {
-    stories: data && activeTab.value === "STORY" ? data.flatMap((item) => item.stories) : [],
-    comments: data && activeTab.value === "COMMENT" ? data.flatMap((item) => item.comments) : [],
-  };
+  const results = data
+    ? {
+        stories: activeTab.value === "STORY" ? data.flatMap((item) => item.stories) : [],
+        comments: activeTab.value === "COMMENT" ? data.flatMap((item) => item.comments) : [],
+      }
+    : null;
 
   const changeFilter = (tab: FilterTab) => {
     setFilter(tab.value);
@@ -67,31 +71,22 @@ const ProfileStories: NextPage = () => {
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}동네생활`,
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
-  if (!profileData?.profile) {
-    return null;
-  }
+  if (!profileData?.profile) return null;
 
   return (
     <div className="container">
-      <CustomHead title={`동네생활 | ${profileData?.profile.name}님의 당근`} />
-
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
           return (
@@ -108,19 +103,21 @@ const ProfileStories: NextPage = () => {
       </div>
 
       {/* 게시글: List */}
-      {Boolean(activeTab.value === "STORY" ? results.stories.length : activeTab.value === "COMMENT" ? results.comments.length : 0) && (
+      {results && Boolean(activeTab.value === "STORY" ? results?.stories?.length : activeTab.value === "COMMENT" ? results?.comments?.length : 0) && (
         <div className="-mx-5">
           {activeTab.value === "STORY" && <StoryList list={results.stories} />}
           {activeTab.value === "COMMENT" && <CommentSummaryList list={results.comments} />}
           <div ref={infiniteRef} />
-          <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isLoading ? `${activeTab?.name}을 모두 확인하였어요` : isReachingEnd ? `${activeTab?.name}을 불러오고있어요` : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 게시글: Empty */}
-      {!Boolean(activeTab.value === "STORY" ? results.stories.length : activeTab.value === "COMMENT" ? results.comments.length : 0) && (
+      {results && !Boolean(activeTab.value === "STORY" ? results?.stories?.length : activeTab.value === "COMMENT" ? results?.comments?.length : 0) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${activeTab?.name}이 존재하지 않아요`}</p>
         </div>
@@ -129,11 +126,11 @@ const ProfileStories: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getStories: { query: string; response: GetProfilesStoriesResponse };
-  getComments: { query: string; response: GetProfilesStoriesResponse };
+  getStories: { options: { url?: string; query?: string }; response: GetProfilesStoriesResponse };
+  getComments: { options: { url?: string; query?: string }; response: GetProfilesStoriesResponse };
 }> = ({ getUser, getProfile, getStories, getComments }) => {
   return (
     <SWRConfig
@@ -141,12 +138,8 @@ const Page: NextPage<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(arg[0], arg[1], getStories.query, `${getProfile.response.profile.id}`))]: [
-            getStories.response,
-          ],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(arg[0], arg[1], getComments.query, `${getProfile.response.profile.id}`))]: [
-            getComments.response,
-          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(...arg, getStories.options))]: [getStories.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(...arg, getComments.options))]: [getComments.response],
         },
       }}
     >
@@ -155,12 +148,14 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
   // getProfile
-  const profileId = params?.id?.toString();
+  const profileId = params?.id?.toString() || "";
 
   // invalid params: profileId
   // redirect: /profiles/[id]
@@ -272,8 +267,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `동네생활 | ${profile?.name} | 프로필`,
+    },
+    header: {
+      title: `${profile.name}님의 동네생활`,
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -289,7 +300,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getStories: {
-        query: `filter=STORY`,
+        options: {
+          url: `/api/profiles/${profile.id}/stories`,
+          query: `filter=STORY`,
+        },
         response: {
           success: true,
           stories: JSON.parse(JSON.stringify(stories || [])),
@@ -297,7 +311,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getComments: {
-        query: `filter=COMMENT`,
+        options: {
+          url: `/api/profiles/${profile.id}/stories`,
+          query: `filter=COMMENT`,
+        },
         response: {
           success: true,
           comments: JSON.parse(JSON.stringify(comments || [])),

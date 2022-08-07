@@ -1,15 +1,56 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useEffect, useMemo } from "react";
 // @components
 import { LayoutDispatchContext, LayoutStateContext } from "@components/layouts/layoutContext";
 import HeaderContainer from "@components/layouts/header/headerContainer";
 
-const HeaderWrapper = () => {
+export const HeaderUtils = {
+  Address: "address",
+  Back: "back",
+  Home: "home",
+  Kebab: "kebab",
+  Share: "share",
+  Search: "search",
+  Submit: "submit",
+  Title: "title",
+} as const;
+export type HeaderUtils = typeof HeaderUtils[keyof typeof HeaderUtils];
+
+export interface HeaderOptions {
+  utils?: HeaderUtils[];
+  title?: string;
+  titleTag?: "h1" | "strong";
+  isTransparent?: boolean;
+  kebabActions?: { key: string; text: string; onClick: () => void }[];
+  submitId?: string;
+}
+
+interface HeaderWrapperProps {
+  defaultHeaderState: HeaderOptions;
+}
+
+const HeaderWrapper = ({ defaultHeaderState }: HeaderWrapperProps) => {
   const currentState = useContext(LayoutStateContext);
-  const { change, reset } = useContext(LayoutDispatchContext);
+  const { change } = useContext(LayoutDispatchContext);
 
-  const currentHeader = useMemo(() => ({  ...currentState.header }), [currentState]);
+  const currentHeader = useMemo(() => ({ ...currentState.header }), [currentState]);
 
-  return <HeaderContainer {...currentHeader} />;
+  useEffect(() => {
+    change({
+      meta: {},
+      header: {
+        utils: [],
+        title: "",
+        titleTag: "h1",
+        isTransparent: false,
+        kebabActions: [],
+        submitId: "",
+        ...defaultHeaderState,
+      },
+      navBar: {},
+    });
+  }, [change, defaultHeaderState]);
+
+  return <HeaderContainer {...defaultHeaderState} {...currentHeader} />;
 };
 
 export default HeaderWrapper;

@@ -15,7 +15,7 @@ export interface CommentProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: CommentItem;
 }
 
-const Comment = ({ item, ...rest }: CommentProps) => {
+const Comment = ({ item, className, ...rest }: CommentProps) => {
   const [mounted, setMounted] = useState(false);
 
   const today = new Date();
@@ -29,14 +29,10 @@ const Comment = ({ item, ...rest }: CommentProps) => {
   if (!item) return null;
   if (item.depth < StoryCommentMinimumDepth) null;
   if (item.depth > StoryCommentMaximumDepth) null;
-
-  if (!item?.content) {
-    if (typeof item?.updatedAt === "string") return <p className="text-notice opacity-60">삭제중입니다</p>;
-    return <p className="text-notice opacity-60">댓글 작성자가 삭제한 댓글이에요</p>;
-  }
+  if (!item?.content) return <p className="text-notice opacity-60">댓글 작성자가 삭제한 댓글이에요</p>;
 
   return (
-    <div className="relative" {...rest}>
+    <div className={`relative ${className}`} {...rest}>
       <Link href={`/profiles/${item?.user?.id}`}>
         <a className="block">
           <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item?.emdPosNm} diffTime={mounted ? diffTime : ""} size="tiny" />

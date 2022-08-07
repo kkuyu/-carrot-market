@@ -13,8 +13,10 @@ import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 
@@ -47,14 +49,9 @@ const ProductDelete: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "중고거래 글 삭제",
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
@@ -64,8 +61,6 @@ const ProductDelete: NextPage = () => {
 
   return (
     <div className="container pb-5">
-      <CustomHead title="글 삭제 | 중고거래" />
-
       {/* 제품정보 */}
       <div className="block -mx-5 px-5 py-3 bg-gray-200">
         <Link href={`/products/${productData?.product?.id}`}>
@@ -114,7 +109,7 @@ const ProductDelete: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getProduct: { response: GetProductsDetailResponse };
 }> = ({ getProduct }) => {
   return (
@@ -130,6 +125,8 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
@@ -144,7 +141,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const productId = params?.id?.toString();
+  const productId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: productId
@@ -213,8 +210,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "글 삭제 | 중고거래",
+    },
+    header: {
+      title: "중고거래 글 삭제",
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getProduct: {
         response: {
           success: true,

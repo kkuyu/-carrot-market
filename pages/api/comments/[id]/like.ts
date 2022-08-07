@@ -50,13 +50,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let likeRecord = null;
-    const exists = comment.records.length ? comment.records[0] : null;
+    const existed = comment.records.length ? comment.records[0] : null;
 
-    if (exists) {
+    if (existed) {
       // delete
       await client.record.delete({
         where: {
-          id: exists.id,
+          id: existed.id,
         },
       });
     } else {

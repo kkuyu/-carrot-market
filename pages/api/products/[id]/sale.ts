@@ -63,16 +63,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let recordSale = null;
-    const exists = product.records.length ? product.records[0] : null;
+    const existed = product.records.length ? product.records[0] : null;
 
-    if (exists && sale === false) {
+    if (existed && sale === false) {
       // delete
       await client.record.delete({
         where: {
-          id: exists.id,
+          id: existed.id,
         },
       });
-    } else if (!exists && sale === true) {
+    } else if (!existed && sale === true) {
       // delete record Kind.ProductPurchase
       await client.record.deleteMany({
         where: {

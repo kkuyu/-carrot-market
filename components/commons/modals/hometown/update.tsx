@@ -152,7 +152,10 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
             hasBackdrop: true,
             onConfirm: () => {
               closeModal(LayerModal, "HometownUpdate");
-              router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+              router.push({
+                pathname: "/join",
+                query: { addrNm: currentAddr?.emdAddrNm },
+              });
             },
           });
           return;

@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 
 import { useEffect } from "react";
@@ -12,8 +12,10 @@ import useMutation from "@libs/client/useMutation";
 import { PostVerificationPhoneResponse } from "@api/verification/phone";
 import { PostConfirmTokenResponse } from "@api/verification/token";
 import { PostVerificationUpdateResponse } from "@api/verification/update";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
@@ -26,7 +28,6 @@ const VerificationPhone: NextPage = () => {
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const { setError: verifyPhoneError, setFocus: verifyPhoneFocus, setValue: verifyPhoneSetValue, getValues: verifyPhoneGetValue } = verifyPhoneForm;
   const [confirmPhone, { loading: phoneLoading, data: phoneData }] = useMutation<PostVerificationPhoneResponse>("/api/verification/phone", {
     onSuccess: () => {
       verifyTokenFocus("token");
@@ -40,10 +41,10 @@ const VerificationPhone: NextPage = () => {
           });
           router.replace("/verification/email");
           return;
-        case "SameExistingAccount":
+        case "SameAccount":
         case "AlreadySubscribedAccount":
-          verifyPhoneError("phone", { type: "validate", message: data.error.message });
-          verifyPhoneFocus("phone");
+          verifyPhoneForm.setError("phone", { type: "validate", message: data.error.message });
+          verifyPhoneForm.setFocus("phone");
           return;
         default:
           console.error(data.error);
@@ -57,9 +58,10 @@ const VerificationPhone: NextPage = () => {
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
     onSuccess: () => {
+      if (updateLoading) return;
       updateUser({
-        originData: { email: verifyPhoneGetValue("targetEmail") },
-        updateData: { phone: verifyPhoneGetValue("phone") },
+        originData: { email: verifyPhoneForm.getValues("targetEmail") },
+        updateData: { phone: verifyPhoneForm.getValues("phone") },
       });
     },
     onError: (data) => {
@@ -76,7 +78,7 @@ const VerificationPhone: NextPage = () => {
   });
 
   // update user data
-  const [updateUser] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
+  const [updateUser, { loading: updateLoading }] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "update-user", {
         placement: "bottom",
@@ -107,27 +109,20 @@ const VerificationPhone: NextPage = () => {
       });
       router.replace("/verification/email");
     } else {
-      verifyPhoneSetValue("targetEmail", query.targetEmail);
+      verifyPhoneForm.setValue("targetEmail", query.targetEmail);
     }
   }, [hasQuery, query]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "휴대폰 번호 변경",
-        titleTag: "strong",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <section className="container py-5">
-      <CustomHead title="휴대폰 번호 변경" />
-
       <h1 className="text-2xl font-bold">
         변경된 휴대폰 번호를
         <br />
@@ -166,4 +161,33 @@ const VerificationPhone: NextPage = () => {
   );
 };
 
-export default VerificationPhone;
+const Page: NextPageWithLayout = () => {
+  return <VerificationPhone />;
+};
+
+Page.getLayout = getLayout;
+
+export const getStaticProps: GetStaticProps = async () => {
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "휴대폰 번호 변경",
+    },
+    header: {
+      title: "휴대폰 번호 변경",
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
+  return {
+    props: {
+      defaultLayout,
+    },
+  };
+};
+
+export default Page;

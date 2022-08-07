@@ -11,8 +11,10 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
 const ProductUpload: NextPage = () => {
@@ -76,25 +78,24 @@ const ProductUpload: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "중고거래 글 쓰기",
-        titleTag: "h1",
-        utils: ["back", "title", "submit"],
-        submitId: "upload-product",
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <CustomHead title="글 쓰기 | 중고거래" />
       <EditProduct formId="upload-product" formData={formData} onValid={submitUploadProduct} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };
+
+const Page: NextPageWithLayout = () => {
+  return <ProductUpload />;
+};
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -120,9 +121,27 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "글 쓰기 | 중고거래",
+    },
+    header: {
+      title: "중고거래 글 쓰기",
+      titleTag: "h1",
+      utils: ["back", "title", "submit"],
+      submitId: "upload-product",
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
-    props: {},
+    props: {
+      defaultLayout,
+    },
   };
 });
 
-export default ProductUpload;
+export default Page;

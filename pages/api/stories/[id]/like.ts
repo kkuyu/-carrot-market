@@ -59,14 +59,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let likeRecord = null;
-    const exists = story.records.length ? story.records[0] : null;
+    const existed = story.records.length ? story.records[0] : null;
 
     if (!_emotion) {
-      if (exists) {
+      if (existed) {
         // delete
         await client.record.delete({
           where: {
-            id: exists.id,
+            id: existed.id,
           },
         });
       } else {
@@ -101,21 +101,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (exists && exists?.emotion !== emotion) {
+    if (existed && existed?.emotion !== emotion) {
       // update
       likeRecord = await client.record.update({
         where: {
-          id: exists.id,
+          id: existed.id,
         },
         data: {
           emotion,
         },
       });
-    } else if (exists && exists?.emotion === emotion) {
+    } else if (existed && existed?.emotion === emotion) {
       // delete
       await client.record.delete({
         where: {
-          id: exists.id,
+          id: existed.id,
         },
       });
     } else {

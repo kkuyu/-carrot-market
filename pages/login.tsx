@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -10,10 +10,12 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { PostLoginResponse } from "@api/users/login";
 import { PostConfirmTokenResponse } from "@api/verification/token";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
-import Buttons from "@components/buttons";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
+import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
@@ -24,7 +26,6 @@ const Login: NextPage = () => {
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const { setError: verifyPhoneError, setFocus: verifyPhoneFocus, control: verifyPhoneControl } = verifyPhoneForm;
   const [login, { loading: loginLoading, data: loginData }] = useMutation<PostLoginResponse>("/api/users/login", {
     onSuccess: () => {
       verifyTokenFocus("token");
@@ -32,8 +33,8 @@ const Login: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "NotFoundUser":
-          verifyPhoneError("phone", { type: "validate", message: data.error.message });
-          verifyPhoneFocus("phone");
+          verifyPhoneForm.setError("phone", { type: "validate", message: data.error.message });
+          verifyPhoneForm.setFocus("phone");
           return;
         default:
           console.error(data.error);
@@ -68,21 +69,14 @@ const Login: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "로그인",
-        titleTag: "strong",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <section className="container py-5">
-      <CustomHead title="로그인" />
-
       <h1 className="text-2xl font-bold">
         안녕하세요!
         <br />
@@ -105,7 +99,7 @@ const Login: NextPage = () => {
 
       <div className="empty:hidden mt-6 text-center space-y-1">
         {/* 시작하기 */}
-        {verifyPhoneControl.getFieldState("phone").error?.type === "validate" && (
+        {verifyPhoneForm.control.getFieldState("phone").error?.type === "validate" && (
           <p>
             <span className="text-gray-500">첫 방문이신가요?</span>
             <Link href="/welcome/locate" passHref>
@@ -142,4 +136,33 @@ const Login: NextPage = () => {
   );
 };
 
-export default Login;
+const Page: NextPageWithLayout = () => {
+  return <Login />;
+};
+
+Page.getLayout = getLayout;
+
+export const getStaticProps: GetStaticProps = async () => {
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "로그인",
+    },
+    header: {
+      title: "로그인",
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
+  return {
+    props: {
+      defaultLayout,
+    },
+  };
+};
+
+export default Page;

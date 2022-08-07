@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import NextError from "next/error";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import useSWR from "swr";
+import useSWR, { SWRConfig } from "swr";
 // @libs
 import { getCommentTree, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
@@ -15,8 +15,10 @@ import client from "@libs/server/client";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Comment from "@components/cards/comment";
 import CommentTreeList from "@components/lists/commentTreeList";
@@ -26,33 +28,34 @@ import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 import StorySummary from "@components/cards/storySummary";
 import Link from "next/link";
 
-const CommentsDetail: NextPage<{
-  staticProps: {
-    comment: GetCommentsDetailResponse["comment"];
-  };
-}> = ({ staticProps }) => {
+const CommentsDetail: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
-  // comment detail
-  const [comment, setComment] = useState<GetCommentsDetailResponse["comment"] | null>(staticProps?.comment ? staticProps.comment : null);
-  const [commentLoading, setCommentLoading] = useState(false);
-  const treeReComments = useMemo(() => {
-    if (!comment?.reComments?.length) return [];
-    return getCommentTree(Math.max(...comment?.reComments.map((v) => v.depth)), [{ ...comment, reComments: [] }, ...comment?.reComments.map((v) => ({ ...v, reComments: [] }))]);
-  }, [comment]);
-  const [commentsQuery, setCommentsQuery] = useState("");
-  const { data, mutate: mutateCommentDetail } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentsQuery}` : null);
+  // fetch data: comment detail
+  const [commentQuery, setCommentQuery] = useState("");
+  const { data: commentData, mutate: mutateCommentDetail } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentQuery}` : null);
+
+  const [commentFlatList, setCommentFlatList] = useState<GetCommentsDetailResponse["comment"][]>(() => {
+    if (!commentData?.comment) return [];
+    return [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])];
+  });
+  const commentLoading = useMemo(() => {
+    if (!commentFlatList?.length) return false;
+    return !!commentFlatList.find((comment) => comment.id === 0);
+  }, [commentFlatList]);
+  const commentTreeList = useMemo(() => {
+    if (!commentFlatList?.length) return [];
+    return getCommentTree(Math.max(...commentFlatList.map((v) => v.depth)), [...commentFlatList.map((v) => ({ ...v, reComments: [] }))]);
+  }, [commentFlatList]);
 
   // new comment
   const formData = useForm<EditCommentTypes>();
-  const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${comment?.storyId}/comments`, {
-    onSuccess: (successData) => {
-      setComment((prev) => prev && { ...prev, reComments: prev?.reComments?.map((comment) => (comment.id !== 0 ? comment : { ...comment, id: successData.comment.id })) || [] });
-      setCommentsQuery(() => `exists=${JSON.stringify(comment?.reComments?.map((comment) => comment.id))}`);
-      setCommentLoading(() => false);
+  const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
+    onSuccess: () => {
+      mutateCommentDetail();
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -64,11 +67,11 @@ const CommentsDetail: NextPage<{
   });
 
   const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
-    const existComments = page !== 0 ? comment?.reComments : comment?.reComments?.filter((comment) => comment.reCommentRefId !== reCommentRefId);
-    setComment((prev) => prev && { ...prev, reComments: existComments?.length ? [...existComments] : [] });
-    setCommentsQuery(() => {
+    const commentExistedList = page !== 0 ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+    setCommentFlatList(() => [...commentExistedList]);
+    setCommentQuery(() => {
       let result = "";
-      result += `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}`;
+      result += `existed=${JSON.stringify(commentExistedList?.map((comment) => comment.id))}`;
       result += `&page=${page}&reCommentRefId=${reCommentRefId}`;
       result += cursorId !== -1 ? `&cursorId=${cursorId}` : "";
       return result;
@@ -78,13 +81,12 @@ const CommentsDetail: NextPage<{
   const submitReComment = (data: EditCommentTypes) => {
     if (commentLoading || sendCommentLoading) return;
     if (!user) return;
-    if (!comment) return;
-    setCommentLoading(() => true);
+    if (!commentData?.comment) return;
     mutateCommentDetail((prev) => {
       const time = new Date();
       const { content, reCommentRefId = null } = data;
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
-      const dummyComment = { id: 0, depth: comment?.depth + 1, content, reCommentRefId, userId: user?.id, storyId: comment?.storyId, createdAt: time, updatedAt: time };
+      const dummyComment = { id: 0, depth: commentData?.comment?.depth + 1, content, reCommentRefId, userId: user?.id, storyId: commentData?.comment?.storyId, createdAt: time, updatedAt: time };
       return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
     }, false);
     formData.setValue("content", "");
@@ -100,83 +102,72 @@ const CommentsDetail: NextPage<{
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push({
+          pathname: "/join",
+          query: { addrNm: currentAddr?.emdAddrNm },
+        });
       },
     });
   };
 
   // merge data
   useEffect(() => {
-    if (!data) return;
-    if (!data.success) {
-      router.push(`/stories/${comment?.storyId}`);
-      return;
-    }
-    setComment((prev) => ({
-      ...prev,
-      ...data.comment,
-    }));
-  }, [data]);
+    if (!commentData) return;
+    if (!commentData?.success) return;
+    setCommentFlatList(() => {
+      if (!commentData?.comment) return [];
+      return [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])];
+    });
+  }, [commentData?.comment]);
 
   useEffect(() => {
-    if (router?.query?.id === comment?.id?.toString()) return;
-    setCommentsQuery(() => "");
-  }, [router?.query?.id, comment?.id]);
+    setCommentQuery(() => "");
+    formData.setValue("reCommentRefId", commentTreeList?.[0]?.id);
+    (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
+  }, [commentTreeList?.[0]?.id]);
 
   // setting layout
   useEffect(() => {
-    if (!comment) return;
-
     changeLayout({
-      header: {
-        title: "댓글",
-        titleTag: 'strong',
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
-  }, [user?.id, comment?.id, comment?.content]);
+  }, []);
 
-  // focus
-  useEffect(() => {
-    if (!comment) return;
-    formData.setValue("reCommentRefId", comment.id);
-    (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
-  }, [comment?.id]);
-
-  if (!comment) {
+  if (!commentTreeList.length) {
     return <NextError statusCode={404} />;
   }
 
   return (
     <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
-      <CustomHead title={`${truncateStr(comment?.content, 15)} | 댓글`} />
-      <h1 className="sr-only">{truncateStr(comment?.content, 15)} | 댓글</h1>
+      <h1 className="sr-only">{truncateStr(commentTreeList?.[0]?.content, 15)} | 댓글</h1>
 
-      {comment?.story && (
-        <Link href={`/stories/${comment.story.id}`}>
+      {commentTreeList?.[0]?.story && (
+        <Link href={`/stories/${commentTreeList?.[0].story.id}`}>
           <a className="block -mx-5 px-5 py-3 bg-gray-200">
-            <StorySummary item={comment?.story} />
+            <StorySummary item={commentTreeList?.[0]?.story} />
           </a>
         </Link>
       )}
+
       <div className="relative mt-5">
-        <Comment item={comment} className={user?.id ? "pr-8" : ""} />
-        <FeedbackComment item={comment} />
-        {user?.id && <HandleComment item={comment} mutateCommentDetail={mutateCommentDetail} />}
+        <Comment item={commentTreeList?.[0]} className={user?.id ? "pr-8" : ""} />
+        <FeedbackComment item={commentTreeList?.[0]} />
+        {user?.id && <HandleComment item={commentTreeList?.[0]} mutateCommentDetail={mutateCommentDetail} />}
       </div>
+
       {/* 답글 목록: list */}
-      {Boolean(treeReComments?.[0]?.reComments?.length) && (
+      {Boolean(commentTreeList?.[0]?.reComments?.length) && (
         <div className="mt-2">
-          <CommentTreeList list={treeReComments?.[0]?.reComments} moreReComments={moreReComments} depth={comment.depth + 1}>
+          <CommentTreeList list={commentTreeList?.[0]?.reComments} moreReComments={moreReComments} depth={commentTreeList?.[0]?.depth + 1}>
             <FeedbackComment key="FeedbackComment" />
             {user?.id && <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} />}
             <CommentTreeList key="CommentTreeList" />
           </CommentTreeList>
         </div>
       )}
+
       {/* 답글 입력 */}
       {user?.id && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
@@ -195,6 +186,24 @@ const CommentsDetail: NextPage<{
     </article>
   );
 };
+
+const Page: NextPageWithLayout<{
+  getComment: { query: string; response: GetCommentsDetailResponse };
+}> = ({ getComment }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/comments/${getComment.response.comment.id}?${getComment.query}`]: getComment.response,
+        },
+      }}
+    >
+      <CommentsDetail />
+    </SWRConfig>
+  );
+};
+
+Page.getLayout = getLayout;
 
 export const getStaticPaths: GetStaticPaths = () => {
   return {
@@ -329,14 +338,33 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  // initial props
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `${truncateStr(comment?.content, 15)} | 댓글`,
+    },
+    header: {
+      title: "댓글",
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
-      staticProps: {
-        comment: JSON.parse(JSON.stringify({ ...comment, reComments: reComments.map(({ reComments, ...o }) => o).concat(reComments.flatMap((o) => o.reComments)) } || null)),
+      defaultLayout,
+      getComment: {
+        query: "includeReComments=true&",
+        response: {
+          success: true,
+          comment: JSON.parse(JSON.stringify({ ...comment, reComments: reComments.map(({ reComments, ...o }) => o).concat(reComments.flatMap((o) => o.reComments)) } || null)),
+        },
       },
     },
   };
 };
 
-export default CommentsDetail;
+export default Page;

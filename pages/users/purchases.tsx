@@ -14,16 +14,19 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users";
 import { GetProfilesPurchasesResponse } from "@api/users/purchases";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import ProductList from "@components/lists/productList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse) => {
-  if (pageIndex === 0) return `/api/users/purchases?page=1`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/users/purchases", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1${query}`;
   if (previousPageData && !previousPageData.products.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/purchases?page=${pageIndex + 1}`;
+  return `${url}?page=${pageIndex + 1}${query}`;
 };
 
 const ProfilePurchase: NextPage = () => {
@@ -32,52 +35,50 @@ const ProfilePurchase: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>(getKey);
+  const { data, size, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => {
+    const options = {};
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const products = data ? data.flatMap((item) => item.products) : [];
+  const products = data ? data.flatMap((item) => item.products) : null;
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "구매내역",
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title="구매내역 | 나의 당근" />
-
       {/* 구매내역: List */}
-      {Boolean(products.length) && (
+      {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products}>
             <FeedbackProduct key="FeedbackProduct" />
           </ProductList>
           <div ref={infiniteRef} />
-          <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? `구매내역을 모두 확인하였어요` : isLoading ? `구매내역을 불러오고있어요` : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">구매내역을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">구매내역을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 구매내역: Empty */}
-      {!Boolean(products.length) && (
+      {products && !Boolean(products.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">구매내역이 존재하지 않아요</p>
         </div>
@@ -86,16 +87,16 @@ const ProfilePurchase: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProfilesPurchasesResponse };
-}> = ({ getUser, getProduct }) => {
+  getProducts: { options: { url?: string; query?: string }; response: GetProfilesPurchasesResponse };
+}> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize(getKey)]: [getProduct.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => getKey(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
     >
@@ -103,6 +104,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -178,8 +181,24 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     : [];
   const products = records.map((record) => record.product);
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "구매내역 | 나의 당근",
+    },
+    header: {
+      title: "구매내역",
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -188,7 +207,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
         },
       },
-      getProduct: {
+      getProducts: {
+        options: {},
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(products || [])),

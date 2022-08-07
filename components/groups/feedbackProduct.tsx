@@ -1,10 +1,12 @@
 import { useRouter } from "next/router";
 import React from "react";
+import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 // @api
+import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 
@@ -18,6 +20,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   const router = useRouter();
   const { user } = useUser();
 
+  const { data, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null);
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: (data) => {
       if (!data.recordSale) {
@@ -36,44 +39,46 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   });
 
   const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = item?.records?.find((record) => record.kind === Kind.ProductPurchase);
-  const existsReview = item?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
+  const saleRecord = data?.product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = data?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
+  const existedReview = data?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
-  const toggleSale = (value: boolean) => {
+  const toggleSale = () => {
     if (!item) return;
     if (saleLoading) return;
-    updateSale({ sale: value });
+    updateSale({ sale: !Boolean(saleRecord) });
   };
 
   const clickReview = () => {
     if (!item) return;
-    router.push(existsReview ? `/reviews/${existsReview?.id}` : purchaseRecord ? `/products/${item.id}/review` : `/products/${item.id}/purchase`);
+    router.push(existedReview ? `/reviews/${existedReview?.id}` : purchaseRecord ? `/products/${item.id}/review` : `/products/${item.id}/purchase`);
   };
 
   if (!item) return null;
 
   return (
     <div className="flex border-t divide-x empty:pt-9">
-      {saleRecord && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
-          끌어올리기
-        </button>
-      )}
-      {saleRecord && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => toggleSale(false)} disabled={saleLoading}>
-          판매완료
-        </button>
-      )}
-      {!saleRecord && !existsReview && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
-          거래 후기 보내기
-        </button>
-      )}
-      {!saleRecord && existsReview && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
-          보낸 후기 보기
-        </button>
+      {saleRecord ? (
+        <>
+          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
+            끌어올리기
+          </button>
+          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={toggleSale} disabled={saleLoading}>
+            판매완료
+          </button>
+        </>
+      ) : existedReview ? (
+        <>
+          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
+            보낸 후기 보기
+          </button>
+        </>
+      ) : (
+        <>
+          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
+            거래 후기 보내기
+          </button>
+        </>
       )}
     </div>
   );
@@ -81,5 +86,6 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
 
 export default React.memo(FeedbackProduct, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
+  if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;
   return true;
 });

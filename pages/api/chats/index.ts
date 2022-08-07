@@ -174,8 +174,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // find exist chat
-      const existChat = await client.chat.findFirst({
+      // find existed chat
+      const existedChat = await client.chat.findFirst({
         where: {
           users: {
             every: {
@@ -188,10 +188,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
 
-      if (existChat) {
+      if (existedChat) {
         const result: PostChatsResponse = {
           success: true,
-          chat: existChat,
+          chat: existedChat,
         };
         return res.status(200).json(result);
       }

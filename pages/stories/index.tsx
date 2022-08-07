@@ -14,17 +14,20 @@ import getSsrUser from "@libs/server/getUser";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetUserResponse } from "@api/users";
 import { GetStoriesResponse } from "@api/stories";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
 import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
 
-const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, query: string = "") => {
-  if (pageIndex === 0) return `/api/stories?page=1&${query}`;
+const getKey = (pageIndex: number, previousPageData: GetStoriesResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/stories", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.stories.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/stories?page=${pageIndex + 1}&${query}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 const StoryHome: NextPage = () => {
@@ -32,52 +35,51 @@ const StoryHome: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
-  const { data, size, setSize } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) =>
-    getKey(arg[0], arg[1], currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "")
-  );
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const { data, size, setSize } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) => {
+    const options = { query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const stories = data ? data.flatMap((item) => item.stories) : [];
+  const stories = data ? data.flatMap((item) => item.stories) : null;
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        utils: ["address", "search"],
-      },
-      navBar: {
-        utils: ["home", "chat", "profile", "story", "streams"],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title="동네생활" />
       <h1 className="sr-only">동네생활</h1>
 
       {/* 동네생활: List */}
-      {Boolean(stories.length) && (
+      {stories && Boolean(stories.length) && (
         <div className="-mx-5">
           <StoryList list={stories}>
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
           <div ref={infiniteRef} />
-          <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? "게시글을 모두 확인하였어요" : isLoading ? "게시글을 불러오고있어요" : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">게시글을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">게시글을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 동네생활: Empty */}
-      {!Boolean(stories.length) && (
+      {stories && !Boolean(stories.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
@@ -97,16 +99,16 @@ const StoryHome: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getStories: { query: string; response: GetStoriesResponse };
+  getStories: { options: { url?: string; query?: string }; response: GetStoriesResponse };
 }> = ({ getUser, getStories }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetStoriesResponse]) => getKey(arg[0], arg[1], getStories.query))]: [getStories.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetStoriesResponse]) => getKey(...arg, getStories.options))]: [getStories.response],
         },
       }}
     >
@@ -114,6 +116,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -180,8 +184,24 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           },
         });
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "동네생활",
+    },
+    header: {
+      title: "",
+      titleTag: "strong",
+      utils: ["address", "search"],
+    },
+    navBar: {
+      utils: ["home", "chat", "profile", "story", "streams"],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -191,7 +211,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
       },
       getStories: {
-        query: `posX=${posX}&posY=${posY}&distance=${distance}`,
+        options: {
+          query: `posX=${posX}&posY=${posY}&distance=${distance}`,
+        },
         response: {
           success: true,
           stories: JSON.parse(JSON.stringify(stories || [])),

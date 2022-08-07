@@ -100,11 +100,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let newReview = null;
-    const exists = product.reviews.find((review) => review.role === role && review.sellUserId === sellUser.id && review.purchaseUserId === purchaseUser.id);
+    const existed = product.reviews.find((review) => review.role === role && review.sellUserId === sellUser.id && review.purchaseUserId === purchaseUser.id);
 
-    if (exists) {
-      const error = new Error("ExistsReview");
-      error.name = "ExistsReview";
+    if (existed) {
+      const error = new Error("ExistedReview");
+      error.name = "ExistedReview";
       throw error;
     }
 
@@ -134,11 +134,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
     const mannerUser = newReview.role === "sellUser" ? purchaseUser : sellUser;
     for (let index = 0; index < manners.length; index++) {
-      const exists = mannerUser.manners.find((manner) => manner.value === manners[index]);
-      if (exists) {
+      const existed = mannerUser.manners.find((manner) => manner.value === manners[index]);
+      if (existed) {
         await client.manner.update({
           where: {
-            id: exists.id,
+            id: existed.id,
           },
           data: {
             reviews: {

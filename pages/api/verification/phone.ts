@@ -49,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
     if (foundUserByEmail && foundUserByEmail.phone === phone) {
       const error = new Error("등록된 휴대폰 번호와 같은 번호예요. 변경하실 휴대폰 번호를 입력해주세요.");
-      error.name = "SameExistingAccount";
+      error.name = "SameAccount";
       throw error;
     }
     const foundUserByPhone = await client.user.findUnique({

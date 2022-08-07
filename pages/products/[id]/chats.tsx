@@ -16,16 +16,19 @@ import getSsrUser from "@libs/server/getUser";
 import { GetChatsResponse } from "@api/chats";
 import { GetUserResponse } from "@api/users";
 import { GetProductsDetailResponse } from "@api/products/[id]";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductSummary from "@components/cards/productSummary";
 import ChatList from "@components/lists/chatList";
 
-const getKey = (pageIndex: number, previousPageData: GetChatsResponse, query: string = "") => {
-  if (pageIndex === 0) return `/api/chats?page=1&${query}`;
+const getKey = (pageIndex: number, previousPageData: GetChatsResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/chats", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.chats.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/chats?page=${pageIndex + 1}&${query}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 const ProductChats: NextPage = () => {
@@ -34,39 +37,33 @@ const ProductChats: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
-  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) =>
-    getKey(arg[0], arg[1], router.query.id ? `productId=${router.query.id}` : "")
-  );
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
+    const options = { query: router.query.id ? `productId=${router.query.id}` : "" };
+    return getKey(...arg, options);
+  });
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const chats = data ? data.flatMap((item) => item.chats) : [];
+  const chats = data ? data.flatMap((item) => item.chats) : null;
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "대화 중인 채팅방",
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title="대화 중인 채팅방 | 중고거래" />
-
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
@@ -75,18 +72,20 @@ const ProductChats: NextPage = () => {
       </Link>
 
       {/* 채팅: List */}
-      {Boolean(chats.length) && (
+      {chats && Boolean(chats.length) && (
         <div className="-mx-5">
-          <ChatList type="link" list={chats} content="message" isVisibleOnlyOneUser={false} />
+          <ChatList type="link" list={chats} content="message" isSingleUser={false} />
           <div ref={infiniteRef} />
-          <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 채팅: Empty */}
-      {!Boolean(chats.length) && (
+      {chats && !Boolean(chats.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">채팅한 이웃이 없어요.</p>
         </div>
@@ -95,10 +94,10 @@ const ProductChats: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
-  getChat: { query: string; response: GetChatsResponse };
+  getChat: { options: { url?: string; query?: string }; response: GetChatsResponse };
 }> = ({ getUser, getProduct, getChat }) => {
   return (
     <SWRConfig
@@ -106,7 +105,7 @@ const Page: NextPage<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(arg[0], arg[1], getChat.query))]: [getChat.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(...arg, getChat.options))]: [getChat.response],
         },
       }}
     >
@@ -114,6 +113,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
@@ -129,7 +130,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const productId = params?.id?.toString();
+  const productId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: productId
@@ -173,6 +174,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // invalid product: not my product
+  // redirect: /products/id
+  if (ssrUser?.profile?.id !== product.userId) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
   // find chat
   const chats = ssrUser.profile
     ? await client.chat.findMany({
@@ -206,8 +218,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       })
     : [];
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "대화 중인 채팅방 | 중고거래",
+    },
+    header: {
+      title: "대화 중인 채팅방",
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -223,7 +251,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getChat: {
-        query: `productId=${product.id}`,
+        options: {
+          query: `productId=${product.id}`,
+        },
         response: {
           success: true,
           chats: JSON.parse(JSON.stringify(chats || [])),

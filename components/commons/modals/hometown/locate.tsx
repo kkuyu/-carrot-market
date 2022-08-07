@@ -24,10 +24,16 @@ interface HometownLocateProps {
 
 const HometownLocate = ({ addrType }: HometownLocateProps) => {
   const { user, mutate: mutateUser } = useUser();
-  const [keyword, setKeyword] = useState("");
-
+  const { state, longitude, latitude } = useCoords();
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
+
+  const [keyword, setKeyword] = useState("");
+  const searchAddressForm = useForm<SearchAddressTypes>();
+  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(Boolean(keyword.length) ? `/api/address/keyword-search?keyword=${keyword}` : null);
+  const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
+    longitude && latitude ? `/api/address/boundary-search?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
+  );
 
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users", {
     onSuccess: () => {
@@ -80,19 +86,10 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
     updateUser(updateData);
   };
 
-  const searchAddressForm = useForm<SearchAddressTypes>();
-  const { setValue: SearchAddressValue, setFocus: SearchAddressFocus } = searchAddressForm;
-
-  const { state, longitude, latitude } = useCoords();
-  const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
-    longitude && latitude ? `/api/address/boundary-search?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
-  );
-  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(Boolean(keyword.length) ? `/api/address/keyword-search?keyword=${keyword}` : null);
-
   const resetForm = () => {
     setKeyword("");
-    SearchAddressValue("keyword", "");
-    SearchAddressFocus("keyword");
+    searchAddressForm.setValue("keyword", "");
+    searchAddressForm.setFocus("keyword");
   };
 
   const selectItem = (itemData: GetBoundarySearchResponse["emdList"][0] | GetKeywordSearchResponse["emdList"][0]) => {
@@ -114,7 +111,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   return (
     <section className="container pb-5">
       {/* 읍면동 검색 폼 */}
-      <div className="sticky top-0 left-0 -mx-5 px-5 pt-5 pb-3 bg-white">
+      <div className="sticky top-0 left-0 -mx-5 px-5 pt-5 bg-white">
         <SearchAddress
           formData={searchAddressForm}
           onValid={(data: SearchAddressTypes) => {
@@ -123,11 +120,12 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
           onReset={resetForm}
           keyword={keyword}
         />
+        <span className="absolute top-full left-0 w-full h-2 bg-gradient-to-b from-white" />
       </div>
 
       {/* 키워드 검색 결과 */}
       {Boolean(keyword.length) && (
-        <>
+        <div className="mt-1">
           {!keywordData && !keywordError ? (
             // 로딩중
             <div className="py-2 text-center">
@@ -135,7 +133,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
             </div>
           ) : keywordData?.emdList.length ? (
             // 검색결과 목록
-            <ul className="-mt-2 divide-y">
+            <ul className="divide-y">
               {keywordData.emdList.map((item) => (
                 <li key={item.id}>
                   <button type="button" onClick={() => selectItem(item)} className="block w-full py-2 text-left">
@@ -155,12 +153,12 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
               <Buttons tag="button" type="button" sort="text-link" text="동네 이름 다시 검색하기" onClick={resetForm} className="mt-2" />
             </div>
           )}
-        </>
+        </div>
       )}
 
       {/* 위치 검색 결과 */}
       {!Boolean(keyword.length) && (
-        <>
+        <div className="mt-1">
           {state === "denied" || state === "error" ? (
             // 위치 정보 수집 불가
             <div className="py-2 text-center">
@@ -179,7 +177,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
             </div>
           ) : boundaryData?.emdList.length ? (
             // 검색결과 목록
-            <ul className="-mt-2 divide-y">
+            <ul className="divide-y">
               {boundaryData.emdList.map((item) => (
                 <li key={item.id}>
                   <button type="button" onClick={() => selectItem(item)} className="block w-full py-2 text-left">
@@ -198,7 +196,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
               </p>
             </div>
           )}
-        </>
+        </div>
       )}
     </section>
   );

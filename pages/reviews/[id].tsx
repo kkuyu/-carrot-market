@@ -13,8 +13,10 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users";
 import { GetReviewsDetailResponse } from "@api/reviews/[id]";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 
 const ReviewsDetail: NextPage = () => {
@@ -30,25 +32,16 @@ const ReviewsDetail: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: `${data?.review?.role === role ? "보낸" : "받은"} 거래 후기`,
-        titleTag: "strong",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
-  }, [data?.review?.role]);
+  }, []);
 
-  if (!data) {
-    return null;
-  }
+  if (!data) return null;
 
   return (
     <article className="container pt-5 pb-5">
-      <CustomHead title="거래 후기" />
-
       {data?.review?.role === role && (
         <h1 className="text-xl font-bold">
           {senderProfile?.name}님에게
@@ -93,16 +86,16 @@ const ReviewsDetail: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getReview: { id: number; response: GetReviewsDetailResponse };
+  getReview: { response: GetReviewsDetailResponse };
 }> = ({ getUser, getReview }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [`/api/reviews/${getReview.id}`]: getReview.response,
+          [`/api/reviews/${getReview.response.review.id}`]: getReview.response,
         },
       }}
     >
@@ -110,6 +103,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
@@ -125,7 +120,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const reviewId = params?.id?.toString();
+  const reviewId = params?.id?.toString() || "";
 
   // invalid params: reviewId
   // redirect: /users
@@ -220,8 +215,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     }
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `${review?.role === role ? "보낸" : "받은"} 거래 후기`,
+    },
+    header: {
+      title: `${review?.role === role ? "보낸" : "받은"} 거래 후기`,
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -231,7 +242,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getReview: {
-        id: review.id,
         response: {
           success: true,
           review: JSON.parse(JSON.stringify(review || [])),

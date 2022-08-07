@@ -4,7 +4,7 @@ import Link from "next/link";
 import NextError from "next/error";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
-import useSWR from "swr";
+import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
 import { getStoryCategory, getDiffTimeStr, getCommentTree, truncateStr } from "@libs/utils";
@@ -17,58 +17,45 @@ import client from "@libs/server/client";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import PictureList, { PictureListItem } from "@components/groups/pictureList";
-import FeedbackStory, { FeedbackStoryItem } from "@components/groups/feedbackStory";
+import PictureList from "@components/groups/pictureList";
+import FeedbackStory from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
 import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import Profiles from "@components/profiles";
 
-const StoryDetail: NextPage<{
-  staticProps: {
-    story: GetStoriesDetailResponse["story"];
-    comments: GetStoriesCommentsResponse["comments"];
-  };
-}> = ({ staticProps }) => {
+const StoryDetail: NextPage<{}> = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
-  // view model
-  const [mounted, setMounted] = useState(false);
-
-  // static data: story detail
-  const today = new Date();
-  const diffTime = getDiffTimeStr(new Date(staticProps?.story?.createdAt).getTime(), today.getTime());
-  const category = getStoryCategory(staticProps?.story?.category);
-  const [story, setStory] = useState<GetStoriesDetailResponse["story"] | null>(staticProps?.story ? staticProps.story : null);
-  const thumbnails: PictureListItem[] = !story?.photos
-    ? []
-    : story.photos.split(",").map((src, index, array) => ({
-        src,
-        index,
-        key: `thumbnails-slider-${index + 1}`,
-        label: `${index + 1}/${array.length}`,
-        name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(story.content, 15)})`,
-      }));
-
   // fetch data: story detail
-  const { data, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const { data: storyData, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const [mounted, setMounted] = useState(false);
+  const today = new Date();
+  const diffTime = storyData?.story && getDiffTimeStr(new Date(storyData?.story?.createdAt).getTime(), today.getTime());
+  const category = storyData?.story && getStoryCategory(storyData?.story?.category);
 
   // fetch data: story comments
-  const [comments, setComments] = useState<GetStoriesCommentsResponse["comments"]>(staticProps?.comments ? staticProps.comments : []);
-  const [commentLoading, setCommentLoading] = useState(false);
-  const [commentsQuery, setCommentsQuery] = useState("");
-  const { data: commentData, mutate: mutateStoryComments } = useSWR<GetStoriesCommentsResponse>(mounted && router.query.id ? `/api/stories/${router.query.id}/comments?${commentsQuery}` : null);
-  const treeComments = useMemo(() => {
-    if (!comments?.length) return [];
-    return getCommentTree(Math.max(...comments.map((v) => v.depth)), [...comments.map((v) => ({ ...v, reComments: [] }))]);
-  }, [comments]);
+  const [commentQuery, setCommentQuery] = useState("");
+  const { data: commentData, mutate: mutateStoryComments } = useSWR<GetStoriesCommentsResponse>(router.query.id ? `/api/stories/${router.query.id}/comments?${commentQuery}` : null);
+
+  const [commentFlatList, setCommentFlatList] = useState<GetStoriesCommentsResponse["comments"]>(commentData?.comments ? commentData?.comments : []);
+  const commentLoading = useMemo(() => {
+    if (!commentFlatList?.length) return false;
+    return !!commentFlatList.find((comment) => comment.id === 0);
+  }, [commentFlatList]);
+  const commentTreeList = useMemo(() => {
+    if (!commentFlatList?.length) return [];
+    return getCommentTree(Math.max(...commentFlatList.map((v) => v.depth)), [...commentFlatList.map((v) => ({ ...v, reComments: [] }))]);
+  }, [commentFlatList]);
 
   // new comment
   const formData = useForm<EditCommentTypes>({ defaultValues: { reCommentRefId: null } });
@@ -76,7 +63,6 @@ const StoryDetail: NextPage<{
     onSuccess: () => {
       mutateStoryDetail();
       mutateStoryComments();
-      setCommentLoading(() => false);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -102,11 +88,11 @@ const StoryDetail: NextPage<{
   });
 
   const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
-    const existComments = page !== 0 ? comments : comments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
-    setComments(() => [...existComments]);
-    setCommentsQuery(() => {
+    const commentExistedList = page !== 0 ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+    setCommentFlatList(() => [...commentExistedList]);
+    setCommentQuery(() => {
       let result = "";
-      result += `exists=${JSON.stringify(existComments?.map((comment) => comment.id))}`;
+      result += `existed=${JSON.stringify(commentExistedList?.map((comment) => comment.id))}`;
       result += `&page=${page}&reCommentRefId=${reCommentRefId}`;
       result += cursorId !== -1 ? `&cursorId=${cursorId}` : "";
       return result;
@@ -116,8 +102,7 @@ const StoryDetail: NextPage<{
   const submitReComment = (data: EditCommentTypes) => {
     if (commentLoading || sendCommentLoading) return;
     if (!user) return;
-    if (!story) return;
-    setCommentLoading(() => true);
+    if (!storyData?.story) return;
     mutateStoryDetail((prev) => {
       return prev && { ...prev, story: { ...prev.story, comments: [...prev.story.comments, { id: 0 }] } };
     }, false);
@@ -125,7 +110,7 @@ const StoryDetail: NextPage<{
       const time = new Date();
       const { content, reCommentRefId = null } = data;
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
-      const dummyComment = { ...data, id: 0, depth: 0, content, reCommentRefId, userId: user?.id, storyId: story?.id, createdAt: time, updatedAt: time };
+      const dummyComment = { ...data, id: 0, depth: 0, content, reCommentRefId, userId: user?.id, storyId: storyData?.story?.id, createdAt: time, updatedAt: time };
       return prev && { ...prev, total: prev.total + 1, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
     formData.setValue("content", "");
@@ -141,7 +126,10 @@ const StoryDetail: NextPage<{
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push({
+          pathname: "/join",
+          query: { addrNm: currentAddr?.emdAddrNm },
+        });
       },
     });
   };
@@ -161,68 +149,51 @@ const StoryDetail: NextPage<{
     });
   };
 
-  // merge data
-  useEffect(() => {
-    if (!data) return;
-    if (!data.success) return;
-    setStory((prev) => ({ ...prev, ...data.story }));
-  }, [data]);
-
   // merge comment data
   useEffect(() => {
     if (!commentData) return;
     if (!commentData?.success) return;
-    setComments(() => [...commentData.comments]);
+    setCommentFlatList(() => [...commentData.comments]);
   }, [commentData]);
 
   useEffect(() => {
-    if (router?.query?.id === story?.id?.toString()) return;
-    setCommentsQuery(() => "");
-  }, [router?.query?.id, story?.id]);
+    setCommentQuery(() => "");
+  }, [storyData?.story?.id]);
 
   // setting layout
   useEffect(() => {
-    if (!story) return;
-
+    if (!storyData?.story) return;
+    const kebabActions = [
+      { key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) },
+      { key: "report", text: "신고", onClick: () => console.log("신고") },
+      { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
+      { key: "edit", text: "수정", onClick: () => router.push(`/stories/${storyData?.story?.id}/edit`) },
+      { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+    ];
     changeLayout({
+      meta: {},
       header: {
-        title: "",
-        titleTag: "strong",
-        utils: ["back", 'title', "home", "share", "kebab"],
-        kebabActions: (() => {
-          if (!user?.id) {
-            return [{ key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) }];
-          }
-          if (user?.id !== staticProps?.story?.userId) {
-            return [
-              { key: "report", text: "신고", onClick: () => console.log("신고") },
-              { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
-            ];
-          }
-          return [
-            { key: "edit", text: "수정", onClick: () => router.push(`/stories/${story?.id}/edit`) },
-            { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
-          ];
-        })(),
+        kebabActions: !user?.id
+          ? kebabActions.filter((action) => ["welcome"].includes(action.key))
+          : user?.id !== storyData?.story?.userId
+          ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
+          : kebabActions.filter((action) => ["edit", "delete"].includes(action.key)),
       },
-      navBar: {
-        utils: [],
-      },
+      navBar: {},
     });
-  }, [user?.id, story?.id, story?.userId, story?.content]);
+  }, [user?.id, storyData?.story]);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!story) {
+  if (!storyData?.story) {
     return <NextError statusCode={404} />;
   }
 
   return (
     <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
-      <CustomHead title={`${truncateStr(story?.content, 15)} | 동네생활`} />
-      <h1 className="sr-only">{truncateStr(story.content, 15)} | 동네생활</h1>
+      <h1 className="sr-only">{truncateStr(storyData?.story?.content, 15)} | 동네생활</h1>
 
       {/* 게시글 정보 */}
       <section className="-mx-5 border-b">
@@ -231,30 +202,40 @@ const StoryDetail: NextPage<{
           {/* 카테고리 */}
           <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
           {/* 판매자 */}
-          <Link href={`/profiles/${story?.user?.id}`}>
+          <Link href={`/profiles/${storyData?.story?.user?.id}`}>
             <a className="block py-3">
-              <Profiles user={story?.user} emdPosNm={story?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} />
+              <Profiles user={storyData?.story?.user} emdPosNm={storyData?.story?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} />
             </a>
           </Link>
           {/* 게시글 내용 */}
           <div className="pt-5 border-t">
-            <p className="whitespace-pre-wrap">{story?.content}</p>
+            <p className="whitespace-pre-wrap">{storyData?.story?.content}</p>
           </div>
         </div>
         {/* 썸네일 */}
-        {Boolean(thumbnails.length) && (
+        {Boolean(storyData?.story?.photos?.length) && (
           <div className="pb-5 px-5">
-            <PictureList list={thumbnails || []} />
+            <PictureList
+              list={
+                storyData?.story?.photos?.split(",")?.map((src, index, array) => ({
+                  src,
+                  index,
+                  key: `thumbnails-slider-${index + 1}`,
+                  label: `${index + 1}/${array.length}`,
+                  name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(storyData?.story?.content, 15)})`,
+                })) || []
+              }
+            />
           </div>
         )}
         {/* 피드백 */}
-        <FeedbackStory item={story} />
+        <FeedbackStory item={storyData?.story} />
       </section>
 
       {/* 댓글/답변 목록: list */}
-      {treeComments && Boolean(treeComments?.length) && (
+      {commentTreeList && Boolean(commentTreeList?.length) && (
         <div className="mt-5">
-          <CommentTreeList list={treeComments} moreReComments={moreReComments}>
+          <CommentTreeList list={commentTreeList} moreReComments={moreReComments}>
             <FeedbackComment key="FeedbackComment" />
             {user?.id && <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" />}
             <CommentTreeList key="CommentTreeList" />
@@ -263,7 +244,7 @@ const StoryDetail: NextPage<{
       )}
 
       {/* 댓글/답변 목록: empty */}
-      {treeComments && !Boolean(treeComments?.length) && (
+      {commentTreeList && !Boolean(commentTreeList?.length) && (
         <div className="pt-10 pb-5 text-center">
           <p className="text-gray-500">
             아직 {category?.commentType}이 없어요.
@@ -291,6 +272,26 @@ const StoryDetail: NextPage<{
     </article>
   );
 };
+
+const Page: NextPageWithLayout<{
+  getStory: { response: GetStoriesDetailResponse };
+  getComments: { query: string; response: GetStoriesCommentsResponse };
+}> = ({ getStory, getComments }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          [`/api/stories/${getStory.response.story.id}`]: getStory.response,
+          [`/api/stories/${getStory.response.story.id}/comments?${getComments.query}`]: getComments.response,
+        },
+      }}
+    >
+      <StoryDetail />
+    </SWRConfig>
+  );
+};
+
+Page.getLayout = getLayout;
 
 export const getStaticPaths: GetStaticPaths = () => {
   return {
@@ -403,15 +404,38 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  // initial props
+  const defaultLayout = {
+    meta: {
+      title: `${truncateStr(story?.content, 15)} | 동네생활`,
+    },
+    header: {
+      title: "",
+      titleTag: "strong",
+      utils: ["back", "title", "home", "share", "kebab"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
-      staticProps: {
-        story: JSON.parse(JSON.stringify(story || {})),
-        comments: JSON.parse(JSON.stringify(comments.map(({ reComments, ...o }) => o).concat(comments.flatMap((o) => o.reComments)) || {})),
+      defaultLayout,
+      getStory: {
+        response: {
+          success: true,
+          story: JSON.parse(JSON.stringify(story || null)),
+        },
+      },
+      getComments: {
+        query: "",
+        response: {
+          success: true,
+          comments: JSON.parse(JSON.stringify(comments || [])),
+        },
       },
     },
   };
 };
 
-export default StoryDetail;
+export default Page;

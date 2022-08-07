@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import type { NextPage } from "next";
 import Link from "next/link";
 import { useEffect } from "react";
 import { SWRConfig } from "swr";
@@ -8,8 +8,10 @@ import useLayouts from "@libs/client/useLayouts";
 import useModal from "@libs/client/useModal";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import HometownUpdate from "@components/commons/modals/hometown/update";
 import Profiles from "@components/profiles";
@@ -167,25 +169,16 @@ const ProfileHome: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "나의 당근",
-        titleTag: "h1",
-        utils: ["title"],
-      },
-      navBar: {
-        utils: ["home", "chat", "profile", "story", "streams"],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <section className="container pb-5">
-      <CustomHead title="나의 당근" />
-
       <div className="-mx-5">
         {user?.id === -1 ? (
           <div className="relative block px-5 py-3">
@@ -226,7 +219,7 @@ const ProfileHome: NextPage = () => {
   );
 };
 
-const Page: NextPage = () => {
+const Page: NextPageWithLayout = () => {
   return (
     <SWRConfig
       value={{
@@ -237,6 +230,8 @@ const Page: NextPage = () => {
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -252,8 +247,25 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "나의 당근",
+    },
+    header: {
+      title: "나의 당근",
+      titleTag: "h1",
+      utils: ["title"],
+    },
+    navBar: {
+      utils: ["home", "chat", "profile", "story", "streams"],
+    },
+  };
+
   return {
-    props: {},
+    props: {
+      defaultLayout,
+    },
   };
 });
 

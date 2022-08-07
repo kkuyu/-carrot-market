@@ -1,15 +1,43 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useEffect, useMemo } from "react";
 // @components
 import { LayoutDispatchContext, LayoutStateContext } from "@components/layouts/layoutContext";
 import NavBarContainer from "@components/layouts/navBar/navBarContainer";
 
-const NavBarWrapper = () => {
+export const NavBarUtils = {
+  Home: "home",
+  Chat: "chat",
+  Profile: "profile",
+  Story: "story",
+  Streams: "streams",
+} as const;
+export type NavBarUtils = typeof NavBarUtils[keyof typeof NavBarUtils];
+
+export interface NavBarOptions {
+  utils?: NavBarUtils[];
+}
+
+interface NavBarWrapperProps {
+  defaultNavBarState: NavBarOptions;
+}
+
+const NavBarWrapper = ({ defaultNavBarState }: NavBarWrapperProps) => {
   const currentState = useContext(LayoutStateContext);
-  const { change, reset } = useContext(LayoutDispatchContext);
+  const { change } = useContext(LayoutDispatchContext);
 
-  const currentNavBar = useMemo(() => currentState.navBar, [currentState]);
+  const currentNavBar = useMemo(() => ({ ...currentState.navBar }), [currentState]);
 
-  return <NavBarContainer {...currentNavBar} />;
+  useEffect(() => {
+    change({
+      meta: {},
+      header: {},
+      navBar: {
+        utils: [],
+        ...defaultNavBarState,
+      },
+    });
+  }, [defaultNavBarState]);
+
+  return <NavBarContainer {...defaultNavBarState} {...currentNavBar} />;
 };
 
 export default NavBarWrapper;

@@ -11,6 +11,7 @@ import sendMessage from "@libs/server/sendMessage";
 
 export interface PostJoinResponse {
   success: boolean;
+  isExisted: boolean;
   error?: {
     timestamp: Date;
     name: string;
@@ -35,16 +36,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     // get data props
-    const userPayload = {
-      name: getRandomName(),
-      phone,
-      emdType: EmdType.MAIN,
-      MAIN_emdAddrNm: mainAddrNm,
-      MAIN_emdPosNm: mainAddrNm.match(/(\S+)$/g)?.[0],
-      MAIN_emdPosX: mainPosX,
-      MAIN_emdPosY: mainPosY,
-      MAIN_emdPosDx: mainDistance,
-    };
+    const user = await client.user.findFirst({
+      where: {
+        phone,
+      },
+      select: {
+        id: true,
+      },
+    });
 
     // create new token
     const newToken = await client.token.create({
@@ -53,9 +52,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         user: {
           connectOrCreate: {
             where: {
-              phone,
+              id: user?.id,
             },
-            create: userPayload,
+            create: {
+              name: getRandomName(),
+              phone,
+              emdType: EmdType.MAIN,
+              MAIN_emdAddrNm: mainAddrNm,
+              MAIN_emdPosNm: mainAddrNm.match(/(\S+)$/g)?.[0],
+              MAIN_emdPosX: mainPosX,
+              MAIN_emdPosY: mainPosY,
+              MAIN_emdPosDx: mainDistance,
+            },
           },
         },
       },
@@ -72,6 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // result
     const result: PostJoinResponse = {
       success: true,
+      isExisted: Boolean(user),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

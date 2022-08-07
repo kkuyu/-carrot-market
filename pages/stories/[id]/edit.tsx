@@ -15,8 +15,10 @@ import getSsrUser from "@libs/server/getUser";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
 const StoryUpload: NextPage = () => {
@@ -112,27 +114,20 @@ const StoryUpload: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "동네생활 글 수정",
-        titleTag: "h1",
-        utils: ["back", "title", "submit"],
-        submitId: "edit-story",
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <CustomHead title={`글 수정 | 동네생활`} />
       <EditStory formId="edit-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
     </div>
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getStory: { response: GetStoriesDetailResponse };
 }> = ({ getStory }) => {
   return (
@@ -148,6 +143,8 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
@@ -162,7 +159,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const storyId = params?.id?.toString();
+  const storyId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: storyId
@@ -205,8 +202,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  const defaultLayout = {
+    meta: {
+      title: "글 수정 | 동네생활",
+    },
+    header: {
+      title: "동네생활 글 수정",
+      titleTag: "h1",
+      utils: ["back", "title", "submit"],
+      submitId: "edit-story",
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getStory: {
         response: {
           success: true,

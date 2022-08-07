@@ -10,9 +10,9 @@ interface RelateProps {
 }
 
 const Relate = ({ item }: RelateProps) => {
-  if (!item) return null;
-
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
+
+  if (!item) return null;
 
   return (
     <div className="relative">

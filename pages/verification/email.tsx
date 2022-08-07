@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -9,8 +9,10 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { PostVerificationEmailResponse } from "@api/verification/email";
 import { PostConfirmTokenResponse } from "@api/verification/token";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
@@ -21,7 +23,6 @@ const VerificationEmail: NextPage = () => {
 
   // Email
   const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
-  const { setError: verifyEmailError, setFocus: verifyEmailFocus, getValues: verifyEmailGetValue } = verifyEmailForm;
   const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostVerificationEmailResponse>("/api/verification/email", {
     onSuccess: () => {
       verifyTokenFocus("token");
@@ -29,8 +30,8 @@ const VerificationEmail: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "NotFoundUser":
-          verifyEmailError("email", { type: "validate", message: data.error.message });
-          verifyEmailFocus("email");
+          verifyEmailForm.setError("email", { type: "validate", message: data.error.message });
+          verifyEmailForm.setFocus("email");
           return;
         default:
           console.error(data.error);
@@ -46,7 +47,7 @@ const VerificationEmail: NextPage = () => {
     onSuccess: () => {
       router.push({
         pathname: "/verification/phone",
-        query: { targetEmail: verifyEmailGetValue("email") },
+        query: { targetEmail: verifyEmailForm.getValues("email") },
       });
     },
     onError: (data) => {
@@ -64,21 +65,14 @@ const VerificationEmail: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "이메일로 계정 찾기",
-        titleTag: "strong",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <section className="container py-5">
-      <CustomHead title="이메일로 계정 찾기" />
-
       <h1 className="text-2xl font-bold">
         등록하신 이메일 주소를
         <br />
@@ -129,4 +123,33 @@ const VerificationEmail: NextPage = () => {
   );
 };
 
-export default VerificationEmail;
+const Page: NextPageWithLayout = () => {
+  return <VerificationEmail />;
+};
+
+Page.getLayout = getLayout;
+
+export const getStaticProps: GetStaticProps = async () => {
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "이메일로 계정 찾기",
+    },
+    header: {
+      title: "이메일로 계정 찾기",
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
+  return {
+    props: {
+      defaultLayout,
+    },
+  };
+};
+
+export default Page;

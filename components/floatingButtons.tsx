@@ -26,7 +26,10 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push({
+          pathname: "/join",
+          query: { addrNm: currentAddr?.emdAddrNm },
+        });
       },
     });
   };

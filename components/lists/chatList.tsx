@@ -8,11 +8,11 @@ interface ChatListProps {
   type: "link" | "button";
   list: ChatItem[];
   content: ChatProps["content"];
-  isVisibleOnlyOneUser?: boolean;
+  isSingleUser?: boolean;
   selectItem?: (item: ChatItem, user: ChatItem["users"][0]) => void;
 }
 
-const ChatList = ({ list, content, type = "link", isVisibleOnlyOneUser = false, selectItem }: ChatListProps) => {
+const ChatList = ({ list, content, type = "link", isSingleUser = false, selectItem }: ChatListProps) => {
   const { user } = useUser();
 
   const makeListItem = (item: ChatItem, users: ChatItem["users"]) => {
@@ -47,7 +47,7 @@ const ChatList = ({ list, content, type = "link", isVisibleOnlyOneUser = false, 
         .filter((item) => item.chatMessages.length)
         .map((item) => {
           const users = item.users.filter((chatUser) => chatUser.id !== user?.id);
-          if (!isVisibleOnlyOneUser) {
+          if (!isSingleUser) {
             return <li key={item.id}>{makeListItem(item, users)}</li>;
           }
           return users.map((user) => {

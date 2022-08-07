@@ -11,9 +11,9 @@ export interface StorySummaryProps {
 }
 
 const StorySummary = ({ item }: StorySummaryProps) => {
-  if (!item) return null;
+  const category = getStoryCategory(item?.category || "");
 
-  const category = getStoryCategory(item?.category);
+  if (!item) return null;
 
   return (
     <div className="relative">

@@ -14,16 +14,18 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesReviewsResponse, ProfilesReviewsFilter } from "@api/profiles/[id]/reviews";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import ReviewList from "@components/lists/reviewList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesReviewsResponse, query: string = "", id: string = "") => {
-  if (!id) return null;
-  if (pageIndex === 0) return `/api/profiles/${id}/reviews?page=1&${query}`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesReviewsResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/profiles/[id]/reviews", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.reviews.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/profiles/${id}/reviews?page=${pageIndex + 1}&${query}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 type FilterTab = { index: number; value: ProfilesReviewsFilter; text: string; name: string };
@@ -43,16 +45,17 @@ const ProfileProducts: NextPage = () => {
   const activeTab = tabs.find((tab) => tab.value === filter)!;
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
-  const { data, size, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) =>
-    getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
-  );
+  const { data, size, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => {
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/reviews` : "", query: `filter=${filter}` };
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const reviews = data ? data.flatMap((item) => item.reviews) : [];
+  const reviews = data ? data.flatMap((item) => item.reviews) : null;
 
   const changeFilter = (tab: FilterTab) => {
     setFilter(tab.value);
@@ -61,27 +64,20 @@ const ProfileProducts: NextPage = () => {
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}받은 매너 후기`,
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title={`받은 매너 후기 | ${profileData?.profile.name}님의 당근`} />
-
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
           return (
@@ -98,18 +94,20 @@ const ProfileProducts: NextPage = () => {
       </div>
 
       {/* 거래후기: List */}
-      {Boolean(reviews.length) && (
+      {reviews && Boolean(reviews.length) && (
         <div className="mt-3">
           <ReviewList list={reviews} />
           <div ref={infiniteRef} />
-          <div className="py-6 text-center">
-            <span className="text-sm text-gray-500">{isReachingEnd ? `${activeTab?.name}를 모두 확인하였어요` : isLoading ? `${activeTab?.name}를 불러오고있어요` : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}를 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}를 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 거래후기: Empty */}
-      {!Boolean(reviews.length) && (
+      {reviews && !Boolean(reviews.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${activeTab?.name}가 존재하지 않아요`}</p>
         </div>
@@ -118,12 +116,12 @@ const ProfileProducts: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getReviewsByAll: { query: string; response: GetProfilesReviewsResponse };
-  getReviewsBySellUser: { query: string; response: GetProfilesReviewsResponse };
-  getReviewsByPurchaseUser: { query: string; response: GetProfilesReviewsResponse };
+  getReviewsByAll: { options: { url?: string; query?: string }; response: GetProfilesReviewsResponse };
+  getReviewsBySellUser: { options: { url?: string; query?: string }; response: GetProfilesReviewsResponse };
+  getReviewsByPurchaseUser: { options: { url?: string; query?: string }; response: GetProfilesReviewsResponse };
 }> = ({ getUser, getProfile, getReviewsByAll, getReviewsBySellUser, getReviewsByPurchaseUser }) => {
   return (
     <SWRConfig
@@ -131,14 +129,9 @@ const Page: NextPage<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(arg[0], arg[1], getReviewsByAll.query, `${getProfile.response.profile.id}`))]: [
-            getReviewsByAll.response,
-          ],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(arg[0], arg[1], getReviewsBySellUser.query, `${getProfile.response.profile.id}`))]: [
-            getReviewsBySellUser.response,
-          ],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(arg[0], arg[1], getReviewsByPurchaseUser.query, `${getProfile.response.profile.id}`))]:
-            [getReviewsByPurchaseUser.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(...arg, getReviewsByAll.options))]: [getReviewsByAll.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(...arg, getReviewsBySellUser.options))]: [getReviewsBySellUser.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(...arg, getReviewsByPurchaseUser.options))]: [getReviewsByPurchaseUser.response],
         },
       }}
     >
@@ -147,12 +140,14 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
   // getProfile
-  const profileId = params?.id?.toString();
+  const profileId = params?.id?.toString() || "";
 
   // invalid params: profileId
   // redirect: /profiles/[id]
@@ -288,8 +283,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `받은 매너 후기 | ${profile?.name} | 프로필`,
+    },
+    header: {
+      title: `${profile.name}님의 받은 매너 후기`,
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -305,7 +316,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getReviewsByAll: {
-        query: `filter=ALL`,
+        options: {
+          url: `/api/profiles/${profile.id}/reviews`,
+          query: `filter=ALL`,
+        },
         response: {
           success: true,
           reviews: JSON.parse(JSON.stringify(reviewsByAll.map((review) => ({ ...review, satisfaction: "", productId: 0 })) || [])),
@@ -313,7 +327,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getReviewsBySellUser: {
-        query: `filter=SELL_USER`,
+        options: {
+          url: `/api/profiles/${profile.id}/reviews`,
+          query: `filter=SELL_USER`,
+        },
         response: {
           success: true,
           reviews: JSON.parse(JSON.stringify(reviewsBySellUser.map((review) => ({ ...review, satisfaction: "", productId: 0 })) || [])),
@@ -321,7 +338,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getReviewsByPurchaseUser: {
-        query: `filter=PURCHASE_USER`,
+        options: {
+          url: `/api/profiles/${profile.id}/reviews`,
+          query: `filter=PURCHASE_USER`,
+        },
         response: {
           success: true,
           reviews: JSON.parse(JSON.stringify(reviewsByPurchaseUser.map((review) => ({ ...review, satisfaction: "", productId: 0 })) || [])),

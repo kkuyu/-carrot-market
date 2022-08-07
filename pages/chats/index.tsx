@@ -13,16 +13,19 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users";
 import { GetChatsResponse } from "@api/chats";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
-const getKey = (pageIndex: number, previousPageData: GetChatsResponse) => {
-  if (pageIndex === 0) return `/api/chats?page=1`;
+const getKey = (pageIndex: number, previousPageData: GetChatsResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/chats", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.chats.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/chats?page=${pageIndex + 1}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 const ChatHome: NextPage = () => {
@@ -31,41 +34,38 @@ const ChatHome: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
-  const { data, size, setSize, mutate } = useSWRInfinite<GetChatsResponse>(getKey);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
+    const options = {};
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && size >= data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const chats = data ? data.flatMap((item) => item.chats) : [];
+  const chats = data ? data.flatMap((item) => item.chats) : null;
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "채팅",
-        titleTag: "h1",
-        utils: ["title"],
-      },
-      navBar: {
-        utils: ["home", "chat", "profile", "story", "streams"],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   if (user?.id === -1) {
     return (
       <div className="container">
-        <CustomHead title="채팅" />
-
         <div className="py-10 text-center">
           <p className="text-notice inline-block">
             이웃과의 채팅은
-            <Buttons text="회원가입" sort="text-link" status="default" className="align-top" onClick={() => router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`)} />후 이용 가능합니다.
+            <Buttons text="회원가입" sort="text-link" status="default" className="align-top" onClick={() => router.push({ pathname: "/join", query: { addrNm: currentAddr?.emdAddrNm } })} />후 이용
+            가능합니다.
           </p>
         </div>
       </div>
@@ -74,21 +74,21 @@ const ChatHome: NextPage = () => {
 
   return (
     <div className="container">
-      <CustomHead title="채팅" />
-
       {/* 채팅: List */}
-      {Boolean(chats.length) && (
+      {chats && Boolean(chats.length) && (
         <div className="-mx-5">
-          <ChatList type="link" list={chats} content="message" isVisibleOnlyOneUser={false} />
+          <ChatList type="link" list={chats} content="message" isSingleUser={false} />
           <div ref={infiniteRef} />
-          <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 채팅: Empty */}
-      {!Boolean(chats.length) && (
+      {chats && !Boolean(chats.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">채팅한 이웃이 없어요.</p>
         </div>
@@ -97,16 +97,16 @@ const ChatHome: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getChats: { response: GetChatsResponse };
+  getChats: { options: { url?: string; query?: string }; response: GetChatsResponse };
 }> = ({ getUser, getChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize(getKey)]: [getChats.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(...arg, getChats.options))]: [getChats.response],
         },
       }}
     >
@@ -114,6 +114,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -160,8 +162,24 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       })
     : [];
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "채팅",
+    },
+    header: {
+      title: "채팅",
+      titleTag: "h1",
+      utils: ["title"],
+    },
+    navBar: {
+      utils: ["home", "chat", "profile", "story", "streams"],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -171,6 +189,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
       },
       getChats: {
+        options: {},
         response: {
           success: true,
           chats: JSON.parse(JSON.stringify(chats || [])),

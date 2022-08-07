@@ -39,23 +39,21 @@ const StoryList = ({ list, children = [] }: StoryListProps) => {
             }));
         return (
           <li key={item?.id} className="relative">
-            <div>
-              <Link href={`/stories/${item?.id}`}>
-                <a className="block pt-5 px-5 pb-3 last:pb-5">
-                  <Story item={item} isVisibleInfo={includeFeedbackStory} />
-                </a>
-              </Link>
-              {Boolean(thumbnails.length) && (
-                <div className="empty:hidden px-5 pb-3 last:pb-5">
-                  <PictureList list={thumbnails} />
-                </div>
-              )}
-              {!includeFeedbackStory && (
-                <div className="empty:hidden px-5 pb-3 last:pb-5 text-sm text-gray-500">
-                  {[item?.records?.length ? `관심 ${item?.records?.length}` : null, item.comments?.length ? `댓글 ${item.comments.length}` : null].filter((v) => !!v).join(" · ")}
-                </div>
-              )}
-            </div>
+            <Link href={`/stories/${item?.id}`}>
+              <a className="block pt-5 px-5 pb-3 last:pb-5">
+                <Story item={item} isVisibleAuthor={includeFeedbackStory} />
+              </a>
+            </Link>
+            {Boolean(thumbnails.length) && (
+              <div className="empty:hidden px-5 pb-3 last:pb-5">
+                <PictureList list={thumbnails} />
+              </div>
+            )}
+            {!includeFeedbackStory && (
+              <div className="empty:hidden px-5 pb-3 last:pb-5 text-sm text-gray-500">
+                {[item?.records?.length ? `관심 ${item?.records?.length}` : null, item.comments?.length ? `댓글 ${item.comments.length}` : null].filter((v) => !!v).join(" · ")}
+              </div>
+            )}
             {childrenWithProps}
           </li>
         );

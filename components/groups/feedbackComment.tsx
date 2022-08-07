@@ -21,7 +21,6 @@ export interface FeedbackCommentProps {
 
 const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const router = useRouter();
-
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
 
@@ -39,8 +38,8 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
     },
   });
 
+  const likeRecord = data?.comment?.records?.find((record) => record.userId === user?.id && record.kind === Kind.CommentLike);
   const likeRecords = data?.comment?.records?.filter((record) => record.kind === Kind.CommentLike) || [];
-  const liked = likeRecords.find((record) => record.userId === user?.id);
 
   // like
   const clickLike = () => {
@@ -49,13 +48,12 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const toggleLike = () => {
     if (!data) return;
     if (likeLoading) return;
-
+    const isLike = !Boolean(likeRecord);
     boundMutate((prev) => {
       let records = prev?.comment?.records ? [...prev.comment.records] : [];
-      const idx = records.findIndex((record) => record.kind === Kind.CommentLike && record.userId === user?.id);
-      const exists = idx !== -1;
-      if (exists) records.splice(idx, 1);
-      if (!exists) records.push({ id: 0, kind: Kind.CommentLike, userId: user?.id! });
+      const idx = records.findIndex((record) => record.id === likeRecord?.id);
+      if (!isLike) records.splice(idx, 1);
+      if (isLike) records.push({ id: 0, kind: Kind.CommentLike, userId: user?.id! });
       return prev && { ...prev, comment: { ...prev.comment, records: records } };
     }, false);
     updateLike({});
@@ -64,7 +62,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   // comment
   const clickComment = () => {
     if (router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString()) {
-      (document.querySelector(".container input#comment") as HTMLInputElement)?.focus();
+      (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
     } else {
       router.push(`/comments/${item?.id}`);
     }
@@ -93,7 +91,10 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push({
+          pathname: "/join",
+          query: { addrNm: currentAddr?.emdAddrNm },
+        });
       },
     });
   };
@@ -107,7 +108,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
     <div className="pl-11 space-x-2">
       {/* 좋아요: button */}
       <button type="button" onClick={clickLike}>
-        <span className={`text-sm ${liked ? "text-orange-500" : "text-gray-500"}`}>좋아요 {likeRecords.length || null}</span>
+        <span className={`text-sm ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>좋아요 {likeRecords.length || null}</span>
       </button>
       {/* 답글: button */}
       {item.depth < StoryCommentMaximumDepth && (

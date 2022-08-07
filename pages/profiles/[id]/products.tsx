@@ -15,18 +15,20 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesProductsResponse, ProfilesProductsFilter } from "@api/profiles/[id]/products";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import HandleProduct from "@components/groups/handleProduct";
 import ProductList from "@components/lists/productList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, query: string = "", id: string = "") => {
-  if (!id) return null;
-  if (pageIndex === 0) return `/api/profiles/${id}/products?page=1&${query}`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesProductsResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/profiles/[id]/products", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.products.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/profiles/${id}/products?page=${pageIndex + 1}&${query}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 type FilterTab = { index: number; value: ProfilesProductsFilter; text: string; name: string };
@@ -48,15 +50,16 @@ const ProfileProducts: NextPage = () => {
   const activeTab = tabs.find((tab) => tab.value === filter)!;
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) =>
-    getKey(arg[0], arg[1], `filter=${filter}`, router.query.id ? `${router.query.id}` : "")
-  );
+  const { data, size, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => {
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/products` : "", query: `filter=${filter}` };
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const products = data ? data.flatMap((item) => item.products) : [];
+  const products = data ? data.flatMap((item) => item.products) : null;
 
   const changeFilter = (tab: FilterTab) => {
     setFilter(tab.value);
@@ -65,31 +68,22 @@ const ProfileProducts: NextPage = () => {
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}판매 상품`,
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
-  if (!profileData?.profile) {
-    return null;
-  }
+  if (!profileData?.profile) return null;
 
   return (
     <div className="container">
-      <CustomHead title={`판매상품 | ${profileData?.profile.name}님의 당근`} />
-
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {tabs.map((tab) => {
           return (
@@ -106,21 +100,23 @@ const ProfileProducts: NextPage = () => {
       </div>
 
       {/* 판매상품: List */}
-      {Boolean(products.length) && (
+      {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products}>
             {profileData?.profile.id === user?.id && <FeedbackProduct key="FeedbackProduct" />}
             {profileData?.profile.id === user?.id && <HandleProduct key="HandleProduct" className="p-3" />}
           </ProductList>
           <div ref={infiniteRef} />
-          <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? `${activeTab?.name}을 모두 확인하였어요` : isLoading ? `${activeTab?.name}을 불러오고있어요` : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 판매상품: Empty */}
-      {!Boolean(products.length) && (
+      {products && !Boolean(products.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${activeTab?.name}이 존재하지 않아요`}</p>
         </div>
@@ -129,12 +125,12 @@ const ProfileProducts: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getProductsByAll: { query: string; response: GetProfilesProductsResponse };
-  getProductsBySale: { query: string; response: GetProfilesProductsResponse };
-  getProductsBySold: { query: string; response: GetProfilesProductsResponse };
+  getProductsByAll: { options: { url?: string; query?: string }; response: GetProfilesProductsResponse };
+  getProductsBySale: { options: { url?: string; query?: string }; response: GetProfilesProductsResponse };
+  getProductsBySold: { options: { url?: string; query?: string }; response: GetProfilesProductsResponse };
 }> = ({ getUser, getProfile, getProductsByAll, getProductsBySale, getProductsBySold }) => {
   return (
     <SWRConfig
@@ -142,15 +138,9 @@ const Page: NextPage<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsByAll.query, `${getProfile.response.profile.id}`))]: [
-            getProductsByAll.response,
-          ],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySold.query, `${getProfile.response.profile.id}`))]: [
-            getProductsBySold.response,
-          ],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(arg[0], arg[1], getProductsBySale.query, `${getProfile.response.profile.id}`))]: [
-            getProductsBySale.response,
-          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(...arg, getProductsByAll.options))]: [getProductsByAll.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(...arg, getProductsBySold.options))]: [getProductsBySold.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey(...arg, getProductsBySale.options))]: [getProductsBySale.response],
         },
       }}
     >
@@ -159,12 +149,14 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
   // getProfile
-  const profileId = params?.id?.toString();
+  const profileId = params?.id?.toString() || "";
 
   // invalid params: profileId
   // redirect: /profiles/[id]
@@ -297,8 +289,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `판매 상품 | ${profile?.name} | 프로필`,
+    },
+    header: {
+      title: `${profile.name}님의 판매 상품`,
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -314,7 +322,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getProductsByAll: {
-        query: `filter=ALL`,
+        options: {
+          url: `/api/profiles/${profile.id}/products`,
+          query: `filter=ALL`,
+        },
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(productsByAll || [])),
@@ -322,7 +333,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getProductsBySale: {
-        query: `filter=SALE`,
+        options: {
+          url: `/api/profiles/${profile.id}/products`,
+          query: `filter=SALE`,
+        },
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(productsBySale || [])),
@@ -330,7 +344,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getProductsBySold: {
-        query: `filter=SOLD`,
+        options: {
+          url: `/api/profiles/${profile.id}/products`,
+          query: `filter=SOLD`,
+        },
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(productsBySold || [])),

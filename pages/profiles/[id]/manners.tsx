@@ -12,8 +12,10 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/users";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MannerList from "@components/lists/mannerList";
 import Buttons from "@components/buttons";
 
@@ -31,21 +33,14 @@ const ProfileManners: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: `${user?.id !== profileData?.profile?.id ? `${profileData?.profile.name}님의 ` : ""}받은 매너 후기`,
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pb-5">
-      <CustomHead title={`받은 매너 평가 | ${profileData?.profile.name}님의 당근`} />
-
       <h2 className="mt-5">받은 매너</h2>
       <div className="mt-2">
         {Boolean(goodManners.length) && <MannerList list={goodManners} />}
@@ -72,7 +67,7 @@ const ProfileManners: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
   getManners: { query: string; response: GetProfilesMannersResponse };
@@ -92,12 +87,14 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
   // getProfile
-  const profileId = params?.id?.toString();
+  const profileId = params?.id?.toString() || "";
 
   // invalid params: profileId
   // redirect: /profiles/[id]
@@ -158,8 +155,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `받은 매너 후기 | ${profile?.name} | 프로필`,
+    },
+    header: {
+      title: `${profile?.name}님의 받은 매너 후기`,
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,

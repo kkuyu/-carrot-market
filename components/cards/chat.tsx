@@ -18,17 +18,15 @@ export interface ChatProps {
 const Chat = ({ item, users, content, isVisibleProduct = true }: ChatProps) => {
   const [mounted, setMounted] = useState(false);
 
+  const today = new Date();
+  const createdDate = new Date(item.chatMessages[0].createdAt);
+  const diffTime = getDiffTimeStr(createdDate.getTime(), today.getTime(), { defaultValue: createdDate.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }), diffLabel: "일" });
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
   if (!item) return null;
-
-  const today = new Date();
-  const createdDate = new Date(item.chatMessages[0].createdAt);
-
-  const timeStr = createdDate.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" });
-  const diffTime = getDiffTimeStr(createdDate.getTime(), today.getTime(), { defaultValue: timeStr, diffLabel: "일" });
 
   return (
     <div className="flex w-full items-center text-left gap-3">

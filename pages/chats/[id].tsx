@@ -20,8 +20,10 @@ import { GetChatsDetailResponse } from "@api/chats/[id]";
 import { PostChatsMessageResponse } from "@api/chats/[id]/message";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
 import ChatMessageList from "@components/lists/chatMessageList";
@@ -41,11 +43,11 @@ const ChatDetail: NextPage = () => {
   const role = user?.id === data?.chat?.product?.userId ? "sellUser" : "purchaseUser";
   const saleRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.ProductSale);
   const purchaseRecord = data?.chat?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
-  const existsReview = data?.chat?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
+  const existedReview = data?.chat?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
 
   const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(data?.chat?.product?.id ? `/api/products/${data.chat.product.id}/purchase` : "", {
     onSuccess: (data) => {
-      router.push(`/products/${router.query.id}/review`);
+      router.push(`/products/${data?.recordPurchase?.productId}/review`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -86,10 +88,10 @@ const ChatDetail: NextPage = () => {
     },
   });
 
-  const toggleSale = (value: boolean) => {
+  const toggleSale = () => {
     if (saleLoading) return;
     if (updatePurchaseLoading) return;
-    updateSale({ sale: value });
+    updateSale({ sale: !Boolean(saleRecord) });
   };
 
   const openSoldProductModal = () => {
@@ -105,7 +107,7 @@ const ChatDetail: NextPage = () => {
       confirmBtn: role === "sellUser" ? "판매완료" : "구매완료",
       hasBackdrop: true,
       onConfirm: () => {
-        toggleSale(false);
+        toggleSale();
       },
     });
   };
@@ -133,16 +135,11 @@ const ChatDetail: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15),
-        titleTag: "strong",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
-  }, [chatUsers]);
+  }, []);
 
   if (!data) {
     return null;
@@ -150,7 +147,6 @@ const ChatDetail: NextPage = () => {
 
   return (
     <article className="container pb-20">
-      <CustomHead title={`${truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15)} | 채팅`} />
       <h1 className="sr-only">{truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15)} | 채팅</h1>
 
       {/* 상품 정보 */}
@@ -167,14 +163,14 @@ const ChatDetail: NextPage = () => {
               <Buttons type="button" text={role === "sellUser" ? "판매완료" : "구매완료"} size="sm" status="default" className="!inline-block !w-auto !text-left" onClick={openSoldProductModal} />
             )}
             {/* 거래 후기 보내기 */}
-            {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
+            {!saleRecord && purchaseRecord && !existedReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
               <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
                 <Buttons tag="a" text="거래 후기 보내기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
               </Link>
             )}
             {/* 보낸 후기 보기 */}
-            {!saleRecord && purchaseRecord && existsReview && data?.chat.users.find((chatUser) => chatUser.id === existsReview?.[`${role === "sellUser" ? "purchaseUser" : "sellUser"}Id`]) && (
-              <Link href={`/reviews/${existsReview.id}`} passHref>
+            {!saleRecord && purchaseRecord && existedReview && data?.chat.users.find((chatUser) => chatUser.id === existedReview?.[`${role === "sellUser" ? "purchaseUser" : "sellUser"}Id`]) && (
+              <Link href={`/reviews/${existedReview.id}`} passHref>
                 <Buttons tag="a" text="보낸 후기 보기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
               </Link>
             )}
@@ -186,7 +182,7 @@ const ChatDetail: NextPage = () => {
         <ChatMessageList list={data.chat.chatMessages} />
       </div>
       {/* 거래 후기 보내기 */}
-      {!saleRecord && purchaseRecord && !existsReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
+      {!saleRecord && purchaseRecord && !existedReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
         <div className="mt-4 p-3 bg-orange-100 rounded-md">
           {user?.name}님, 거래 잘 하셨나요?
           <br />
@@ -206,16 +202,16 @@ const ChatDetail: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getChat: { id: number; response: GetChatsDetailResponse };
+  getChat: { response: GetChatsDetailResponse };
 }> = ({ getUser, getChat }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [`/api/chats/${getChat.id}`]: getChat.response,
+          [`/api/chats/${getChat.response.chat.id}`]: getChat.response,
         },
       }}
     >
@@ -223,6 +219,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
@@ -238,7 +236,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const chatId = params?.id?.toString();
+  const chatId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: chatId
@@ -324,8 +322,36 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: `${truncateStr(
+        chat.users
+          .filter((chatUser) => chatUser.id !== ssrUser?.profile?.id)
+          .map((chatUser) => chatUser.name)
+          .join(", "),
+        15
+      )} | 채팅`,
+    },
+    header: {
+      title: truncateStr(
+        chat.users
+          .filter((chatUser) => chatUser.id !== ssrUser?.profile?.id)
+          .map((chatUser) => chatUser.name)
+          .join(", "),
+        15
+      ),
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -335,7 +361,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getChat: {
-        id: chatId,
         response: {
           success: true,
           chat: JSON.parse(JSON.stringify(chat || [])),

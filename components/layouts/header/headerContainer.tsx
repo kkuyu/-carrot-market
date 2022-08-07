@@ -1,10 +1,10 @@
 import { useRouter } from "next/router";
 // @libs
-import { HeaderOptions, HeaderUtils } from "@components/layouts";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
 // @components
+import { HeaderOptions, HeaderUtils } from "@components/layouts/header/headerWrapper";
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
@@ -13,10 +13,9 @@ import HometownUpdate from "@components/commons/modals/hometown/update";
 
 export interface HeaderProps extends HeaderOptions {}
 
-const Header = ({ title = "", titleTag = "h1", bgColor = "white", utils, kebabActions, submitId }: HeaderProps) => {
+const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, submitId }: HeaderProps) => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
-
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
@@ -122,25 +121,29 @@ const Header = ({ title = "", titleTag = "h1", bgColor = "white", utils, kebabAc
     }
   };
 
+  if (!utils?.length) {
+    return null;
+  }
+
   return (
-    <div id="layout-header" className={`fixed-container top-0 z-[100] ${bgColor !== "transparent" ? "" : "is-transparent"}`}>
-      <header className={`fixed-inner h-12 ${bgColor !== "transparent" ? `bg-${bgColor} border-b text-black` : "bg-gradient-to-b from-black/20  text-white"}`}>
+    <div id="layout-header" className={`fixed-container top-0 z-[100] ${isTransparent ? "is-transparent" : ""}`}>
+      <header className={`fixed-inner h-12 ${isTransparent ? "bg-gradient-to-b from-black/20  text-white" : "bg-white border-b text-black"}`}>
         {/* left utils */}
         <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
-          {utils.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
-          {utils.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
+          {utils?.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
+          {utils?.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
         </div>
 
         {/* center utils */}
-        <div className="flex justify-center items-center w-full h-full px-20">{utils.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
+        <div className="flex justify-center items-center w-full h-full px-20">{utils?.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
 
         {/* right utils */}
         <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
-          {utils.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
-          {utils.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
-          {utils.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
-          {utils.includes(HeaderUtils["Kebab"]) && <>{getUtils(HeaderUtils["Kebab"])}</>}
-          {utils.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
+          {utils?.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
+          {utils?.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
+          {utils?.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
+          {utils?.includes(HeaderUtils["Kebab"]) && <>{getUtils(HeaderUtils["Kebab"])}</>}
+          {utils?.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
         </div>
       </header>
     </div>

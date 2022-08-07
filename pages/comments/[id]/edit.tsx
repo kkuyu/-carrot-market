@@ -10,10 +10,12 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import CustomHead from "@components/custom/head";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
+import { getLayout } from "@components/layouts/case/siteLayout";
 import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 
 const CommentEdit: NextPage = () => {
@@ -49,27 +51,20 @@ const CommentEdit: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "댓글 수정",
-        titleTag: 'h1',
-        utils: ["back", "title", "submit"],
-        submitId: "edit-comment",
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <CustomHead title="댓글 수정 | 댓글" />
       <EditComment type="edit" formId="edit-comment" formData={formData} onValid={submitUploadComment} isLoading={loading} />
     </div>
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getComment: { response: GetCommentsDetailResponse };
 }> = ({ getComment }) => {
   return (
@@ -85,6 +80,8 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
@@ -99,7 +96,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const commentId = params?.id?.toString();
+  const commentId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: commentId
@@ -142,8 +139,25 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "댓글 수정 | 댓글",
+    },
+    header: {
+      title: "댓글 수정",
+      titleTag: "h1",
+      utils: ["back", "title", "submit"],
+      submitId: "edit-comment",
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getComment: {
         response: {
           success: true,

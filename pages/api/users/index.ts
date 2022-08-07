@@ -137,7 +137,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
       // check data: email
       if (email && email !== foundUser?.email) {
-        const exists = Boolean(
+        const existed = Boolean(
           await client.user.findUnique({
             where: {
               email,
@@ -147,7 +147,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
           })
         );
-        if (exists) {
+        if (existed) {
           const error = new Error("This email is already in use");
           throw error;
         }
@@ -156,7 +156,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
       // check data: phone number
       if (phone && phone !== foundUser?.phone) {
-        const exists = Boolean(
+        const existed = Boolean(
           await client.user.findUnique({
             where: {
               phone,
@@ -166,7 +166,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
           })
         );
-        if (exists) {
+        if (existed) {
           const error = new Error("This phone number is already in use");
           throw error;
         }

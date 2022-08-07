@@ -2,45 +2,29 @@ import React, { useState, useMemo } from "react";
 // @components
 import { LayoutDispatch, LayoutState } from "@components/layouts";
 import { LayoutDispatchContext, LayoutStateContext } from "@components/layouts/layoutContext";
-import HeaderWrapper from "@components/layouts/header/headerWrapper";
-import NavBarWrapper from "@components/layouts/navBar/navBarWrapper";
 
 const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
   const [currentState, setCurrentState] = useState<LayoutState>({
-    header: {
-      utils: [],
-    },
-    navBar: {
-      utils: [],
-    },
+    meta: {},
+    header: {},
+    navBar: {},
   });
 
   const change: LayoutDispatch["change"] = (options) => {
-    setCurrentState(() => ({
-      ...options,
-    }));
+    setCurrentState((prev) => {
+      return {
+        meta: { ...prev.meta, ...options.meta },
+        header: { ...prev.header, ...options.header },
+        navBar: { ...prev.navBar, ...options.navBar },
+      };
+    });
   };
 
-  const reset: LayoutDispatch["reset"] = () => {
-    setCurrentState(() => ({
-      header: {
-        utils: [],
-      },
-      navBar: {
-        utils: [],
-      },
-    }));
-  };
-
-  const dispatch = useMemo(() => ({ change, reset }), []);
+  const dispatch = useMemo(() => ({ change }), []);
 
   return (
     <LayoutStateContext.Provider value={currentState}>
-      <LayoutDispatchContext.Provider value={dispatch}>
-        <HeaderWrapper />
-        {children}
-        <NavBarWrapper />
-      </LayoutDispatchContext.Provider>
+      <LayoutDispatchContext.Provider value={dispatch}>{children}</LayoutDispatchContext.Provider>
     </LayoutStateContext.Provider>
   );
 };

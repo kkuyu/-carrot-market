@@ -12,10 +12,10 @@ export interface ProductSummaryProps {
 }
 
 const ProductSummary = ({ item }: ProductSummaryProps) => {
-  if (!item) return null;
-
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
   const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
+
+  if (!item) return null;
 
   return (
     <div className="flex items-start">

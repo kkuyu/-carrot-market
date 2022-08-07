@@ -14,68 +14,71 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users";
 import { GetProfilesLikeResponse } from "@api/users/likes";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductList from "@components/lists/productList";
+import LikeProduct from "@components/groups/likeProduct";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse) => {
-  if (pageIndex === 0) return `/api/users/likes?page=1`;
+const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/users/likes", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.products.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/users/likes?page=${pageIndex + 1}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 const ProfileLikes: NextPage = () => {
   const router = useRouter();
+  const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const { user } = useUser();
-
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetProfilesLikeResponse>(getKey);
+  const { data, size, setSize } = useSWRInfinite<GetProfilesLikeResponse>((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => {
+    const options = {};
+    return getKey(...arg, options);
+  });
 
   const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const products = data ? data.flatMap((item) => item.products) : [];
+  const products = data ? data.flatMap((item) => item.products) : null;
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "관심목록",
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title="관심목록 | 나의 당근" />
-
       {/* 관심목록: List */}
-      {Boolean(products.length) && (
+      {products && Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductList list={products}></ProductList>
+          <ProductList list={products}>
+            <LikeProduct key="LikeProduct" className="absolute top-0 right-0 p-5" />
+          </ProductList>
           <div ref={infiniteRef} />
-          <div className="px-5 py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? `관심목록을 모두 확인하였어요` : isLoading ? `관심목록을 불러오고있어요` : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">관심목록을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">관심목록을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 관심목록: Empty */}
-      {!Boolean(products.length) && (
+      {products && !Boolean(products.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`관심목록이 존재하지 않아요`}</p>
         </div>
@@ -84,16 +87,16 @@ const ProfileLikes: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProfilesLikeResponse };
-}> = ({ getUser, getProduct }) => {
+  getProducts: { options: { url?: string; query?: string }; response: GetProfilesLikeResponse };
+}> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize(getKey)]: [getProduct.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => getKey(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
     >
@@ -101,6 +104,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -176,8 +181,24 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     : [];
   const products = records.map((record) => record.product);
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "관심목록 | 나의 당근",
+    },
+    header: {
+      title: "관심목록",
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -186,7 +207,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
           currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
         },
       },
-      getProduct: {
+      getProducts: {
+        options: {},
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(products || [])),

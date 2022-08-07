@@ -2,13 +2,11 @@ import { NextMiddleware, userAgent } from "next/server";
 import { NextResponse } from "next/server";
 
 export const middleware: NextMiddleware = (req) => {
-  if (req.url.includes("/api")) return NextResponse.next();
-  if (req.url.includes("/_next")) return NextResponse.next();
+  if (req.url.includes("/api")) return;
+  if (req.url.includes("/_next")) return;
 
   const ua = userAgent(req);
-  if (ua.isBot) {
-    return new NextResponse(null, { status: 403 });
-  }
+  if (ua.isBot) return new NextResponse(null, { status: 403 });
 
   const url = req.nextUrl.clone();
   const isLogin = Boolean(req.cookies.get("carrot-market-session"));
@@ -48,6 +46,4 @@ export const middleware: NextMiddleware = (req) => {
         return NextResponse.next();
     }
   }
-
-  return NextResponse.next();
 };

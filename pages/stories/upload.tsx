@@ -11,8 +11,10 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { PostStoriesResponse } from "@api/stories";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
 const StoryUpload: NextPage = () => {
@@ -76,25 +78,24 @@ const StoryUpload: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "동네생활 글 쓰기",
-        titleTag: "h1",
-        utils: ["back", "title", "submit"],
-        submitId: "upload-story",
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <CustomHead title="글 쓰기 | 동네생활" />
       <EditStory formId="upload-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };
+
+const Page: NextPageWithLayout = () => {
+  return <StoryUpload />;
+};
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
@@ -120,9 +121,27 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "글 쓰기 | 동네생활",
+    },
+    header: {
+      title: "동네생활 글 쓰기",
+      titleTag: "h1",
+      utils: ["back", "title", "submit"],
+      submitId: "upload-story",
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
-    props: {},
+    props: {
+      defaultLayout,
+    },
   };
 });
 
-export default StoryUpload;
+export default Page;

@@ -10,18 +10,12 @@ import Images from "@components/images";
 
 export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
 
-export interface ProductProps {
+export interface ProductProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: ProductItem;
 }
 
-const Product = ({ item }: ProductProps) => {
+const Product = ({ item, className }: ProductProps) => {
   const [mounted, setMounted] = useState(false);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!item) return null;
 
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.resumeAt).getTime(), today.getTime());
@@ -31,8 +25,14 @@ const Product = ({ item }: ProductProps) => {
   const likeRecords = item?.records?.filter((record) => record.kind === Kind.ProductLike) || [];
   const foundChats = item?.chats?.filter((chat) => chat._count.chatMessages > 0);
 
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!item) return null;
+
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <div className="flex items-start">
         <div className="flex-none">
           <Images size="6rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />

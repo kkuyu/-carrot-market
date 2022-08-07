@@ -15,8 +15,10 @@ import getSsrUser from "@libs/server/getUser";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
 const ProductUpload: NextPage = () => {
@@ -117,27 +119,20 @@ const ProductUpload: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "중고거래 글 수정",
-        titleTag: "h1",
-        utils: ["back", "title", "submit"],
-        submitId: "edit-product",
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <CustomHead title="글 수정 | 중고거래" />
       <EditProduct formId="edit-product" formData={formData} onValid={submitEditProduct} isLoading={loading || photoLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getProduct: { response: GetProductsDetailResponse };
 }> = ({ getProduct }) => {
   return (
@@ -153,6 +148,8 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
@@ -167,7 +164,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const productId = params?.id?.toString();
+  const productId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: productId
@@ -209,8 +206,25 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "글 수정 | 중고거래",
+    },
+    header: {
+      title: "중고거래 글 수정",
+      titleTag: "h1",
+      utils: ["back", "title", "submit"],
+      submitId: "edit-product",
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getProduct: {
         response: {
           success: true,

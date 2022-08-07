@@ -27,7 +27,6 @@ export interface HandleCommentProps extends React.HTMLAttributes<HTMLButtonEleme
 
 const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCommentDetail, className }: HandleCommentProps) => {
   const router = useRouter();
-
   const { user } = useUser();
   const { openModal } = useModal();
   const { openPanel } = usePanel();
@@ -47,8 +46,8 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
     },
   });
 
-  const openOthersPanel = () => {
-    openPanel<ActionPanelProps>(ActionPanel, "others", {
+  const openHandlePanel = () => {
+    openPanel<ActionPanelProps>(ActionPanel, "handleComment", {
       hasBackdrop: true,
       actions:
         user?.id === item?.userId
@@ -81,7 +80,8 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
         if (mutateStoryComments) {
           mutateStoryComments((prev) => {
             if (!prev) return prev;
-            return { ...prev, total: prev.total - 1, comments: prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time })) };
+            const comments = prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time }));
+            return { ...prev, total: prev.total - 1, comments };
           }, false);
         }
         // comment boundMutate
@@ -89,10 +89,8 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
           mutateCommentDetail((prev) => {
             if (!prev) return prev;
             if (router?.query?.id?.toString() === item?.id?.toString()) return { ...prev, comment: { ...prev.comment, content: "", updatedAt: time } };
-            return {
-              ...prev,
-              comment: { ...prev.comment, reComments: (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time })) },
-            };
+            const reComments = (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time }));
+            return { ...prev, comment: { ...prev.comment, reComments } };
           }, false);
         }
         deleteComment({});
@@ -106,7 +104,7 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
   if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openOthersPanel}>
+    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandlePanel}>
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
       </svg>

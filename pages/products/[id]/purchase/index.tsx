@@ -17,17 +17,20 @@ import { GetChatsResponse } from "@api/chats";
 import { GetUserResponse } from "@api/users";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductSummary from "@components/cards/productSummary";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
-const getKey = (pageIndex: number, previousPageData: GetChatsResponse, query: string = "") => {
-  if (pageIndex === 0) return `/api/chats?page=1&${query}`;
+const getKey = (pageIndex: number, previousPageData: GetChatsResponse, options: { url?: string; query?: string }) => {
+  const { url = "/api/chats", query = "" } = options;
+  if (pageIndex === 0) return `${url}?page=1&${query}`;
   if (previousPageData && !previousPageData.chats.length) return null;
   if (pageIndex + 1 > previousPageData.pages) return null;
-  return `/api/chats?page=${pageIndex + 1}&${query}`;
+  return `${url}?page=${pageIndex + 1}&${query}`;
 };
 
 const ProductPurchase: NextPage = () => {
@@ -35,12 +38,18 @@ const ProductPurchase: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-64px" });
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
 
-  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) =>
-    getKey(arg[0], arg[1], router.query.id ? `productId=${router.query.id}` : "")
-  );
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
+    const options = { query: router.query.id ? `productId=${router.query.id}` : "" };
+    return getKey(...arg, options);
+  });
+
+  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const isLoading = data && typeof data[data.length - 1] === "undefined";
+  const chats = data ? data.flatMap((item) => item.chats) : null;
+
   const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
     onSuccess: (data) => {
       router.push(`/products/${router.query.id}/review`);
@@ -54,10 +63,6 @@ const ProductPurchase: NextPage = () => {
     },
   });
 
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const chats = data ? data.flatMap((item) => item.chats) : [];
-
   const purchaseItem = (item: GetChatsResponse["chats"][0], chatUser: GetChatsResponse["chats"][0]["users"][0]) => {
     if (updatePurchaseLoading) return;
     updatePurchase({ purchase: true, purchaseUserId: chatUser.id });
@@ -65,27 +70,20 @@ const ProductPurchase: NextPage = () => {
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
-      setSize(size + 1);
+      setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "구매자 선택",
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container">
-      <CustomHead title="구매자 선택 | 중고거래" />
-
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
@@ -102,24 +100,26 @@ const ProductPurchase: NextPage = () => {
       </div>
 
       {/* 대화중인 채팅방: List */}
-      {Boolean(chats.length) && (
+      {chats && Boolean(chats.length) && (
         <div className="-mx-5 mt-5 border-t">
-          <ChatList type="button" list={chats} content="timestamp" isVisibleOnlyOneUser={true} selectItem={purchaseItem} />
+          <ChatList type="button" list={chats} content="timestamp" isSingleUser={true} selectItem={purchaseItem} />
           <div ref={infiniteRef} />
-          <div className="py-6 text-center border-t">
-            <span className="text-sm text-gray-500">{isReachingEnd ? "대화 중인 채팅방을 모두 확인하였어요" : isLoading ? "대화 중인 채팅방을 불러오고있어요" : ""}</span>
-          </div>
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
       {/* 대화중인 채팅방: Empty */}
-      {!Boolean(chats.length) && (
+      {chats && !Boolean(chats.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">대화 중인 이웃이 없어요.</p>
         </div>
       )}
 
-      {(!Boolean(chats.length) || isReachingEnd) && (
+      {chats && (!Boolean(chats.length) || isReachingEnd) && (
         <div className="text-center">
           <Link href={`/products/${router.query.id}/purchase/all`} passHref>
             <Buttons tag="a" sort="text-link" size="sm" status="default" text="최근 채팅 목록에서 구매자 찾기" />
@@ -130,18 +130,18 @@ const ProductPurchase: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
-  getChat: { query: string; response: GetChatsResponse };
-}> = ({ getUser, getProduct, getChat }) => {
+  getChats: { options: { url?: string; query?: string }; response: GetChatsResponse };
+}> = ({ getUser, getProduct, getChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(arg[0], arg[1], getChat.query))]: [getChat.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(...arg, getChats.options))]: [getChats.response],
         },
       }}
     >
@@ -149,6 +149,8 @@ const Page: NextPage<{
     </SWRConfig>
   );
 };
+
+Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
@@ -164,7 +166,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const productId = params?.id?.toString();
+  const productId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: productId
@@ -219,7 +221,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const role = ssrUser?.profile?.id === product.userId ? "sellUser" : "purchaseUser";
   const saleRecord = product.records.find((record) => record.kind === Kind.ProductSale);
   const purchaseRecord = product.records.find((record) => record.kind === Kind.ProductPurchase);
-  const existsReview = product.reviews.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
+  const existedReview = product.reviews.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
 
   // invalid product: not my product
   // redirect: /products/id
@@ -243,18 +245,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // purchase product && exists review
+  // purchase product && existed review
   // redirect: /reviews/id
-  if (purchaseRecord && existsReview) {
+  if (purchaseRecord && existedReview) {
     return {
       redirect: {
         permanent: false,
-        destination: `/reviews/${existsReview.id}`,
+        destination: `/reviews/${existedReview.id}`,
       },
     };
   }
 
-  // purchase product && exists review (purchase)
+  // purchase product && existed review (purchase)
   // redirect: /products/id/review
   if (purchaseRecord && product.reviews.length) {
     return {
@@ -298,8 +300,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       })
     : [];
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "구매자 선택 | 중고거래",
+    },
+    header: {
+      title: "구매자 선택",
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,
@@ -314,8 +332,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           product: JSON.parse(JSON.stringify(product || [])),
         },
       },
-      getChat: {
-        query: `productId=${product.id}`,
+      getChats: {
+        options: {
+          query: `productId=${product.id}`,
+        },
         response: {
           success: true,
           chats: JSON.parse(JSON.stringify(chats || [])),

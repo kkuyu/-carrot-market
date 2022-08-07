@@ -15,6 +15,7 @@ export interface PostConfirmTokenResponse {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   try {
+    const { referer = "" } = req.headers;
     const { token } = req.body;
 
     // request valid
@@ -36,12 +37,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // save data: session.user
-    req.session.user = {
-      id: foundToken.userId,
-    };
-    delete req.session.dummyUser;
-    await req.session.save();
+    if (/\/login$/.test(referer) || /\/join?.*$/.test(referer)) {
+      // save data: session.user
+      req.session.user = {
+        id: foundToken.userId,
+      };
+      delete req.session.dummyUser;
+      await req.session.save();
+    }
 
     // db token delete
     await client.token.deleteMany({

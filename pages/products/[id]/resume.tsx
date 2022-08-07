@@ -16,8 +16,10 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
@@ -89,29 +91,17 @@ const ProductResume: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "끌어올리기",
-        titleTag: "h1",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
-  if (!productData?.product) {
-    return null;
-  }
-
-  if (state === null) {
-    return null;
-  }
+  if (!productData?.product) return null;
+  if (state === null) return null;
 
   return (
     <div className="container pb-5">
-      <CustomHead title="끌어올리기 | 중고거래" />
-
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product?.id}`}>
         <a className="block -mx-5 px-5 py-3 bg-gray-200">
@@ -197,7 +187,7 @@ const ProductResume: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getProduct: { response: GetProductsDetailResponse };
 }> = ({ getProduct }) => {
   return (
@@ -213,6 +203,8 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
@@ -227,7 +219,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const productId = params?.id?.toString();
+  const productId = params?.id?.toString() || "";
 
   // !ssrUser.profile
   // invalid params: productId
@@ -294,8 +286,24 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "끌어올리기 | 중고거래",
+    },
+    header: {
+      title: "끌어올리기",
+      titleTag: "h1",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getProduct: {
         response: {
           success: true,

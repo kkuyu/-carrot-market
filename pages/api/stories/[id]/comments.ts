@@ -32,7 +32,7 @@ export interface PostStoriesCommentsResponse {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
   if (req.method === "GET") {
     try {
-      const { id: _id, exists: _exists, page: _page, reCommentRefId: _reCommentRefId, cursorId: _cursorId } = req.query;
+      const { id: _id, existed: _existed, page: _page, reCommentRefId: _reCommentRefId, cursorId: _cursorId } = req.query;
       const { user } = req.session;
 
       // request valid
@@ -103,7 +103,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
           reComments: {
             skip: 0,
-            take: !_exists ? 2 : 0,
+            take: !_existed ? 2 : 0,
             orderBy: {
               createdAt: "asc",
             },
@@ -136,11 +136,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         defaultComments.flatMap((o) => o.reComments)
       );
 
-      const exists: number[] = _exists ? JSON.parse(_exists?.toString()) : [];
-      const existComments = await client.storyComment.findMany({
+      const existed: number[] = _existed ? JSON.parse(_existed?.toString()) : [];
+      const existedComments = await client.storyComment.findMany({
         where: {
           storyId: story.id,
-          OR: exists.filter((id) => !comments.find((o) => o.id === id)).map((id) => ({ id })),
+          OR: existed.filter((id) => !comments.find((o) => o.id === id)).map((id) => ({ id })),
         },
         orderBy: {
           createdAt: "asc",
@@ -167,7 +167,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
         },
       });
-      comments = comments.concat(existComments);
+      comments = comments.concat(existedComments);
 
       const page = _page ? +_page?.toString() : null;
       const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : null;

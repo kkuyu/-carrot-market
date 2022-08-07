@@ -22,12 +22,8 @@ export interface FeedbackStoryProps {
 
 const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   const router = useRouter();
-  const isDetailPage = router.pathname === "/stories/[id]";
-
   const { user, currentAddr } = useUser();
   const { openModal } = useModal();
-
-  const [isVisibleBox, setIsVisibleBox] = useState(false);
 
   const { data, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
   const [updateLike, { loading: likeLoading }] = useMutation(item?.id ? `/api/stories/${item.id}/like` : "", {
@@ -43,36 +39,29 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     },
   });
 
-  if (!item) return null;
-
-  const category = getStoryCategory(item?.category);
+  const [isVisibleBox, setIsVisibleBox] = useState(false);
+  const category = getStoryCategory(item?.category || "");
+  const likeRecord = data?.story?.records?.find((record) => record.userId === user?.id && record.kind === Kind.StoryLike);
   const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
-  const liked = likeRecords.find((record) => record.userId === user?.id);
-  const count = data?.story?.comments?.length || item?.comments?.length;
+  const commentCount = data?.story?.comments?.length || item?.comments?.length;
 
   // like
   const clickLike = () => {
     !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike();
   };
-  const toggleLike = (emotion?: EmotionKeys) => {
+  const toggleLike = (emotion: null | EmotionKeys = null) => {
     if (!data) return;
     if (likeLoading) return;
+    const isLike = !Boolean(likeRecord);
     boundMutate((prev) => {
       let records = prev?.story?.records ? [...prev.story.records] : [];
-      const idx = records.findIndex((record) => record.kind === Kind.StoryLike && record.userId === user?.id);
-      const exists = idx !== -1;
-
-      if (!emotion) {
-        if (exists) records.splice(idx, 1);
-        if (!exists) records.push({ id: 0, kind: Kind.StoryLike, emotion: null, userId: user?.id! });
-        return prev && { ...prev, story: { ...prev.story, records: records } };
-      } else {
-        if (exists) records[idx].emotion !== emotion ? records.splice(idx, 1, { ...records[idx], emotion }) : records.splice(idx, 1);
-        if (!exists) records.push({ id: 0, kind: Kind.StoryLike, emotion: emotion, userId: user?.id! });
-      }
+      const idx = records.findIndex((record) => record.id === likeRecord?.id);
+      if (!emotion && !isLike) records.splice(idx, 1);
+      if (emotion && !isLike) records[idx].emotion !== emotion ? records.splice(idx, 1, { ...records[idx], emotion }) : records.splice(idx, 1);
+      if (isLike) records.push({ id: 0, kind: Kind.StoryLike, emotion, userId: user?.id! });
       return prev && { ...prev, story: { ...prev.story, records: records } };
     }, false);
-    updateLike({ emotion: emotion || null });
+    updateLike({ emotion });
   };
 
   // emotion
@@ -83,7 +72,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     if (boxEl?.contains(e.relatedTarget)) return;
     setIsVisibleBox(false);
   };
-  const clickEmotionBox = (key: EmotionKeys) => {
+  const clickEmotionIcon = (key: EmotionKeys) => {
     !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike(key);
     setIsVisibleBox(false);
   };
@@ -98,11 +87,11 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
 
   // comment
   const clickComment = () => {
-    if (isDetailPage) {
+    if (router.pathname === "/stories/[id]") {
       const target = document.querySelector(".container input#comment") as HTMLInputElement;
       target?.focus();
     } else {
-      router.push(`/stories/${item.id}`);
+      router.push(`/stories/${item?.id}`);
     }
   };
 
@@ -129,33 +118,38 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push(`/join?addrNm=${currentAddr?.emdAddrNm}`);
+        router.push({
+          pathname: "/join",
+          query: { addrNm: currentAddr?.emdAddrNm },
+        });
       },
     });
   };
+
+  if (!item) return null;
 
   return (
     <div className="relative px-5 border-t">
       {/* 궁금해요: button */}
       {!category?.isLikeWithEmotion && (
         <button type="button" onClick={clickLike} className="py-2">
-          <svg className={`inline-block w-5 h-5 ${liked ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+          <svg className={`inline-block w-5 h-5 ${likeRecord ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
-          <span className={`ml-1 text-sm ${liked ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
+          <span className={`ml-1 text-sm ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
         </button>
       )}
       {/* 공감하기: button */}
       {category?.isLikeWithEmotion && (
         <button type="button" onClick={clickEmotionButton} onBlur={blurEmotionButton} className="py-2">
-          {!liked ? (
+          {!likeRecord ? (
             <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <span className="inline-block w-5 h-5">{EmotionIcon?.[liked.emotion!].text}</span>
+            <span className="inline-block w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>
           )}
-          {!liked ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
+          {!likeRecord ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
         </button>
       )}
       {/* 공감하기: box */}
@@ -165,7 +159,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
             {Object.entries(EmotionIcon)
               .sort(([, a], [, b]) => a.index - b.index)
               .map(([key, emotion]) => (
-                <button key={key} type="button" onClick={() => clickEmotionBox(key as EmotionKeys)} className="p-1">
+                <button key={key} type="button" onClick={() => clickEmotionIcon(key as EmotionKeys)} className="p-1">
                   {emotion.text}
                 </button>
               ))}
@@ -196,7 +190,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
             d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
           ></path>
         </svg>
-        <span className="ml-1 text-sm text-gray-500">{count ? `${category?.commentType} ${count}` : `${category?.commentType}쓰기`}</span>
+        <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
       </button>
     </div>
   );
@@ -204,5 +198,6 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
 
 export default React.memo(FeedbackStory, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
+  if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;
   return true;
 });

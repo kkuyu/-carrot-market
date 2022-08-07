@@ -86,20 +86,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     let recordPurchase = null;
-    const exists = product.records.find((record) => record.kind === Kind.ProductPurchase);
+    const existed = product.records.find((record) => record.kind === Kind.ProductPurchase);
 
-    if (exists && purchase === false) {
+    if (existed && purchase === false) {
       // delete
       await client.record.delete({
         where: {
-          id: exists.id,
+          id: existed.id,
         },
       });
-    } else if (exists && purchase === true && purchaseUser) {
+    } else if (existed && purchase === true && purchaseUser) {
       // update
       recordPurchase = await client.record.update({
         where: {
-          id: exists.id,
+          id: existed.id,
         },
         data: {
           user: {
@@ -115,7 +115,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           kind: Kind.ProductPurchase,
         },
       });
-    } else if (!exists && purchase === true && purchaseUser) {
+    } else if (!existed && purchase === true && purchaseUser) {
       // create
       recordPurchase = await client.record.create({
         data: {

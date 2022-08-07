@@ -14,8 +14,10 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse, PostUserResponse } from "@api/users";
 import { PostDummyResponse } from "@api/users/dummy";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import EditProfile, { EditProfileTypes } from "@components/forms/editProfile";
 
 const ProfileEdit: NextPage = () => {
@@ -126,22 +128,14 @@ const ProfileEdit: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "프로필 수정",
-        titleTag: "h1",
-        utils: ["back", "title", "submit"],
-        submitId: "edit-profile",
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <CustomHead title="프로필 수정 | 나의 당근" />
-
       <EditProfile
         formId="edit-profile"
         formData={formData}
@@ -153,7 +147,7 @@ const ProfileEdit: NextPage = () => {
   );
 };
 
-const Page: NextPage<{
+const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
 }> = ({ getUser }) => {
   return (
@@ -169,6 +163,8 @@ const Page: NextPage<{
   );
 };
 
+Page.getLayout = getLayout;
+
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
@@ -183,8 +179,25 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "프로필 수정 | 나의 당근",
+    },
+    header: {
+      title: "프로필 수정",
+      titleTag: "h1",
+      utils: ["back", "title", "submit"],
+      submitId: "edit-profile",
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
   return {
     props: {
+      defaultLayout,
       getUser: {
         response: {
           success: true,

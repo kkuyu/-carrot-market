@@ -1,4 +1,4 @@
-import { NextPage } from "next";
+import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
@@ -14,10 +14,12 @@ import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/verification/token";
 import { PostDummyResponse } from "@api/users/dummy";
+// @pages
+import type { NextPageWithLayout } from "@pages/_app";
 // @components
-import CustomHead from "@components/custom/head";
-import Buttons from "@components/buttons";
+import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
+import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
@@ -52,7 +54,7 @@ const Join: NextPage = () => {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-user", {
         placement: "bottom",
-        message: "회원가입이 완료되었어요",
+        message: userData?.isExisted ? "기존 정보로 로그인 되었어요" : "회원가입이 완료되었어요",
       });
       router.replace("/");
     },
@@ -108,21 +110,14 @@ const Join: NextPage = () => {
 
   useEffect(() => {
     changeLayout({
-      header: {
-        title: "회원가입",
-        titleTag: "strong",
-        utils: ["back", "title"],
-      },
-      navBar: {
-        utils: [],
-      },
+      meta: {},
+      header: {},
+      navBar: {},
     });
   }, []);
 
   return (
     <section className="container py-5">
-      <CustomHead title="회원가입" />
-
       <h1 className="text-2xl font-bold">
         안녕하세요!
         <br />
@@ -203,4 +198,33 @@ const Join: NextPage = () => {
   );
 };
 
-export default Join;
+const Page: NextPageWithLayout = () => {
+  return <Join />;
+};
+
+Page.getLayout = getLayout;
+
+export const getStaticProps: GetStaticProps = async () => {
+  // defaultLayout
+  const defaultLayout = {
+    meta: {
+      title: "회원가입",
+    },
+    header: {
+      title: "회원가입",
+      titleTag: "strong",
+      utils: ["back", "title"],
+    },
+    navBar: {
+      utils: [],
+    },
+  };
+
+  return {
+    props: {
+      defaultLayout,
+    },
+  };
+};
+
+export default Page;
