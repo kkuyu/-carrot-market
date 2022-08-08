@@ -10,9 +10,9 @@ import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
-import { PostJoinResponse } from "@api/users/join";
+import { PostJoinResponse } from "@api/user/join";
 import { PostConfirmTokenResponse } from "@api/verification/token";
-import { PostDummyResponse } from "@api/users/dummy";
+import { PostDummyResponse } from "@api/user/dummy";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
 // @components
@@ -32,7 +32,7 @@ const Join: NextPage = () => {
 
   // join user
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostJoinResponse>("/api/users/join", {
+  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostJoinResponse>("/api/user/join", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -70,7 +70,7 @@ const Join: NextPage = () => {
   });
 
   // join dummy
-  const [joinDummy, { loading: dummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
+  const [joinDummy, { loading: dummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-dummy", {
         placement: "bottom",

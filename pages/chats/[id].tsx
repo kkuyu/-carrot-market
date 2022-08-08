@@ -15,7 +15,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 import { PostChatsMessageResponse } from "@api/chats/[id]/message";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
@@ -210,7 +210,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [`/api/chats/${getChat.response.chat.id}`]: getChat.response,
         },
       }}

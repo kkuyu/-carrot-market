@@ -11,7 +11,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { GetReviewsDetailResponse } from "@api/reviews/[id]";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
@@ -94,7 +94,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [`/api/reviews/${getReview.response.review.id}`]: getReview.response,
         },
       }}
@@ -123,12 +123,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const reviewId = params?.id?.toString() || "";
 
   // invalid params: reviewId
-  // redirect: /users
+  // redirect: /user
   if (!ssrUser.profile || !reviewId || isNaN(+reviewId)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users`,
+        destination: `/user`,
       },
     };
   }
@@ -173,12 +173,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   });
 
   // not found review
-  // redirect: /users
+  // redirect: /user
   if (!review) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users`,
+        destination: `/user`,
       },
     };
   }
@@ -186,23 +186,23 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const role = ssrUser.profile?.id === review.product?.userId ? "sellUser" : "purchaseUser";
 
   // not my review
-  // redirect: /users
+  // redirect: /user
   if (!(review.sellUser.id === ssrUser?.profile?.id || review.purchaseUser.id === ssrUser?.profile?.id)) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users`,
+        destination: `/user`,
       },
     };
   }
 
   // dislike review
-  // redirect: /users
+  // redirect: /user
   if (review.role !== role && review.satisfaction === "dislike") {
     return {
       redirect: {
         permanent: false,
-        destination: `/users`,
+        destination: `/user`,
       },
     };
   }

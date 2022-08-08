@@ -9,7 +9,7 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
 // @pages
@@ -76,7 +76,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [`/api/profiles/${getProfile.response.profile.id}/manners?${getManners.query}`]: getManners.response,
         },

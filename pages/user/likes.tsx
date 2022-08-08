@@ -13,8 +13,8 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
-import { GetProfilesLikeResponse } from "@api/users/likes";
+import { GetUserResponse } from "@api/user";
+import { GetProfilesLikeResponse } from "@api/user/likes";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
 // @components
@@ -28,7 +28,7 @@ const ProfileLikes: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const { data, setSize } = useSWRInfinite<GetProfilesLikeResponse>((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => {
-    const options = { url: "/api/users/likes" };
+    const options = { url: "/api/user/likes" };
     return getKey<GetProfilesLikeResponse>(...arg, options);
   });
 
@@ -87,7 +87,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => getKey<GetProfilesLikeResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
@@ -114,12 +114,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   }
 
   // !ssrUser.profile
-  // redirect: /users
+  // redirect: /user
   if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users`,
+        destination: `/user`,
       },
     };
   }
@@ -201,7 +201,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       },
       getProducts: {
         options: {
-          url: "/api/users/likes",
+          url: "/api/user/likes",
         },
         response: {
           success: true,

@@ -13,7 +13,7 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
@@ -40,7 +40,9 @@ const ProfileStories: NextPage = () => {
     { value: "stories", index: 0, text: "게시글", name: "등록된 게시글" },
     { value: "stories/comments", index: 1, text: "댓글", name: "등록된 댓글" },
   ];
-  const [currentTab, setCurrentTab] = useState<StoryTab>(storyTabs.find((tab) => tab.index === 0) || storyTabs[0]);
+  const [currentTab, setCurrentTab] = useState<StoryTab>(() => {
+    return storyTabs.find((tab) => tab.value === router?.query?.filter) || storyTabs.find((tab) => tab.index === 0) || storyTabs[0];
+  });
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => {
@@ -62,6 +64,14 @@ const ProfileStories: NextPage = () => {
   const changeFilter = (tab: StoryTab) => {
     setCurrentTab(tab);
     window.scrollTo(0, 0);
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: { ...router.query, filter: tab.value },
+      },
+      undefined,
+      { shallow: true }
+    );
   };
 
   useEffect(() => {
@@ -136,7 +146,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey<GetProfilesStoriesResponse>(...arg, getStories.options))]: [getStories.response],
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey<GetProfilesStoriesResponse>(...arg, getComments.options))]: [getComments.response],

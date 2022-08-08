@@ -15,7 +15,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetChatsResponse } from "@api/chats";
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
@@ -104,7 +104,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey<GetChatsResponse>(...arg, getChats.options))]: [getChats.response],
         },
       }}

@@ -13,7 +13,7 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 // @pages
@@ -41,7 +41,9 @@ const ProfileProducts: NextPage = () => {
     { value: "products/sale", index: 1, text: "판매중", name: "판매 중인 게시글" },
     { value: "products/sold", index: 2, text: "판매완료", name: "판매 완료된 게시글" },
   ];
-  const [currentTab, setCurrentTab] = useState<ProductTab>(productTabs.find((tab) => tab.index === 0) || productTabs[0]);
+  const [currentTab, setCurrentTab] = useState<ProductTab>(() => {
+    return productTabs.find((tab) => tab.value === router?.query?.filter) || productTabs.find((tab) => tab.index === 0) || productTabs[0];
+  });
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => {
@@ -58,6 +60,14 @@ const ProfileProducts: NextPage = () => {
   const changeFilter = (tab: ProductTab) => {
     setCurrentTab(tab);
     window.scrollTo(0, 0);
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: { ...router.query, filter: tab.value },
+      },
+      undefined,
+      { shallow: true }
+    );
   };
 
   useEffect(() => {
@@ -135,7 +145,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey<GetProfilesProductsResponse>(...arg, getProductsByAll.options))]: [
             getProductsByAll.response,

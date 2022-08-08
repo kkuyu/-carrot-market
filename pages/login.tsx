@@ -8,7 +8,7 @@ import useLayouts from "@libs/client/useLayouts";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostLoginResponse } from "@api/users/login";
+import { PostLoginResponse } from "@api/user/login";
 import { PostConfirmTokenResponse } from "@api/verification/token";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
@@ -26,7 +26,7 @@ const Login: NextPage = () => {
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostLoginResponse>("/api/users/login", {
+  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostLoginResponse>("/api/user/login", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },

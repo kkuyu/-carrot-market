@@ -13,8 +13,8 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
-import { GetProfilesPurchasesResponse } from "@api/users/purchases";
+import { GetUserResponse } from "@api/user";
+import { GetProfilesPurchasesResponse } from "@api/user/purchases";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
 // @components
@@ -28,7 +28,7 @@ const ProfilePurchase: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const { data, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => {
-    const options = { url: "/api/users/purchases" };
+    const options = { url: "/api/user/purchases" };
     return getKey<GetProfilesPurchasesResponse>(...arg, options);
   });
 
@@ -87,7 +87,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => getKey<GetProfilesPurchasesResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
@@ -114,12 +114,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   }
 
   // !ssrUser.profile
-  // redirect: /users
+  // redirect: /user
   if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/users`,
+        destination: `/user`,
       },
     };
   }
@@ -201,7 +201,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       },
       getProducts: {
         options: {
-          url: "/api/users/purchases",
+          url: "/api/user/purchases",
         },
         response: {
           success: true,

@@ -12,7 +12,7 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/users";
+import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
 // @pages
@@ -39,7 +39,9 @@ const ProfileProducts: NextPage = () => {
     { value: "reviews/sellUser", index: 1, text: "판매자 후기", name: "판매자 후기" },
     { value: "reviews/purchaseUser", index: 2, text: "구매자 후기", name: "구매자 후기" },
   ];
-  const [currentTab, setCurrentTab] = useState<ReviewTab>(reviewTabs.find((tab) => tab.index === 0) || reviewTabs[0]);
+  const [currentTab, setCurrentTab] = useState<ReviewTab>(() => {
+    return reviewTabs.find((tab) => tab.value === router?.query?.filter) || reviewTabs.find((tab) => tab.index === 0) || reviewTabs[0];
+  });
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => {
@@ -56,6 +58,14 @@ const ProfileProducts: NextPage = () => {
   const changeFilter = (tab: ReviewTab) => {
     setCurrentTab(tab);
     window.scrollTo(0, 0);
+    router.replace(
+      {
+        pathname: router.pathname,
+        query: { ...router.query, filter: tab.value },
+      },
+      undefined,
+      { shallow: true }
+    );
   };
 
   useEffect(() => {
@@ -128,7 +138,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          "/api/users": getUser.response,
+          "/api/user": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey<GetProfilesReviewsResponse>(...arg, getReviewsByAll.options))]: [
             getReviewsByAll.response,

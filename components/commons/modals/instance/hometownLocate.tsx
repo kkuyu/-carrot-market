@@ -8,8 +8,8 @@ import useToast from "@libs/client/useToast";
 import useCoords from "@libs/client/useCoords";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostUserRequestBody, PostUserResponse } from "@api/users";
-import { PostDummyResponse } from "@api/users/dummy";
+import { PostUserRequestBody, PostUserResponse } from "@api/user";
+import { PostDummyResponse } from "@api/user/dummy";
 import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
 import { GetSearchKeywordResponse } from "@api/address/searchKeyword";
 // @components
@@ -35,7 +35,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
     longitude && latitude ? `/api/address/searchBoundary?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
   );
 
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users", {
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/user", {
     onSuccess: () => {
       mutateUser();
       closeModal(LayerModal, "HometownLocate");
@@ -54,7 +54,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
       }
     },
   });
-  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
+  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
     onSuccess: () => {
       mutateUser();
       closeModal(LayerModal, "HometownLocate");

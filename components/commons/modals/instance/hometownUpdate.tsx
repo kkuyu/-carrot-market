@@ -8,8 +8,8 @@ import useModal from "@libs/client/useModal";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostUserRequestBody, PostUserResponse } from "@api/users";
-import { PostDummyResponse } from "@api/users/dummy";
+import { PostUserRequestBody, PostUserResponse } from "@api/user";
+import { PostDummyResponse } from "@api/user/dummy";
 import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
 // @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
@@ -31,7 +31,7 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
 
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users", {
+  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/user", {
     onSuccess: () => {
       mutateUser();
     },
@@ -49,7 +49,7 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
       }
     },
   });
-  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/users/dummy", {
+  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
     onSuccess: () => {
       mutateUser();
     },

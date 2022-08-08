@@ -64,7 +64,7 @@ const ProfileDetail: NextPage = () => {
 
       {/* 프로필 수정 */}
       {user?.id === profileData?.profile?.id && (
-        <Link href="/users/edit" passHref>
+        <Link href="/user/edit" passHref>
           <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mt-3" />
         </Link>
       )}

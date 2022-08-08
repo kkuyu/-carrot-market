@@ -47,7 +47,7 @@ const ProfileHome: NextPage = () => {
               },
               {
                 key: "purchases",
-                href: "/users/purchases",
+                href: "/user/purchases",
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -59,7 +59,7 @@ const ProfileHome: NextPage = () => {
               },
               {
                 key: "likes",
-                href: "/users/likes",
+                href: "/user/likes",
                 content: (
                   <div className="relative block py-1 pl-12 pr-5">
                     <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -105,31 +105,27 @@ const ProfileHome: NextPage = () => {
       key: "default",
       name: "사용자 설정",
       links: [
-        ...(user?.id !== -1
-          ? [
-              {
-                key: "revise",
-                href: "/users/revise",
-                content: (
-                  <div className="relative block py-1 pl-12 pr-5">
-                    <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-                      />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>계정 관리</span>
-                  </div>
-                ),
-              },
-            ]
-          : []),
+        {
+          key: "account",
+          href: "/user/account",
+          content: (
+            <div className="relative block py-1 pl-12 pr-5">
+              <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
+                />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+              </svg>
+              <span>계정 관리</span>
+            </div>
+          ),
+        },
         {
           key: "edit",
-          href: "/users/edit",
+          href: "/user/edit",
           content: (
             <div className="relative block py-1 pl-12 pr-5">
               <svg className="absolute top-1/2 left-5 w-5 h-5 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
