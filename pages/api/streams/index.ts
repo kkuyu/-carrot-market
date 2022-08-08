@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     const { page } = req.query;
     const cleanPage = +page?.toString()!;

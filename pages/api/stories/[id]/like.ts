@@ -1,30 +1,24 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Record } from "@prisma/client";
 // @libs
-import { getStoryCategory } from "@libs/utils";
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { getStoryCategory } from "@libs/utils";
 // @api
 import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 
-export interface PostStoriesLikeResponse {
-  success: boolean;
+export interface PostStoriesLikeResponse extends ResponseDataType {
   likeRecord: Record | null;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { emotion: _emotion } = req.body;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -36,8 +30,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find story detail
+    // params
     const id = +_id.toString();
+    const emotion = _emotion ? (_emotion.toString() as EmotionKeys) : null;
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const story = await client.story.findUnique({
       where: {
         id,
@@ -57,20 +59,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundStory";
       throw error;
     }
+    if (!emotion && getStoryCategory(story.category)?.isLikeWithEmotion) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (emotion && !getStoryCategory(story.category)?.isLikeWithEmotion) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
     let likeRecord = null;
     const existed = story.records.length ? story.records[0] : null;
 
+    // early return result
     if (!_emotion) {
       if (existed) {
-        // delete
+        // delete record
         await client.record.delete({
           where: {
             id: existed.id,
           },
         });
       } else {
-        // create
+        // create record
         likeRecord = await client.record.create({
           data: {
             kind: Kind.StoryLike,
@@ -95,14 +108,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       return res.status(200).json(result);
     }
 
-    const emotion = _emotion.toString() as EmotionKeys;
-    if (!getStoryCategory(story.category)?.isLikeWithEmotion) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
-    }
     if (existed && existed?.emotion !== emotion) {
-      // update
+      // update record
       likeRecord = await client.record.update({
         where: {
           id: existed.id,
@@ -112,14 +119,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
     } else if (existed && existed?.emotion === emotion) {
-      // delete
+      // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
     } else {
-      // create
+      // create record
       likeRecord = await client.record.create({
         data: {
           kind: Kind.StoryLike,
@@ -148,14 +155,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

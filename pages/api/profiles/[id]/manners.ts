@@ -2,34 +2,35 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Manner, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProfilesMannersResponse {
-  success: boolean;
+export interface GetProfilesMannersResponse extends ResponseDataType {
   manners: (Manner & { reviews: Pick<ProductReview, "id" | "satisfaction">[] })[];
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   const { id: _id, includeDislike: _includeDislike } = req.query;
   const { user } = req.session;
 
-  // request valid
+  // invalid
   if (!_id) {
     const error = new Error("InvalidRequestBody");
     error.name = "InvalidRequestBody";
     throw error;
   }
 
-  // fetch data: client.manner
+  // params
   const id = +_id.toString();
   const includeDislike = _includeDislike ? JSON.parse(_includeDislike.toString()) : false;
   const allowDislike = includeDislike === false || id !== user?.id;
+  if (isNaN(id)) {
+    const error = new Error("InvalidRequestBody");
+    error.name = "InvalidRequestBody";
+    throw error;
+  }
+
+  // fetch data
   const manners = await client.manner.findMany({
     where: {
       userId: id,

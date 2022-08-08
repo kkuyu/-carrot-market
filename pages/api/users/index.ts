@@ -1,16 +1,15 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
-import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
-import { withSessionRoute } from "@libs/server/withSession";
-
 import { EmdType, User } from "@prisma/client";
-import { getAbsoluteUrl, isInstance } from "@libs/utils";
-import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
 import { IronSessionData } from "iron-session";
+// @libs
+import client from "@libs/server/client";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
+import { withSessionRoute } from "@libs/server/withSession";
+import { getAbsoluteUrl, isInstance } from "@libs/utils";
+// @api
+import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
 
-export interface GetUserResponse {
-  success: boolean;
+export interface GetUserResponse extends ResponseDataType {
   profile: User | null;
   dummyProfile: IronSessionData["dummyUser"] | null;
   currentAddr: {
@@ -19,11 +18,6 @@ export interface GetUserResponse {
     emdPosDx: number | null;
     emdPosX: number | null;
     emdPosY: number | null;
-  };
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
   };
 }
 
@@ -35,21 +29,14 @@ export interface PostUserRequestBody {
   subDistance?: number | null;
 }
 
-export interface PostUserResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostUserResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
       const { user } = req.session;
 
-      // check user
+      // fetch data
       const foundUser = user?.id
         ? await client.user.findUnique({
             where: {
@@ -93,7 +80,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const { user } = req.session;
       const { email, phone, name, photos, concerns, emdType, mainAddrNm, mainDistance, subAddrNm, subDistance } = req.body;
 
-      // request valid
+      // invalid
       if (JSON.stringify(req.body) === JSON.stringify({})) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
@@ -115,14 +102,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // check user
-      const foundUser = user?.id
-        ? await client.user.findUnique({
-            where: {
-              id: user.id,
-            },
-          })
-        : null;
+      // fetch data
+      const foundUser = await client.user.findUnique({
+        where: {
+          id: user?.id,
+        },
+      });
       if (!foundUser) {
         const error = new Error("NotFoundUser");
         error.name = "NotFoundUser";
@@ -135,7 +120,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         ...(concerns && { concerns: concerns.join(",") }),
       };
 
-      // check data: email
+      // email
       if (email && email !== foundUser?.email) {
         const existed = Boolean(
           await client.user.findUnique({
@@ -154,7 +139,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         userPayload.email = email;
       }
 
-      // check data: phone number
+      // phone
       if (phone && phone !== foundUser?.phone) {
         const existed = Boolean(
           await client.user.findUnique({
@@ -173,26 +158,29 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         userPayload.phone = phone;
       }
 
-      // check data: address
+      // emdType
       if (emdType) {
         userPayload = {
           ...userPayload,
           emdType,
         };
       }
-      // check data: main address
+
+      // MAIN_emdPosDx
       if (mainDistance) {
         userPayload = {
           ...userPayload,
           MAIN_emdPosDx: mainDistance,
         };
       }
+
+      // mainAddrNm
       if (mainAddrNm) {
         const { origin: originUrl } = getAbsoluteUrl(req);
-        const mainResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${mainAddrNm}`)).json();
+        const mainResponse: GetSearchGeoCodeResponse = await (await fetch(`${originUrl}/api/address/searchGeoCode?addrNm=${mainAddrNm}`)).json();
         if (!mainResponse.success) {
           const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
-          error.name = "GeocodeDistrictError";
+          error.name = "GeoCodeDistrictError";
           throw error;
         }
         userPayload = {
@@ -203,13 +191,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           MAIN_emdPosY: mainResponse.posY,
         };
       }
-      // check data: sub address
+
+      // SUB_emdPosDx
       if (subDistance) {
         userPayload = {
           ...userPayload,
           SUB_emdPosDx: subDistance,
         };
       }
+
+      // SUB_emdAddrNm, SUB_emdPosNm, SUB_emdPosX, SUB_emdPosY
       if (subAddrNm === null) {
         userPayload = {
           ...userPayload,
@@ -220,10 +211,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         };
       } else if (subAddrNm) {
         const { origin: originUrl } = getAbsoluteUrl(req);
-        const subResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${subAddrNm}`)).json();
+        const subResponse: GetSearchGeoCodeResponse = await (await fetch(`${originUrl}/api/address/searchGeoCode?addrNm=${subAddrNm}`)).json();
         if (!subResponse.success) {
           const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
-          error.name = "GeocodeDistrictError";
+          error.name = "GeoCodeDistrictError";
           throw error;
         }
         userPayload = {
@@ -235,7 +226,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         };
       }
 
-      // update data: client.user
+      // update user
       await client.user.update({
         where: {
           id: user?.id,

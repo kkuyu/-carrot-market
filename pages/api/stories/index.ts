@@ -2,60 +2,47 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Story, Record, User, StoryComment } from "@prisma/client";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @libs
-import { getStoryCategory } from "@libs/utils";
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { getStoryCategory } from "@libs/utils";
 
-export interface GetStoriesResponse {
-  success: boolean;
+export interface GetStoriesResponse extends ResponseDataType {
+  totalCount: number;
+  lastCursor: number;
   stories: (Story & {
     user: Pick<User, "id" | "name">;
     records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
     comments?: Pick<StoryComment, "id">[];
   })[];
-  pages: number;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-export interface PostStoriesResponse {
-  success: boolean;
+export interface PostStoriesResponse extends ResponseDataType {
   story: Story;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { page: _page, posX: _posX, posY: _posY, distance: _distance } = req.query;
-      const { user } = req.session;
+      const { prevCursor: _prevCursor, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
-      // request valid
-      if (!_page) {
+      // invalid
+      if (!_prevCursor || !_posX || !_posY || !_distance) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (!_posX || !_posY || !_distance) {
-        const result: GetStoriesResponse = {
-          success: true,
-          stories: [],
-          pages: 1,
-        };
-        return res.status(200).json(result);
+
+      // page
+      const prevCursor = +_prevCursor.toString();
+      const pageSize = 10;
+      if (isNaN(prevCursor) || prevCursor === -1) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
       }
 
-      // get data props
-      const displayRow = 10;
-      const page = +_page.toString();
+      // query
       const posX = +_posX.toString();
       const posY = +_posY.toString();
       const distance = +_distance.toString();
@@ -63,14 +50,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         emdPosX: { gte: posX - distance, lte: posX + distance },
         emdPosY: { gte: posY - distance, lte: posY + distance },
       };
+      if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+
+      // search
+      const where = {
+        ...boundaryArea,
+      };
 
       // fetch data: client.stories
-      const totalStories = await client.story.count({
-        where: boundaryArea,
+      const totalCount = await client.story.count({
+        where,
       });
       const stories = await await client.story.findMany({
-        take: displayRow,
-        skip: (page - 1) * displayRow,
+        where,
+        take: pageSize,
+        skip: prevCursor ? 1 : 0,
+        ...(prevCursor && { cursor: { id: prevCursor } }),
         orderBy: {
           createdAt: "desc",
         },
@@ -105,14 +104,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
           },
         },
-        where: boundaryArea,
       });
 
       // result
       const result: GetStoriesResponse = {
         success: true,
+        totalCount,
+        lastCursor: stories.length ? stories[stories.length - 1].id : -1,
         stories,
-        pages: Math.ceil(totalStories / displayRow),
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
@@ -135,7 +134,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const { photos = [], category, content, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
-      // request valid
+      // invalid
       if (!content && !category) {
         const error = new Error("Invalid request body");
         throw error;
@@ -156,7 +155,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // create new story
+      // create story
       const newStory = await client.story.create({
         data: {
           photos: photos.join(","),

@@ -16,7 +16,7 @@ const MannerList = ({ list }: MannerListProps) => {
   }
 
   return (
-    <ul className="space-y-2">
+    <ul className="space-y-1">
       {list.map((item) => {
         const count = item?.reviews?.length;
         if (count === 0) {

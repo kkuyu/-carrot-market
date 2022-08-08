@@ -2,74 +2,84 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Chat, ChatMessage, Product, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetChatsResponse {
-  success: boolean;
+export interface GetChatsResponse extends ResponseDataType {
+  totalCount: number;
+  lastCursor: number;
   chats: (Chat & {
     users: Pick<User, "id" | "name" | "avatar">[];
     chatMessages: ChatMessage[];
     product?: Pick<Product, "id" | "name" | "photos"> | null;
   })[];
-  pages: number;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-export interface PostChatsResponse {
-  success: boolean;
+export interface PostChatsResponse extends ResponseDataType {
   chat: Chat;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { page: _page, productId: _productId } = req.query;
+      const { prevCursor: _prevCursor, productId: _productId } = req.query;
       const { user } = req.session;
 
-      // request valid
-      if (!_page) {
+      // invalid
+      if (!_prevCursor) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
 
-      // get data props
-      const displayRow = 10;
-      const page = +_page.toString();
-
+      // early return result
       if (!user?.id) {
+        // result
         const result: GetChatsResponse = {
           success: true,
+          totalCount: 0,
+          lastCursor: -1,
           chats: [],
-          pages: Math.ceil(0 / displayRow),
         };
         return res.status(200).json(result);
       }
 
-      // fetch data: client.chat
-      const totalChats = await client.chat.count({
-        where: {
-          users: {
-            some: {
-              id: user?.id,
-            },
+      // page
+      const prevCursor = +_prevCursor.toString();
+      const pageSize = 10;
+      if (isNaN(prevCursor) || prevCursor === -1) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+
+      // params
+      const productId = _productId ? +_productId.toString() : 0;
+      if (isNaN(productId)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
+
+      // search
+      const where = {
+        users: {
+          some: {
+            id: user?.id,
           },
-          ...(_productId ? { productId: +_productId.toString() } : {}),
         },
+        ...(productId ? { productId } : {}),
+      };
+
+      // fetch data
+      const totalCount = await client.chat.count({
+        where,
       });
       const chats = await client.chat.findMany({
-        take: displayRow,
-        skip: (page - 1) * displayRow,
+        where,
+        take: pageSize,
+        skip: prevCursor ? 1 : 0,
+        ...(prevCursor && { cursor: { id: prevCursor } }),
         orderBy: {
           updatedAt: "desc",
         },
@@ -95,21 +105,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
                 },
               }),
         },
-        where: {
-          users: {
-            some: {
-              id: user?.id,
-            },
-          },
-          ...(_productId ? { productId: +_productId.toString() } : {}),
-        },
       });
 
       // result
       const result: GetChatsResponse = {
         success: true,
+        totalCount,
+        lastCursor: chats.length ? chats[chats.length - 1].id : -1,
         chats,
-        pages: Math.ceil(totalChats / displayRow),
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
@@ -132,14 +135,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const { userIds = [], productId: _productId } = req.body;
       const { user } = req.session;
 
-      // request valid
+      // invalid
       if (!userIds.length || !userIds.find((id: number) => +id === user?.id)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
 
-      // check user
+      // fetch data
       for (let index = 0; index < userIds.length; index++) {
         const user = await client.user.findUnique({
           where: {
@@ -156,7 +159,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         }
       }
 
-      // check product
+      // fetch product
       const productId = _productId ? +_productId.toString() : null;
       const product = productId
         ? await client.product.findUnique({
@@ -174,7 +177,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // find existed chat
+      // fetch chat
       const existedChat = await client.chat.findFirst({
         where: {
           users: {
@@ -188,6 +191,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
 
+      // early return result
       if (existedChat) {
         const result: PostChatsResponse = {
           success: true,
@@ -196,7 +200,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         return res.status(200).json(result);
       }
 
-      // create new chat
+      // create chat
       const newChat = await client.chat.create({
         data: {
           users: {

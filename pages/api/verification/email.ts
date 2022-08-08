@@ -1,33 +1,25 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-
 import { EmailTemplateKey } from "@libs/server/getUtilsNcp";
 import sendEmail from "@libs/server/sendEmail";
 
-export interface PostVerificationEmailResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostVerificationEmailResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { email } = req.body;
 
-    // request valid
+    // invalid
     if (!email || !email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // check user
+    // fetch data
     const foundUser = await client.user.findUnique({
       where: {
         email,
@@ -42,7 +34,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // create new token
+    // create token
     const newToken = await client.token.create({
       data: {
         payload: Math.floor(100000 + Math.random() * 900000) + "",
@@ -53,6 +45,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       },
     });
+
+    // send email
     sendEmail({
       sendTo: email,
       templateId: EmailTemplateKey.verificationEmail,
@@ -70,14 +64,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

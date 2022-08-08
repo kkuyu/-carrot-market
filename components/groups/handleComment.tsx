@@ -81,7 +81,7 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
           mutateStoryComments((prev) => {
             if (!prev) return prev;
             const comments = prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time }));
-            return { ...prev, total: prev.total - 1, comments };
+            return { ...prev, comments };
           }, false);
         }
         // comment boundMutate

@@ -2,52 +2,55 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Chat, Kind, Product, Record, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-type ProfilesPurchasesProduct = Product & {
-  records: Pick<Record, "id" | "kind" | "userId">[];
-  chats: (Chat & { _count: { chatMessages: number } })[];
-  reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
-};
-
-export interface GetProfilesPurchasesResponse {
-  success: boolean;
-  products: ProfilesPurchasesProduct[];
-  pages: number;
-  total: number;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
+export interface GetProfilesPurchasesResponse extends ResponseDataType {
+  totalCount: number;
+  lastCursor: number;
+  products: (Product & {
+    records: Pick<Record, "id" | "kind" | "userId">[];
+    chats: (Chat & { _count: { chatMessages: number } })[];
+    reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+  })[];
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { page: _page } = req.query;
+    const { prevCursor: _prevCursor } = req.query;
     const { user } = req.session;
 
-    // request valid
-    if (!_page) {
+    // invalid
+    if (!_prevCursor) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // fetch data: client.product
-    const displayRow = 10;
-    const page = +_page.toString();
+    // page
+    const prevCursor = +_prevCursor.toString();
+    const pageSize = 10;
+    if (isNaN(prevCursor) || prevCursor === -1) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
-    const totalRecords = await client.record.count({
-      where: {
-        userId: user?.id,
-        kind: Kind.ProductPurchase,
-      },
+    // search
+    const where = {
+      userId: user?.id,
+      kind: Kind.ProductPurchase,
+    };
+
+    // fetch data
+    const totalCount = await client.record.count({
+      where,
     });
     const records = await client.record.findMany({
-      take: displayRow,
-      skip: (page - 1) * displayRow,
+      where,
+      take: pageSize,
+      skip: prevCursor ? 1 : 0,
+      ...(prevCursor && { cursor: { id: prevCursor } }),
       orderBy: {
         createdAt: "desc",
       },
@@ -84,18 +87,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
           },
         },
       },
-      where: {
-        userId: user?.id,
-        kind: Kind.ProductPurchase,
-      },
     });
+
+    const products = records.map((record) => record.product).filter((product): product is GetProfilesPurchasesResponse["products"][0] => !!product);
 
     // result
     const result: GetProfilesPurchasesResponse = {
       success: true,
-      products: records.map((record) => record.product).filter((product): product is ProfilesPurchasesProduct => !!product),
-      pages: Math.ceil(totalRecords / displayRow),
-      total: totalRecords,
+      totalCount,
+      lastCursor: products.length ? products[products.length - 1].id : -1,
+      products,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

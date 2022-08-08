@@ -5,6 +5,7 @@ import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -14,7 +15,7 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesStoriesResponse, ProfilesStoriesFilter } from "@api/profiles/[id]/stories";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
@@ -23,49 +24,43 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
 import CommentSummaryList from "@components/lists/commentSummaryList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesStoriesResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/profiles/[id]/stories", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1&${query}`;
-  if (previousPageData && !previousPageData.stories.length && !previousPageData.comments.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}&${query}`;
+type StoryTab = {
+  index: number;
+  value: "stories" | "stories/comments";
+  text: string;
+  name: string;
 };
-
-type FilterTab = { index: number; value: ProfilesStoriesFilter; text: string; name: string };
 
 const ProfileStories: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
-
-  const tabs: FilterTab[] = [
-    { index: 0, value: "STORY", text: "게시글", name: "등록된 게시글" },
-    { index: 1, value: "COMMENT", text: "댓글", name: "등록된 댓글" },
+  const storyTabs: StoryTab[] = [
+    { value: "stories", index: 0, text: "게시글", name: "등록된 게시글" },
+    { value: "stories/comments", index: 1, text: "댓글", name: "등록된 댓글" },
   ];
-  const [filter, setFilter] = useState<FilterTab["value"]>(tabs[0].value);
-  const activeTab = tabs.find((tab) => tab.value === filter)!;
+  const [currentTab, setCurrentTab] = useState<StoryTab>(storyTabs.find((tab) => tab.index === 0) || storyTabs[0]);
+
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
+  const { data, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => {
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/${currentTab.value}` : "" };
+    return getKey<GetProfilesStoriesResponse>(...arg, options);
+  });
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
-
-  const { data, size, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => {
-    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/stories` : "", query: `filter=${filter}` };
-    return getKey(...arg, options);
-  });
-
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const results = data
     ? {
-        stories: activeTab.value === "STORY" ? data.flatMap((item) => item.stories) : [],
-        comments: activeTab.value === "COMMENT" ? data.flatMap((item) => item.comments) : [],
+        stories: data.flatMap((item) => item.stories),
+        comments: data.flatMap((item) => item.comments),
       }
     : null;
 
-  const changeFilter = (tab: FilterTab) => {
-    setFilter(tab.value);
+  const changeFilter = (tab: StoryTab) => {
+    setCurrentTab(tab);
     window.scrollTo(0, 0);
   };
 
@@ -88,9 +83,14 @@ const ProfileStories: NextPage = () => {
   return (
     <div className="container">
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
-        {tabs.map((tab) => {
+        {storyTabs.map((tab) => {
           return (
-            <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
+            <button
+              key={tab.index}
+              type="button"
+              className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
+              onClick={() => changeFilter(tab)}
+            >
               {tab.text}
             </button>
           );
@@ -98,28 +98,28 @@ const ProfileStories: NextPage = () => {
         <span
           aria-hidden="true"
           className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-          style={{ width: `${100 / tabs.length}%`, transform: `translateX(${100 * activeTab.index}%)` }}
+          style={{ width: `${100 / storyTabs.length}%`, transform: `translateX(${100 * currentTab.index}%)` }}
         />
       </div>
 
       {/* 게시글: List */}
-      {results && Boolean(activeTab.value === "STORY" ? results?.stories?.length : activeTab.value === "COMMENT" ? results?.comments?.length : 0) && (
+      {results && (Boolean(results.stories.length) || Boolean(results.comments.length)) && (
         <div className="-mx-5">
-          {activeTab.value === "STORY" && <StoryList list={results.stories} />}
-          {activeTab.value === "COMMENT" && <CommentSummaryList list={results.comments} />}
+          {Boolean(results.stories.length) && <StoryList list={results.stories} />}
+          {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} />}
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
           ) : null}
         </div>
       )}
 
       {/* 게시글: Empty */}
-      {results && !Boolean(activeTab.value === "STORY" ? results?.stories?.length : activeTab.value === "COMMENT" ? results?.comments?.length : 0) && (
+      {results && !(Boolean(results.stories.length) || Boolean(results.comments.length)) && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">{`${activeTab?.name}이 존재하지 않아요`}</p>
+          <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}
     </div>
@@ -129,8 +129,8 @@ const ProfileStories: NextPage = () => {
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getStories: { options: { url?: string; query?: string }; response: GetProfilesStoriesResponse };
-  getComments: { options: { url?: string; query?: string }; response: GetProfilesStoriesResponse };
+  getStories: { options: { url: string; query?: string }; response: GetProfilesStoriesResponse };
+  getComments: { options: { url: string; query?: string }; response: GetProfilesStoriesResponse };
 }> = ({ getUser, getProfile, getStories, getComments }) => {
   return (
     <SWRConfig
@@ -138,8 +138,8 @@ const Page: NextPageWithLayout<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(...arg, getStories.options))]: [getStories.response],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey(...arg, getComments.options))]: [getComments.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey<GetProfilesStoriesResponse>(...arg, getStories.options))]: [getStories.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => getKey<GetProfilesStoriesResponse>(...arg, getComments.options))]: [getComments.response],
         },
       }}
     >
@@ -302,21 +302,21 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getStories: {
         options: {
           url: `/api/profiles/${profile.id}/stories`,
-          query: `filter=STORY`,
         },
         response: {
           success: true,
           stories: JSON.parse(JSON.stringify(stories || [])),
+          comments: [],
           pages: 0,
         },
       },
       getComments: {
         options: {
-          url: `/api/profiles/${profile.id}/stories`,
-          query: `filter=COMMENT`,
+          url: `/api/profiles/${profile.id}/stories/comments`,
         },
         response: {
           success: true,
+          stories: [],
           comments: JSON.parse(JSON.stringify(comments || [])),
           pages: 0,
         },

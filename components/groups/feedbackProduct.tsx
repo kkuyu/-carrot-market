@@ -58,27 +58,25 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
 
   return (
     <div className="flex border-t divide-x empty:pt-9">
-      {saleRecord ? (
-        <>
-          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
-            끌어올리기
-          </button>
-          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={toggleSale} disabled={saleLoading}>
-            판매완료
-          </button>
-        </>
-      ) : existedReview ? (
-        <>
-          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
-            보낸 후기 보기
-          </button>
-        </>
-      ) : (
-        <>
-          <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
-            거래 후기 보내기
-          </button>
-        </>
+      {data && saleRecord && (
+        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
+          끌어올리기
+        </button>
+      )}
+      {data && saleRecord && (
+        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={toggleSale} disabled={saleLoading}>
+          판매완료
+        </button>
+      )}
+      {data && !saleRecord && !existedReview && (
+        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
+          거래 후기 보내기
+        </button>
+      )}
+      {data && !saleRecord && existedReview && (
+        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
+          보낸 후기 보기
+        </button>
       )}
     </div>
   );

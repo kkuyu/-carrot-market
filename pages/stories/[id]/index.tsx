@@ -14,7 +14,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
-import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
+import { StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadType } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @pages
@@ -87,14 +87,13 @@ const StoryDetail: NextPage<{}> = () => {
     },
   });
 
-  const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
-    const commentExistedList = page !== 0 ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+  const moreReComments = (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => {
+    const commentExistedList = readType === "more" ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setCommentFlatList(() => [...commentExistedList]);
     setCommentQuery(() => {
       let result = "";
       result += `existed=${JSON.stringify(commentExistedList?.map((comment) => comment.id))}`;
-      result += `&page=${page}&reCommentRefId=${reCommentRefId}`;
-      result += cursorId !== -1 ? `&cursorId=${cursorId}` : "";
+      result += `&readType=${readType}&reCommentRefId=${reCommentRefId}&prevCursor=${prevCursor}`;
       return result;
     });
   };
@@ -111,7 +110,7 @@ const StoryDetail: NextPage<{}> = () => {
       const { content, reCommentRefId = null } = data;
       const dummyAddr = { emdAddrNm: "", emdPosNm: "", emdPosDx: 0, emdPosX: 0, emdPosY: 0 };
       const dummyComment = { ...data, id: 0, depth: 0, content, reCommentRefId, userId: user?.id, storyId: storyData?.story?.id, createdAt: time, updatedAt: time };
-      return prev && { ...prev, total: prev.total + 1, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
+      return prev && { ...prev, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
     formData.setValue("content", "");
     sendComment({ ...data, ...currentAddr });
@@ -157,8 +156,9 @@ const StoryDetail: NextPage<{}> = () => {
   }, [commentData]);
 
   useEffect(() => {
+    if (!router?.query?.id) return;
     setCommentQuery(() => "");
-  }, [storyData?.story?.id]);
+  }, [router?.query?.id]);
 
   // setting layout
   useEffect(() => {
@@ -350,6 +350,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     where: {
       storyId: story.id,
       depth: StoryCommentMinimumDepth,
+      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
     },
     orderBy: {
       createdAt: "asc",
@@ -374,31 +375,37 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           reComments: true,
         },
       },
-      reComments: {
-        take: 2,
-        orderBy: {
-          createdAt: "asc",
+    },
+  });
+
+  const reComments = await client.storyComment.findMany({
+    take: 2,
+    where: {
+      storyId: story.id,
+      depth: StoryCommentMinimumDepth + 1,
+      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          story: {
-            select: {
-              id: true,
-              userId: true,
-              category: true,
-            },
-          },
-          _count: {
-            select: {
-              reComments: true,
-            },
-          },
+      },
+      story: {
+        select: {
+          id: true,
+          userId: true,
+          category: true,
+        },
+      },
+      _count: {
+        select: {
+          reComments: true,
         },
       },
     },
@@ -431,7 +438,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         query: "",
         response: {
           success: true,
-          comments: JSON.parse(JSON.stringify(comments || [])),
+          comments: JSON.parse(JSON.stringify([...comments, ...reComments] || [])),
         },
       },
     },

@@ -2,33 +2,34 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Record } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostCommentsLikeResponse {
-  success: boolean;
+export interface PostCommentsLikeResponse extends ResponseDataType {
   likeRecord: Record | null;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // find comment detail
+    // params
     const id = +_id.toString();
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const comment = await client.storyComment.findUnique({
       where: {
         id,
@@ -53,14 +54,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const existed = comment.records.length ? comment.records[0] : null;
 
     if (existed) {
-      // delete
+      // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
     } else {
-      // create
+      // create record
       likeRecord = await client.record.create({
         data: {
           kind: Kind.CommentLike,
@@ -77,6 +78,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
     }
+
     // result
     const result: PostCommentsLikeResponse = {
       success: true,
@@ -87,14 +89,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

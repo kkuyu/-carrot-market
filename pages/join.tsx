@@ -6,11 +6,10 @@ import { useForm } from "react-hook-form";
 import useSWR from "swr";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
-import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
+import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
 import { PostJoinResponse } from "@api/users/join";
 import { PostConfirmTokenResponse } from "@api/verification/token";
 import { PostDummyResponse } from "@api/users/dummy";
@@ -26,11 +25,10 @@ import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 const Join: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
-  const { hasQuery, query } = useQuery();
   const { openToast } = useToast();
 
   // check query data
-  const { data: addrData } = useSWR<GetGeocodeDistrictResponse>(query?.addrNm ? `api/address/geocode-district?addrNm=${query.addrNm}` : null);
+  const { data: addrData } = useSWR<GetSearchGeoCodeResponse>(router?.query?.addrNm ? `api/address/searchGeoCode?addrNm=${router?.query?.addrNm}` : null);
 
   // join user
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
@@ -83,30 +81,16 @@ const Join: NextPage = () => {
   });
 
   useEffect(() => {
-    if (hasQuery && !query) {
-      openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
-        placement: "bottom",
-        message: "먼저 내 동네를 설정해주세요",
-      });
-      router.replace("/welcome/locate");
-    } else if (!query?.addrNm) {
-      openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
-        placement: "bottom",
-        message: "먼저 내 동네를 설정해주세요",
-      });
-      router.replace("/welcome/locate");
-    }
-  }, [hasQuery, query]);
-
-  useEffect(() => {
-    if (addrData && !addrData.success) {
+    const invalidRouter = router.isReady && !router?.query?.addrNm;
+    const invalidAddr = addrData && !addrData.success;
+    if (invalidRouter || invalidAddr) {
       openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
         placement: "bottom",
         message: "먼저 내 동네를 설정해주세요",
       });
       router.replace("/welcome/locate");
     }
-  }, [addrData]);
+  }, [router.isReady, router?.query, addrData]);
 
   useEffect(() => {
     changeLayout({

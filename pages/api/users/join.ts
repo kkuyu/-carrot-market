@@ -1,29 +1,22 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+import { EmdType } from "@prisma/client";
+// @libs
 import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
-
-import { EmdType } from "@prisma/client";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { getRandomName } from "@libs/utils";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostJoinResponse {
-  success: boolean;
+export interface PostJoinResponse extends ResponseDataType {
   isExisted: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { phone, mainAddrNm, mainPosX, mainPosY, mainDistance } = req.body;
 
-    // request valid
+    // invalid
     if (!phone || phone.length < 8) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -35,7 +28,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // get data props
+    // fetch data
     const user = await client.user.findFirst({
       where: {
         phone,
@@ -45,14 +38,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
-    // create new token
+    // create token
     const newToken = await client.token.create({
       data: {
         payload: Math.floor(100000 + Math.random() * 900000) + "",
         user: {
           connectOrCreate: {
             where: {
-              id: user?.id,
+              phone,
             },
             create: {
               name: getRandomName(),
@@ -69,6 +62,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
+    // send message
     sendMessage({
       templateId: MessageTemplateKey.verificationPhone,
       sendTo: phone,
@@ -87,14 +81,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

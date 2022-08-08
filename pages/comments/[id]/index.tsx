@@ -12,7 +12,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @pages
@@ -66,14 +66,13 @@ const CommentsDetail: NextPage = () => {
     },
   });
 
-  const moreReComments = (page: number, reCommentRefId: number, cursorId: number) => {
-    const commentExistedList = page !== 0 ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+  const moreReComments = (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => {
+    const commentExistedList = readType === "more" ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setCommentFlatList(() => [...commentExistedList]);
     setCommentQuery(() => {
       let result = "";
       result += `existed=${JSON.stringify(commentExistedList?.map((comment) => comment.id))}`;
-      result += `&page=${page}&reCommentRefId=${reCommentRefId}`;
-      result += cursorId !== -1 ? `&cursorId=${cursorId}` : "";
+      result += `&readType=${readType}&reCommentRefId=${reCommentRefId}&prevCursor=${prevCursor}`;
       return result;
     });
   };
@@ -89,7 +88,7 @@ const CommentsDetail: NextPage = () => {
       const dummyComment = { id: 0, depth: commentData?.comment?.depth + 1, content, reCommentRefId, userId: user?.id, storyId: commentData?.comment?.storyId, createdAt: time, updatedAt: time };
       return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
     }, false);
-    formData.setValue("content", "");
+    formData?.setValue("content", "");
     sendComment({ ...data, ...currentAddr });
   };
 
@@ -110,7 +109,7 @@ const CommentsDetail: NextPage = () => {
     });
   };
 
-  // merge data
+  // merge comment data
   useEffect(() => {
     if (!commentData) return;
     if (!commentData?.success) return;
@@ -118,13 +117,15 @@ const CommentsDetail: NextPage = () => {
       if (!commentData?.comment) return [];
       return [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])];
     });
-  }, [commentData?.comment]);
+  }, [commentData]);
 
   useEffect(() => {
+    if (!router?.query?.id) return;
     setCommentQuery(() => "");
-    formData.setValue("reCommentRefId", commentTreeList?.[0]?.id);
-    (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
-  }, [commentTreeList?.[0]?.id]);
+    if (!user?.id) return;
+    formData?.setValue("reCommentRefId", +router.query.id.toString());
+    formData?.setFocus("content");
+  }, [router?.query?.id, user?.id]);
 
   // setting layout
   useEffect(() => {
@@ -279,11 +280,11 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
-  const reComments = await client.storyComment.findMany({
+  const comments = await client.storyComment.findMany({
     where: {
-      storyId: comment.storyId,
-      reCommentRefId: comment.id,
+      storyId: comment.story.id,
       depth: comment.depth + 1,
+      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
     },
     orderBy: {
       createdAt: "asc",
@@ -308,31 +309,37 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           reComments: true,
         },
       },
-      reComments: {
-        take: 2,
-        orderBy: {
-          createdAt: "asc",
+    },
+  });
+
+  const reComments = await client.storyComment.findMany({
+    take: 2,
+    where: {
+      storyId: comment.story.id,
+      depth: comment.depth + 2,
+      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+    },
+    orderBy: {
+      createdAt: "asc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
         },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          story: {
-            select: {
-              id: true,
-              userId: true,
-              category: true,
-            },
-          },
-          _count: {
-            select: {
-              reComments: true,
-            },
-          },
+      },
+      story: {
+        select: {
+          id: true,
+          userId: true,
+          category: true,
+        },
+      },
+      _count: {
+        select: {
+          reComments: true,
         },
       },
     },
@@ -360,7 +367,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         query: "includeReComments=true&",
         response: {
           success: true,
-          comment: JSON.parse(JSON.stringify({ ...comment, reComments: reComments.map(({ reComments, ...o }) => o).concat(reComments.flatMap((o) => o.reComments)) } || null)),
+          comment: JSON.parse(JSON.stringify({ ...comment, reComments: [...comments, ...reComments] } || null)),
         },
       },
     },

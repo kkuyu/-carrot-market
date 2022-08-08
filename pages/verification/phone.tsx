@@ -5,7 +5,6 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
-import useQuery from "@libs/client/useQuery";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
@@ -23,7 +22,6 @@ import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 const VerificationPhone: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
-  const { hasQuery, query } = useQuery();
   const { openToast } = useToast();
 
   // phone
@@ -96,22 +94,18 @@ const VerificationPhone: NextPage = () => {
   });
 
   useEffect(() => {
-    if (hasQuery && !query) {
-      openToast<MessageToastProps>(MessageToast, "invalid-targetEmail", {
-        placement: "bottom",
-        message: "이메일 주소를 다시 확인해주세요",
-      });
-      router.replace("/verification/email");
-    } else if (!query?.targetEmail || !query.targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    const invalidRouter = router.isReady && !router?.query?.targetEmail;
+    const invalidEmail = !(router?.query?.targetEmail || "").toString()?.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/);
+    if (invalidRouter || invalidEmail) {
       openToast<MessageToastProps>(MessageToast, "invalid-targetEmail", {
         placement: "bottom",
         message: "이메일 주소를 다시 확인해주세요",
       });
       router.replace("/verification/email");
     } else {
-      verifyPhoneForm.setValue("targetEmail", query.targetEmail);
+      verifyPhoneForm.setValue("targetEmail", router?.query?.targetEmail?.toString());
     }
-  }, [hasQuery, query]);
+  }, [router.isReady, router.query]);
 
   useEffect(() => {
     changeLayout({

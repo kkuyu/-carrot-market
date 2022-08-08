@@ -2,34 +2,35 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { User, Manner, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProfilesDetailResponse {
-  success: boolean;
+export interface GetProfilesDetailResponse extends ResponseDataType {
   profile: User & { _count?: { products: number } };
   manners: (Manner & { reviews: Pick<ProductReview, "id" | "satisfaction">[] })[];
   reviews: (ProductReview & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // find profile detail
+    // params
     const id = +_id.toString();
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const profile = await client.user.findUnique({
       where: {
         id,
@@ -48,7 +49,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find manners
+    // fetch manner
     const manners = await client.manner.findMany({
       where: {
         userId: profile.id,
@@ -68,7 +69,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
-    // find reviews
+    // fetch product review
     const reviews = await client.productReview.findMany({
       take: 3,
       orderBy: {
@@ -116,14 +117,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

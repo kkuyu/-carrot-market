@@ -1,34 +1,36 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, ChatMessage, User } from "@prisma/client";
+import { ChatMessage } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostChatsMessageResponse {
-  success: boolean;
+export interface PostChatsMessageResponse extends ResponseDataType {
   chatMessage: ChatMessage;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { text } = req.body;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id || !text) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
+    // params
     const id = +_id?.toString();
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const chat = await client.chat.findUnique({
       where: {
         id,
@@ -40,7 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // create client.chatMessage
+    // create new chat message
     const newChatMessage = await client.chatMessage.create({
       data: {
         text,
@@ -57,8 +59,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
-    // update client.chat
-    const updateChat = await client.chat.update({
+    // update chat
+    await client.chat.update({
       where: {
         id,
       },

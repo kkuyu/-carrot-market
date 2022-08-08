@@ -1,27 +1,28 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { StoryComment, Kind, Record, Story, User } from "@prisma/client";
+import { Kind } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-
-export interface GetStoriesDetailResponse extends ResponseDataType {
-  story: Story & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments: Pick<StoryComment, "id">[];
-  };
-}
+import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { id: _id } = req.query;
-    const { user } = req.session;
+    const { id: _id, prevCursor: _prevCursor } = req.query;
 
     // invalid
-    if (!_id) {
+    if (!_id || !_prevCursor) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // page
+    const prevCursor = +_prevCursor.toString();
+    const pageSize = 10;
+    if (isNaN(prevCursor) || prevCursor === -1) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -35,10 +36,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
+    // search
+    const where = {
+      userId: id,
+      NOT: [{ content: "" }],
+      depth: {
+        gte: StoryCommentMinimumDepth,
+        lte: StoryCommentMaximumDepth,
+      },
+    };
+
     // fetch data
-    const story = await client.story.findUnique({
-      where: {
-        id,
+    const totalCount = await client.storyComment.count({
+      where,
+    });
+    const comments = await client.storyComment.findMany({
+      where,
+      take: pageSize,
+      skip: prevCursor ? 1 : 0,
+      ...(prevCursor && { cursor: { id: prevCursor } }),
+      orderBy: {
+        createdAt: "desc",
       },
       include: {
         user: {
@@ -50,49 +68,40 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
         records: {
           where: {
-            kind: Kind.StoryLike,
+            kind: Kind.CommentLike,
           },
           select: {
             id: true,
             kind: true,
-            emotion: true,
             userId: true,
           },
         },
-        comments: {
-          where: {
-            depth: {
-              gte: StoryCommentMinimumDepth,
-              lte: StoryCommentMaximumDepth,
-            },
-            NOT: [{ content: "" }],
-          },
+        story: {
           select: {
             id: true,
+            content: true,
+            createdAt: true,
           },
         },
       },
     });
-    if (!story) {
-      const error = new Error("NotFoundStory");
-      error.name = "NotFoundStory";
-      throw error;
-    }
 
     // result
-    const result: GetStoriesDetailResponse = {
+    const result: GetProfilesStoriesResponse = {
       success: true,
-      story,
+      totalCount,
+      lastCursor: comments.length ? comments[comments.length - 1].id : -1,
+      stories: [],
+      comments,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
     // error
     if (error instanceof Error) {
-      const date = Date.now().toString();
       const result = {
         success: false,
         error: {
-          timestamp: date,
+          timestamp: Date.now().toString(),
           name: error.name,
           message: error.message,
         },

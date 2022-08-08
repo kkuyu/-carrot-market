@@ -5,6 +5,7 @@ import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -21,28 +22,19 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductList from "@components/lists/productList";
 import LikeProduct from "@components/groups/likeProduct";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesLikeResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/users/likes", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1&${query}`;
-  if (previousPageData && !previousPageData.products.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}&${query}`;
-};
-
 const ProfileLikes: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
-
-  const { data, size, setSize } = useSWRInfinite<GetProfilesLikeResponse>((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => {
-    const options = {};
-    return getKey(...arg, options);
+  const { data, setSize } = useSWRInfinite<GetProfilesLikeResponse>((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => {
+    const options = { url: "/api/users/likes" };
+    return getKey<GetProfilesLikeResponse>(...arg, options);
   });
 
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
 
@@ -89,14 +81,14 @@ const ProfileLikes: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProducts: { options: { url?: string; query?: string }; response: GetProfilesLikeResponse };
+  getProducts: { options: { url: string; query?: string }; response: GetProfilesLikeResponse };
 }> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => getKey(...arg, getProducts.options))]: [getProducts.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => getKey<GetProfilesLikeResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
     >
@@ -208,7 +200,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
       },
       getProducts: {
-        options: {},
+        options: {
+          url: "/api/users/likes",
+        },
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(products || [])),

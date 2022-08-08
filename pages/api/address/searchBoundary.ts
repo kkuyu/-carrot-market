@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
-import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-interface FetchResponse {
+interface GetVworldSearchBoundaryResponse {
   response: {
     status: string;
     record: {
@@ -29,8 +28,7 @@ interface FetchResponse {
   };
 }
 
-export interface GetBoundarySearchResponse {
-  success: boolean;
+export interface GetSearchBoundaryResponse extends ResponseDataType {
   emdList: {
     id: string;
     addrNm: string;
@@ -43,21 +41,28 @@ export interface GetBoundarySearchResponse {
   };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { posX: _posX, posY: _posY, distance: _distance = 0 } = req.query;
+    const { posX: _posX, posY: _posY, distance: _distance } = req.query;
 
-    // request valid
+    // invalid
     if (!_posX || !_posY) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // get data props
+    // params
     const posX = +_posX.toString();
     const posY = +_posY.toString();
-    const distance = +_distance.toString();
+    const distance = _distance ? +_distance.toString() : 0;
+    if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // search params
     const params = new URLSearchParams({
       service: "data",
       request: "GetFeature",
@@ -71,8 +76,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       crs: "EPSG:4326",
     }).toString();
 
-    // fetch data: geomFilter to emdList
-    const response: FetchResponse = await (
+    // fetch data
+    const response: GetVworldSearchBoundaryResponse = await (
       await fetch(`http://api.vworld.kr/req/data?${params}`, {
         method: "GET",
         headers: {
@@ -81,22 +86,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       })
     ).json();
 
-    const emdList =
-      response.response.status === "OK"
-        ? response.response.result.featureCollection.features
-            .map((data) => ({
-              id: data.properties.emd_cd,
-              addrNm: data.properties.full_nm,
-              emdNm: data.properties.emd_kor_nm,
-              emdCd: data.properties.emd_cd,
-            }))
-            .reverse()
-        : [];
-
     // result
-    const result: GetBoundarySearchResponse = {
+    const result: GetSearchBoundaryResponse = {
       success: true,
-      emdList,
+      emdList:
+        response.response.status === "OK"
+          ? response.response.result.featureCollection.features
+              .map((data) => ({
+                id: data.properties.emd_cd,
+                addrNm: data.properties.full_nm,
+                emdNm: data.properties.emd_kor_nm,
+                emdCd: data.properties.emd_cd,
+              }))
+              .reverse()
+          : [],
       record: response.response.record,
     };
     return res.status(200).json(result);

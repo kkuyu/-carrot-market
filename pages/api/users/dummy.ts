@@ -1,22 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
-import client from "@libs/server/client";
+// @libs
 import { withSessionRoute } from "@libs/server/withSession";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
-
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { getAbsoluteUrl, getRandomName } from "@libs/utils";
-import { GetGeocodeDistrictResponse } from "@api/address/geocode-district";
+// @api
+import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
 
-export interface PostDummyResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostDummyResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { name, mainAddrNm, mainPosX, mainPosY, mainDistance } = req.body;
 
@@ -30,14 +22,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       ...req.session.dummyUser,
     };
 
-    // check data: name
+    // name
     if (name) {
       dummyPayload.name = name;
     } else if (dummyPayload.name === "") {
       dummyPayload.name = getRandomName();
     }
 
-    // check data: main address
+    // MAIN_emdPosDx
     if (mainDistance) {
       dummyPayload = {
         ...dummyPayload,
@@ -45,12 +37,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       };
     }
 
+    // mainAddrNm
     if (mainAddrNm && Boolean(!mainPosX && !mainPosY)) {
       const { origin: originUrl } = getAbsoluteUrl(req);
-      const mainResponse: GetGeocodeDistrictResponse = await (await fetch(`${originUrl}/api/address/geocode-district?addrNm=${mainAddrNm}`)).json();
+      const mainResponse: GetSearchGeoCodeResponse = await (await fetch(`${originUrl}/api/address/searchGeoCode?addrNm=${mainAddrNm}`)).json();
       if (!mainResponse.success) {
         const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
-        error.name = "GeocodeDistrictError";
+        error.name = "GeoCodeDistrictError";
         throw error;
       }
       dummyPayload = {
@@ -70,9 +63,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       };
     }
 
-    // update data: session.dummyUser
+    // update dummyUser
     req.session.dummyUser = {
       id: -1,
+      avatar: "",
       emdType: "MAIN",
       ...dummyPayload,
     };
@@ -88,14 +82,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

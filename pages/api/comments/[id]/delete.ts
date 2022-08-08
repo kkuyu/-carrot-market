@@ -2,33 +2,34 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { StoryComment } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostCommentsDeleteResponse {
-  success: boolean;
+export interface PostCommentsDeleteResponse extends ResponseDataType {
   comment: StoryComment | null;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // find comment detail
+    // params
     const id = +_id.toString();
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const comment = await client.storyComment.findUnique({
       where: {
         id,
@@ -56,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // remove record
+    // delete record
     await client.record.deleteMany({
       where: {
         commentId: comment.id,
@@ -65,14 +66,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
 
     let newComment = null;
     if (!comment._count.reComments) {
-      // delete comment
+      // delete story comment
       await client.storyComment.delete({
         where: {
           id: comment.id,
         },
       });
     } else {
-      // update comment
+      // update story comment
       newComment = await client.storyComment.update({
         where: {
           id: comment.id,
@@ -83,6 +84,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       });
     }
 
+    // fetch reCommentRef
     const reCommentRef = !comment?.reCommentRefId
       ? null
       : await client.storyComment.findUnique({
@@ -119,14 +121,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

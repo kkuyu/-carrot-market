@@ -8,8 +8,8 @@ import { HeaderOptions, HeaderUtils } from "@components/layouts/header/headerWra
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
-import HometownDropdown from "@components/commons/modals/hometown/dropdown";
-import HometownUpdate from "@components/commons/modals/hometown/update";
+import HometownDropdown from "@components/commons/modals/instance/hometownDropdown";
+import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
 
 export interface HeaderProps extends HeaderOptions {}
 
@@ -81,6 +81,7 @@ const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = []
       case "kebab":
         return (
           <button
+            type="button"
             className="p-3"
             onClick={() => {
               openPanel<ActionPanelProps>(ActionPanel, name, {

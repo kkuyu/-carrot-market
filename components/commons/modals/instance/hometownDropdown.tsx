@@ -10,7 +10,7 @@ import { PostDummyResponse } from "@api/users/dummy";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
-import HometownUpdate from "@components/commons/modals/hometown/update";
+import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
 
 interface HometownDropdownProps {}
 
@@ -27,8 +27,8 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+        case "GeoCodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
             placement: "bottom",
             message: data.error.message,
           });
@@ -46,8 +46,8 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+        case "GeoCodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
             placement: "bottom",
             message: data.error.message,
           });

@@ -10,8 +10,8 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { PostUserRequestBody, PostUserResponse } from "@api/users";
 import { PostDummyResponse } from "@api/users/dummy";
-import { GetBoundarySearchResponse } from "@api/address/boundary-search";
-import { GetKeywordSearchResponse } from "@api/address/keyword-search";
+import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
+import { GetSearchKeywordResponse } from "@api/address/searchKeyword";
 // @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -28,11 +28,11 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
 
-  const [keyword, setKeyword] = useState("");
+  const [searchedKeyword, setSearchedKeyword] = useState("");
   const searchAddressForm = useForm<SearchAddressTypes>();
-  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(Boolean(keyword.length) ? `/api/address/keyword-search?keyword=${keyword}` : null);
-  const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
-    longitude && latitude ? `/api/address/boundary-search?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
+  const { data: keywordData, error: keywordError } = useSWR<GetSearchKeywordResponse>(Boolean(searchedKeyword.length) ? `/api/address/searchKeyword?keyword=${searchedKeyword}` : null);
+  const { data: boundaryData, error: boundaryError } = useSWR<GetSearchBoundaryResponse>(
+    longitude && latitude ? `/api/address/searchBoundary?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
   );
 
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/users", {
@@ -42,8 +42,8 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+        case "GeoCodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
             placement: "bottom",
             message: data.error.message,
           });
@@ -61,8 +61,8 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+        case "GeoCodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
             placement: "bottom",
             message: data.error.message,
           });
@@ -87,12 +87,12 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   };
 
   const resetForm = () => {
-    setKeyword("");
+    setSearchedKeyword("");
     searchAddressForm.setValue("keyword", "");
     searchAddressForm.setFocus("keyword");
   };
 
-  const selectItem = (itemData: GetBoundarySearchResponse["emdList"][0] | GetKeywordSearchResponse["emdList"][0]) => {
+  const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
     if (user?.MAIN_emdPosNm === itemData.emdNm) {
       openToast<MessageToastProps>(MessageToast, "alreadyRegisteredAddress", {
         placement: "bottom",
@@ -115,16 +115,16 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
         <SearchAddress
           formData={searchAddressForm}
           onValid={(data: SearchAddressTypes) => {
-            setKeyword(data.keyword);
+            setSearchedKeyword(data.keyword);
           }}
           onReset={resetForm}
-          keyword={keyword}
+          searchedKeyword={searchedKeyword}
         />
         <span className="absolute top-full left-0 w-full h-2 bg-gradient-to-b from-white" />
       </div>
 
       {/* 키워드 검색 결과 */}
-      {Boolean(keyword.length) && (
+      {Boolean(searchedKeyword.length) && (
         <div className="mt-1">
           {!keywordData && !keywordError ? (
             // 로딩중
@@ -157,7 +157,7 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
       )}
 
       {/* 위치 검색 결과 */}
-      {!Boolean(keyword.length) && (
+      {!Boolean(searchedKeyword.length) && (
         <div className="mt-1">
           {state === "denied" || state === "error" ? (
             // 위치 정보 수집 불가

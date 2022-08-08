@@ -1,6 +1,6 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+// @libs
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 export interface CloudflareResponse {
@@ -21,27 +21,20 @@ export interface ImageDeliveryResponse {
   };
 }
 
-export interface GetFileResponse {
-  success: boolean;
+export interface GetFileResponse extends ResponseDataType {
   id: string;
   uploadURL: string;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    // get cloudflare file data
+    // fetch data
     const response: CloudflareResponse = await (
       await fetch(`https://api.cloudflare.com/client/v4/accounts/${process.env.CF_ID}/images/v1/direct_upload`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${process.env.CF_TOKEN_IMAGE}`,
-          
         },
       })
     ).json();
@@ -57,21 +50,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }
 
 export default withSessionRoute(
   withHandler({
-    methods: [{ type: "GET", isPrivate: false }],
+    methods: [{ type: "GET", isPrivate: true }],
     handler,
   })
 );

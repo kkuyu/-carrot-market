@@ -13,7 +13,7 @@ import type { NextPageWithLayout } from "@pages/_app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
-import HometownUpdate from "@components/commons/modals/hometown/update";
+import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
 import Profiles from "@components/profiles";
 
 const ProfileHome: NextPage = () => {

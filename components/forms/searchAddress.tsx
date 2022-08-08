@@ -11,10 +11,10 @@ interface SearchAddressProps extends React.HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<SearchAddressTypes, object>;
   onValid: (validForm: SearchAddressTypes) => void;
   onReset: () => void;
-  keyword: string;
+  searchedKeyword: string;
 }
 
-const SearchAddress = ({ formData, onValid, onReset, keyword, ...rest }: SearchAddressProps) => {
+const SearchAddress = ({ formData, onValid, onReset, searchedKeyword, ...rest }: SearchAddressProps) => {
   const { register, handleSubmit } = formData;
 
   return (
@@ -46,7 +46,7 @@ const SearchAddress = ({ formData, onValid, onReset, keyword, ...rest }: SearchA
         <Buttons tag="button" type="reset" text="현재위치로 찾기" onClick={onReset} />
       </form>
       <div className="mt-5">
-        <strong>{Boolean(keyword.length) ? `'${keyword}' 검색 결과` : `근처 동네`}</strong>
+        <strong>{Boolean(searchedKeyword.length) ? `'${searchedKeyword}' 검색 결과` : `근처 동네`}</strong>
       </div>
     </>
   );

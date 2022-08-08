@@ -1,30 +1,23 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostVerificationUpdateResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostVerificationUpdateResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { originData, updateData } = req.body;
 
-    // request valid
+    // invalid
     if (!originData || !updateData) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // user check
+    // fetch data
     const foundUser = await client.user.findUnique({
       where: {
         ...(originData.phone ? { phone: originData.phone } : {}),
@@ -40,7 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // update data: client.user
+    // update user
     await client.user.update({
       where: {
         id: foundUser.id,
@@ -60,14 +53,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

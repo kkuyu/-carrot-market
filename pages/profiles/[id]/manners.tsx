@@ -40,8 +40,8 @@ const ProfileManners: NextPage = () => {
   }, []);
 
   return (
-    <div className="container pb-5">
-      <h2 className="mt-5">받은 매너</h2>
+    <div className="container pt-5 pb-5">
+      <h2 className="">받은 매너</h2>
       <div className="mt-2">
         {Boolean(goodManners.length) && <MannerList list={goodManners} />}
         {!Boolean(goodManners.length) && <p>받은 매너 칭찬이 아직 없어요</p>}

@@ -1,31 +1,24 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostConfirmTokenResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostConfirmTokenResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { referer = "" } = req.headers;
     const { token } = req.body;
 
-    // request valid
+    // invalid
     if (!token) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // token check
+    // fetch data
     const foundToken = await client.token.findUnique({
       where: {
         payload: token,
@@ -38,7 +31,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     }
 
     if (/\/login$/.test(referer) || /\/join?.*$/.test(referer)) {
-      // save data: session.user
+      // update user
       req.session.user = {
         id: foundToken.userId,
       };
@@ -46,7 +39,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       await req.session.save();
     }
 
-    // db token delete
+    // delete token
     await client.token.deleteMany({
       where: {
         userId: foundToken.userId,
@@ -61,14 +54,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
   } catch (error: unknown) {
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -13,22 +14,19 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/users";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesReviewsResponse, ProfilesReviewsFilter } from "@api/profiles/[id]/reviews";
+import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import ReviewList from "@components/lists/reviewList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesReviewsResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/profiles/[id]/reviews", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1&${query}`;
-  if (previousPageData && !previousPageData.reviews.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}&${query}`;
+type ReviewTab = {
+  index: number;
+  value: "reviews" | "reviews/sellUser" | "reviews/purchaseUser";
+  text: string;
+  name: string;
 };
-
-type FilterTab = { index: number; value: ProfilesReviewsFilter; text: string; name: string };
 
 const ProfileProducts: NextPage = () => {
   const router = useRouter();
@@ -36,29 +34,27 @@ const ProfileProducts: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   // profile review paging
-  const tabs: FilterTab[] = [
-    { index: 0, value: "ALL", text: "전체", name: "전체 후기" },
-    { index: 1, value: "SELL_USER", text: "판매자 후기", name: "판매자 후기" },
-    { index: 2, value: "PURCHASE_USER", text: "구매자 후기", name: "구매자 후기" },
+  const reviewTabs: ReviewTab[] = [
+    { value: "reviews", index: 0, text: "전체", name: "전체 후기" },
+    { value: "reviews/sellUser", index: 1, text: "판매자 후기", name: "판매자 후기" },
+    { value: "reviews/purchaseUser", index: 2, text: "구매자 후기", name: "구매자 후기" },
   ];
-  const [filter, setFilter] = useState<FilterTab["value"]>(tabs[0].value);
-  const activeTab = tabs.find((tab) => tab.value === filter)!;
+  const [currentTab, setCurrentTab] = useState<ReviewTab>(reviewTabs.find((tab) => tab.index === 0) || reviewTabs[0]);
+
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
+  const { data, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => {
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/${currentTab.value}` : "" };
+    return getKey<GetProfilesReviewsResponse>(...arg, options);
+  });
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
-
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
-  const { data, size, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => {
-    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/reviews` : "", query: `filter=${filter}` };
-    return getKey(...arg, options);
-  });
-
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const reviews = data ? data.flatMap((item) => item.reviews) : null;
 
-  const changeFilter = (tab: FilterTab) => {
-    setFilter(tab.value);
+  const changeFilter = (tab: ReviewTab) => {
+    setCurrentTab(tab);
     window.scrollTo(0, 0);
   };
 
@@ -79,9 +75,14 @@ const ProfileProducts: NextPage = () => {
   return (
     <div className="container">
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
-        {tabs.map((tab) => {
+        {reviewTabs.map((tab) => {
           return (
-            <button key={tab.index} type="button" className={`basis-full py-2 text-sm font-semibold ${tab.value === filter ? "text-black" : "text-gray-500"}`} onClick={() => changeFilter(tab)}>
+            <button
+              key={tab.index}
+              type="button"
+              className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
+              onClick={() => changeFilter(tab)}
+            >
               {tab.text}
             </button>
           );
@@ -89,7 +90,7 @@ const ProfileProducts: NextPage = () => {
         <span
           aria-hidden="true"
           className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-          style={{ width: `${100 / tabs.length}%`, transform: `translateX(${100 * activeTab.index}%)` }}
+          style={{ width: `${100 / reviewTabs.length}%`, transform: `translateX(${100 * currentTab.index}%)` }}
         />
       </div>
 
@@ -99,9 +100,9 @@ const ProfileProducts: NextPage = () => {
           <ReviewList list={reviews} />
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}를 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}를 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{activeTab?.name}를 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}를 불러오고있어요</span>
           ) : null}
         </div>
       )}
@@ -109,7 +110,7 @@ const ProfileProducts: NextPage = () => {
       {/* 거래후기: Empty */}
       {reviews && !Boolean(reviews.length) && (
         <div className="py-10 text-center">
-          <p className="text-gray-500">{`${activeTab?.name}가 존재하지 않아요`}</p>
+          <p className="text-gray-500">{`${currentTab?.name}가 존재하지 않아요`}</p>
         </div>
       )}
     </div>
@@ -119,9 +120,9 @@ const ProfileProducts: NextPage = () => {
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getReviewsByAll: { options: { url?: string; query?: string }; response: GetProfilesReviewsResponse };
-  getReviewsBySellUser: { options: { url?: string; query?: string }; response: GetProfilesReviewsResponse };
-  getReviewsByPurchaseUser: { options: { url?: string; query?: string }; response: GetProfilesReviewsResponse };
+  getReviewsByAll: { options: { url: string; query?: string }; response: GetProfilesReviewsResponse };
+  getReviewsBySellUser: { options: { url: string; query?: string }; response: GetProfilesReviewsResponse };
+  getReviewsByPurchaseUser: { options: { url: string; query?: string }; response: GetProfilesReviewsResponse };
 }> = ({ getUser, getProfile, getReviewsByAll, getReviewsBySellUser, getReviewsByPurchaseUser }) => {
   return (
     <SWRConfig
@@ -129,9 +130,15 @@ const Page: NextPageWithLayout<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(...arg, getReviewsByAll.options))]: [getReviewsByAll.response],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(...arg, getReviewsBySellUser.options))]: [getReviewsBySellUser.response],
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey(...arg, getReviewsByPurchaseUser.options))]: [getReviewsByPurchaseUser.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey<GetProfilesReviewsResponse>(...arg, getReviewsByAll.options))]: [
+            getReviewsByAll.response,
+          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey<GetProfilesReviewsResponse>(...arg, getReviewsBySellUser.options))]: [
+            getReviewsBySellUser.response,
+          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => getKey<GetProfilesReviewsResponse>(...arg, getReviewsByPurchaseUser.options))]: [
+            getReviewsByPurchaseUser.response,
+          ],
         },
       }}
     >
@@ -318,7 +325,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getReviewsByAll: {
         options: {
           url: `/api/profiles/${profile.id}/reviews`,
-          query: `filter=ALL`,
         },
         response: {
           success: true,
@@ -328,8 +334,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getReviewsBySellUser: {
         options: {
-          url: `/api/profiles/${profile.id}/reviews`,
-          query: `filter=SELL_USER`,
+          url: `/api/profiles/${profile.id}/reviews/sellUser`,
         },
         response: {
           success: true,
@@ -339,8 +344,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getReviewsByPurchaseUser: {
         options: {
-          url: `/api/profiles/${profile.id}/reviews`,
-          query: `filter=PURCHASE_USER`,
+          url: `/api/profiles/${profile.id}/reviews/purchaseUser`,
         },
         response: {
           success: true,

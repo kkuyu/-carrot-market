@@ -1,55 +1,43 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Chat, Kind, Product, Record } from "@prisma/client";
 // @libs
-import { getProductCategory } from "@libs/utils";
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import { getProductCategory } from "@libs/utils";
 
-export interface GetProductsResponse {
-  success: boolean;
+export interface GetProductsResponse extends ResponseDataType {
+  totalCount: number;
+  lastCursor: number;
   products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[] })[];
-  pages: number;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-export interface PostProductsResponse {
-  success: boolean;
+export interface PostProductsResponse extends ResponseDataType {
   product: Product;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { page: _page, posX: _posX, posY: _posY, distance: _distance } = req.query;
+      const { prevCursor: _prevCursor, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
-      // request valid
-      if (!_page) {
+      // invalid
+      if (!_prevCursor || !_posX || !_posY || !_distance) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (!_posX || !_posY || !_distance) {
-        const result: GetProductsResponse = {
-          success: true,
-          products: [],
-          pages: 1,
-        };
-        return res.status(200).json(result);
+
+      // page
+      const prevCursor = +_prevCursor.toString();
+      const pageSize = 10;
+      if (isNaN(prevCursor) || prevCursor === -1) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
       }
 
-      // get data props
-      const displayRow = 10;
-      const page = +_page.toString();
+      // params
       const posX = +_posX.toString();
       const posY = +_posY.toString();
       const distance = +_distance.toString();
@@ -57,17 +45,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         emdPosX: { gte: posX - distance, lte: posX + distance },
         emdPosY: { gte: posY - distance, lte: posY + distance },
       };
+      if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
+        const error = new Error("InvalidRequestBody");
+        error.name = "InvalidRequestBody";
+        throw error;
+      }
 
-      // fetch data: client.product
-      const totalProducts = await client.product.count({
-        where: {
-          ...boundaryArea,
-          records: { some: { kind: Kind.ProductSale } },
-        },
+      // search
+      const where = {
+        ...boundaryArea,
+        records: { some: { kind: Kind.ProductSale } },
+      };
+
+      // fetch data
+      const totalCount = await client.product.count({
+        where,
       });
       const products = await client.product.findMany({
-        take: displayRow,
-        skip: (page - 1) * displayRow,
+        where,
+        take: pageSize,
+        skip: prevCursor ? 1 : 0,
+        ...(prevCursor && { cursor: { id: prevCursor } }),
         orderBy: {
           resumeAt: "desc",
         },
@@ -92,19 +90,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
             },
           },
         },
-        where: {
-          ...boundaryArea,
-          records: {
-            some: { kind: Kind.ProductSale },
-          },
-        },
       });
 
       // result
       const result: GetProductsResponse = {
         success: true,
+        totalCount,
+        lastCursor: products.length ? products[products.length - 1].id : -1,
         products,
-        pages: Math.ceil(totalProducts / displayRow),
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
@@ -127,7 +120,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       const { photos = [], name, category, price, description, emdAddrNm, emdPosNm, emdPosX, emdPosY } = req.body;
       const { user } = req.session;
 
-      // request valid
+      // invalid
       if (!name && !category && !price && !description) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
@@ -149,7 +142,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         throw error;
       }
 
-      // create new product
+      // create product
       const newProduct = await client.product.create({
         data: {
           photos: photos.join(","),
@@ -170,7 +163,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
 
-      // create new record
+      // create record
       await client.record.create({
         data: {
           user: {

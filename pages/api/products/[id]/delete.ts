@@ -1,32 +1,32 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductsDeleteResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostProductsDeleteResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // find product detail
+    // params
     const id = +_id.toString();
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const product = await client.product.findUnique({
       where: {
         id,
@@ -47,21 +47,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // remove review
+    // delete product review
     await client.productReview.deleteMany({
       where: {
         productId: product.id,
       },
     });
 
-    // remove record
+    // delete record
     await client.record.deleteMany({
       where: {
         productId: product.id,
       },
     });
 
-    // remove chatMessage
+    // delete chat message
     await client.chatMessage.deleteMany({
       where: {
         chat: {
@@ -70,14 +70,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       },
     });
 
-    // remove chat
+    // delete chat
     await client.chat.deleteMany({
       where: {
         productId: product.id,
       },
     });
 
-    // remove product
+    // delete product
     await client.product.delete({
       where: {
         id: product.id,
@@ -93,14 +93,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

@@ -2,26 +2,20 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Record } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostProductsSaleResponse {
-  success: boolean;
+export interface PostProductsSaleResponse extends ResponseDataType {
   recordSale: Record | null;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { sale } = req.body;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -33,9 +27,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // find product detail
+    // params
     const id = +_id.toString();
-    const isForcedHeader = /\/chats\/[0-9]*$/.test(req?.headers?.referer || "");
+    const isForcedUpdate = /\/chats\/[0-9]*$/.test(req?.headers?.referer || "");
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const product = await client.product.findUnique({
       where: {
         id,
@@ -56,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (!isForcedHeader && product.userId !== user?.id) {
+    if (!isForcedUpdate && product.userId !== user?.id) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;
@@ -66,14 +67,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     const existed = product.records.length ? product.records[0] : null;
 
     if (existed && sale === false) {
-      // delete
+      // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
     } else if (!existed && sale === true) {
-      // delete record Kind.ProductPurchase
+      // delete record
       await client.record.deleteMany({
         where: {
           productId: product.id,
@@ -88,7 +89,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       });
 
-      // create
+      // create record
       recordSale = await client.record.create({
         data: {
           user: {
@@ -116,14 +117,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

@@ -3,7 +3,7 @@ import { Children, cloneElement, isValidElement, useEffect, useMemo, useState } 
 // @libs
 import useUser from "@libs/client/useUser";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
 // @components
 import Comment, { CommentItem } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
@@ -14,31 +14,22 @@ interface CommentTreeListProps {
   depth?: number;
   reCommentRefId?: number;
   countReComments?: number;
-  moreReComments?: (page: number, reCommentRefId: number, cursorId: number) => void;
+  moreReComments?: (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => void;
   children?: React.ReactNode;
 }
 
-const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComments = 0, moreReComments, children }: CommentTreeListProps) => {
+const CommentTreeList = ({ list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, children }: CommentTreeListProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const [page, setPage] = useState(depth === 0 ? -1 : 1);
-  const [moreInfo, setMoreInfo] = useState({ read: false, page });
+  const [isLoading, setIsLoading] = useState(false);
+  const [readType, setReadType] = useState<StoryCommentReadType>("more");
 
-  const takeLength = (() => {
-    if (page === 0) return 0;
-    if (page === -1) return list.length;
-    if (!countReComments) return list.length;
-    const result = (page - 1) * 10 + 1 + 1;
-    return countReComments < result ? countReComments : result;
-  })();
-  const isVisibleReCommentButton = router.pathname === "/stories/[id]" && Boolean(list.length) && depth >= StoryCommentMinimumDepth + 1 && depth <= StoryCommentMaximumDepth;
-
-  const updatePage = (page: number) => {
+  const readMoreReComments = () => {
     if (!reCommentRefId) return;
     if (!moreReComments) return;
-    setPage(page);
-    moreReComments(page, reCommentRefId, !list.length ? -1 : list[list.length - 1].id);
+    setIsLoading(true);
+    moreReComments(readType, reCommentRefId, !list.length ? 0 : list[list.length - 1].id);
   };
 
   const clickComment = () => {
@@ -46,9 +37,10 @@ const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComm
   };
 
   useEffect(() => {
-    if (moreInfo.read) return;
-    if (takeLength === countReComments) setMoreInfo({ read: true, page });
-  }, [takeLength]);
+    setIsLoading(false);
+    if (readType === "fold") return;
+    if (list.length === countReComments) setReadType("fold");
+  }, [list.length]);
 
   if (!Boolean(list.length) && !countReComments) return null;
   if (depth < StoryCommentMinimumDepth) return null;
@@ -82,32 +74,12 @@ const CommentTreeList = ({ list = [], depth = 0, reCommentRefId = 0, countReComm
         </ul>
       )}
       {/* 답글: read more */}
-      <div className="mt-1 empty:hidden before:mt-1 before:mr-1 before:inline-block before:w-2 before:h-2 before:border-l before:border-b before:border-gray-400 before:align-top">
-        {list?.length < takeLength && page > 0 ? (
-          <span className="text-sm text-gray-500">답글을 불러오고있어요</span>
-        ) : list.length < countReComments ? (
-          <button type="button" onClick={() => updatePage(moreInfo.read ? moreInfo.page : page + 1)} disabled={list?.length < takeLength} className="text-sm text-gray-500">
-            {page < 2 ? `답글 ${countReComments - list.length}개 보기` : `이전 답글 더보기`}
+      {Boolean(countReComments) && depth !== StoryCommentMinimumDepth && (
+        <div className="relative pl-3 mt-1">
+          <button type="button" onClick={readMoreReComments} disabled={isLoading} className="text-sm text-gray-500">
+            {isLoading ? "답글을 불러오고있어요" : list?.length === countReComments ? "답글 숨기기" : list.length > 2 ? "이전 답글 더보기" : `답글 ${countReComments - list.length}개 보기`}
           </button>
-        ) : list?.length === countReComments && page > 0 ? (
-          <button type="button" onClick={() => updatePage(0)} disabled={list?.length < takeLength} className="text-sm text-gray-500">
-            답글 숨기기
-          </button>
-        ) : null}
-      </div>
-      {/* 답글: re-comment */}
-      {user?.id && isVisibleReCommentButton && (
-        <div className="mt-1 -mr-2">
-          <button type="button" className="flex items-center w-full text-left" onClick={clickComment}>
-            <div className="grow shrink basis-auto min-w-0">
-              <p className="w-full px-3 py-2 border border-gray-300 rounded-md text-gray-400 overflow-hidden whitespace-nowrap overflow-ellipsis">답글을 입력해주세요</p>
-            </div>
-            <div className="ml-2 flex-none flex items-center justify-center rounded-md w-10 h-10 text-gray-500">
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
-              </svg>
-            </div>
-          </button>
+          <span className="absolute top-1/4 left-0 w-2 h-2 border-l border-b border-gray-400" />
         </div>
       )}
     </div>

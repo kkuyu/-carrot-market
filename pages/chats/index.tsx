@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @libs
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -20,27 +21,19 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
-const getKey = (pageIndex: number, previousPageData: GetChatsResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/chats", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1&${query}`;
-  if (previousPageData && !previousPageData.chats.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}&${query}`;
-};
-
 const ChatHome: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
-  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
-    const options = {};
-    return getKey(...arg, options);
+  const { data, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
+    const options = { url: user && user?.id === -1 ? "" : "/api/chats" };
+    return getKey<GetChatsResponse>(...arg, options);
   });
 
-  const isReachingEnd = data && size >= data[data.length - 1].pages;
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
 
@@ -99,14 +92,14 @@ const ChatHome: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getChats: { options: { url?: string; query?: string }; response: GetChatsResponse };
+  getChats: { options: { url: string; query?: string }; response: GetChatsResponse };
 }> = ({ getUser, getChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(...arg, getChats.options))]: [getChats.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey<GetChatsResponse>(...arg, getChats.options))]: [getChats.response],
         },
       }}
     >
@@ -189,7 +182,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
       },
       getChats: {
-        options: {},
+        options: {
+          url: "/api/chats",
+        },
         response: {
           success: true,
           chats: JSON.parse(JSON.stringify(chats || [])),

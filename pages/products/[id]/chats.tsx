@@ -6,6 +6,7 @@ import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -23,28 +24,20 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductSummary from "@components/cards/productSummary";
 import ChatList from "@components/lists/chatList";
 
-const getKey = (pageIndex: number, previousPageData: GetChatsResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/chats", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1&${query}`;
-  if (previousPageData && !previousPageData.chats.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}&${query}`;
-};
-
 const ProductChats: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
+  const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
+    const options = { url: "/api/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
+    return getKey<GetChatsResponse>(...arg, options);
+  });
+
   const infiniteRef = useRef<HTMLDivElement | null>(null);
   const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
-  const { data, size, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
-    const options = { query: router.query.id ? `productId=${router.query.id}` : "" };
-    return getKey(...arg, options);
-  });
-  const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
-
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
 
@@ -97,7 +90,7 @@ const ProductChats: NextPage = () => {
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
-  getChat: { options: { url?: string; query?: string }; response: GetChatsResponse };
+  getChat: { options: { url: string; query?: string }; response: GetChatsResponse };
 }> = ({ getUser, getProduct, getChat }) => {
   return (
     <SWRConfig
@@ -105,7 +98,7 @@ const Page: NextPageWithLayout<{
         fallback: {
           "/api/users": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey(...arg, getChat.options))]: [getChat.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey<GetChatsResponse>(...arg, getChat.options))]: [getChat.response],
         },
       }}
     >
@@ -252,6 +245,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getChat: {
         options: {
+          url: "/api/chats",
           query: `productId=${product.id}`,
         },
         response: {

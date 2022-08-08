@@ -5,6 +5,7 @@ import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -21,28 +22,19 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import ProductList from "@components/lists/productList";
 
-const getKey = (pageIndex: number, previousPageData: GetProfilesPurchasesResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/users/purchases", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1${query}`;
-  if (previousPageData && !previousPageData.products.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}${query}`;
-};
-
 const ProfilePurchase: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
-
-  const { data, size, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => {
-    const options = {};
-    return getKey(...arg, options);
+  const { data, setSize } = useSWRInfinite<GetProfilesPurchasesResponse>((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => {
+    const options = { url: "/api/users/purchases" };
+    return getKey<GetProfilesPurchasesResponse>(...arg, options);
   });
 
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
 
@@ -89,14 +81,14 @@ const ProfilePurchase: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProducts: { options: { url?: string; query?: string }; response: GetProfilesPurchasesResponse };
+  getProducts: { options: { url: string; query?: string }; response: GetProfilesPurchasesResponse };
 }> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => getKey(...arg, getProducts.options))]: [getProducts.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesPurchasesResponse]) => getKey<GetProfilesPurchasesResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
     >
@@ -208,7 +200,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
       },
       getProducts: {
-        options: {},
+        options: {
+          url: "/api/users/purchases",
+        },
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(products || [])),

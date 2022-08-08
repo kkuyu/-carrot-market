@@ -2,36 +2,37 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Product, User, ProductReview, Manner } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 type ReviewUser = Pick<User, "id" | "name">;
 type ReviewProduct = Pick<Product, "id" | "name" | "userId"> & { reviews: Pick<ProductReview, "id" | "role" | "satisfaction">[] };
 
-export interface GetReviewsDetailResponse {
-  success: boolean;
+export interface GetReviewsDetailResponse extends ResponseDataType {
   review: ProductReview & { sellUser: ReviewUser; purchaseUser: ReviewUser; manners: Manner[] } & { product: ReviewProduct };
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
     const { user } = req.session;
 
-    // request valid
+    // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // find chat detail
+    // params
     const id = +_id.toString();
+    if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+
+    // fetch data
     const review = await client.productReview.findUnique({
       where: {
         id,
@@ -102,14 +103,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }

@@ -1,5 +1,6 @@
 import { Emotion } from "@prisma/client";
 
+export type StoryCommentReadType = "more" | "fold";
 export const StoryCommentMinimumDepth = 0;
 export const StoryCommentMaximumDepth = 1;
 

@@ -10,12 +10,12 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { PostUserRequestBody, PostUserResponse } from "@api/users";
 import { PostDummyResponse } from "@api/users/dummy";
-import { GetBoundarySearchResponse } from "@api/address/boundary-search";
+import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
 // @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import HometownLocate from "@components/commons/modals/hometown/locate";
+import HometownLocate from "@components/commons/modals/instance/hometownLocate";
 import Buttons from "@components/buttons";
 
 interface HometownUpdateProps {}
@@ -37,8 +37,8 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+        case "GeoCodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
             placement: "bottom",
             message: data.error.message,
           });
@@ -55,8 +55,8 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "GeocodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeocodeDistrictError", {
+        case "GeoCodeDistrictError":
+          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
             placement: "bottom",
             message: data.error.message,
           });
@@ -173,8 +173,8 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
 
   // distance
   const { register, handleSubmit, setValue } = useForm<DistanceForm>();
-  const { data: boundaryData } = useSWR<GetBoundarySearchResponse>(
-    currentAddr.emdPosX && currentAddr.emdPosY && currentAddr.emdPosDx ? `/api/address/boundary-search?distance=${currentAddr.emdPosDx}&posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}` : null
+  const { data: boundaryData } = useSWR<GetSearchBoundaryResponse>(
+    currentAddr.emdPosX && currentAddr.emdPosY && currentAddr.emdPosDx ? `/api/address/searchBoundary?distance=${currentAddr.emdPosDx}&posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}` : null
   );
   const distanceSubmit = (data: DistanceForm) => {
     updateHometown({

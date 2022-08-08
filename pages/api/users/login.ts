@@ -1,33 +1,25 @@
 import { NextApiRequest, NextApiResponse } from "next";
-
+// @libs
 import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
-
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostLoginResponse {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+export interface PostLoginResponse extends ResponseDataType {}
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { phone } = req.body;
 
-    // request valid
+    // invalid
     if (!phone || phone.length < 8) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // check user
+    // fetch data
     const foundUser = await client.user.findUnique({
       where: {
         phone,
@@ -42,7 +34,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       throw error;
     }
 
-    // create new token
+    // create token
     const newToken = await client.token.create({
       data: {
         payload: Math.floor(100000 + Math.random() * 900000) + "",
@@ -53,6 +45,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       },
     });
+
+    // send message
     sendMessage({
       templateId: MessageTemplateKey.verificationPhone,
       sendTo: phone,
@@ -70,21 +64,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     // error
     if (error instanceof Error) {
       const date = Date.now().toString();
-      return res.status(422).json({
+      const result = {
         success: false,
         error: {
           timestamp: date,
           name: error.name,
           message: error.message,
         },
-      });
+      };
+      return res.status(422).json(result);
     }
   }
 }
 
 export default withSessionRoute(
   withHandler({
-    methods: [{type: "POST", isPrivate: false}],
+    methods: [{ type: "POST", isPrivate: false }],
     handler,
   })
 );

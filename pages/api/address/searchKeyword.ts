@@ -1,9 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-interface FetchResponse {
+interface GetVworldSearchKeywordResponse {
   response: {
     status: "OK" | "NOT_FOUND" | "ERROR";
     result: {
@@ -24,8 +24,7 @@ interface FetchResponse {
   };
 }
 
-export interface GetKeywordSearchResponse {
-  success: boolean;
+export interface GetSearchKeywordResponse extends ResponseDataType {
   emdList: {
     id: string;
     addrNm: string;
@@ -34,19 +33,21 @@ export interface GetKeywordSearchResponse {
   }[];
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { keyword: _keyword } = req.query;
 
-    // request valid
+    // invalid
     if (!_keyword) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // get data props
+    // params
     const keyword = _keyword.toString();
+
+    // search params
     const params = new URLSearchParams({
       service: "data",
       request: "GetFeature",
@@ -59,8 +60,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       attrFilter: `emd_kor_nm:like:${keyword}`,
     }).toString();
 
-    // fetch data: keyword to emdList
-    const response: FetchResponse = await (
+    // fetch data
+    const response: GetVworldSearchKeywordResponse = await (
       await fetch(`http://api.vworld.kr/req/data?${params}`, {
         method: "GET",
         headers: {
@@ -68,20 +69,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
         },
       })
     ).json();
-    const emdList =
-      response.response.status === "OK"
-        ? response.response.result.featureCollection.features.map((data) => ({
-            id: data.properties.emd_cd,
-            addrNm: data.properties.full_nm,
-            emdNm: data.properties.emd_kor_nm,
-            emdCd: data.properties.emd_cd,
-          }))
-        : [];
 
     // result
-    const result: GetKeywordSearchResponse = {
+    const result: GetSearchKeywordResponse = {
       success: true,
-      emdList,
+      emdList:
+        response.response.status === "OK"
+          ? response.response.result.featureCollection.features.map((data) => ({
+              id: data.properties.emd_cd,
+              addrNm: data.properties.full_nm,
+              emdNm: data.properties.emd_kor_nm,
+              emdCd: data.properties.emd_cd,
+            }))
+          : [],
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

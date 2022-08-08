@@ -1,13 +1,6 @@
 import { useEffect, useState } from "react";
-
-interface responseDataType {
-  success: boolean;
-  error?: {
-    timestamp: Date;
-    name: string;
-    message: string;
-  };
-}
+// @libs
+import { ResponseDataType } from "@libs/server/withHandler";
 
 interface UseMutationState<T> {
   loading: boolean;
@@ -15,13 +8,7 @@ interface UseMutationState<T> {
   error?: Error | undefined;
 }
 
-const useMutation = <T extends responseDataType>(
-  url: string,
-  options?: {
-    onSuccess?: (data: T) => void;
-    onError?: (data: T) => void;
-  }
-): [(data: any) => void, UseMutationState<T>] => {
+const useMutation = <T extends ResponseDataType>(url: string, options?: { onSuccess?: (data: T) => void; onError?: (data: T) => void }): [(data: any) => void, UseMutationState<T>] => {
   // state
   const [state, setState] = useState<UseMutationState<T>>({
     loading: false,

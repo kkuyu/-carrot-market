@@ -4,6 +4,7 @@ import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
+import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -20,27 +21,18 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import FloatingButtons from "@components/floatingButtons";
 import ProductList from "@components/lists/productList";
 
-const getKey = (pageIndex: number, previousPageData: GetProductsResponse, options: { url?: string; query?: string }) => {
-  const { url = "/api/products", query = "" } = options;
-  if (pageIndex === 0) return `${url}?page=1&${query}`;
-  if (previousPageData && !previousPageData.products.length) return null;
-  if (pageIndex + 1 > previousPageData.pages) return null;
-  return `${url}?page=${pageIndex + 1}&${query}`;
-};
-
 const ProductHome: NextPage = () => {
   const { currentAddr } = useUser();
   const { changeLayout } = useLayouts();
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
-
-  const { data, size, setSize } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
-    const options = { query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
-    return getKey(...arg, options);
+  const { data, setSize } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
+    const options = { url: "/api/products", query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
+    return getKey<GetProductsResponse>(...arg, options);
   });
 
-  const isReachingEnd = data && data?.[data.length - 1].pages > 0 && size > data[data.length - 1].pages;
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
+  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
 
@@ -98,14 +90,14 @@ const ProductHome: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { options: { url?: string; query?: string }; response: GetProductsResponse };
+  getProduct: { options: { url: string; query?: string }; response: GetProductsResponse };
 }> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/users": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsResponse]) => getKey(...arg, getProduct.options))]: [getProduct.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsResponse]) => getKey<GetProductsResponse>(...arg, getProduct.options))]: [getProduct.response],
         },
       }}
     >
@@ -200,6 +192,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       },
       getProduct: {
         options: {
+          url: "/api/products",
           query: `posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {

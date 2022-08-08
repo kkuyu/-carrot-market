@@ -7,8 +7,8 @@ import useSWR from "swr";
 import useLayouts from "@libs/client/useLayouts";
 import useCoords from "@libs/client/useCoords";
 // @api
-import { GetBoundarySearchResponse } from "@api/address/boundary-search";
-import { GetKeywordSearchResponse } from "@api/address/keyword-search";
+import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
+import { GetSearchKeywordResponse } from "@api/address/searchKeyword";
 // @pages
 import type { NextPageWithLayout } from "@pages/_app";
 // @components
@@ -21,20 +21,20 @@ const WelcomeLocate: NextPage = () => {
   const { changeLayout } = useLayouts();
   const { state, longitude, latitude } = useCoords();
 
-  const [keyword, setKeyword] = useState("");
+  const [searchedKeyword, setSearchedKeyword] = useState("");
   const searchAddressForm = useForm<SearchAddressTypes>();
-  const { data: keywordData, error: keywordError } = useSWR<GetKeywordSearchResponse>(Boolean(keyword.length) ? `/api/address/keyword-search?keyword=${keyword}` : null);
-  const { data: boundaryData, error: boundaryError } = useSWR<GetBoundarySearchResponse>(
-    longitude && latitude ? `/api/address/boundary-search?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
+  const { data: keywordData, error: keywordError } = useSWR<GetSearchKeywordResponse>(Boolean(searchedKeyword.length) ? `/api/address/searchKeyword?keyword=${searchedKeyword}` : null);
+  const { data: boundaryData, error: boundaryError } = useSWR<GetSearchBoundaryResponse>(
+    longitude && latitude ? `/api/address/searchBoundary?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
   );
 
   const resetForm = () => {
-    setKeyword("");
+    setSearchedKeyword("");
     searchAddressForm.setValue("keyword", "");
     searchAddressForm.setFocus("keyword");
   };
 
-  const selectItem = (itemData: GetBoundarySearchResponse["emdList"][0] | GetKeywordSearchResponse["emdList"][0]) => {
+  const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
     router.push({
       pathname: "/join",
       query: { addrNm: itemData?.addrNm },
@@ -56,16 +56,16 @@ const WelcomeLocate: NextPage = () => {
         <SearchAddress
           formData={searchAddressForm}
           onValid={(data: SearchAddressTypes) => {
-            setKeyword(data.keyword);
+            setSearchedKeyword(data.keyword);
           }}
           onReset={resetForm}
-          keyword={keyword}
+          searchedKeyword={searchedKeyword}
         />
         <span className="absolute top-full left-0 w-full h-2 bg-gradient-to-b from-white" />
       </div>
 
       {/* 키워드 검색 결과 */}
-      {Boolean(keyword.length) && (
+      {Boolean(searchedKeyword.length) && (
         <div className="mt-1">
           {!keywordData && !keywordError ? (
             // 로딩중
@@ -98,7 +98,7 @@ const WelcomeLocate: NextPage = () => {
       )}
 
       {/* 위치 검색 결과 */}
-      {!Boolean(keyword.length) && (
+      {!Boolean(searchedKeyword.length) && (
         <div className="mt-1">
           {state === "denied" || state === "error" ? (
             // 위치 정보 수집 불가

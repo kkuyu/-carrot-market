@@ -1,10 +1,9 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
-import client from "@libs/server/client";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-interface FetchResponse {
+interface GetVworldSearchGeoCodeResponse {
   response: {
     status: "OK" | "NOT_FOUND" | "ERROR";
     result: {
@@ -20,26 +19,27 @@ interface FetchResponse {
   };
 }
 
-export interface GetGeocodeDistrictResponse {
-  success: boolean;
+export interface GetSearchGeoCodeResponse extends ResponseDataType {
   addrNm: string;
   posX: number;
   posY: number;
 }
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { addrNm: _addrNm } = req.query;
 
-    // request valid
+    // invalid
     if (!_addrNm) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // get data props
+    // params
     const query = _addrNm.toString();
+
+    // search params
     const params = new URLSearchParams({
       query,
       service: "search",
@@ -50,8 +50,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
       refine: "false",
     }).toString();
 
-    // fetch data: district(address) to point
-    const response: FetchResponse = await (
+    // fetch data
+    const response: GetVworldSearchGeoCodeResponse = await (
       await fetch(`http://api.vworld.kr/req/search?${params}`, {
         method: "GET",
         headers: {
@@ -61,7 +61,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) 
     ).json();
 
     // result
-    const result: GetGeocodeDistrictResponse = {
+    const result: GetSearchGeoCodeResponse = {
       success: true,
       addrNm: response.response.result.items[0].title,
       posX: +response.response.result.items[0].point.x,

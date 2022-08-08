@@ -1,8 +1,13 @@
 import { NextApiHandler, NextApiRequest, NextApiResponse } from "next";
 
-export interface ResponseType {
+export interface ResponseDataType {
   success: boolean;
   [key: string]: any;
+  error?: {
+    timestamp: string;
+    name: string;
+    message: string;
+  };
 }
 
 interface ConfigType {

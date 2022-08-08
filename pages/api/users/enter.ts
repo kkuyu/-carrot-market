@@ -5,9 +5,9 @@ import client from "@libs/server/client";
 
 import sendEmail from "@libs/server/sendEmail";
 import sendMessage from "@libs/server/sendMessage";
-import withHandler, { ResponseType } from "@libs/server/withHandler";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 
-async function handler(req: NextApiRequest, res: NextApiResponse<ResponseType>) {
+async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   const { phone, email } = req.body;
   if (!phone && !email) {
     const error = new Error("Invalid request body");
