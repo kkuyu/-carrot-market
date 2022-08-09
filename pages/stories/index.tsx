@@ -15,15 +15,15 @@ import getSsrUser from "@libs/server/getUser";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetUserResponse } from "@api/user";
 import { GetStoriesResponse } from "@api/stories";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
 import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
 
-const StoryHome: NextPage = () => {
+const StoriesIndexPage: NextPage = () => {
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
 
@@ -105,7 +105,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <StoryHome />
+      <StoriesIndexPage />
     </SWRConfig>
   );
 };
@@ -116,21 +116,10 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
-
   // getStories
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
-
   const stories =
     !posX || !posY || !distance
       ? []
@@ -193,12 +182,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getStories: {
         options: {

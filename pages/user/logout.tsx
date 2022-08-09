@@ -5,18 +5,18 @@ import { useEffect } from "react";
 import useMutation from "@libs/client/useMutation";
 import useToast from "@libs/client/useToast";
 // @api
-import { PostLogoutResponse } from "@api/user/logout";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+import { PostUserLogoutResponse } from "@api/user/logout";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 
-const UserLogout: NextPage = () => {
+const UserLogoutPage: NextPage = () => {
   const router = useRouter();
   const { openToast } = useToast();
 
-  const [logoutUser, { loading: logoutUserLoading }] = useMutation<PostLogoutResponse>("/api/user/logout", {
+  const [logoutUser, { loading: logoutUserLoading }] = useMutation<PostUserLogoutResponse>("/api/user/logout", {
     onSuccess: (data) => {
       if (data.isExisted) {
         openToast<MessageToastProps>(MessageToast, `logout`, {
@@ -44,7 +44,7 @@ const UserLogout: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <UserLogout />;
+  return <UserLogoutPage />;
 };
 
 Page.getLayout = getLayout;

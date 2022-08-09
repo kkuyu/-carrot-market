@@ -17,7 +17,7 @@ export interface NavBarOptions {
 }
 
 interface NavBarWrapperProps {
-  defaultNavBarState: NavBarOptions;
+  defaultNavBarState: NavBarOptions | null;
 }
 
 const NavBarWrapper = ({ defaultNavBarState }: NavBarWrapperProps) => {
@@ -27,6 +27,7 @@ const NavBarWrapper = ({ defaultNavBarState }: NavBarWrapperProps) => {
   const currentNavBar = useMemo(() => ({ ...currentState.navBar }), [currentState]);
 
   useEffect(() => {
+    if (!defaultNavBarState) return;
     change({
       meta: {},
       header: {},

@@ -12,13 +12,13 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 
-const CommentEdit: NextPage = () => {
+const CommentsEditPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
@@ -75,7 +75,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <CommentEdit />
+      <CommentsEditPage />
     </SWRConfig>
   );
 };
@@ -86,22 +86,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // commentId
+  const commentId: string = params?.id?.toString() || "";
 
-  const commentId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: commentId
-  // redirect: comments/[id]
-  if (!ssrUser.profile || !commentId || isNaN(+commentId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/comments/${commentId}`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -110,31 +102,36 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find comment
+  // invalidUrl
+  let invalidUrl = false;
+  if (!commentId || isNaN(+commentId)) invalidUrl = true;
+  // redirect `/comments/${commentId}`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/comments/${commentId}`,
+      },
+    };
+  }
+
+  // getComment
   const comment = await client.storyComment.findUnique({
     where: {
       id: +commentId,
     },
   });
 
-  // invalid comment: not found
-  // redirect: comments/[id]
-  if (!comment) {
+  // invalidComment
+  let invalidComment = false;
+  if (!comment) invalidComment = true;
+  if (comment?.userId !== ssrUser?.profile?.id) invalidComment = true;
+  // redirect `/comments/${commentId}`
+  if (invalidComment) {
     return {
       redirect: {
         permanent: false,
         destination: `/comments/${commentId}`,
-      },
-    };
-  }
-
-  // invalid comment: not my comment
-  // redirect: stories/[id]
-  if (comment.userId !== ssrUser?.profile?.id) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/stories/${commentId}`,
       },
     };
   }
@@ -161,7 +158,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getComment: {
         response: {
           success: true,
-          comment: JSON.parse(JSON.stringify(comment || [])),
+          comment: JSON.parse(JSON.stringify(comment || {})),
         },
       },
     },

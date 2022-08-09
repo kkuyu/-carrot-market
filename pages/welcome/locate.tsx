@@ -9,14 +9,14 @@ import useCoords from "@libs/client/useCoords";
 // @api
 import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
 import { GetSearchKeywordResponse } from "@api/address/searchKeyword";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 
-const WelcomeLocate: NextPage = () => {
+const WelcomeLocatePage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { state, longitude, latitude } = useCoords();
@@ -144,7 +144,7 @@ const WelcomeLocate: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <WelcomeLocate />;
+  return <WelcomeLocatePage />;
 };
 
 Page.getLayout = getLayout;

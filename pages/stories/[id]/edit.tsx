@@ -15,13 +15,13 @@ import getSsrUser from "@libs/server/getUser";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
-const StoryUpload: NextPage = () => {
+const StoriesEditPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -46,7 +46,7 @@ const StoryUpload: NextPage = () => {
   });
 
   const setDefaultPhotos = async () => {
-    if (!storyData?.story || !storyData?.story?.photos) {
+    if (!storyData?.story?.photos) {
       setPhotoLoading(false);
       return;
     }
@@ -64,8 +64,7 @@ const StoryUpload: NextPage = () => {
 
   const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
     if (loading || photoLoading) return;
-
-    if (!_photos || !_photos.length) {
+    if (!_photos?.length) {
       editStory({ ...data, photos: [] });
       return;
     }
@@ -138,7 +137,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <StoryUpload />
+      <StoriesEditPage />
     </SWRConfig>
   );
 };
@@ -149,22 +148,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // storyId
+  const storyId: string = params?.id?.toString() || "";
 
-  const storyId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: storyId
-  // redirect: stories/[id]
-  if (!ssrUser.profile || !storyId || isNaN(+storyId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/stories/${storyId}`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -173,16 +164,32 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find story
+  // invalidUrl
+  let invalidUrl = false;
+  if (!storyId || isNaN(+storyId)) invalidUrl = true;
+  // redirect `/stories/${storyId}`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/stories/${storyId}`,
+      },
+    };
+  }
+
+  // getStory
   const story = await client.story.findUnique({
     where: {
       id: +storyId,
     },
   });
 
-  // invalid story: not found
-  // redirect: stories/[id]
-  if (!story) {
+  // invalidStory
+  let invalidStory = false;
+  if (!story) invalidStory = true;
+  if (story?.userId !== ssrUser?.profile?.id) invalidStory = true;
+  // redirect `/stories/${storyId}`
+  if (invalidStory) {
     return {
       redirect: {
         permanent: false,
@@ -191,17 +198,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalid story: not my story
-  // redirect: stories/[id]
-  if (story.userId !== ssrUser?.profile?.id) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/stories/${storyId}`,
-      },
-    };
-  }
-
+  // defaultLayout
   const defaultLayout = {
     meta: {
       title: "글 수정 | 동네생활",
@@ -223,7 +220,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getStory: {
         response: {
           success: true,
-          story: JSON.parse(JSON.stringify(story || [])),
+          story: JSON.parse(JSON.stringify(story || {})),
         },
       },
     },

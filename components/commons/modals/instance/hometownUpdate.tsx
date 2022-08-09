@@ -26,7 +26,7 @@ interface DistanceForm {
 
 const HometownUpdate = ({}: HometownUpdateProps) => {
   const router = useRouter();
-  const { user, currentAddr, mutate: mutateUser } = useUser();
+  const { user, currentAddr, type: userType, mutate: mutateUser } = useUser();
 
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
@@ -69,15 +69,13 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
   });
 
   const updateHometown = (updateData: PostUserRequestBody) => {
-    // dummy user
-    if (user?.id === -1) {
-      if (updateDummyLoading) return;
-      updateDummy(updateData);
+    if (userType === "member") {
+      if (updateUserLoading) return;
+      updateUser(updateData);
       return;
     }
-    // membership user
-    if (updateUserLoading) return;
-    updateUser(updateData);
+    if (updateDummyLoading) return;
+    updateDummy(updateData);
   };
 
   // address
@@ -142,29 +140,24 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
       key: "ANOTHER",
       text: "새 동네 추가하기",
       selectItem: () => {
-        // dummy user
-        if (user?.id === -1) {
-          openModal<MessageModalProps>(MessageModal, "signUpNow", {
-            type: "confirm",
-            message: "휴대폰 인증하고 회원가입하시겠어요?",
-            cancelBtn: "취소",
-            confirmBtn: "회원가입",
-            hasBackdrop: true,
-            onConfirm: () => {
-              closeModal(LayerModal, "HometownUpdate");
-              router.push({
-                pathname: "/join",
-                query: { addrNm: currentAddr?.emdAddrNm },
-              });
-            },
+        if (userType === "member") {
+          openModal<LayerModalProps>(LayerModal, "HometownLocate", {
+            headerType: "default",
+            title: "내 동네 추가하기",
+            contents: <HometownLocate addrType="SUB" />,
           });
           return;
         }
-        // membership user
-        openModal<LayerModalProps>(LayerModal, "HometownLocate", {
-          headerType: "default",
-          title: "내 동네 추가하기",
-          contents: <HometownLocate addrType="SUB" />,
+        openModal<MessageModalProps>(MessageModal, "signUpNow", {
+          type: "confirm",
+          message: "휴대폰 인증하고 회원가입하시겠어요?",
+          cancelBtn: "취소",
+          confirmBtn: "회원가입",
+          hasBackdrop: true,
+          onConfirm: () => {
+            closeModal(LayerModal, "HometownUpdate");
+            router.push("/user/account/phone");
+          },
         });
       },
       removeItem: () => null,

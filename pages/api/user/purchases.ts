@@ -5,7 +5,7 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProfilesPurchasesResponse extends ResponseDataType {
+export interface GetUserPurchasesResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   products: (Product & {
@@ -89,10 +89,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       },
     });
 
-    const products = records.map((record) => record.product).filter((product): product is GetProfilesPurchasesResponse["products"][0] => !!product);
+    const products = records.map((record) => record.product).filter((product): product is GetUserPurchasesResponse["products"][0] => !!product);
 
     // result
-    const result: GetProfilesPurchasesResponse = {
+    const result: GetUserPurchasesResponse = {
       success: true,
       totalCount,
       lastCursor: products.length ? products[products.length - 1].id : -1,

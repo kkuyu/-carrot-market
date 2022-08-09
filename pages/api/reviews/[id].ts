@@ -86,17 +86,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "NotFoundReview";
       throw error;
     }
-    if (review.product.reviews.length) {
-      const receiveReview = review.product.reviews[0];
-      if (receiveReview.role !== role && receiveReview.satisfaction === "dislike") {
-        review.product.reviews = [];
-      }
-    }
 
     // result
     const result: GetReviewsDetailResponse = {
       success: true,
-      review,
+      review: {
+        ...review,
+        product: {
+          ...review.product,
+          reviews: review.product.reviews.filter((review) => review.role !== role && review.satisfaction === "dislike"),
+        },
+      },
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

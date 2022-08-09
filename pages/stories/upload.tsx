@@ -11,13 +11,13 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { PostStoriesResponse } from "@api/stories";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
-const StoryUpload: NextPage = () => {
+const StoriesUploadPage: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
@@ -41,8 +41,7 @@ const StoryUpload: NextPage = () => {
 
   const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
     if (loading || photoLoading) return;
-
-    if (!_photos || !_photos.length) {
+    if (!_photos?.length) {
       uploadStory({ ...data, photos: [], ...currentAddr });
       return;
     }
@@ -92,7 +91,7 @@ const StoryUpload: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <StoryUpload />;
+  return <StoriesUploadPage />;
 };
 
 Page.getLayout = getLayout;
@@ -101,18 +100,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
-
-  // redirect: stories
-  if (!ssrUser.profile) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `stories`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,

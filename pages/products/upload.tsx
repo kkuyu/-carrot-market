@@ -11,13 +11,13 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
-const ProductUpload: NextPage = () => {
+const ProductsUploadPage: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
@@ -41,8 +41,7 @@ const ProductUpload: NextPage = () => {
 
   const submitUploadProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (loading || photoLoading) return;
-
-    if (!_photos || !_photos.length) {
+    if (!_photos?.length) {
       uploadProduct({ ...data, photos: [], ...currentAddr });
       return;
     }
@@ -92,7 +91,7 @@ const ProductUpload: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <ProductUpload />;
+  return <ProductsUploadPage />;
 };
 
 Page.getLayout = getLayout;
@@ -101,18 +100,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
-
-  // redirect: /
-  if (!ssrUser.profile) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,

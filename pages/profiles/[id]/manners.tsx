@@ -12,14 +12,14 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MannerList from "@components/lists/mannerList";
 import Buttons from "@components/buttons";
 
-const ProfileManners: NextPage = () => {
+const ProfilesMannersPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
@@ -82,7 +82,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProfileManners />
+      <ProfilesMannersPage />
     </SWRConfig>
   );
 };
@@ -93,12 +93,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // getProfile
-  const profileId = params?.id?.toString() || "";
+  // profileId
+  const profileId: string = params?.id?.toString() || "";
 
-  // invalid params: profileId
-  // redirect: /profiles/[id]
-  if (!profileId || isNaN(+profileId)) {
+  // invalidUrl
+  let invalidUrl = false;
+  if (!profileId || isNaN(+profileId)) invalidUrl = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidUrl) {
     return {
       redirect: {
         permanent: false,
@@ -107,7 +109,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find profile
+  // getProfile
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
@@ -121,9 +123,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // not found profile
-  // redirect: /profiles/[id]
-  if (!profile) {
+  // invalidProfile
+  let invalidProfile = false;
+  if (!profile) invalidProfile = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidProfile) {
     return {
       redirect: {
         permanent: false,
@@ -132,12 +136,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find manner
-  const allowDislike = profile.id === ssrUser?.profile?.id;
+  // getManners
+  const includeDislike = profile?.id === ssrUser?.profile?.id;
   const manners = await client.manner.findMany({
     where: {
-      userId: profile.id,
-      ...(!allowDislike
+      userId: profile?.id,
+      ...(!includeDislike
         ? {
             reviews: {
               some: { NOT: [{ satisfaction: "dislike" }] },
@@ -174,12 +178,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProfile: {
         response: {
@@ -188,7 +187,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
       },
       getManners: {
-        query: `includeDislike=${allowDislike}`,
+        query: `includeDislike=${includeDislike}`,
         response: {
           success: true,
           manners: JSON.parse(JSON.stringify(manners || [])),

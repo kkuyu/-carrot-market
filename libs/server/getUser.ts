@@ -5,6 +5,7 @@ import { IronSessionData } from "iron-session";
 import client from "@libs/server/client";
 
 export interface SsrUserResponse {
+  success: boolean;
   profile: User | null;
   dummyProfile: IronSessionData["dummyUser"] | null;
   currentAddr: {
@@ -31,6 +32,7 @@ const getSsrUser = async (
 
   return new Promise((resolve) => {
     resolve({
+      success: true,
       profile: foundUser,
       dummyProfile: dummyUser,
       currentAddr: {

@@ -6,7 +6,7 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostLoginResponse extends ResponseDataType {}
+export interface PostUserLoginResponse extends ResponseDataType {}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -56,7 +56,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostLoginResponse = {
+    const result: PostUserLoginResponse = {
       success: true,
     };
     return res.status(200).json(result);

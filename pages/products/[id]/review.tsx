@@ -16,15 +16,15 @@ import client from "@libs/server/client";
 import { PostReviewsResponse } from "@api/reviews";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ReviewProduct, { ReviewProductTypes } from "@components/forms/reviewProduct";
 
-const ProductReview: NextPage = () => {
+const ProductsReviewPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -143,7 +143,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProductReview />
+      <ProductsReviewPage />
     </SWRConfig>
   );
 };
@@ -154,22 +154,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // productId
+  const productId: string = params?.id?.toString() || "";
 
-  const productId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: productId
-  // redirect: /products/[id]
-  if (!ssrUser.profile || !productId || isNaN(+productId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/products/${productId}`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -178,7 +170,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find product
+  // invalidUrl
+  let invalidUrl = false;
+  if (!productId || isNaN(+productId)) invalidUrl = true;
+  // redirect `/products/${productId}`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // getProduct
   const product = await client.product.findUnique({
     where: {
       id: +productId,
@@ -205,9 +210,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // invalid product: not found
-  // redirect: /products/[id]
-  if (!product) {
+  // invalidProduct
+  let invalidProduct = false;
+  if (!product) invalidProduct = true;
+  // redirect `/products/${productId}`
+  if (invalidProduct) {
     return {
       redirect: {
         permanent: false,
@@ -216,14 +223,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const role = ssrUser?.profile?.id === product.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = product.records.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = product.records.find((record) => record.kind === Kind.ProductPurchase);
-  const existedReview = product.reviews.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
+  // condition
+  const role = ssrUser?.profile?.id === product?.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase);
+  const existedReview = product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
 
-  // invalid product: not my product
-  // redirect: /products/id
-  if (ssrUser?.profile?.id !== product.userId && ssrUser?.profile?.id !== purchaseRecord?.userId) {
+  // invalidCondition
+  let invalidCondition = false;
+  if (saleRecord) invalidCondition = true;
+  if (ssrUser?.profile?.id !== product?.userId && ssrUser?.profile?.id !== purchaseRecord?.userId) invalidCondition = true;
+  // redirect `/products/${productId}`
+  if (invalidCondition) {
     return {
       redirect: {
         permanent: false,
@@ -232,30 +243,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // sale product
-  // redirect: /products/id
-  if (saleRecord) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${product.id}`,
-      },
-    };
-  }
-
-  // not purchase product
-  // redirect: /products/id/purchase
+  // redirect `/products/${productId}/purchase`
   if (!purchaseRecord) {
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${product.id}/purchase`,
+        destination: `/products/${productId}/purchase`,
       },
     };
   }
 
-  // existed review
-  // redirect: /reviews/id
+  // redirect `/reviews/${existedReview.id}`
   if (purchaseRecord && existedReview) {
     return {
       redirect: {
@@ -265,13 +263,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // other user
-  const findUser = await client.user.findUnique({
+  // getOtherProfile
+  const otherProfile = await client.user.findUnique({
     where: {
-      id: role === "sellUser" ? purchaseRecord.userId : product.userId,
+      id: role === "sellUser" ? purchaseRecord.userId : product?.userId,
     },
   });
 
+  // defaultLayout
   const defaultLayout = {
     meta: {
       title: "거래 후기 보내기 | 중고거래",
@@ -292,7 +291,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getProduct: {
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || [])),
+          product: JSON.parse(JSON.stringify(product || {})),
         },
       },
       getProfile: {
@@ -304,7 +303,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getOtherProfile: {
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(findUser || {})),
+          profile: JSON.parse(JSON.stringify(otherProfile || {})),
         },
       },
     },

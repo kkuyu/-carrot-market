@@ -14,14 +14,14 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetProductsResponse } from "@api/products";
 import { GetUserResponse } from "@api/user";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import FloatingButtons from "@components/floatingButtons";
 import ProductList from "@components/lists/productList";
 
-const ProductHome: NextPage = () => {
+const ProductsIndexPage: NextPage = () => {
   const { currentAddr } = useUser();
   const { changeLayout } = useLayouts();
 
@@ -101,7 +101,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProductHome />
+      <ProductsIndexPage />
     </SWRConfig>
   );
 };
@@ -112,8 +112,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: user/logout or welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile && !ssrUser.dummyProfile) invalidUser = true;
+  // redirect `/welcome` OR `/user/logout`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -126,7 +129,6 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
-
   const products =
     !posX || !posY || !distance
       ? []
@@ -183,12 +185,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProduct: {
         options: {

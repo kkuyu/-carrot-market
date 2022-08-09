@@ -21,7 +21,7 @@ export interface FeedbackCommentProps {
 
 const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
   const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item.id}` : null);
@@ -43,7 +43,9 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
 
   // like
   const clickLike = () => {
-    !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike();
+    if (userType === "member") toggleLike();
+    if (userType === "non-member") openSignUpModal();
+    if (userType === "guest") openWelcomeModal();
   };
   const toggleLike = () => {
     if (!data) return;
@@ -91,10 +93,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push({
-          pathname: "/join",
-          query: { addrNm: currentAddr?.emdAddrNm },
-        });
+        router.push("/user/account/phone");
       },
     });
   };

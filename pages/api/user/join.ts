@@ -8,7 +8,7 @@ import { getRandomName } from "@libs/utils";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostJoinResponse extends ResponseDataType {
+export interface PostUserJoinResponse extends ResponseDataType {
   isExisted: boolean;
 }
 
@@ -72,7 +72,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostJoinResponse = {
+    const result: PostUserJoinResponse = {
       success: true,
       isExisted: Boolean(user),
     };

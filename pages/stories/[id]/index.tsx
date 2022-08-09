@@ -17,8 +17,8 @@ import client from "@libs/server/client";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadType } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -30,9 +30,9 @@ import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import Profiles from "@components/profiles";
 
-const StoryDetail: NextPage<{}> = () => {
+const StoriesDetailPage: NextPage<{}> = () => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { user, currentAddr, type: userType } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
@@ -99,9 +99,9 @@ const StoryDetail: NextPage<{}> = () => {
   };
 
   const submitReComment = (data: EditCommentTypes) => {
-    if (commentLoading || sendCommentLoading) return;
-    if (!user) return;
+    if (!user || userType !== "member") return;
     if (!storyData?.story) return;
+    if (commentLoading || sendCommentLoading) return;
     mutateStoryDetail((prev) => {
       return prev && { ...prev, story: { ...prev.story, comments: [...prev.story.comments, { id: 0 }] } };
     }, false);
@@ -125,10 +125,7 @@ const StoryDetail: NextPage<{}> = () => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push({
-          pathname: "/join",
-          query: { addrNm: currentAddr?.emdAddrNm },
-        });
+        router.push("/user/account/phone");
       },
     });
   };
@@ -162,7 +159,7 @@ const StoryDetail: NextPage<{}> = () => {
 
   // setting layout
   useEffect(() => {
-    if (!storyData?.story) return;
+    if (!userType) return;
     const kebabActions = [
       { key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) },
       { key: "report", text: "신고", onClick: () => console.log("신고") },
@@ -173,15 +170,16 @@ const StoryDetail: NextPage<{}> = () => {
     changeLayout({
       meta: {},
       header: {
-        kebabActions: !user?.id
-          ? kebabActions.filter((action) => ["welcome"].includes(action.key))
-          : user?.id !== storyData?.story?.userId
-          ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
-          : kebabActions.filter((action) => ["edit", "delete"].includes(action.key)),
+        kebabActions:
+          userType === "guest"
+            ? kebabActions.filter((action) => ["welcome"].includes(action.key))
+            : user?.id !== storyData?.story?.userId
+            ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
+            : kebabActions.filter((action) => ["edit", "delete"].includes(action.key)),
       },
       navBar: {},
     });
-  }, [user?.id, storyData?.story]);
+  }, [storyData?.story, user?.id, userType]);
 
   useEffect(() => {
     setMounted(true);
@@ -261,7 +259,7 @@ const StoryDetail: NextPage<{}> = () => {
             <EditComment
               type="post"
               formData={formData}
-              onValid={user?.id === -1 ? openSignUpModal : submitReComment}
+              onValid={userType === "member" ? submitReComment : openSignUpModal}
               isLoading={commentLoading || sendCommentLoading}
               commentType={category?.commentType}
               className="w-full pl-5 pr-3"
@@ -286,7 +284,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <StoryDetail />
+      <StoriesDetailPage />
     </SWRConfig>
   );
 };
@@ -301,17 +299,20 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const storyId = params?.id?.toString();
+  // storyId
+  const storyId: string = params?.id?.toString() || "";
 
-  // invalid params: storyId
+  // invalidUrl
+  let invalidUrl = false;
+  if (!storyId || isNaN(+storyId)) invalidUrl = true;
   // 404
-  if (!storyId || isNaN(+storyId)) {
+  if (invalidUrl) {
     return {
       notFound: true,
     };
   }
 
-  // find story
+  // getStory
   const story = await client.story.findUnique({
     where: {
       id: +storyId,
@@ -338,17 +339,20 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  // not found story
+  // invalidStory
+  let invalidStory = false;
+  if (!story) invalidStory = true;
   // 404
-  if (!story) {
+  if (invalidStory) {
     return {
       notFound: true,
     };
   }
 
+  // getComments
   const comments = await client.storyComment.findMany({
     where: {
-      storyId: story.id,
+      storyId: story?.id,
       depth: StoryCommentMinimumDepth,
       AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
     },
@@ -378,6 +382,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
+  // defaultLayout
   const defaultLayout = {
     meta: {
       title: `${truncateStr(story?.content, 15)} | 동네생활`,
@@ -398,7 +403,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       getStory: {
         response: {
           success: true,
-          story: JSON.parse(JSON.stringify(story || null)),
+          story: JSON.parse(JSON.stringify(story || {})),
         },
       },
       getComments: {

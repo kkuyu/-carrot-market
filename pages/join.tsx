@@ -10,11 +10,11 @@ import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
-import { PostJoinResponse } from "@api/user/join";
-import { PostConfirmTokenResponse } from "@api/verification/token";
+import { PostUserJoinResponse } from "@api/user/join";
+import { PostVerificationTokenResponse } from "@api/verification/token";
 import { PostDummyResponse } from "@api/user/dummy";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -22,7 +22,7 @@ import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const Join: NextPage = () => {
+const JoinPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { openToast } = useToast();
@@ -32,7 +32,7 @@ const Join: NextPage = () => {
 
   // join user
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostJoinResponse>("/api/user/join", {
+  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostUserJoinResponse>("/api/user/join", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -48,7 +48,7 @@ const Join: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-user", {
         placement: "bottom",
@@ -183,7 +183,7 @@ const Join: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <Join />;
+  return <JoinPage />;
 };
 
 Page.getLayout = getLayout;

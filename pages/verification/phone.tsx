@@ -1,6 +1,5 @@
 import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
-
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 // @libs
@@ -9,17 +8,17 @@ import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { PostVerificationPhoneResponse } from "@api/verification/phone";
-import { PostConfirmTokenResponse } from "@api/verification/token";
+import { PostVerificationTokenResponse } from "@api/verification/token";
 import { PostVerificationUpdateResponse } from "@api/verification/update";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const VerificationPhone: NextPage = () => {
+const VerificationPhonePage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { openToast } = useToast();
@@ -54,7 +53,7 @@ const VerificationPhone: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       if (updateLoading) return;
       updateUser({
@@ -156,7 +155,7 @@ const VerificationPhone: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <VerificationPhone />;
+  return <VerificationPhonePage />;
 };
 
 Page.getLayout = getLayout;

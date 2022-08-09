@@ -15,7 +15,7 @@ export interface HeaderProps extends HeaderOptions {}
 
 const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, submitId }: HeaderProps) => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { user, currentAddr, type: userType } = useUser();
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
@@ -27,28 +27,18 @@ const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = []
           <button
             className="h-12 flex items-center px-5"
             onClick={() => {
-              // dummy user
-              if (user?.id === -1) {
-                openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
-                  headerType: "default",
-                  title: "내 동네 설정하기",
-                  contents: <HometownUpdate />,
-                });
-                return;
-              }
-              // membership user
-              if (!user?.SUB_emdPosNm) {
-                openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
-                  headerType: "default",
-                  title: "내 동네 설정하기",
-                  contents: <HometownUpdate />,
-                });
-              } else {
+              if (userType === "member" && user?.SUB_emdPosNm) {
                 openModal<CustomModalProps>(CustomModal, "HometownDropdown", {
                   hasBackdrop: true,
                   contents: <HometownDropdown />,
                 });
+                return;
               }
+              openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
+                headerType: "default",
+                title: "내 동네 설정하기",
+                contents: <HometownUpdate />,
+              });
             }}
           >
             <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>

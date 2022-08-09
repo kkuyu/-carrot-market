@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostConfirmTokenResponse extends ResponseDataType {}
+export interface PostVerificationTokenResponse extends ResponseDataType {}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -47,7 +47,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostConfirmTokenResponse = {
+    const result: PostVerificationTokenResponse = {
       success: true,
     };
     return res.status(200).json(result);

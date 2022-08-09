@@ -13,13 +13,13 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetReviewsDetailResponse } from "@api/reviews/[id]";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 
-const ReviewsDetail: NextPage = () => {
+const ReviewsDetailPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -99,7 +99,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ReviewsDetail />
+      <ReviewsDetailPage />
     </SWRConfig>
   );
 };
@@ -110,21 +110,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // reviewId
+  const reviewId: string = params?.id?.toString() || "";
 
-  const reviewId = params?.id?.toString() || "";
-
-  // invalid params: reviewId
-  // redirect: /user
-  if (!ssrUser.profile || !reviewId || isNaN(+reviewId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/user`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -133,7 +126,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find review
+  // invalidUrl
+  let invalidUrl = false;
+  if (!reviewId || isNaN(+reviewId)) invalidUrl = true;
+  // redirect `/user`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/user`,
+      },
+    };
+  }
+
+  // getReview
   const review = await client.productReview.findUnique({
     where: {
       id: +reviewId,
@@ -172,9 +178,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // not found review
-  // redirect: /user
-  if (!review) {
+  // invalidReview
+  let invalidReview = false;
+  if (!review) invalidReview = true;
+  // redirect `/user`
+  if (invalidReview) {
     return {
       redirect: {
         permanent: false,
@@ -183,36 +191,21 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const role = ssrUser.profile?.id === review.product?.userId ? "sellUser" : "purchaseUser";
+  // condition
+  const role = ssrUser.profile?.id === review?.product?.userId ? "sellUser" : "purchaseUser";
 
-  // not my review
-  // redirect: /user
-  if (!(review.sellUser.id === ssrUser?.profile?.id || review.purchaseUser.id === ssrUser?.profile?.id)) {
+  // invalidCondition
+  let invalidCondition = false;
+  if (!(review?.sellUser.id === ssrUser?.profile?.id || review?.purchaseUser.id === ssrUser?.profile?.id)) invalidCondition = true;
+  if (review?.role !== role && review?.satisfaction === "dislike") invalidCondition = true;
+  // redirect `/user`
+  if (invalidCondition) {
     return {
       redirect: {
         permanent: false,
         destination: `/user`,
       },
     };
-  }
-
-  // dislike review
-  // redirect: /user
-  if (review.role !== role && review.satisfaction === "dislike") {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/user`,
-      },
-    };
-  }
-
-  // receive dislike review (remove)
-  if (review.product.reviews.length) {
-    const receiveReview = review.product.reviews[0];
-    if (receiveReview.role !== role && receiveReview.satisfaction === "dislike") {
-      review.product.reviews = [];
-    }
   }
 
   // defaultLayout
@@ -234,17 +227,22 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getReview: {
         response: {
           success: true,
-          review: JSON.parse(JSON.stringify(review || [])),
+          review: JSON.parse(
+            JSON.stringify(
+              {
+                ...review,
+                product: {
+                  ...review?.product,
+                  reviews: review?.product?.reviews?.filter((review) => review.role !== role && review.satisfaction === "dislike"),
+                },
+              } || {}
+            )
+          ),
         },
       },
     },

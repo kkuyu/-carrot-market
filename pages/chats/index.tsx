@@ -1,4 +1,5 @@
 import type { NextPage } from "next";
+import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
 import { SWRConfig } from "swr";
@@ -14,20 +15,20 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetChatsResponse } from "@api/chats";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
-const ChatHome: NextPage = () => {
+const ChatsIndexPage: NextPage = () => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { type: userType } = useUser();
   const { changeLayout } = useLayouts();
 
   const { data, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
-    const options = { url: user && user?.id === -1 ? "" : "/api/chats" };
+    const options = { url: userType === "member" ? "/api/chats" : "" };
     return getKey<GetChatsResponse>(...arg, options);
   });
 
@@ -51,14 +52,16 @@ const ChatHome: NextPage = () => {
     });
   }, []);
 
-  if (user?.id === -1) {
+  if (userType !== "member") {
     return (
       <div className="container">
         <div className="py-10 text-center">
           <p className="text-notice inline-block">
             이웃과의 채팅은
-            <Buttons text="회원가입" sort="text-link" status="default" className="align-top" onClick={() => router.push({ pathname: "/join", query: { addrNm: currentAddr?.emdAddrNm } })} />후 이용
-            가능합니다.
+            <Link href="/user/account/phone" passHref>
+              <Buttons tag="a" sort="text-link" status="default" text="휴대폰 인증" className="align-top" />
+            </Link>
+            후 이용 가능합니다.
           </p>
         </div>
       </div>
@@ -103,7 +106,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ChatHome />
+      <ChatsIndexPage />
     </SWRConfig>
   );
 };
@@ -114,16 +117,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
-
+  // getChats
   const chats = ssrUser.profile
     ? await client.chat.findMany({
         take: 10,
@@ -174,16 +168,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getChats: {
         options: {
-          url: "/api/chats",
+          url: ssrUser.profile ? "/api/chats" : "",
         },
         response: {
           success: true,

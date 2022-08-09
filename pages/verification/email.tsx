@@ -8,16 +8,16 @@ import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { PostVerificationEmailResponse } from "@api/verification/email";
-import { PostConfirmTokenResponse } from "@api/verification/token";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+import { PostVerificationTokenResponse } from "@api/verification/token";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const VerificationEmail: NextPage = () => {
+const VerificationEmailPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
@@ -43,7 +43,7 @@ const VerificationEmail: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       router.push({
         pathname: "/verification/phone",
@@ -124,7 +124,7 @@ const VerificationEmail: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <VerificationEmail />;
+  return <VerificationEmailPage />;
 };
 
 Page.getLayout = getLayout;

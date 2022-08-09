@@ -23,7 +23,7 @@ interface HometownLocateProps {
 }
 
 const HometownLocate = ({ addrType }: HometownLocateProps) => {
-  const { user, mutate: mutateUser } = useUser();
+  const { user, type: userType, mutate: mutateUser } = useUser();
   const { state, longitude, latitude } = useCoords();
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
@@ -75,15 +75,13 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   });
 
   const updateHometown = (updateData: PostUserRequestBody) => {
-    // dummy user
-    if (user?.id === -1) {
-      if (updateDummyLoading) return;
-      updateDummy(updateData);
+    if (userType === "member") {
+      if (updateUserLoading) return;
+      updateUser(updateData);
       return;
     }
-    // membership user
-    if (updateUserLoading) return;
-    updateUser(updateData);
+    if (updateDummyLoading) return;
+    updateDummy(updateData);
   };
 
   const resetForm = () => {

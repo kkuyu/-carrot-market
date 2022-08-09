@@ -3,13 +3,13 @@ import Link from "next/link";
 import { useEffect } from "react";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 
-const WelcomeHome: NextPage = () => {
+const WelcomeIndexPage: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   useEffect(() => {
@@ -56,7 +56,7 @@ const WelcomeHome: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <WelcomeHome />;
+  return <WelcomeIndexPage />;
 };
 
 Page.getLayout = getLayout;

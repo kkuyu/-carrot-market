@@ -13,14 +13,14 @@ import client from "@libs/server/client";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 
-const ProductDelete: NextPage = () => {
+const ProductsDeletePage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
@@ -120,7 +120,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProductDelete />
+      <ProductsDeletePage />
     </SWRConfig>
   );
 };
@@ -131,22 +131,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // productId
+  const productId: string = params?.id?.toString() || "";
 
-  const productId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: productId
-  // redirect: /products/[id]
-  if (!ssrUser.profile || !productId || isNaN(+productId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/products/${productId}`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -155,7 +147,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find product
+  // invalidUrl
+  let invalidUrl = false;
+  if (!productId || isNaN(+productId)) invalidUrl = true;
+  // redirect `/products/${productId}`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // getProduct
   const product = await client.product.findUnique({
     where: {
       id: +productId,
@@ -188,20 +193,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // invalid product: not found
-  // redirect: /products/[id]
-  if (!product) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // invalid product: not my product
-  // redirect: /products/id
-  if (ssrUser?.profile?.id !== product.userId) {
+  // invalidProduct
+  let invalidProduct = false;
+  if (!product) invalidProduct = true;
+  if (ssrUser?.profile?.id !== product?.userId) invalidProduct = true;
+  // redirect `/products/${productId}`
+  if (invalidProduct) {
     return {
       redirect: {
         permanent: false,
@@ -231,7 +228,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getProduct: {
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || [])),
+          product: JSON.parse(JSON.stringify(product || {})),
         },
       },
     },

@@ -8,10 +8,10 @@ import useLayouts from "@libs/client/useLayouts";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostLoginResponse } from "@api/user/login";
-import { PostConfirmTokenResponse } from "@api/verification/token";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+import { PostUserLoginResponse } from "@api/user/login";
+import { PostVerificationTokenResponse } from "@api/verification/token";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -19,14 +19,14 @@ import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const Login: NextPage = () => {
+const LoginPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { openToast } = useToast();
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostLoginResponse>("/api/user/login", {
+  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostUserLoginResponse>("/api/user/login", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -46,7 +46,7 @@ const Login: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostConfirmTokenResponse>("/api/verification/token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       openToast<MessageToastProps>(MessageToast, "login-user", {
         placement: "bottom",
@@ -137,7 +137,7 @@ const Login: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <Login />;
+  return <LoginPage />;
 };
 
 Page.getLayout = getLayout;

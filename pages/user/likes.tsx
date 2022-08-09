@@ -14,22 +14,22 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
-import { GetProfilesLikeResponse } from "@api/user/likes";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+import { GetUserLikeResponse } from "@api/user/likes";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductList from "@components/lists/productList";
 import LikeProduct from "@components/groups/likeProduct";
 
-const ProfileLikes: NextPage = () => {
+const UserLikesPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const { data, setSize } = useSWRInfinite<GetProfilesLikeResponse>((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => {
+  const { data, setSize } = useSWRInfinite<GetUserLikeResponse>((...arg: [index: number, previousPageData: GetUserLikeResponse]) => {
     const options = { url: "/api/user/likes" };
-    return getKey<GetProfilesLikeResponse>(...arg, options);
+    return getKey<GetUserLikeResponse>(...arg, options);
   });
 
   const infiniteRef = useRef<HTMLDivElement | null>(null);
@@ -81,18 +81,18 @@ const ProfileLikes: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProducts: { options: { url: string; query?: string }; response: GetProfilesLikeResponse };
+  getProducts: { options: { url: string; query?: string }; response: GetUserLikeResponse };
 }> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesLikeResponse]) => getKey<GetProfilesLikeResponse>(...arg, getProducts.options))]: [getProducts.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetUserLikeResponse]) => getKey<GetUserLikeResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
     >
-      <ProfileLikes />
+      <UserLikesPage />
     </SWRConfig>
   );
 };
@@ -103,19 +103,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
-
-  // !ssrUser.profile
-  // redirect: /user
-  if (!ssrUser.profile) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/user`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -124,7 +116,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
-  // find product
+  // getRecords
   const records = ssrUser.profile
     ? await client.record.findMany({
         take: 10,
@@ -171,6 +163,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
       })
     : [];
+
+  // getProducts
   const products = records.map((record) => record.product);
 
   // defaultLayout
@@ -192,12 +186,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProducts: {
         options: {

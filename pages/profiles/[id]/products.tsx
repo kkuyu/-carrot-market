@@ -16,8 +16,8 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import FeedbackProduct from "@components/groups/feedbackProduct";
@@ -31,7 +31,7 @@ type ProductTab = {
   name: string;
 };
 
-const ProfileProducts: NextPage = () => {
+const ProfilesProductsPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -159,7 +159,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProfileProducts />
+      <ProfilesProductsPage />
     </SWRConfig>
   );
 };
@@ -170,12 +170,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // getProfile
-  const profileId = params?.id?.toString() || "";
+  // profileId
+  const profileId: string = params?.id?.toString() || "";
 
-  // invalid params: profileId
-  // redirect: /profiles/[id]
-  if (!profileId || isNaN(+profileId)) {
+  // invalidUrl
+  let invalidUrl = false;
+  if (!profileId || isNaN(+profileId)) invalidUrl = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidUrl) {
     return {
       redirect: {
         permanent: false,
@@ -184,16 +186,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find profile
+  // getProfile
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
     },
   });
 
-  // not found profile
-  // redirect: /profiles/[id]
-  if (!profile) {
+  // invalidProfile
+  let invalidProfile = false;
+  if (!profile) invalidProfile = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidProfile) {
     return {
       redirect: {
         permanent: false,
@@ -202,7 +206,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find product
+  // getProductsByAll
   const productsByAll = await client.product.findMany({
     take: 10,
     skip: 0,
@@ -210,7 +214,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       resumeAt: "desc",
     },
     where: {
-      userId: profile.id,
+      userId: profile?.id,
     },
     include: {
       records: {
@@ -234,7 +238,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // find product by sale
+  // getProductsBySale
   const productsBySale = await client.product.findMany({
     take: 10,
     skip: 0,
@@ -242,7 +246,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       resumeAt: "desc",
     },
     where: {
-      userId: profile.id,
+      userId: profile?.id,
       AND: {
         records: { some: { kind: Kind.ProductSale } },
       },
@@ -269,7 +273,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // find product by sold
+  // getProductsBySold
   const productsBySold = await client.product.findMany({
     take: 10,
     skip: 0,
@@ -277,7 +281,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       resumeAt: "desc",
     },
     where: {
-      userId: profile.id,
+      userId: profile?.id,
       NOT: {
         records: { some: { kind: Kind.ProductSale } },
       },
@@ -310,7 +314,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: `판매 상품 | ${profile?.name} | 프로필`,
     },
     header: {
-      title: `${profile.name}님의 판매 상품`,
+      title: `${profile?.name}님의 판매 상품`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -323,12 +327,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProfile: {
         response: {
@@ -338,7 +337,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getProductsByAll: {
         options: {
-          url: `/api/profiles/${profile.id}/products`,
+          url: `/api/profiles/${profile?.id}/products`,
         },
         response: {
           success: true,
@@ -348,7 +347,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getProductsBySale: {
         options: {
-          url: `/api/profiles/${profile.id}/products/sale`,
+          url: `/api/profiles/${profile?.id}/products/sale`,
         },
         response: {
           success: true,
@@ -358,7 +357,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getProductsBySold: {
         options: {
-          url: `/api/profiles/${profile.id}/products/sold`,
+          url: `/api/profiles/${profile?.id}/products/sold`,
         },
         response: {
           success: true,

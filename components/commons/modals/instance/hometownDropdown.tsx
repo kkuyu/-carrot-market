@@ -15,7 +15,7 @@ import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
 interface HometownDropdownProps {}
 
 const HometownDropdown = ({}: HometownDropdownProps) => {
-  const { user, currentAddr, mutate: mutateUser } = useUser();
+  const { user, type: userType, mutate: mutateUser } = useUser();
 
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
@@ -60,15 +60,13 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
   });
 
   const updateHometown = (updateData: PostUserRequestBody) => {
-    // dummy user
-    if (user?.id === -1) {
-      if (updateDummyLoading) return;
-      updateDummy(updateData);
+    if (userType === "member") {
+      if (updateUserLoading) return;
+      updateUser(updateData);
       return;
     }
-    // membership user
-    if (updateUserLoading) return;
-    updateUser(updateData);
+    if (updateDummyLoading) return;
+    updateDummy(updateData);
   };
 
   const addressButtons = [

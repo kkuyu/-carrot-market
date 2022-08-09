@@ -22,7 +22,7 @@ export interface FeedbackStoryProps {
 
 const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
   const { data, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
@@ -47,7 +47,9 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
 
   // like
   const clickLike = () => {
-    !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike();
+    if (userType === "member") toggleLike();
+    if (userType === "non-member") openSignUpModal();
+    if (userType === "guest") openWelcomeModal();
   };
   const toggleLike = (emotion: null | EmotionKeys = null) => {
     if (!data) return;
@@ -73,7 +75,9 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     setIsVisibleBox(false);
   };
   const clickEmotionIcon = (key: EmotionKeys) => {
-    !user?.id ? openWelcomeModal() : user?.id === -1 ? openSignUpModal() : toggleLike(key);
+    if (userType === "member") toggleLike(key);
+    if (userType === "non-member") openSignUpModal();
+    if (userType === "guest") openWelcomeModal();
     setIsVisibleBox(false);
   };
   const blurEmotionBox = (e: FocusEvent<HTMLDivElement, Element>) => {
@@ -88,8 +92,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   // comment
   const clickComment = () => {
     if (router.pathname === "/stories/[id]") {
-      const target = document.querySelector(".container input#comment") as HTMLInputElement;
-      target?.focus();
+      (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
     } else {
       router.push(`/stories/${item?.id}`);
     }
@@ -118,10 +121,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push({
-          pathname: "/join",
-          query: { addrNm: currentAddr?.emdAddrNm },
-        });
+        router.push("/user/account/phone");
       },
     });
   };

@@ -20,8 +20,8 @@ import { GetChatsDetailResponse } from "@api/chats/[id]";
 import { PostChatsMessageResponse } from "@api/chats/[id]/message";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -30,9 +30,9 @@ import ChatMessageList from "@components/lists/chatMessageList";
 import ProductSummary from "@components/cards/productSummary";
 import Buttons from "@components/buttons";
 
-const ChatDetail: NextPage = () => {
+const ChatsDetailPage: NextPage = () => {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, type: userType } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
@@ -113,17 +113,17 @@ const ChatDetail: NextPage = () => {
   };
 
   const submitChatMessage = (data: SendMessageTypes) => {
-    if (!user || user.id === -1) return;
+    if (!user || userType !== "member") return;
     if (sendChatMessageLoading) return;
     boundMutate((prev) => {
       const time = new Date();
-      const newMessage = { id: time.getTime(), text: data.text, userId: user.id, chatId: 1, createdAt: time, updatedAt: time };
+      const newMessage = { id: time.getTime(), text: data.text, userId: user?.id, chatId: 1, createdAt: time, updatedAt: time };
       return (
         prev && {
           ...prev,
           chat: {
             ...prev.chat,
-            chatMessages: [...prev.chat.chatMessages, { ...newMessage, user: { id: user.id, name: user.name, avatar: "" } }],
+            chatMessages: [...prev.chat.chatMessages, { ...newMessage, user: { id: user?.id, name: user?.name, avatar: "" } }],
           },
         }
       );
@@ -215,7 +215,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ChatDetail />
+      <ChatsDetailPage />
     </SWRConfig>
   );
 };
@@ -226,22 +226,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // chatId
+  const chatId: string = params?.id?.toString() || "";
 
-  const chatId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: chatId
-  // redirect: chats
-  if (!ssrUser.profile || !chatId || isNaN(+chatId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/chats`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -250,7 +242,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find chat
+  // invalidUrl
+  let invalidUrl = false;
+  if (!chatId || isNaN(+chatId)) invalidUrl = true;
+  // redirect `/chats`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/chats`,
+      },
+    };
+  }
+
+  // getChat
   const chat = await client.chat.findUnique({
     where: {
       id: +chatId,
@@ -300,20 +305,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // not found chat
-  // redirect: chats
-  if (!chat) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/chats`,
-      },
-    };
-  }
-
-  // not my chat
-  // redirect: chats
-  if (!chat?.users.find((chatUser) => chatUser.id === ssrUser?.profile?.id)) {
+  // invalidChat
+  let invalidChat = false;
+  if (!chat) invalidChat = true;
+  if (!chat?.users.find((chatUser) => chatUser.id === ssrUser?.profile?.id)) invalidChat = true;
+  // redirect `/chats`
+  if (invalidChat) {
     return {
       redirect: {
         permanent: false,
@@ -326,19 +323,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const defaultLayout = {
     meta: {
       title: `${truncateStr(
-        chat.users
-          .filter((chatUser) => chatUser.id !== ssrUser?.profile?.id)
-          .map((chatUser) => chatUser.name)
-          .join(", "),
+        chat?.users
+          ?.filter((chatUser) => chatUser.id !== ssrUser?.profile?.id)
+          ?.map((chatUser) => chatUser.name)
+          ?.join(", "),
         15
       )} | 채팅`,
     },
     header: {
       title: truncateStr(
-        chat.users
-          .filter((chatUser) => chatUser.id !== ssrUser?.profile?.id)
-          .map((chatUser) => chatUser.name)
-          .join(", "),
+        chat?.users
+          ?.filter((chatUser) => chatUser.id !== ssrUser?.profile?.id)
+          ?.map((chatUser) => chatUser.name)
+          ?.join(", "),
         15
       ),
       titleTag: "strong",
@@ -353,17 +350,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getChat: {
         response: {
           success: true,
-          chat: JSON.parse(JSON.stringify(chat || [])),
+          chat: JSON.parse(JSON.stringify(chat || {})),
         },
       },
     },

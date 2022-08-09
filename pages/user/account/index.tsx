@@ -11,16 +11,16 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
 import Buttons from "@components/buttons";
 
-const UserAccount: NextPage = () => {
+const UserAccountPage: NextPage = () => {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, type: userType } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
@@ -56,7 +56,7 @@ const UserAccount: NextPage = () => {
             <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "추가"} className="absolute top-0 right-0" />
           </Link>
         </li>
-        {user?.id && user?.id !== -1 && (
+        {userType === "member" && (
           <li className="relative">
             <strong className="font-normal">이메일</strong>
             <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.email}</span>
@@ -72,7 +72,7 @@ const UserAccount: NextPage = () => {
         <li>
           <Buttons tag="button" sort="text-link" status="default" text="로그아웃" onClick={openLogoutModal} className="px-0 no-underline" />
         </li>
-        {user?.id && user?.id !== -1 && (
+        {userType === "member" && (
           <li>
             <Link href="/user/account/delete" passHref>
               <Buttons tag="a" sort="text-link" status="default" text="탈퇴하기" className="px-0 no-underline" />
@@ -95,7 +95,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <UserAccount />
+      <UserAccountPage />
     </SWRConfig>
   );
 };
@@ -105,16 +105,6 @@ Page.getLayout = getLayout;
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
-
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
 
   // defaultLayout
   const defaultLayout = {
@@ -135,12 +125,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
     },
   };

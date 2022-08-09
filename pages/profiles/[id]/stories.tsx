@@ -17,8 +17,8 @@ import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
@@ -31,7 +31,7 @@ type StoryTab = {
   name: string;
 };
 
-const ProfileStories: NextPage = () => {
+const ProfilesStoriesPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -153,7 +153,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProfileStories />
+      <ProfilesStoriesPage />
     </SWRConfig>
   );
 };
@@ -164,12 +164,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // getProfile
-  const profileId = params?.id?.toString() || "";
+  // profileId
+  const profileId: string = params?.id?.toString() || "";
 
-  // invalid params: profileId
-  // redirect: /profiles/[id]
-  if (!profileId || isNaN(+profileId)) {
+  // invalidUrl
+  let invalidUrl = false;
+  if (!profileId || isNaN(+profileId)) invalidUrl = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidUrl) {
     return {
       redirect: {
         permanent: false,
@@ -178,16 +180,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find profile
+  // getProfile
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
     },
   });
 
-  // not found profile
-  // redirect: /profiles/[id]
-  if (!profile) {
+  // invalidProfile
+  let invalidProfile = false;
+  if (!profile) invalidProfile = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidProfile) {
     return {
       redirect: {
         permanent: false,
@@ -196,7 +200,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find story
+  // getStories
   const stories = await client.story.findMany({
     take: 10,
     skip: 0,
@@ -204,7 +208,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       createdAt: "desc",
     },
     where: {
-      userId: profile.id,
+      userId: profile?.id,
     },
     include: {
       user: {
@@ -236,7 +240,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // find comments
+  // getComments
   const comments = await client.storyComment.findMany({
     take: 10,
     skip: 0,
@@ -244,7 +248,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       createdAt: "desc",
     },
     where: {
-      userId: profile.id,
+      userId: profile?.id,
       NOT: [{ content: "" }],
     },
     include: {
@@ -280,7 +284,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: `동네생활 | ${profile?.name} | 프로필`,
     },
     header: {
-      title: `${profile.name}님의 동네생활`,
+      title: `${profile?.name}님의 동네생활`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -293,12 +297,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProfile: {
         response: {
@@ -308,7 +307,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getStories: {
         options: {
-          url: `/api/profiles/${profile.id}/stories`,
+          url: `/api/profiles/${profile?.id}/stories`,
         },
         response: {
           success: true,
@@ -319,7 +318,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getComments: {
         options: {
-          url: `/api/profiles/${profile.id}/stories/comments`,
+          url: `/api/profiles/${profile?.id}/stories/comments`,
         },
         response: {
           success: true,

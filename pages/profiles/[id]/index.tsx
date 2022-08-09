@@ -11,8 +11,8 @@ import client from "@libs/server/client";
 // @api
 import { ProfilesConcern } from "@api/profiles/types";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Profiles from "@components/profiles";
@@ -20,7 +20,7 @@ import MannerList from "@components/lists/mannerList";
 import ReviewList from "@components/lists/reviewList";
 import Buttons from "@components/buttons";
 
-const ProfileDetail: NextPage = () => {
+const ProfilesDetailPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -129,7 +129,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProfileDetail />
+      <ProfilesDetailPage />
     </SWRConfig>
   );
 };
@@ -144,17 +144,20 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const profileId = params?.id?.toString() || "";
+  // profileId
+  const profileId: string = params?.id?.toString() || "";
 
-  // invalid params: profileId
+  // invalidUrl
+  let invalidUrl = false;
+  if (!profileId || isNaN(+profileId)) invalidUrl = true;
   // 404
-  if (!profileId || isNaN(+profileId)) {
+  if (invalidUrl) {
     return {
       notFound: true,
     };
   }
 
-  // find profile
+  // getProfile
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
@@ -168,9 +171,10 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  // not found profile
+  let invalidProfile = false;
+  if (!profile) invalidProfile = true;
   // 404
-  if (!profile) {
+  if (invalidProfile) {
     return {
       notFound: true,
     };

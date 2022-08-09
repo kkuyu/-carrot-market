@@ -14,8 +14,7 @@ interface FloatingButtonsProps {
 
 const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
-
+  const { type: userType } = useUser();
   const { openModal } = useModal();
 
   const openSignUpModal = () => {
@@ -26,10 +25,7 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push({
-          pathname: "/join",
-          query: { addrNm: currentAddr?.emdAddrNm },
-        });
+        router.push("/user/account/phone");
       },
     });
   };
@@ -37,8 +33,13 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
   return (
     <div className="fixed-container bottom-0">
       <div className="fixed-inner">
-        {user?.id === -1 ? (
-          // dummy user
+        {userType === "member" ? (
+          <Link href={href}>
+            <a className="absolute bottom-20 right-4 flex items-center justify-center w-14 aspect-square text-white bg-orange-400 border-transparent transition-colors rounded-full shadow-xl hover:bg-orange-500">
+              {children}
+            </a>
+          </Link>
+        ) : (
           <button
             type="button"
             onClick={openSignUpModal}
@@ -46,13 +47,6 @@ const FloatingButtons = ({ href, children }: FloatingButtonsProps) => {
           >
             {children}
           </button>
-        ) : (
-          // membership user
-          <Link href={href}>
-            <a className="absolute bottom-20 right-4 flex items-center justify-center w-14 aspect-square text-white bg-orange-400 border-transparent transition-colors rounded-full shadow-xl hover:bg-orange-500">
-              {children}
-            </a>
-          </Link>
         )}
       </div>
     </div>

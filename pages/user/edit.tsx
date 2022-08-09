@@ -14,15 +14,15 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse, PostUserResponse } from "@api/user";
 import { PostDummyResponse } from "@api/user/dummy";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import EditProfile, { EditProfileTypes } from "@components/forms/editProfile";
 
-const ProfileEdit: NextPage = () => {
+const UserEditPage: NextPage = () => {
   const router = useRouter();
-  const { user, mutate: mutateUser } = useUser();
+  const { user, type: userType, mutate: mutateUser } = useUser();
   const { changeLayout } = useLayouts();
 
   const formData = useForm<EditProfileTypes>();
@@ -43,7 +43,8 @@ const ProfileEdit: NextPage = () => {
     },
   });
   const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
-    onSuccess: () => {
+    onSuccess: async () => {
+      await mutateUser();
       router.replace(`/user`);
     },
     onError: (data) => {
@@ -57,8 +58,9 @@ const ProfileEdit: NextPage = () => {
   });
 
   const setDefaultPhotos = async () => {
-    if (!user || !user?.avatar) {
+    if (!user?.avatar) {
       setPhotoLoading(false);
+      return;
     }
 
     const transfer = new DataTransfer();
@@ -73,14 +75,14 @@ const ProfileEdit: NextPage = () => {
   };
 
   const submitProfileUpdate = async ({ photos: _photos, ...data }: EditProfileTypes) => {
-    if (user?.id === -1) {
+    if (userType !== "member") {
       if (updateDummyLoading || photoLoading) return;
       updateDummy({ ...data });
       return;
     }
 
     if (updateUserLoading || photoLoading) return;
-    if (!_photos || !_photos.length) {
+    if (!_photos?.length) {
       updateUser({ ...data, photos: [] });
       return;
     }
@@ -136,13 +138,7 @@ const ProfileEdit: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProfile
-        formId="edit-profile"
-        formData={formData}
-        onValid={submitProfileUpdate}
-        isDummyProfile={user?.id === -1}
-        isLoading={user?.id === -1 ? updateDummyLoading : updateUserLoading || photoLoading}
-      />
+      <EditProfile formId="edit-profile" formData={formData} onValid={submitProfileUpdate} isLoading={(userType === "member" ? updateUserLoading : updateDummyLoading) || photoLoading} />
     </div>
   );
 };
@@ -158,7 +154,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProfileEdit />
+      <UserEditPage />
     </SWRConfig>
   );
 };
@@ -168,16 +164,6 @@ Page.getLayout = getLayout;
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
-
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
 
   // defaultLayout
   const defaultLayout = {
@@ -199,12 +185,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
     },
   };

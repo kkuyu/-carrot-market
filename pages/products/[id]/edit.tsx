@@ -15,13 +15,13 @@ import getSsrUser from "@libs/server/getUser";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
-const ProductUpload: NextPage = () => {
+const ProductsEditPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -46,7 +46,7 @@ const ProductUpload: NextPage = () => {
   });
 
   const setDefaultPhotos = async () => {
-    if (!productData?.product || !productData?.product?.photos) {
+    if (!productData?.product?.photos) {
       setPhotoLoading(false);
       return;
     }
@@ -64,8 +64,7 @@ const ProductUpload: NextPage = () => {
 
   const submitEditProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (loading || photoLoading) return;
-
-    if (!_photos || !_photos.length) {
+    if (!_photos?.length) {
       editProduct({ ...data, photos: [] });
       return;
     }
@@ -143,7 +142,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProductUpload />
+      <ProductsEditPage />
     </SWRConfig>
   );
 };
@@ -154,22 +153,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // productId
+  const productId: string = params?.id?.toString() || "";
 
-  const productId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: productId
-  // redirect: /products/[id]
-  if (!ssrUser.profile || !productId || isNaN(+productId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/products/${productId}`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -178,26 +169,32 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find product
+  // invalidUrl
+  let invalidUrl = false;
+  if (!productId || isNaN(+productId)) invalidUrl = true;
+  // redirect `/products/${productId}`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // getProduct
   const product = await client.product.findUnique({
     where: {
       id: +productId,
     },
   });
 
-  // invalid product: not found
-  // redirect: /products/[id]
+  // invalidProduct
+  let invalidProduct = false;
+  if (!product) invalidProduct = true;
+  if (product?.userId !== ssrUser?.profile?.id) invalidProduct = true;
+  // redirect `/products/${productId}`
   if (!product) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // invalid product: not my product
-  if (product.userId !== ssrUser?.profile?.id) {
     return {
       redirect: {
         permanent: false,
@@ -228,7 +225,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getProduct: {
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || [])),
+          product: JSON.parse(JSON.stringify(product || {})),
         },
       },
     },

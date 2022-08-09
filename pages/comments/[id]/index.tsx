@@ -15,8 +15,8 @@ import client from "@libs/server/client";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -28,9 +28,9 @@ import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 import StorySummary from "@components/cards/storySummary";
 import Link from "next/link";
 
-const CommentsDetail: NextPage = () => {
+const CommentsDetailPage: NextPage = () => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { user, currentAddr, type: userType } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
@@ -78,9 +78,9 @@ const CommentsDetail: NextPage = () => {
   };
 
   const submitReComment = (data: EditCommentTypes) => {
-    if (commentLoading || sendCommentLoading) return;
-    if (!user) return;
+    if (!user || userType !== "member") return;
     if (!commentData?.comment) return;
+    if (commentLoading || sendCommentLoading) return;
     mutateCommentDetail((prev) => {
       const time = new Date();
       const { content, reCommentRefId = null } = data;
@@ -101,10 +101,7 @@ const CommentsDetail: NextPage = () => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push({
-          pathname: "/join",
-          query: { addrNm: currentAddr?.emdAddrNm },
-        });
+        router.push("/user/account/phone");
       },
     });
   };
@@ -199,7 +196,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <CommentsDetail />
+      <CommentsDetailPage />
     </SWRConfig>
   );
 };
@@ -214,16 +211,19 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const commentId = params?.id?.toString();
+  const commentId: string = params?.id?.toString() || "";
 
-  // invalid params: commentId
-  if (!commentId || isNaN(+commentId)) {
+  // invalidUrl
+  let invalidUrl = false;
+  if (!commentId || isNaN(+commentId)) invalidUrl = true;
+  // 404
+  if (invalidUrl) {
     return {
       notFound: true,
     };
   }
 
-  // find comment
+  // getComment
   const comment = await client.storyComment.findUnique({
     where: {
       id: +commentId,
@@ -261,56 +261,51 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       },
     },
   });
+  const comments = comment
+    ? await client.storyComment.findMany({
+        where: {
+          storyId: comment?.story.id,
+          ...(comment?.depth ? { depth: comment?.depth + 1 } : {}),
+          AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+        },
+        orderBy: {
+          createdAt: "asc",
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              avatar: true,
+            },
+          },
+          story: {
+            select: {
+              id: true,
+              userId: true,
+              category: true,
+            },
+          },
+          _count: {
+            select: {
+              reComments: true,
+            },
+          },
+        },
+      })
+    : [];
 
-  // not found comment
+  // invalidComment
+  let invalidComment = false;
+  if (!comment) invalidComment = true;
+  if (comment?.depth && comment.depth < StoryCommentMinimumDepth) invalidComment = true;
+  if (comment?.depth && comment.depth > StoryCommentMaximumDepth) invalidComment = true;
   // 404
-  if (!comment) {
+  if (invalidComment) {
     return {
       notFound: true,
     };
   }
-  if (comment.depth < StoryCommentMinimumDepth) {
-    return {
-      notFound: true,
-    };
-  }
-  if (comment.depth > StoryCommentMaximumDepth) {
-    return {
-      notFound: true,
-    };
-  }
-
-  const comments = await client.storyComment.findMany({
-    where: {
-      storyId: comment.story.id,
-      depth: comment.depth + 1,
-      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      story: {
-        select: {
-          id: true,
-          userId: true,
-          category: true,
-        },
-      },
-      _count: {
-        select: {
-          reComments: true,
-        },
-      },
-    },
-  });
 
   // defaultLayout
   const defaultLayout = {
@@ -334,7 +329,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         query: "includeReComments=true&",
         response: {
           success: true,
-          comment: JSON.parse(JSON.stringify({ ...comment, reComments: comments } || null)),
+          comment: JSON.parse(JSON.stringify({ ...comment, reComments: comments } || {})),
         },
       },
     },

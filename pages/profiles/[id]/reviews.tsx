@@ -15,8 +15,8 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import ReviewList from "@components/lists/reviewList";
@@ -28,7 +28,7 @@ type ReviewTab = {
   name: string;
 };
 
-const ProfileProducts: NextPage = () => {
+const ProfilesReviewsPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
@@ -152,7 +152,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProfileProducts />
+      <ProfilesReviewsPage />
     </SWRConfig>
   );
 };
@@ -163,12 +163,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // getProfile
-  const profileId = params?.id?.toString() || "";
+  // profileId
+  const profileId: string = params?.id?.toString() || "";
 
-  // invalid params: profileId
-  // redirect: /profiles/[id]
-  if (!profileId || isNaN(+profileId)) {
+  // invalidUrl
+  let invalidUrl = false;
+  if (!profileId || isNaN(+profileId)) invalidUrl = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidUrl) {
     return {
       redirect: {
         permanent: false,
@@ -177,16 +179,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find profile
+  // getProfile
   const profile = await client.user.findUnique({
     where: {
       id: +profileId,
     },
   });
 
-  // not found profile
-  // redirect: /profiles/[id]
-  if (!profile) {
+  // invalidProfile
+  let invalidProfile = false;
+  if (!profile) invalidProfile = true;
+  // redirect `/profiles/${profileId}`
+  if (invalidProfile) {
     return {
       redirect: {
         permanent: false,
@@ -195,7 +199,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find review
+  // getReviewsByAll
   const reviewsByAll = await client.productReview.findMany({
     take: 10,
     skip: 0,
@@ -210,8 +214,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         not: "",
       },
       OR: [
-        { role: "sellUser", purchaseUserId: profile.id, product: { userId: { not: profile.id } } },
-        { role: "purchaseUser", sellUserId: profile.id, product: { userId: { equals: profile.id } } },
+        { role: "sellUser", purchaseUserId: profile?.id, product: { userId: { not: profile?.id } } },
+        { role: "purchaseUser", sellUserId: profile?.id, product: { userId: { equals: profile?.id } } },
       ],
     },
     include: {
@@ -232,7 +236,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // find review by sell user
+  // getReviewsBySellUser
   const reviewsBySellUser = await client.productReview.findMany({
     take: 10,
     skip: 0,
@@ -246,7 +250,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       text: {
         not: "",
       },
-      OR: [{ role: "sellUser", purchaseUserId: profile.id, product: { userId: { not: profile.id } } }],
+      OR: [{ role: "sellUser", purchaseUserId: profile?.id, product: { userId: { not: profile?.id } } }],
     },
     include: {
       purchaseUser: {
@@ -266,7 +270,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // find review by purchase user
+  // getReviewsByPurchaseUser
   const reviewsByPurchaseUser = await client.productReview.findMany({
     take: 10,
     skip: 0,
@@ -280,7 +284,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       text: {
         not: "",
       },
-      OR: [{ role: "purchaseUser", sellUserId: profile.id, product: { userId: { equals: profile.id } } }],
+      OR: [{ role: "purchaseUser", sellUserId: profile?.id, product: { userId: { equals: profile?.id } } }],
     },
     include: {
       purchaseUser: {
@@ -306,7 +310,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: `받은 매너 후기 | ${profile?.name} | 프로필`,
     },
     header: {
-      title: `${profile.name}님의 받은 매너 후기`,
+      title: `${profile?.name}님의 받은 매너 후기`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -319,12 +323,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProfile: {
         response: {
@@ -334,7 +333,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getReviewsByAll: {
         options: {
-          url: `/api/profiles/${profile.id}/reviews`,
+          url: `/api/profiles/${profile?.id}/reviews`,
         },
         response: {
           success: true,
@@ -344,7 +343,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getReviewsBySellUser: {
         options: {
-          url: `/api/profiles/${profile.id}/reviews/sellUser`,
+          url: `/api/profiles/${profile?.id}/reviews/sellUser`,
         },
         response: {
           success: true,
@@ -354,7 +353,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getReviewsByPurchaseUser: {
         options: {
-          url: `/api/profiles/${profile.id}/reviews/purchaseUser`,
+          url: `/api/profiles/${profile?.id}/reviews/purchaseUser`,
         },
         response: {
           success: true,

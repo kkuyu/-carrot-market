@@ -25,7 +25,7 @@ export interface HeaderOptions {
 }
 
 interface HeaderWrapperProps {
-  defaultHeaderState: HeaderOptions;
+  defaultHeaderState: HeaderOptions | null;
 }
 
 const HeaderWrapper = ({ defaultHeaderState }: HeaderWrapperProps) => {
@@ -35,6 +35,7 @@ const HeaderWrapper = ({ defaultHeaderState }: HeaderWrapperProps) => {
   const currentHeader = useMemo(() => ({ ...currentState.header }), [currentState]);
 
   useEffect(() => {
+    if (!defaultHeaderState) return;
     change({
       meta: {},
       header: {
@@ -48,7 +49,7 @@ const HeaderWrapper = ({ defaultHeaderState }: HeaderWrapperProps) => {
       },
       navBar: {},
     });
-  }, [change, defaultHeaderState]);
+  }, [defaultHeaderState]);
 
   return <HeaderContainer {...defaultHeaderState} {...currentHeader} />;
 };

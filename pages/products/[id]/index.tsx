@@ -17,8 +17,8 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostChatsResponse } from "@api/chats";
-// @pages
-import { NextPageWithLayout } from "@pages/_app";
+// @app
+import { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
@@ -28,10 +28,10 @@ import Profiles from "@components/profiles";
 import LikeProduct from "@components/groups/likeProduct";
 import PictureSlider from "@components/groups/pictureSlider";
 
-const ProductDetail: NextPage = () => {
+const ProductsDetailPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
-  const { user, currentAddr } = useUser();
+  const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
   // fetch data: product detail
@@ -92,12 +92,11 @@ const ProductDetail: NextPage = () => {
   };
 
   const goChat = () => {
-    if (!data?.product) return;
-    if (!user || user.id === -1) return;
+    if (!user || userType !== "member") return;
     if (createChatLoading) return;
     createChat({
-      userIds: [user.id, data.product.user.id],
-      productId: data.product.id,
+      userIds: [user?.id, data?.product?.user?.id],
+      productId: data?.product?.id,
     });
   };
 
@@ -110,10 +109,7 @@ const ProductDetail: NextPage = () => {
       confirmBtn: "회원가입",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push({
-          pathname: "/join",
-          query: { addrNm: currentAddr?.emdAddrNm },
-        });
+        router.push("/user/account/phone");
       },
     });
   };
@@ -131,6 +127,7 @@ const ProductDetail: NextPage = () => {
 
   // setting layout
   useEffect(() => {
+    if (!userType) return;
     if (!data?.product) return;
     const kebabActions = [
       { key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) },
@@ -142,23 +139,22 @@ const ProductDetail: NextPage = () => {
       { key: "delete", text: "삭제", onClick: () => router.push(`/products/${data?.product?.id}/delete`) },
       { key: "sale", text: "판매중", onClick: () => (data?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
       { key: "review", text: "거래 후기 보내기", onClick: () => router.push(`/products/${data?.product?.id}/review`) },
-      { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${data?.product?.id}/edit`) },
-      { key: "delete", text: "삭제", onClick: () => router.push(`/products/${data?.product?.id}/delete`) },
     ];
     changeLayout({
       meta: {},
       header: {
-        kebabActions: !user?.id
-          ? kebabActions.filter((action) => ["welcome"].includes(action.key))
-          : user?.id !== data?.product?.userId
-          ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
-          : saleRecord
-          ? kebabActions.filter((action) => ["sold", "edit", "resume", "delete"].includes(action.key))
-          : kebabActions.filter((action) => ["sale", "edit", "review", "delete"].includes(action.key)),
+        kebabActions:
+          userType === "guest"
+            ? kebabActions.filter((action) => ["welcome"].includes(action.key))
+            : user?.id !== data?.product?.userId
+            ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
+            : saleRecord
+            ? kebabActions.filter((action) => ["sold", "edit", "resume", "delete"].includes(action.key))
+            : kebabActions.filter((action) => ["sale", "edit", "review", "delete"].includes(action.key)),
       },
       navBar: {},
     });
-  }, [user?.id, data?.product]);
+  }, [data?.product, userType]);
 
   useEffect(() => {
     setMounted(true);
@@ -222,17 +218,19 @@ const ProductDetail: NextPage = () => {
             <div className="absolute top-1/2 left-3 -translate-y-1/2">
               <LikeProduct item={data?.product} className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" />
             </div>
-            <div className="flex-none px-5">
-              {!user?.id ? (
-                <Link href="/welcome" passHref>
-                  <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
-                </Link>
-              ) : user?.id !== data?.product?.userId ? (
-                <Buttons tag="button" text="채팅하기" size="sm" onClick={user?.id === -1 ? openSignUpModal : goChat} />
-              ) : (
-                <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${data?.product?.id}/chats`)} />
-              )}
-            </div>
+            {userType && (
+              <div className="flex-none px-5">
+                {userType === "guest" ? (
+                  <Link href="/welcome" passHref>
+                    <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
+                  </Link>
+                ) : user?.id !== data?.product?.userId ? (
+                  <Buttons tag="button" text="채팅하기" size="sm" onClick={userType === "member" ? goChat : openSignUpModal} />
+                ) : (
+                  <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${data?.product?.id}/chats`)} />
+                )}
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -281,7 +279,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProductDetail />
+      <ProductsDetailPage />
     </SWRConfig>
   );
 };
@@ -296,17 +294,20 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const productId = params?.id?.toString() || "";
+  // productId
+  const productId: string = params?.id?.toString() || "";
 
-  // invalid params: productId
+  // invalidUrl
+  let invalidUrl = false;
+  if (!productId || isNaN(+productId)) invalidUrl = true;
   // 404
-  if (!productId || isNaN(+productId)) {
+  if (invalidUrl) {
     return {
       notFound: true,
     };
   }
 
-  // find product
+  // getProduct
   const product = await client.product.findUnique({
     where: {
       id: +productId,
@@ -332,9 +333,11 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  // not found product
+  // invalidProduct
+  let invalidProduct = false;
+  if (!product) invalidProduct = true;
   // 404
-  if (!product) {
+  if (invalidProduct) {
     return {
       notFound: true,
     };
@@ -362,7 +365,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       getProduct: {
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || [])),
+          product: JSON.parse(JSON.stringify(product || {})),
         },
       },
     },

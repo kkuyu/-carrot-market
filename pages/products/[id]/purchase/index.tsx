@@ -18,15 +18,15 @@ import { GetChatsResponse } from "@api/chats";
 import { GetUserResponse } from "@api/user";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
-// @pages
-import type { NextPageWithLayout } from "@pages/_app";
+// @app
+import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import ProductSummary from "@components/cards/productSummary";
 import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
-const ProductPurchase: NextPage = () => {
+const ProductsPurchasePage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
@@ -137,7 +137,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <ProductPurchase />
+      <ProductsPurchasePage />
     </SWRConfig>
   );
 };
@@ -148,22 +148,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
-  if (!ssrUser.profile && !ssrUser.dummyProfile) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/welcome`,
-      },
-    };
-  }
+  // productId
+  const productId: string = params?.id?.toString() || "";
 
-  const productId = params?.id?.toString() || "";
-
-  // !ssrUser.profile
-  // invalid params: productId
-  // redirect: /products/id
-  if (!ssrUser.profile || !productId || isNaN(+productId)) {
+  // invalidUser
+  let invalidUser = false;
+  if (!ssrUser.profile) invalidUser = true;
+  // redirect `/products/${productId}`
+  if (invalidUser) {
     return {
       redirect: {
         permanent: false,
@@ -172,7 +164,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // find product
+  // invalidUrl
+  let invalidUrl = false;
+  if (!productId || isNaN(+productId)) invalidUrl = true;
+  // redirect `/products/${productId}`
+  if (invalidUrl) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // getProduct
   const product = await client.product.findUnique({
     where: {
       id: +productId,
@@ -199,9 +204,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
   });
 
-  // invalid product: not found
-  // redirect: /products/id
-  if (!product) {
+  // invalidProduct
+  let invalidProduct = false;
+  if (!product) invalidProduct = true;
+  if (product?.userId !== ssrUser?.profile?.id) invalidProduct = true;
+  // redirect `/products/${productId}`
+  if (invalidProduct) {
     return {
       redirect: {
         permanent: false,
@@ -210,14 +218,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const role = ssrUser?.profile?.id === product.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = product.records.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = product.records.find((record) => record.kind === Kind.ProductPurchase);
-  const existedReview = product.reviews.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
+  // condition
+  const role = ssrUser?.profile?.id === product?.userId ? "sellUser" : "purchaseUser";
+  const saleRecord = product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase);
+  const existedReview = product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
 
-  // invalid product: not my product
-  // redirect: /products/id
-  if (product.userId !== ssrUser?.profile?.id) {
+  // invalidCondition
+  let invalidCondition = false;
+  if (saleRecord) invalidCondition = true;
+  // redirect `/products/${productId}`
+  if (invalidCondition) {
     return {
       redirect: {
         permanent: false,
@@ -226,19 +237,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // sale product
-  // redirect: /products/id
-  if (saleRecord) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${product.id}`,
-      },
-    };
-  }
-
-  // purchase product && existed review
-  // redirect: /reviews/id
+  // redirect `/reviews/${existedReview.id}`
   if (purchaseRecord && existedReview) {
     return {
       redirect: {
@@ -248,18 +247,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // purchase product && existed review (purchase)
-  // redirect: /products/id/review
-  if (purchaseRecord && product.reviews.length) {
+  // redirect `/products/${productId}`
+  if (purchaseRecord && product?.reviews?.length) {
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${product.id}/review`,
+        destination: `/products/${productId}/review`,
       },
     };
   }
 
-  // find chat
+  // getChats
   const chats = ssrUser.profile
     ? await client.chat.findMany({
         take: 10,
@@ -287,7 +285,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
               id: ssrUser.profile?.id,
             },
           },
-          productId: product.id,
+          productId: product?.id,
         },
       })
     : [];
@@ -311,23 +309,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
-          dummyProfile: JSON.parse(JSON.stringify(ssrUser.dummyProfile || {})),
-          currentAddr: JSON.parse(JSON.stringify(ssrUser.currentAddr || {})),
-        },
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProduct: {
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || [])),
+          product: JSON.parse(JSON.stringify(product || {})),
         },
       },
       getChats: {
         options: {
           url: "/api/chats",
-          query: `productId=${product.id}`,
+          query: `productId=${product?.id}`,
         },
         response: {
           success: true,

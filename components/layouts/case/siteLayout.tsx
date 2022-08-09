@@ -17,10 +17,10 @@ export interface SiteLayoutProps {
 const SiteLayout = ({ children }: SiteLayoutProps) => {
   return (
     <>
-      <MetaWrapper defaultMetaState={children?.props?.defaultLayout?.meta || {}} />
-      <HeaderWrapper defaultHeaderState={children?.props?.defaultLayout?.header || {}} />
+      <MetaWrapper defaultMetaState={children?.props?.defaultLayout?.meta || null} />
+      <HeaderWrapper defaultHeaderState={children?.props?.defaultLayout?.header || null} />
       <div className="main h-min-full-screen">{children}</div>
-      <NavBarWrapper defaultNavBarState={children?.props?.defaultLayout?.navBar || {}} />
+      <NavBarWrapper defaultNavBarState={children?.props?.defaultLayout?.navBar || null} />
     </>
   );
 };

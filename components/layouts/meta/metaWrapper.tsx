@@ -9,7 +9,7 @@ export interface MetaOptions {
 }
 
 interface MetaWrapperProps {
-  defaultMetaState: MetaOptions;
+  defaultMetaState: MetaOptions | null;
 }
 
 const MetaWrapper = ({ defaultMetaState }: MetaWrapperProps) => {
@@ -19,6 +19,7 @@ const MetaWrapper = ({ defaultMetaState }: MetaWrapperProps) => {
   const currentMeta = useMemo(() => ({ ...currentState.meta }), [currentState]);
 
   useEffect(() => {
+    if (!defaultMetaState) return;
     change({
       meta: {
         title: "",
@@ -28,7 +29,7 @@ const MetaWrapper = ({ defaultMetaState }: MetaWrapperProps) => {
       header: {},
       navBar: {},
     });
-  }, [change, defaultMetaState]);
+  }, [defaultMetaState]);
 
   return <MetaContainer {...defaultMetaState} {...currentMeta} />;
 };

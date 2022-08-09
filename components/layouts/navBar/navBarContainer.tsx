@@ -9,7 +9,7 @@ const NavBar = ({ utils = [] }: NavBarProps) => {
   const router = useRouter();
 
   const classNames = {
-    default: `basis-full h-full pt-2 space-y-1`,
+    default: `basis-full h-full pt-2.5 space-y-1`,
     active: "text-orange-500",
     inactive: "hover:text-gray-500 transition-colors",
   };
