@@ -10,8 +10,10 @@ import useModal from "@libs/client/useModal";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
+import { PostCommentsLikeResponse } from "@api/comments/[id]/like";
 // @components
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import WelcomeModal, { WelcomeModalProps, WelcomeModalName } from "@components/commons/modals/case/welcomeModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
 
 export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
@@ -25,8 +27,8 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   const { openModal } = useModal();
 
   const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item.id}` : null);
-  const [updateLike, { loading: likeLoading }] = useMutation(data ? `/api/comments/${item?.id}/like` : "", {
-    onSuccess: (data) => {
+  const [updateLike, { loading: likeLoading }] = useMutation<PostCommentsLikeResponse>(data ? `/api/comments/${item?.id}/like` : "", {
+    onSuccess: () => {
       boundMutate();
     },
     onError: (data) => {
@@ -44,8 +46,8 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   // like
   const clickLike = () => {
     if (userType === "member") toggleLike();
-    if (userType === "non-member") openSignUpModal();
-    if (userType === "guest") openWelcomeModal();
+    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
   };
   const toggleLike = () => {
     if (!data) return;
@@ -68,34 +70,6 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
     } else {
       router.push(`/comments/${item?.id}`);
     }
-  };
-
-  // modal: welcome
-  const openWelcomeModal = () => {
-    openModal<MessageModalProps>(MessageModal, "welcome", {
-      type: "confirm",
-      message: "당근마켓 첫 방문이신가요?",
-      cancelBtn: "취소",
-      confirmBtn: "당근마켓 시작하기",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/welcome");
-      },
-    });
-  };
-
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/user/account/phone");
-      },
-    });
   };
 
   if (!item) return null;

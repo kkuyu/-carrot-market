@@ -115,12 +115,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // invalidUser
   let invalidUser = false;
   if (!ssrUser.profile && !ssrUser.dummyProfile) invalidUser = true;
-  // redirect `/welcome` OR `/user/logout`
+  // redirect `/welcome` OR `/account/logout`
   if (invalidUser) {
     return {
       redirect: {
         permanent: false,
-        destination: req?.cookies?.["carrot-market-session"] ? `/user/logout` : `/welcome`,
+        destination: req?.cookies?.["carrot-market-session"] ? `/account/logout` : `/welcome`,
       },
     };
   }

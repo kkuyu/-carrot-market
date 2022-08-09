@@ -17,11 +17,13 @@ import client from "@libs/server/client";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadType } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
+import { PostStoriesDeleteResponse } from "@api/stories/[id]/delete";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
 import PictureList from "@components/groups/pictureList";
 import FeedbackStory from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
@@ -74,7 +76,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
   });
 
   // kebab action: delete
-  const [deleteStory, { loading: deleteLoading }] = useMutation(`/api/stories/${router.query.id}/delete`, {
+  const [deleteStory, { loading: deleteLoading }] = useMutation<PostStoriesDeleteResponse>(`/api/stories/${router.query.id}/delete`, {
     onSuccess: () => {
       router.replace("/stories");
     },
@@ -98,10 +100,17 @@ const StoriesDetailPage: NextPage<{}> = () => {
     });
   };
 
+  const validReComment = (data: EditCommentTypes) => {
+    if (userType === "member") {
+      submitReComment(data);
+      return;
+    }
+    openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+  };
+
   const submitReComment = (data: EditCommentTypes) => {
-    if (!user || userType !== "member") return;
+    if (!user || commentLoading || sendCommentLoading) return;
     if (!storyData?.story) return;
-    if (commentLoading || sendCommentLoading) return;
     mutateStoryDetail((prev) => {
       return prev && { ...prev, story: { ...prev.story, comments: [...prev.story.comments, { id: 0 }] } };
     }, false);
@@ -116,23 +125,9 @@ const StoriesDetailPage: NextPage<{}> = () => {
     sendComment({ ...data, ...currentAddr });
   };
 
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/user/account/phone");
-      },
-    });
-  };
-
   // modal: delete
   const openDeleteModal = () => {
-    openModal<MessageModalProps>(MessageModal, "confirmDeleteStory", {
+    openModal<MessageModalProps>(MessageModal, "ConfirmDeleteStory", {
       type: "confirm",
       message: "게시글을 정말 삭제하시겠어요?",
       cancelBtn: "취소",
@@ -148,7 +143,6 @@ const StoriesDetailPage: NextPage<{}> = () => {
   // merge comment data
   useEffect(() => {
     if (!commentData) return;
-    if (!commentData?.success) return;
     setCommentFlatList(() => [...commentData.comments]);
   }, [commentData]);
 
@@ -256,14 +250,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
       {user?.id && (
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-16 border-t bg-white">
-            <EditComment
-              type="post"
-              formData={formData}
-              onValid={userType === "member" ? submitReComment : openSignUpModal}
-              isLoading={commentLoading || sendCommentLoading}
-              commentType={category?.commentType}
-              className="w-full pl-5 pr-3"
-            />
+            <EditComment type="post" formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType={category?.commentType} className="w-full pl-5 pr-3" />
           </div>
         </div>
       )}

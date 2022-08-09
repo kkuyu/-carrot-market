@@ -12,6 +12,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
@@ -63,7 +64,8 @@ const StoriesEditPage: NextPage = () => {
   };
 
   const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
-    if (loading || photoLoading) return;
+    if (!user || loading || photoLoading) return;
+
     if (!_photos?.length) {
       editStory({ ...data, photos: [] });
       return;
@@ -71,7 +73,6 @@ const StoriesEditPage: NextPage = () => {
 
     let photos = [];
     setPhotoLoading(true);
-
     for (let index = 0; index < _photos.length; index++) {
       // same photo
       if (storyData?.story?.photos && storyData?.story.photos.includes(_photos[index].name)) {
@@ -99,17 +100,20 @@ const StoriesEditPage: NextPage = () => {
       }
       photos.push(imageResponse.result.id);
     }
-
     editStory({ photos, ...data });
   };
 
   useEffect(() => {
     if (!storyData?.story) return;
+    if (storyData.story.userId !== user?.id) {
+      router.push(`/stories/${router.query.id}`);
+      return;
+    }
     setPhotoLoading(true);
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
     setDefaultPhotos();
-  }, [storyData?.story?.id]);
+  }, [storyData, user?.id]);
 
   useEffect(() => {
     changeLayout({
@@ -127,12 +131,14 @@ const StoriesEditPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
   getStory: { response: GetStoriesDetailResponse };
-}> = ({ getStory }) => {
+}> = ({ getUser, getStory }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/user": getUser.response,
           [`/api/stories/${getStory.response.story.id}`]: getStory.response,
         },
       }}
@@ -217,6 +223,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
       getStory: {
         response: {
           success: true,

@@ -45,7 +45,7 @@ const EditProfile = ({ formId, formData, onValid, isSuccess, isLoading, ...rest 
       {userType !== "member" && (
         <p className="text-notice">
           프로필 사진 및 관심사 설정은
-          <Link href="/user/account/phone" passHref>
+          <Link href="/account/phone" passHref>
             <Buttons tag="a" sort="text-link" status="default" text="휴대폰 인증" className="align-top" />
           </Link>
           후 이용 가능합니다.

@@ -1,4 +1,3 @@
-import { useRouter } from "next/router";
 import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import useSWR from "swr";
@@ -12,20 +11,19 @@ import { PostUserRequestBody, PostUserResponse } from "@api/user";
 import { PostDummyResponse } from "@api/user/dummy";
 import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
 // @components
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import HometownLocateModal, { HometownLocateModalProps, HometownLocateModalName } from "@components/commons/modals/case/hometownLocateModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import HometownLocate from "@components/commons/modals/instance/hometownLocate";
 import Buttons from "@components/buttons";
 
-interface HometownUpdateProps {}
+export interface HometownUpdateProps {}
 
 interface DistanceForm {
   range: number;
 }
 
 const HometownUpdate = ({}: HometownUpdateProps) => {
-  const router = useRouter();
   const { user, currentAddr, type: userType, mutate: mutateUser } = useUser();
 
   const { openModal, closeModal } = useModal();
@@ -38,7 +36,7 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "GeoCodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
+          openToast<MessageToastProps>(MessageToast, `UpdatedUser_${data.error.name}`, {
             placement: "bottom",
             message: data.error.message,
           });
@@ -56,7 +54,7 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "GeoCodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
+          openToast<MessageToastProps>(MessageToast, `UpdatedUser_${data.error.name}`, {
             placement: "bottom",
             message: data.error.message,
           });
@@ -89,23 +87,21 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
       },
       removeItem: () => {
         if (!user?.SUB_emdAddrNm) {
-          openModal<MessageModalProps>(MessageModal, "oneOrMore", {
+          openModal<MessageModalProps>(MessageModal, "ConfirmLimitedAddress", {
             type: "confirm",
             message: "동네가 1개만 선택된 상태에서는 삭제를 할 수 없어요. 현재 설정된 동네를 변경하시겠어요?",
             cancelBtn: "취소",
             confirmBtn: "변경",
             hasBackdrop: true,
             onConfirm: () => {
-              openModal<LayerModalProps>(LayerModal, "HometownLocate", {
-                headerType: "default",
-                title: "내 동네 추가하기",
-                contents: <HometownLocate addrType="MAIN" />,
+              openModal<HometownLocateModalProps>(HometownLocateModal, HometownLocateModalName, {
+                addrType: "MAIN",
               });
             },
           });
           return;
         }
-        openModal<MessageModalProps>(MessageModal, "confirmDeleteMainAddress", {
+        openModal<MessageModalProps>(MessageModal, "ConfirmDeleteMainAddress", {
           type: "confirm",
           message: "선택한 지역을 삭제하시겠습니까?",
           cancelBtn: "취소",
@@ -124,7 +120,7 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
         updateHometown({ emdType: "SUB" });
       },
       removeItem: () => {
-        openModal<MessageModalProps>(MessageModal, "confirmDeleteSubAddress", {
+        openModal<MessageModalProps>(MessageModal, "ConfirmDeleteSubAddress", {
           type: "confirm",
           message: "선택한 지역을 삭제하시겠습니까?",
           cancelBtn: "취소",
@@ -141,24 +137,12 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
       text: "새 동네 추가하기",
       selectItem: () => {
         if (userType === "member") {
-          openModal<LayerModalProps>(LayerModal, "HometownLocate", {
-            headerType: "default",
-            title: "내 동네 추가하기",
-            contents: <HometownLocate addrType="SUB" />,
+          openModal<HometownLocateModalProps>(HometownLocateModal, HometownLocateModalName, {
+            addrType: "SUB",
           });
           return;
         }
-        openModal<MessageModalProps>(MessageModal, "signUpNow", {
-          type: "confirm",
-          message: "휴대폰 인증하고 회원가입하시겠어요?",
-          cancelBtn: "취소",
-          confirmBtn: "회원가입",
-          hasBackdrop: true,
-          onConfirm: () => {
-            closeModal(LayerModal, "HometownUpdate");
-            router.push("/user/account/phone");
-          },
-        });
+        openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
       },
       removeItem: () => null,
     },

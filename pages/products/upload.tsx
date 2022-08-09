@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { SWRConfig } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
@@ -9,6 +10,7 @@ import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { PostProductsResponse } from "@api/products";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @app
@@ -40,7 +42,8 @@ const ProductsUploadPage: NextPage = () => {
   });
 
   const submitUploadProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
-    if (loading || photoLoading) return;
+    if (!user || loading || photoLoading) return;
+
     if (!_photos?.length) {
       uploadProduct({ ...data, photos: [], ...currentAddr });
       return;
@@ -48,7 +51,6 @@ const ProductsUploadPage: NextPage = () => {
 
     let photos = [];
     setPhotoLoading(true);
-
     for (let index = 0; index < _photos.length; index++) {
       // new photo
       const form = new FormData();
@@ -71,7 +73,6 @@ const ProductsUploadPage: NextPage = () => {
       }
       photos.push(imageResponse.result.id);
     }
-
     uploadProduct({ ...data, photos, ...currentAddr });
   };
 
@@ -90,8 +91,20 @@ const ProductsUploadPage: NextPage = () => {
   );
 };
 
-const Page: NextPageWithLayout = () => {
-  return <ProductsUploadPage />;
+const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
+}> = ({ getUser }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          "/api/user": getUser.response,
+        },
+      }}
+    >
+      <ProductsUploadPage />
+    </SWRConfig>
+  );
 };
 
 Page.getLayout = getLayout;
@@ -132,6 +145,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
     },
   };
 });

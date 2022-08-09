@@ -8,7 +8,7 @@ import useLayouts from "@libs/client/useLayouts";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostUserLoginResponse } from "@api/user/login";
+import { PostAccountLoginResponse } from "@api/account/login";
 import { PostVerificationTokenResponse } from "@api/verification/token";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -19,14 +19,14 @@ import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const LoginPage: NextPage = () => {
+const AccountLoginPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { openToast } = useToast();
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostUserLoginResponse>("/api/user/login", {
+  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostAccountLoginResponse>("/api/account/login", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -48,7 +48,7 @@ const LoginPage: NextPage = () => {
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
-      openToast<MessageToastProps>(MessageToast, "login-user", {
+      openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
         message: "로그인 되었어요",
       });
@@ -137,7 +137,7 @@ const LoginPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <LoginPage />;
+  return <AccountLoginPage />;
 };
 
 Page.getLayout = getLayout;

@@ -66,7 +66,7 @@ const HandleComment = ({ item, mutateStoryDetail, mutateStoryComments, mutateCom
 
   // modal: delete
   const openDeleteModal = () => {
-    openModal<MessageModalProps>(MessageModal, "confirmDeleteComment", {
+    openModal<MessageModalProps>(MessageModal, "ConfirmDeleteComment", {
       type: "confirm",
       message: "삭제하시겠어요?",
       cancelBtn: "취소",

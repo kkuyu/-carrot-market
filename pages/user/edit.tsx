@@ -75,13 +75,13 @@ const UserEditPage: NextPage = () => {
   };
 
   const submitProfileUpdate = async ({ photos: _photos, ...data }: EditProfileTypes) => {
+    if (!user || updateUserLoading || updateDummyLoading || photoLoading) return;
+
     if (userType !== "member") {
-      if (updateDummyLoading || photoLoading) return;
       updateDummy({ ...data });
       return;
     }
 
-    if (updateUserLoading || photoLoading) return;
     if (!_photos?.length) {
       updateUser({ ...data, photos: [] });
       return;
@@ -116,7 +116,6 @@ const UserEditPage: NextPage = () => {
       }
       photos.push(imageResponse.result.id);
     }
-
     updateUser({ ...data, photos });
   };
 
@@ -126,7 +125,7 @@ const UserEditPage: NextPage = () => {
     formData.setValue("name", user?.name);
     formData.setValue("concerns", !user?.concerns ? [] : (user.concerns.split(",") as EditProfileTypes["concerns"]));
     setDefaultPhotos();
-  }, [user?.id]);
+  }, [user]);
 
   useEffect(() => {
     changeLayout({

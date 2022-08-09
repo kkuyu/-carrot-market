@@ -10,7 +10,7 @@ import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
-import { PostUserJoinResponse } from "@api/user/join";
+import { PostAccountJoinResponse } from "@api/account/join";
 import { PostVerificationTokenResponse } from "@api/verification/token";
 import { PostDummyResponse } from "@api/user/dummy";
 // @app
@@ -22,7 +22,7 @@ import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const JoinPage: NextPage = () => {
+const AccountJoinPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { openToast } = useToast();
@@ -32,7 +32,7 @@ const JoinPage: NextPage = () => {
 
   // join user
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostUserJoinResponse>("/api/user/join", {
+  const [joinUser, { loading: userLoading, data: userData }] = useMutation<PostAccountJoinResponse>("/api/account/join", {
     onSuccess: () => {
       verifyTokenFocus("token");
     },
@@ -50,7 +50,7 @@ const JoinPage: NextPage = () => {
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
-      openToast<MessageToastProps>(MessageToast, "login-user", {
+      openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
         message: userData?.isExisted ? "기존 정보로 로그인 되었어요" : "회원가입이 완료되었어요",
       });
@@ -72,7 +72,7 @@ const JoinPage: NextPage = () => {
   // join dummy
   const [joinDummy, { loading: dummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
     onSuccess: () => {
-      openToast<MessageToastProps>(MessageToast, "login-dummy", {
+      openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
         message: "비회원으로 인증되었어요",
       });
@@ -84,7 +84,7 @@ const JoinPage: NextPage = () => {
     const invalidRouter = router.isReady && !router?.query?.addrNm;
     const invalidAddr = addrData && !addrData.success;
     if (invalidRouter || invalidAddr) {
-      openToast<MessageToastProps>(MessageToast, "invalid-addrNm", {
+      openToast<MessageToastProps>(MessageToast, "InvalidAddress", {
         placement: "bottom",
         message: "먼저 내 동네를 설정해주세요",
       });
@@ -183,7 +183,7 @@ const JoinPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <JoinPage />;
+  return <AccountJoinPage />;
 };
 
 Page.getLayout = getLayout;

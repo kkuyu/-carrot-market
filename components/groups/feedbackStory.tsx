@@ -11,8 +11,10 @@ import useModal from "@libs/client/useModal";
 import { GetStoriesResponse } from "@api/stories";
 import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
+import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
 // @components
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import WelcomeModal, { WelcomeModalProps, WelcomeModalName } from "@components/commons/modals/case/welcomeModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
@@ -26,7 +28,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   const { openModal } = useModal();
 
   const { data, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
-  const [updateLike, { loading: likeLoading }] = useMutation(item?.id ? `/api/stories/${item.id}/like` : "", {
+  const [updateLike, { loading: likeLoading }] = useMutation<PostStoriesLikeResponse>(item?.id ? `/api/stories/${item.id}/like` : "", {
     onSuccess: () => {
       boundMutate();
     },
@@ -48,8 +50,8 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   // like
   const clickLike = () => {
     if (userType === "member") toggleLike();
-    if (userType === "non-member") openSignUpModal();
-    if (userType === "guest") openWelcomeModal();
+    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
   };
   const toggleLike = (emotion: null | EmotionKeys = null) => {
     if (!data) return;
@@ -76,8 +78,8 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   };
   const clickEmotionIcon = (key: EmotionKeys) => {
     if (userType === "member") toggleLike(key);
-    if (userType === "non-member") openSignUpModal();
-    if (userType === "guest") openWelcomeModal();
+    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
     setIsVisibleBox(false);
   };
   const blurEmotionBox = (e: FocusEvent<HTMLDivElement, Element>) => {
@@ -96,34 +98,6 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
     } else {
       router.push(`/stories/${item?.id}`);
     }
-  };
-
-  // modal: welcome
-  const openWelcomeModal = () => {
-    openModal<MessageModalProps>(MessageModal, "welcome", {
-      type: "confirm",
-      message: "당근마켓 첫 방문이신가요?",
-      cancelBtn: "취소",
-      confirmBtn: "당근마켓 시작하기",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/welcome");
-      },
-    });
-  };
-
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/user/account/phone");
-      },
-    });
   };
 
   if (!item) return null;

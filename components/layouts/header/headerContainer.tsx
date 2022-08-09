@@ -5,11 +5,9 @@ import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
 // @components
 import { HeaderOptions, HeaderUtils } from "@components/layouts/header/headerWrapper";
-import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
+import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/case/hometownDropdownModal";
+import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
-import HometownDropdown from "@components/commons/modals/instance/hometownDropdown";
-import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
 
 export interface HeaderProps extends HeaderOptions {}
 
@@ -28,17 +26,10 @@ const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = []
             className="h-12 flex items-center px-5"
             onClick={() => {
               if (userType === "member" && user?.SUB_emdPosNm) {
-                openModal<CustomModalProps>(CustomModal, "HometownDropdown", {
-                  hasBackdrop: true,
-                  contents: <HometownDropdown />,
-                });
+                openModal<HometownDropdownModalProps>(HometownDropdownModal, HometownDropdownModalName, {});
                 return;
               }
-              openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
-                headerType: "default",
-                title: "내 동네 설정하기",
-                contents: <HometownUpdate />,
-              });
+              openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});
             }}
           >
             <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>

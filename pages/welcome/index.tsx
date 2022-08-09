@@ -45,7 +45,7 @@ const WelcomeIndexPage: NextPage = () => {
           </Link>
           <div className="mt-4">
             <span className="text-gray-500">이미 계정이 있나요?</span>
-            <Link href="/login" passHref>
+            <Link href="/account/login" passHref>
               <Buttons tag="a" sort="text-link" text="로그인" />
             </Link>
           </div>

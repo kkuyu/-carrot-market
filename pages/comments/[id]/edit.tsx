@@ -4,12 +4,14 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
+import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
 // @app
@@ -20,6 +22,7 @@ import EditComment, { EditCommentTypes } from "@components/forms/editComment";
 
 const CommentsEditPage: NextPage = () => {
   const router = useRouter();
+  const { user } = useUser();
   const { changeLayout } = useLayouts();
 
   const { data: commentData, mutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}` : null);
@@ -40,14 +43,18 @@ const CommentsEditPage: NextPage = () => {
   });
 
   const submitUploadComment = async ({ ...data }: EditCommentTypes) => {
-    if (loading) return;
+    if (!user || loading) return;
     editComment({ ...data });
   };
 
   useEffect(() => {
     if (!commentData?.comment) return;
+    if (commentData.comment.userId !== user?.id) {
+      router.push(`/comments/${router.query.id}`);
+      return;
+    }
     formData.setValue("content", commentData?.comment?.content);
-  }, [commentData?.comment]);
+  }, [commentData, user?.id]);
 
   useEffect(() => {
     changeLayout({
@@ -65,12 +72,14 @@ const CommentsEditPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
   getComment: { response: GetCommentsDetailResponse };
-}> = ({ getComment }) => {
+}> = ({ getUser, getComment }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/user": getUser.response,
           [`/api/comments/${getComment.response.comment.id}`]: getComment.response,
         },
       }}
@@ -155,6 +164,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
       getComment: {
         response: {
           success: true,

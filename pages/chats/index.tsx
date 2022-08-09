@@ -58,7 +58,7 @@ const ChatsIndexPage: NextPage = () => {
         <div className="py-10 text-center">
           <p className="text-notice inline-block">
             이웃과의 채팅은
-            <Link href="/user/account/phone" passHref>
+            <Link href="/account/phone" passHref>
               <Buttons tag="a" sort="text-link" status="default" text="휴대폰 인증" className="align-top" />
             </Link>
             후 이용 가능합니다.

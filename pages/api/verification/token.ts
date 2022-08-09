@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
-    if (/\/login$/.test(referer) || /\/join?.*$/.test(referer)) {
+    if (/\/account\/login$/.test(referer) || /\/account\/join?.*$/.test(referer)) {
       // update user
       req.session.user = {
         id: foundToken.userId,

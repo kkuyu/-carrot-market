@@ -14,6 +14,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @app
@@ -70,7 +71,7 @@ const ProductsResumePage: NextPage = () => {
   });
 
   const submitResumeProduct = () => {
-    if (loading) return;
+    if (!user || loading) return;
     editProduct({
       resume: true,
       price: formData.getValues("price"),
@@ -79,7 +80,10 @@ const ProductsResumePage: NextPage = () => {
 
   useEffect(() => {
     if (!productData?.product) return;
-
+    if (productData.product.userId !== user?.id) {
+      router.push(`/products/${router.query.id}`);
+      return;
+    }
     setState(() => {
       if (targetDate[0] === null) return "MaxCount";
       if (today > targetDate[0]) return productData?.product?.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct";
@@ -87,7 +91,7 @@ const ProductsResumePage: NextPage = () => {
       return null;
     });
     formData.setValue("price", productData?.product?.price);
-  }, [productData?.product?.id]);
+  }, [productData, user?.id]);
 
   useEffect(() => {
     changeLayout({
@@ -188,12 +192,14 @@ const ProductsResumePage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
-}> = ({ getProduct }) => {
+}> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/user": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
         },
       }}
@@ -306,6 +312,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
       getProduct: {
         response: {
           success: true,

@@ -6,33 +6,58 @@ import { SWRConfig } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
+import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
+import useToast from "@libs/client/useToast";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
+import { PostAccountLogoutResponse } from "@api/account/logout";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import Buttons from "@components/buttons";
 
-const UserAccountPage: NextPage = () => {
+const AccountIndexPage: NextPage = () => {
   const router = useRouter();
   const { user, type: userType } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
+  const { openToast } = useToast();
+
+  const [logoutUser, { loading: logoutUserLoading }] = useMutation<PostAccountLogoutResponse>("/api/account/logout", {
+    onSuccess: (data) => {
+      if (data?.isExisted) {
+        openToast<MessageToastProps>(MessageToast, "LogoutUser", {
+          placement: "bottom",
+          message: "로그아웃되었습니다",
+        });
+      }
+      router.push("/welcome");
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          break;
+      }
+    },
+  });
 
   const openLogoutModal = () => {
-    openModal<MessageModalProps>(MessageModal, "logout", {
+    openModal<MessageModalProps>(MessageModal, "LogoutUser", {
       type: "confirm",
       message: "정말 로그아웃하시겠어요?",
       cancelBtn: "취소",
       confirmBtn: "로그아웃",
       hasBackdrop: true,
       onConfirm: () => {
-        router.push("/user/logout");
+        if (logoutUserLoading) return;
+        logoutUser({});
       },
     });
   };
@@ -52,7 +77,7 @@ const UserAccountPage: NextPage = () => {
         <li className="relative">
           <strong className="font-normal">휴대폰 번호</strong>
           <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.phone}</span>
-          <Link href="/user/account/phone" passHref>
+          <Link href="/account/phone" passHref>
             <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "추가"} className="absolute top-0 right-0" />
           </Link>
         </li>
@@ -60,7 +85,7 @@ const UserAccountPage: NextPage = () => {
           <li className="relative">
             <strong className="font-normal">이메일</strong>
             <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.email}</span>
-            <Link href="/user/account/email" passHref>
+            <Link href="/account/email" passHref>
               <Buttons tag="a" sort="text-link" status="primary" text={user?.email ? "변경" : "추가"} className="absolute top-0 right-0" />
             </Link>
           </li>
@@ -74,7 +99,7 @@ const UserAccountPage: NextPage = () => {
         </li>
         {userType === "member" && (
           <li>
-            <Link href="/user/account/delete" passHref>
+            <Link href="/account/delete" passHref>
               <Buttons tag="a" sort="text-link" status="default" text="탈퇴하기" className="px-0 no-underline" />
             </Link>
           </li>
@@ -95,7 +120,7 @@ const Page: NextPageWithLayout<{
         },
       }}
     >
-      <UserAccountPage />
+      <AccountIndexPage />
     </SWRConfig>
   );
 };

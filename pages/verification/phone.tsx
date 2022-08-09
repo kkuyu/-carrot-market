@@ -32,7 +32,7 @@ const VerificationPhonePage: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "NotFoundUser":
-          openToast<MessageToastProps>(MessageToast, "invalid-user", {
+          openToast<MessageToastProps>(MessageToast, "InvalidUser", {
             placement: "bottom",
             message: data.error.message,
           });
@@ -77,11 +77,11 @@ const VerificationPhonePage: NextPage = () => {
   // update user data
   const [updateUser, { loading: updateLoading }] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
     onSuccess: () => {
-      openToast<MessageToastProps>(MessageToast, "update-user", {
+      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
         placement: "bottom",
         message: "휴대폰 번호가 변경되었어요",
       });
-      router.push("/login");
+      router.push("/account/login");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -96,7 +96,7 @@ const VerificationPhonePage: NextPage = () => {
     const invalidRouter = router.isReady && !router?.query?.targetEmail;
     const invalidEmail = !(router?.query?.targetEmail || "").toString()?.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/);
     if (invalidRouter || invalidEmail) {
-      openToast<MessageToastProps>(MessageToast, "invalid-targetEmail", {
+      openToast<MessageToastProps>(MessageToast, "InvalidEmail", {
         placement: "bottom",
         message: "이메일 주소를 다시 확인해주세요",
       });

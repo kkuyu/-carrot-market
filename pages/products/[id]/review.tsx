@@ -13,6 +13,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 import client from "@libs/server/client";
 // @api
+import { GetUserResponse } from "@api/user";
 import { PostReviewsResponse } from "@api/reviews";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
@@ -54,7 +55,7 @@ const ProductsReviewPage: NextPage = () => {
   });
 
   const submitReviewProduct = (data: ReviewProductTypes) => {
-    if (loading) return;
+    if (!user || loading) return;
     uploadReview({
       ...data,
       purchaseUserId: purchaseUser?.profile?.id,
@@ -69,7 +70,7 @@ const ProductsReviewPage: NextPage = () => {
   }, [role]);
 
   useEffect(() => {
-    if (saleRecord) router.replace(`/reviews/${productData?.product?.id}`);
+    if (saleRecord) router.replace(`/products/${productData?.product?.id}`);
     if (!purchaseRecord) router.replace(`/products/${productData?.product?.id}/purchase`);
     if (purchaseRecord && existedReview) router.replace(`/reviews/${existedReview.id}`);
   }, [saleRecord, purchaseRecord, existedReview]);
@@ -129,14 +130,16 @@ const ProductsReviewPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
   getProfile: { response: GetProfilesDetailResponse };
   getOtherProfile: { response: GetProfilesDetailResponse };
-}> = ({ getProduct, getProfile, getOtherProfile }) => {
+}> = ({ getUser, getProduct, getProfile, getOtherProfile }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/user": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [`/api/profiles/${getOtherProfile.response.profile.id}`]: getOtherProfile.response,
@@ -288,6 +291,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
       getProduct: {
         response: {
           success: true,

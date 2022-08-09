@@ -12,8 +12,7 @@ import getSsrUser from "@libs/server/getUser";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
-import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
+import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
 import Profiles from "@components/profiles";
 
 const UserIndexPage: NextPage = () => {
@@ -110,7 +109,7 @@ const UserIndexPage: NextPage = () => {
       links: [
         {
           key: "account",
-          href: "/user/account",
+          href: "/account",
           isVisible: true,
           content: (
             <div className="relative block py-1 pl-12 pr-5">
@@ -149,11 +148,7 @@ const UserIndexPage: NextPage = () => {
           key: "hometown",
           isVisible: true,
           onClick: () => {
-            openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
-              headerType: "default",
-              title: "내 동네 설정하기",
-              contents: <HometownUpdate />,
-            });
+            openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});
           },
           content: (
             <div className="relative block py-1 pl-12 pr-5">

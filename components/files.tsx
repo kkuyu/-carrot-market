@@ -65,7 +65,7 @@ const Files = ({ name, required = false, disabled, fileOptions, currentFiles, ch
     // check options
     const { errors, validFiles } = validateFiles(transfer.files, fileOptions);
     errors.map((error) => {
-      openToast<MessageToastProps>(MessageToast, `invalid-files-${error.type}`, {
+      openToast<MessageToastProps>(MessageToast, `InvalidFile_${error.type}`, {
         placement: "bottom",
         message: error.message,
       });
@@ -77,7 +77,7 @@ const Files = ({ name, required = false, disabled, fileOptions, currentFiles, ch
   const onErrorImage = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
     const img = e.target as HTMLImageElement;
     img?.setAttribute("class", "error-image");
-    openToast<MessageToastProps>(MessageToast, "error-image", {
+    openToast<MessageToastProps>(MessageToast, "InvalidImage", {
       placement: "bottom",
       message: `이미지를 확인해주세요.`,
     });

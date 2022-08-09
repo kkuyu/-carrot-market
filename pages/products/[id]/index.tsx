@@ -22,6 +22,7 @@ import { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
 import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
@@ -91,8 +92,15 @@ const ProductsDetailPage: NextPage = () => {
     updateSale({ sale: isSale });
   };
 
-  const goChat = () => {
-    if (!user || userType !== "member") return;
+  // chat
+  const clickChat = () => {
+    if (userType === "member") {
+      moveChat();
+      return;
+    }
+    openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+  };
+  const moveChat = () => {
     if (createChatLoading) return;
     createChat({
       userIds: [user?.id, data?.product?.user?.id],
@@ -100,23 +108,9 @@ const ProductsDetailPage: NextPage = () => {
     });
   };
 
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/user/account/phone");
-      },
-    });
-  };
-
   // modal: sale
   const openSaleModal = () => {
-    openModal<MessageModalProps>(MessageModal, "sale", {
+    openModal<MessageModalProps>(MessageModal, "ConfirmSoldToSale", {
       type: "confirm",
       hasBackdrop: true,
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
@@ -225,7 +219,7 @@ const ProductsDetailPage: NextPage = () => {
                     <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
                   </Link>
                 ) : user?.id !== data?.product?.userId ? (
-                  <Buttons tag="button" text="채팅하기" size="sm" onClick={userType === "member" ? goChat : openSignUpModal} />
+                  <Buttons tag="button" text="채팅하기" size="sm" onClick={clickChat} />
                 ) : (
                   <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${data?.product?.id}/chats`)} />
                 )}

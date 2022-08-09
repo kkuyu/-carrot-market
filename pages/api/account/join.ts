@@ -1,16 +1,20 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { EmdType } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
+import { getRandomName } from "@libs/utils";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostUserLoginResponse extends ResponseDataType {}
+export interface PostAccountJoinResponse extends ResponseDataType {
+  isExisted: boolean;
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { phone } = req.body;
+    const { phone, mainAddrNm, mainPosX, mainPosY, mainDistance } = req.body;
 
     // invalid
     if (!phone || phone.length < 8) {
@@ -18,9 +22,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
+    if (!mainAddrNm || !mainPosX || !mainPosY || !mainDistance) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
     // fetch data
-    const foundUser = await client.user.findUnique({
+    const user = await client.user.findFirst({
       where: {
         phone,
       },
@@ -28,19 +37,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
       },
     });
-    if (!foundUser) {
-      const error = new Error("휴대폰 번호를 다시 확인해주세요.");
-      error.name = "NotFoundUser";
-      throw error;
-    }
 
     // create token
     const newToken = await client.token.create({
       data: {
         payload: Math.floor(100000 + Math.random() * 900000) + "",
         user: {
-          connect: {
-            phone,
+          connectOrCreate: {
+            where: {
+              phone,
+            },
+            create: {
+              name: getRandomName(),
+              phone,
+              emdType: EmdType.MAIN,
+              MAIN_emdAddrNm: mainAddrNm,
+              MAIN_emdPosNm: mainAddrNm.match(/(\S+)$/g)?.[0],
+              MAIN_emdPosX: mainPosX,
+              MAIN_emdPosY: mainPosY,
+              MAIN_emdPosDx: mainDistance,
+            },
           },
         },
       },
@@ -56,8 +72,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostUserLoginResponse = {
+    const result: PostAccountJoinResponse = {
       success: true,
+      isExisted: Boolean(user),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

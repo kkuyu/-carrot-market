@@ -8,14 +8,15 @@ export const middleware: NextMiddleware = (req) => {
   if (ua.isBot) return new NextResponse(null, { status: 403 });
 
   const url = req.nextUrl.clone();
-  const isLogin = Boolean(req.cookies.get("carrot-market-session"));
+  const hasCookie = Boolean(req.cookies.get("carrot-market-session"));
 
-  if (!isLogin) {
+  if (!hasCookie) {
     switch (url.pathname) {
       case "/welcome":
       case "/welcome/locate":
-      case "/login":
-      case "/join":
+      case "/account/join":
+      case "/account/login":
+      case "/account/logout":
       case "/verification/email":
       case "/verification/phone":
         return NextResponse.next();
@@ -30,12 +31,13 @@ export const middleware: NextMiddleware = (req) => {
     }
   }
 
-  if (isLogin) {
+  if (hasCookie) {
     switch (url.pathname) {
       case "/welcome":
       case "/welcome/locate":
-      case "/login":
-      case "/join":
+      case "/account/join":
+      case "/account/login":
+      case "/account/logout":
       case "/verification/email":
       case "/verification/phone":
         url.pathname = "/";

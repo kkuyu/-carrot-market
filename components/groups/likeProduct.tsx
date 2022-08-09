@@ -1,4 +1,3 @@
-import { useRouter } from "next/router";
 import React from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
@@ -11,7 +10,8 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 import { PostProductsLikeResponse } from "@api/products/[id]/like";
 // @components
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import WelcomeModal, { WelcomeModalProps, WelcomeModalName } from "@components/commons/modals/case/welcomeModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
 
 export type LikeProductItem = GetProfilesProductsResponse["products"][0];
 
@@ -20,7 +20,6 @@ export interface LikeProductProps extends React.HTMLAttributes<HTMLButtonElement
 }
 
 const LikeProduct = ({ item, className }: LikeProductProps) => {
-  const router = useRouter();
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
@@ -44,8 +43,8 @@ const LikeProduct = ({ item, className }: LikeProductProps) => {
   // like
   const clickLike = () => {
     if (userType === "member") toggleLike();
-    if (userType === "non-member") openSignUpModal();
-    if (userType === "guest") openWelcomeModal();
+    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
   };
   const toggleLike = () => {
     if (!data?.product) return;
@@ -59,34 +58,6 @@ const LikeProduct = ({ item, className }: LikeProductProps) => {
       return prev && { ...prev, product: { ...prev.product, records } };
     }, false);
     updateLike({});
-  };
-
-  // modal: welcome
-  const openWelcomeModal = () => {
-    openModal<MessageModalProps>(MessageModal, "welcome", {
-      type: "confirm",
-      message: "당근마켓 첫 방문이신가요?",
-      cancelBtn: "취소",
-      confirmBtn: "당근마켓 시작하기",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/welcome");
-      },
-    });
-  };
-
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/user/account/phone");
-      },
-    });
   };
 
   if (!item) return null;

@@ -97,7 +97,7 @@ const ChatsDetailPage: NextPage = () => {
   const openSoldProductModal = () => {
     if (saleLoading) return;
     if (updatePurchaseLoading) return;
-    openModal<MessageModalProps>(MessageModal, "SoldProduct", {
+    openModal<MessageModalProps>(MessageModal, "ConfirmSoldProduct", {
       type: "confirm",
       message:
         role === "sellUser"
@@ -113,20 +113,11 @@ const ChatsDetailPage: NextPage = () => {
   };
 
   const submitChatMessage = (data: SendMessageTypes) => {
-    if (!user || userType !== "member") return;
-    if (sendChatMessageLoading) return;
+    if (!user || sendChatMessageLoading) return;
     boundMutate((prev) => {
       const time = new Date();
       const newMessage = { id: time.getTime(), text: data.text, userId: user?.id, chatId: 1, createdAt: time, updatedAt: time };
-      return (
-        prev && {
-          ...prev,
-          chat: {
-            ...prev.chat,
-            chatMessages: [...prev.chat.chatMessages, { ...newMessage, user: { id: user?.id, name: user?.name, avatar: "" } }],
-          },
-        }
-      );
+      return prev && { ...prev, chat: { ...prev.chat, chatMessages: [...prev.chat.chatMessages, { ...newMessage, user: { id: user?.id, name: user?.name, avatar: "" } }] } };
     }, false);
     sendChatMessage(data);
     formData.setValue("text", "");

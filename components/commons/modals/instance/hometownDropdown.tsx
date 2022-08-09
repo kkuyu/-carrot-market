@@ -7,12 +7,11 @@ import useMutation from "@libs/client/useMutation";
 import { PostUserRequestBody, PostUserResponse } from "@api/user";
 import { PostDummyResponse } from "@api/user/dummy";
 // @components
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
+import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/case/hometownDropdownModal";
+import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
-import HometownUpdate from "@components/commons/modals/instance/hometownUpdate";
 
-interface HometownDropdownProps {}
+export interface HometownDropdownProps {}
 
 const HometownDropdown = ({}: HometownDropdownProps) => {
   const { user, type: userType, mutate: mutateUser } = useUser();
@@ -23,12 +22,12 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/user", {
     onSuccess: () => {
       mutateUser();
-      closeModal(CustomModal, "HometownDropdown");
+      closeModal(HometownDropdownModal, HometownDropdownModalName);
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "GeoCodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
+          openToast<MessageToastProps>(MessageToast, `UpdatedUser_${data.error.name}`, {
             placement: "bottom",
             message: data.error.message,
           });
@@ -42,12 +41,12 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
   const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
     onSuccess: () => {
       mutateUser();
-      closeModal(CustomModal, "HometownDropdown");
+      closeModal(HometownDropdownModal, HometownDropdownModalName);
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "GeoCodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
+          openToast<MessageToastProps>(MessageToast, `UpdatedUser_${data.error.name}`, {
             placement: "bottom",
             message: data.error.message,
           });
@@ -93,12 +92,8 @@ const HometownDropdown = ({}: HometownDropdownProps) => {
       text: "내 동네 설정하기",
       isActive: false,
       selectItem: () => {
-        openModal<LayerModalProps>(LayerModal, "HometownUpdate", {
-          headerType: "default",
-          title: "내 동네 설정하기",
-          contents: <HometownUpdate />,
-        });
-        closeModal(CustomModal, "HometownDropdown");
+        openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});
+        closeModal(HometownDropdownModal, HometownDropdownModalName);
       },
     },
   ];

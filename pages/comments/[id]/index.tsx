@@ -19,7 +19,7 @@ import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
 import Comment from "@components/cards/comment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import FeedbackComment from "@components/groups/feedbackComment";
@@ -77,10 +77,17 @@ const CommentsDetailPage: NextPage = () => {
     });
   };
 
+  const validReComment = (data: EditCommentTypes) => {
+    if (userType === "member") {
+      submitReComment(data);
+      return;
+    }
+    openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+  };
+
   const submitReComment = (data: EditCommentTypes) => {
-    if (!user || userType !== "member") return;
+    if (!user || commentLoading || sendCommentLoading) return;
     if (!commentData?.comment) return;
-    if (commentLoading || sendCommentLoading) return;
     mutateCommentDetail((prev) => {
       const time = new Date();
       const { content, reCommentRefId = null } = data;
@@ -92,24 +99,9 @@ const CommentsDetailPage: NextPage = () => {
     sendComment({ ...data, ...currentAddr });
   };
 
-  // modal: sign up
-  const openSignUpModal = () => {
-    openModal<MessageModalProps>(MessageModal, "signUpNow", {
-      type: "confirm",
-      message: "휴대폰 인증하고 회원가입하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "회원가입",
-      hasBackdrop: true,
-      onConfirm: () => {
-        router.push("/user/account/phone");
-      },
-    });
-  };
-
   // merge comment data
   useEffect(() => {
     if (!commentData) return;
-    if (!commentData?.success) return;
     setCommentFlatList(() => {
       if (!commentData?.comment) return [];
       return [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])];
@@ -170,14 +162,7 @@ const CommentsDetailPage: NextPage = () => {
       {user?.id && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-16 max-w-screen-sm border-t bg-white">
-            <EditComment
-              type="post"
-              formData={formData}
-              onValid={user?.id === -1 ? openSignUpModal : submitReComment}
-              isLoading={commentLoading || sendCommentLoading}
-              commentType="답글"
-              className="w-full pl-5 pr-3"
-            />
+            <EditComment type="post" formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType="답글" className="w-full pl-5 pr-3" />
           </div>
         </div>
       )}

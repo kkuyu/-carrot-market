@@ -68,7 +68,7 @@ const HandleProduct = ({ item, className }: HandleProductProps) => {
   };
 
   const openSaleModal = () => {
-    openModal<MessageModalProps>(MessageModal, "sale", {
+    openModal<MessageModalProps>(MessageModal, "ConfirmSaleToSold", {
       type: "confirm",
       hasBackdrop: true,
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",

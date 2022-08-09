@@ -13,12 +13,12 @@ import { PostDummyResponse } from "@api/user/dummy";
 import { GetSearchBoundaryResponse } from "@api/address/searchBoundary";
 import { GetSearchKeywordResponse } from "@api/address/searchKeyword";
 // @components
-import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
+import HometownLocateModal, { HometownLocateModalProps, HometownLocateModalName } from "@components/commons/modals/case/hometownLocateModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
 import Buttons from "@components/buttons";
 
-interface HometownLocateProps {
+export interface HometownLocateProps {
   addrType: "MAIN" | "SUB";
 }
 
@@ -38,12 +38,12 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>("/api/user", {
     onSuccess: () => {
       mutateUser();
-      closeModal(LayerModal, "HometownLocate");
+      closeModal(HometownLocateModal, HometownLocateModalName);
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "GeoCodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
+          openToast<MessageToastProps>(MessageToast, `UpdatedUser_${data.error.name}`, {
             placement: "bottom",
             message: data.error.message,
           });
@@ -57,12 +57,12 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
   const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
     onSuccess: () => {
       mutateUser();
-      closeModal(LayerModal, "HometownLocate");
+      closeModal(HometownLocateModal, HometownLocateModalName);
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "GeoCodeDistrictError":
-          openToast<MessageToastProps>(MessageToast, "GeoCodeDistrictError", {
+          openToast<MessageToastProps>(MessageToast, `UpdatedUser_${data.error.name}`, {
             placement: "bottom",
             message: data.error.message,
           });
@@ -92,11 +92,11 @@ const HometownLocate = ({ addrType }: HometownLocateProps) => {
 
   const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
     if (user?.MAIN_emdPosNm === itemData.emdNm) {
-      openToast<MessageToastProps>(MessageToast, "alreadyRegisteredAddress", {
+      openToast<MessageToastProps>(MessageToast, "AlreadyRegisteredAddress", {
         placement: "bottom",
         message: "이미 등록된 주소예요",
       });
-      closeModal(LayerModal, "HometownLocate");
+      closeModal(HometownLocateModal, HometownLocateModalName);
       return;
     }
     updateHometown({

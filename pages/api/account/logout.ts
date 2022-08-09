@@ -4,7 +4,7 @@ import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 
-export interface PostUserLogoutResponse extends ResponseDataType {
+export interface PostAccountLogoutResponse extends ResponseDataType {
   isExisted: boolean;
 }
 
@@ -30,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     await req.session.destroy();
 
     // result
-    const result: PostUserLogoutResponse = {
+    const result: PostAccountLogoutResponse = {
       success: true,
       isExisted: Boolean(userData || dummyUser),
     };

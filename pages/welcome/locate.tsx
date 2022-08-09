@@ -36,7 +36,7 @@ const WelcomeLocatePage: NextPage = () => {
 
   const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
     router.push({
-      pathname: "/join",
+      pathname: "/account/join",
       query: { addrNm: itemData?.addrNm },
     });
   };

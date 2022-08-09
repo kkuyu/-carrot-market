@@ -12,6 +12,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
@@ -63,7 +64,8 @@ const ProductsEditPage: NextPage = () => {
   };
 
   const submitEditProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
-    if (loading || photoLoading) return;
+    if (!user || loading || photoLoading) return;
+
     if (!_photos?.length) {
       editProduct({ ...data, photos: [] });
       return;
@@ -102,19 +104,22 @@ const ProductsEditPage: NextPage = () => {
         console.error(`Failed Upload: ${_photos[index].name}`);
       }
     }
-
     editProduct({ photos, ...data });
   };
 
   useEffect(() => {
     if (!productData?.product) return;
+    if (productData.product.userId !== user?.id) {
+      router.push(`/products/${router.query.id}`);
+      return;
+    }
     setPhotoLoading(true);
     formData.setValue("category", productData?.product?.category as EditProductTypes["category"]);
     formData.setValue("name", productData?.product?.name);
     formData.setValue("description", productData?.product?.description);
     formData.setValue("price", productData?.product?.price);
     setDefaultPhotos();
-  }, [productData?.product?.id]);
+  }, [productData, user?.id]);
 
   useEffect(() => {
     changeLayout({
@@ -132,12 +137,14 @@ const ProductsEditPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
-}> = ({ getProduct }) => {
+}> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/user": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
         },
       }}
@@ -222,6 +229,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
       getProduct: {
         response: {
           success: true,
