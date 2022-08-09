@@ -104,22 +104,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
         },
         orderBy,
-        include,
-      });
-      comments = comments.concat(defaultComments);
-
-      // fetch comments: children
-      const childrenComments = await client.storyComment.findMany({
-        where: {
-          storyId: story.id,
-          depth: StoryCommentMinimumDepth + 1,
-          AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+        include: {
+          ...include,
+          reComments: {
+            skip: 0,
+            take: !existed.length ? 2 : 0,
+            orderBy: {
+              createdAt: "asc",
+            },
+            include,
+          },
         },
-        take: !existed.length ? 2 : 0,
-        orderBy,
-        include,
       });
-      comments = comments.concat(childrenComments);
+      comments = comments.concat(
+        defaultComments.map(({ reComments, ...o }) => o),
+        defaultComments.flatMap((o) => o.reComments)
+      );
 
       // fetch comments: existed
       const existedComments = await client.storyComment.findMany({

@@ -312,39 +312,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  const reComments = await client.storyComment.findMany({
-    take: 2,
-    where: {
-      storyId: comment.story.id,
-      depth: comment.depth + 2,
-      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      story: {
-        select: {
-          id: true,
-          userId: true,
-          category: true,
-        },
-      },
-      _count: {
-        select: {
-          reComments: true,
-        },
-      },
-    },
-  });
-
   // defaultLayout
   const defaultLayout = {
     meta: {
@@ -367,7 +334,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         query: "includeReComments=true&",
         response: {
           success: true,
-          comment: JSON.parse(JSON.stringify({ ...comment, reComments: [...comments, ...reComments] } || null)),
+          comment: JSON.parse(JSON.stringify({ ...comment, reComments: comments } || null)),
         },
       },
     },

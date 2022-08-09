@@ -378,39 +378,6 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     },
   });
 
-  const reComments = await client.storyComment.findMany({
-    take: 2,
-    where: {
-      storyId: story.id,
-      depth: StoryCommentMinimumDepth + 1,
-      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      story: {
-        select: {
-          id: true,
-          userId: true,
-          category: true,
-        },
-      },
-      _count: {
-        select: {
-          reComments: true,
-        },
-      },
-    },
-  });
-
   const defaultLayout = {
     meta: {
       title: `${truncateStr(story?.content, 15)} | 동네생활`,
@@ -438,7 +405,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         query: "",
         response: {
           success: true,
-          comments: JSON.parse(JSON.stringify([...comments, ...reComments] || [])),
+          comments: JSON.parse(JSON.stringify(comments || [])),
         },
       },
     },

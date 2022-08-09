@@ -8,7 +8,7 @@ import { ProductCategory } from "@api/products/types";
 import { ReviewManners } from "@api/reviews/types";
 import { StoryCommentItem } from "@api/comments/[id]";
 
-export const getKey = <T extends ResponseDataType>(pageIndex: number, previousPageData: T, options: { url: string; query?: string }) => {
+export const getKey = <T extends ResponseDataType>(pageIndex: number, previousPageData: T | null, options: { url: string; query?: string }) => {
   const { url = "", query = "" } = options;
   if (pageIndex === 0) return `${url}?prevCursor=0&${query}`;
   if (previousPageData && previousPageData.lastCursor === -1) return null;

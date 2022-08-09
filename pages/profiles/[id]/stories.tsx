@@ -226,10 +226,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       comments: {
         where: {
-          depth: {
-            gte: StoryCommentMinimumDepth,
-            lte: StoryCommentMaximumDepth,
-          },
+          AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
           NOT: [{ content: "" }],
         },
         select: {

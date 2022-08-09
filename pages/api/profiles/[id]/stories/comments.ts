@@ -40,10 +40,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const where = {
       userId: id,
       NOT: [{ content: "" }],
-      depth: {
-        gte: StoryCommentMinimumDepth,
-        lte: StoryCommentMaximumDepth,
-      },
+      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
     };
 
     // fetch data
