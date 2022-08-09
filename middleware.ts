@@ -1,5 +1,4 @@
-import { NextMiddleware, userAgent } from "next/server";
-import { NextResponse } from "next/server";
+import { NextMiddleware, NextResponse, userAgent } from "next/server";
 
 export const middleware: NextMiddleware = (req) => {
   if (req.url.includes("/api")) return;

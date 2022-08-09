@@ -112,12 +112,12 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // redirect: welcome
+  // redirect: user/logout or welcome
   if (!ssrUser.profile && !ssrUser.dummyProfile) {
     return {
       redirect: {
         permanent: false,
-        destination: `/welcome`,
+        destination: req?.cookies?.["carrot-market-session"] ? `/user/logout` : `/welcome`,
       },
     };
   }
