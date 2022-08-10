@@ -30,7 +30,7 @@ const ProductsChatsPage: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
-  const { data, setSize } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
+  const { data, setSize, mutate } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
     const options = { url: "/api/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
     return getKey<GetChatsResponse>(...arg, options);
   });
@@ -46,6 +46,10 @@ const ProductsChatsPage: NextPage = () => {
       setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
+
+  useEffect(() => {
+    if (!data?.[0].success && router.query.id) mutate();
+  }, [data, router.query.id]);
 
   useEffect(() => {
     changeLayout({

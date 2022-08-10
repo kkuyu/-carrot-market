@@ -27,7 +27,7 @@ const StoriesIndexPage: NextPage = () => {
   const { user, currentAddr } = useUser();
   const { changeLayout } = useLayouts();
 
-  const { data, setSize } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) => {
+  const { data, setSize, mutate } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) => {
     const options = { url: "/api/stories", query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
     return getKey<GetStoriesResponse>(...arg, options);
   });
@@ -43,6 +43,10 @@ const StoriesIndexPage: NextPage = () => {
       setSize((size) => size + 1);
     }
   }, [isVisible, isReachingEnd]);
+
+  useEffect(() => {
+    if (!data?.[0].success && currentAddr.emdPosNm) mutate();
+  }, [data, currentAddr]);
 
   useEffect(() => {
     changeLayout({

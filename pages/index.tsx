@@ -22,11 +22,11 @@ import FloatingButtons from "@components/floatingButtons";
 import ProductList from "@components/lists/productList";
 
 const ProductsIndexPage: NextPage = () => {
-  const { currentAddr } = useUser();
+  const { currentAddr, type: userType, mutate: mutateUser } = useUser();
   const { changeLayout } = useLayouts();
 
-  const { data, setSize } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
-    const options = { url: "/api/products", query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
+  const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
+    const options = { url: "/api/products", query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "" };
     return getKey<GetProductsResponse>(...arg, options);
   });
 
@@ -43,12 +43,19 @@ const ProductsIndexPage: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
+    if (userType === "guest") mutateUser();
+    if (!data?.[0].success && currentAddr?.emdAddrNm) mutate();
+  }, [data, currentAddr, userType]);
+
+  useEffect(() => {
     changeLayout({
       meta: {},
       header: {},
       navBar: {},
     });
   }, []);
+
+  if (userType === "guest") return null;
 
   return (
     <div className="container">

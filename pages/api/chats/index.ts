@@ -33,12 +33,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // early return result
-      if (!user?.id) {
+      if (!user?.id || _productId) {
         // result
         const result: GetChatsResponse = {
-          success: true,
+          success: false,
           totalCount: 0,
-          lastCursor: -1,
+          lastCursor: 0,
           chats: [],
         };
         return res.status(200).json(result);
@@ -144,7 +144,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // fetch data
       for (let index = 0; index < userIds.length; index++) {
-        const user = await client.user.findUnique({
+        const foundUser = await client.user.findUnique({
           where: {
             id: +userIds[index],
           },
@@ -152,7 +152,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
             id: true,
           },
         });
-        if (!user) {
+        if (!foundUser) {
           const error = new Error("NotFoundUser");
           error.name = "NotFoundUser";
           throw error;

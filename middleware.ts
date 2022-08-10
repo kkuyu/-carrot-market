@@ -37,7 +37,7 @@ export const middleware: NextMiddleware = (req) => {
       case "/welcome/locate":
       case "/account/join":
       case "/account/login":
-      case "/account/logout":
+      // case "/account/logout":
       case "/verification/email":
       case "/verification/phone":
         url.pathname = "/";

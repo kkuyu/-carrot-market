@@ -13,6 +13,7 @@ export const getKey = <T extends ResponseDataType>(pageIndex: number, previousPa
   if (pageIndex === 0) return `${url}?prevCursor=0&${query}`;
   if (previousPageData && previousPageData.lastCursor === -1) return null;
   if (previousPageData) return `${url}?prevCursor=${previousPageData.lastCursor}&${query}`;
+  return null;
 };
 
 export const isInstance = <T extends object>(value: string | number, type: T): type is T => {

@@ -27,10 +27,21 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const { prevCursor: _prevCursor, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
       // invalid
-      if (!_prevCursor || !_posX || !_posY || !_distance) {
+      if (!_prevCursor) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
+      }
+
+      // early return result
+      if (!_posX || !_posY || !_distance) {
+        const result: GetStoriesResponse = {
+          success: false,
+          totalCount: 0,
+          lastCursor: 0,
+          stories: [],
+        };
+        return res.status(200).json(result);
       }
 
       // page
