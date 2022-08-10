@@ -1,12 +1,17 @@
-import type { GetStaticProps, NextPage } from "next";
+import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
+import { SWRConfig } from "swr";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
+import useUser from "@libs/client/useUser";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
+import { withSsrSession } from "@libs/server/withSession";
+import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { PostVerificationPhoneResponse } from "@api/verification/phone";
 import { PostVerificationTokenResponse } from "@api/verification/token";
 import { PostVerificationUpdateResponse } from "@api/verification/update";
@@ -18,10 +23,14 @@ import MessageToast, { MessageToastProps } from "@components/commons/toasts/case
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 
-const VerificationPhonePage: NextPage = () => {
+const AccountPhonePage: NextPage = () => {
   const router = useRouter();
+  const { user, type: userType, mutate: mutateUser } = useUser();
   const { changeLayout } = useLayouts();
   const { openToast } = useToast();
+
+  // copy user
+  const originalUser = useRef({ ...user, userType });
 
   // phone
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
@@ -31,13 +40,6 @@ const VerificationPhonePage: NextPage = () => {
     },
     onError: (data) => {
       switch (data?.error?.name) {
-        case "NotFoundUser":
-          openToast<MessageToastProps>(MessageToast, "InvalidUser", {
-            placement: "bottom",
-            message: data.error.message,
-          });
-          router.replace("/verification/email");
-          return;
         case "SameAccount":
         case "AlreadySubscribedAccount":
           verifyPhoneForm.setError("phone", { type: "validate", message: data.error.message });
@@ -53,12 +55,21 @@ const VerificationPhonePage: NextPage = () => {
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
-    onSuccess: () => {
+    onSuccess: async () => {
       if (updateLoading) return;
-      updateUser({
-        originData: { email: verifyPhoneForm.getValues("targetEmail") },
-        updateData: { phone: verifyPhoneForm.getValues("phone") },
+      if (originalUser.current.userType === "member") {
+        updateUser({
+          originData: { phone: user?.phone },
+          updateData: { phone: verifyPhoneForm.getValues("phone") },
+        });
+        return;
+      }
+      await mutateUser();
+      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
+        placement: "bottom",
+        message: "휴대폰 번호가 등록되었어요",
       });
+      router.replace("/account");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -73,14 +84,15 @@ const VerificationPhonePage: NextPage = () => {
     },
   });
 
-  // update user data
+  // update user
   const [updateUser, { loading: updateLoading }] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
-    onSuccess: () => {
+    onSuccess: async () => {
+      await mutateUser();
       openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
         placement: "bottom",
         message: "휴대폰 번호가 변경되었어요",
       });
-      router.push("/account/login");
+      router.replace("/account");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -92,20 +104,6 @@ const VerificationPhonePage: NextPage = () => {
   });
 
   useEffect(() => {
-    const invalidRouter = router.isReady && !router?.query?.targetEmail;
-    const invalidEmail = !(router?.query?.targetEmail || "").toString()?.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/);
-    if (invalidRouter || invalidEmail) {
-      openToast<MessageToastProps>(MessageToast, "InvalidEmail", {
-        placement: "bottom",
-        message: "이메일 주소를 다시 확인해주세요",
-      });
-      router.replace("/verification/email");
-    } else {
-      verifyPhoneForm.setValue("targetEmail", router?.query?.targetEmail?.toString());
-    }
-  }, [router.isReady, router.query]);
-
-  useEffect(() => {
     changeLayout({
       meta: {},
       header: {},
@@ -115,12 +113,11 @@ const VerificationPhonePage: NextPage = () => {
 
   return (
     <section className="container py-5">
-      <h1 className="text-2xl font-bold">
-        새로운 휴대폰 번호를
-        <br />
-        입력해주세요
-      </h1>
-      <p className="mt-2">휴대폰 번호는 안전하게 보관되며 어디에도 공개되지 않아요.</p>
+      <h1 className="text-2xl font-bold">{originalUser.current.userType === "member" ? "새로운" : ""} 휴대폰 번호를 입력해주세요</h1>
+      <p className="mt-2">
+        휴대폰 번호는 안전하게 보관되며 어디에도 공개되지 않아요.
+        {originalUser.current.userType === "member" && <span className="block">현재 등록된 번호는 {originalUser.current.phone} 이에요</span>}
+      </p>
 
       {/* 전화번호 입력 */}
       <div className="mt-6">
@@ -128,7 +125,20 @@ const VerificationPhonePage: NextPage = () => {
           formData={verifyPhoneForm}
           onValid={(data: VerifyPhoneTypes) => {
             if (phoneLoading) return;
-            confirmPhone(data);
+            confirmPhone({
+              ...data,
+              ...(user && userType !== "member"
+                ? {
+                    name: user.name,
+                    emdType: user.emdType,
+                    mainAddrNm: user.MAIN_emdAddrNm,
+                    mainPosNm: user.MAIN_emdPosNm,
+                    mainPosX: user.MAIN_emdPosX,
+                    mainPosY: user.MAIN_emdPosY,
+                    mainDistance: user.MAIN_emdPosDx,
+                  }
+                : {}),
+            });
           }}
           isSuccess={phoneData?.success}
           isLoading={phoneLoading}
@@ -146,6 +156,7 @@ const VerificationPhonePage: NextPage = () => {
             }}
             isSuccess={tokenData?.success}
             isLoading={tokenLoading}
+            submitButtonText={originalUser.current.userType === "member" ? "인증번호 확인" : "인증번호 확인 및 회원가입"}
           />
         </div>
       )}
@@ -153,21 +164,36 @@ const VerificationPhonePage: NextPage = () => {
   );
 };
 
-const Page: NextPageWithLayout = () => {
-  return <VerificationPhonePage />;
+const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
+}> = ({ getUser }) => {
+  return (
+    <SWRConfig
+      value={{
+        fallback: {
+          "/api/user": getUser.response,
+        },
+      }}
+    >
+      <AccountPhonePage />
+    </SWRConfig>
+  );
 };
 
 Page.getLayout = getLayout;
 
-export const getStaticProps: GetStaticProps = async () => {
+export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // getUser
+  const ssrUser = await getSsrUser(req);
+
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "휴대폰 번호 변경",
+      title: `${ssrUser.profile ? "휴대폰 번호 변경" : "휴대폰 번호 등록"} | 계정 관리`,
     },
     header: {
-      title: "휴대폰 번호 변경",
-      titleTag: "strong",
+      title: `${ssrUser.profile ? "휴대폰 번호 변경" : "휴대폰 번호 등록"}`,
+      titleTag: "h1",
       utils: ["back", "title"],
     },
     navBar: {
@@ -178,8 +204,11 @@ export const getStaticProps: GetStaticProps = async () => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
     },
   };
-};
+});
 
 export default Page;

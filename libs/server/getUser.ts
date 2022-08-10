@@ -27,12 +27,11 @@ const getSsrUser = async (
         where: { id: req.session.user.id },
       })
     : null;
-
   const dummyUser = !foundUser && req.session.dummyUser ? req.session.dummyUser : null;
 
   return new Promise((resolve) => {
     resolve({
-      success: true,
+      success: Boolean(foundUser || dummyUser),
       profile: foundUser,
       dummyProfile: dummyUser,
       currentAddr: {

@@ -12,9 +12,10 @@ interface VerifyTokenProps extends React.HTMLAttributes<HTMLFormElement> {
   onValid: (validForm: VerifyTokenTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
+  submitButtonText?: string;
 }
 
-const VerifyToken = ({ formData, onValid, isSuccess, isLoading, ...rest }: VerifyTokenProps) => {
+const VerifyToken = ({ formData, onValid, isSuccess, isLoading, submitButtonText = "인증번호 확인", ...rest }: VerifyTokenProps) => {
   const { register, handleSubmit, formState } = formData;
 
   return (
@@ -33,7 +34,7 @@ const VerifyToken = ({ formData, onValid, isSuccess, isLoading, ...rest }: Verif
         <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
         <span className="empty:hidden invalid">{formState.errors.token?.message}</span>
       </div>
-      <Buttons tag="button" type="submit" status="primary" text="인증번호 확인" disabled={isLoading} />
+      <Buttons tag="button" type="submit" status="primary" text={submitButtonText} disabled={isLoading} />
     </form>
   );
 };

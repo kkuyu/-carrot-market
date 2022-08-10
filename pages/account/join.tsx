@@ -28,7 +28,7 @@ const AccountJoinPage: NextPage = () => {
   const { openToast } = useToast();
 
   // check query data
-  const { data: addrData } = useSWR<GetSearchGeoCodeResponse>(router?.query?.addrNm ? `api/address/searchGeoCode?addrNm=${router?.query?.addrNm}` : null);
+  const { data: addrData } = useSWR<GetSearchGeoCodeResponse>(router?.query?.addrNm ? `/api/address/searchGeoCode?addrNm=${router?.query?.addrNm}` : null);
 
   // join user
   const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });

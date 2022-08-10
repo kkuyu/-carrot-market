@@ -29,7 +29,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const user = await client.user.findFirst({
+    const foundUser = await client.user.findUnique({
       where: {
         phone,
       },
@@ -74,7 +74,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // result
     const result: PostAccountJoinResponse = {
       success: true,
-      isExisted: Boolean(user),
+      isExisted: Boolean(foundUser),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -48,7 +48,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // result
       const result: GetUserResponse = {
-        success: true,
+        success: Boolean(foundUser || dummyUser),
         profile: foundUser,
         dummyProfile: dummyUser,
         currentAddr: {

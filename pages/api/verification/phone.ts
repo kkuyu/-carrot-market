@@ -10,36 +10,50 @@ export interface PostVerificationPhoneResponse extends ResponseDataType {}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { phone, targetEmail } = req.body;
+    const { user, dummyUser } = req.session;
+    const { targetEmail, phone, name, emdType, mainAddrNm, mainPosNm, mainPosX, mainPosY, mainDistance } = req.body;
 
     // invalid
-    if (!phone || phone.length < 8) {
+    if (!phone || (!user && !dummyUser && !targetEmail)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!targetEmail || !targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    if (targetEmail && !targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (phone && phone.length < 8) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (dummyUser && (!name || !emdType || !mainAddrNm || !mainPosNm || !mainPosX || !mainPosY || !mainDistance)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // fetch data
-    const foundUserByEmail = await client.user.findUnique({
-      where: {
-        email: targetEmail,
-      },
-      select: {
-        id: true,
-        phone: true,
-      },
-    });
-    if (!foundUserByEmail) {
+    const foundUser = !dummyUser
+      ? await client.user.findUnique({
+          where: {
+            ...(user ? { id: user?.id } : {}),
+            ...(targetEmail ? { email: targetEmail } : {}),
+          },
+          select: {
+            id: true,
+            phone: true,
+          },
+        })
+      : null;
+    if (!dummyUser && !foundUser) {
       const error = new Error("계정 정보를 다시 확인해주세요.");
       error.name = "NotFoundUser";
       throw error;
     }
-    if (foundUserByEmail && foundUserByEmail.phone === phone) {
+    if (foundUser && foundUser.phone === phone) {
       const error = new Error("등록된 휴대폰 번호와 같은 번호예요. 변경하실 휴대폰 번호를 입력해주세요.");
       error.name = "SameAccount";
       throw error;
@@ -60,13 +74,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
+    const connectUser = foundUser
+      ? { ...foundUser }
+      : await client.user.create({
+          data: {
+            name,
+            phone,
+            emdType,
+            MAIN_emdAddrNm: mainAddrNm,
+            MAIN_emdPosNm: mainPosNm,
+            MAIN_emdPosX: mainPosX,
+            MAIN_emdPosY: mainPosY,
+            MAIN_emdPosDx: mainDistance,
+          },
+        });
+
     // create token
     const newToken = await client.token.create({
       data: {
         payload: Math.floor(100000 + Math.random() * 900000) + "",
         user: {
           connect: {
-            email: targetEmail,
+            id: connectUser.id,
           },
         },
       },

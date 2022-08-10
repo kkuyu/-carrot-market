@@ -14,7 +14,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // fetch data
     const userData = user?.id
-      ? await client.user.findFirst({
+      ? await client.user.findUnique({
           where: {
             id: user?.id,
           },

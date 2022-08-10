@@ -24,7 +24,7 @@ const AccountLogoutPage: NextPage = () => {
           message: "로그아웃되었습니다",
         });
       }
-      router.push("/welcome");
+      router.replace("/welcome");
     },
     onError: (data) => {
       switch (data?.error?.name) {

@@ -78,7 +78,7 @@ const AccountIndexPage: NextPage = () => {
           <strong className="font-normal">휴대폰 번호</strong>
           <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.phone}</span>
           <Link href="/account/phone" passHref>
-            <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "추가"} className="absolute top-0 right-0" />
+            <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "등록 및 회원가입"} className="absolute top-0 right-0" />
           </Link>
         </li>
         {userType === "member" && (
@@ -86,7 +86,7 @@ const AccountIndexPage: NextPage = () => {
             <strong className="font-normal">이메일</strong>
             <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.email}</span>
             <Link href="/account/email" passHref>
-              <Buttons tag="a" sort="text-link" status="primary" text={user?.email ? "변경" : "추가"} className="absolute top-0 right-0" />
+              <Buttons tag="a" sort="text-link" status="primary" text={user?.email ? "변경" : "등록"} className="absolute top-0 right-0" />
             </Link>
           </li>
         )}
@@ -134,7 +134,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "계정 관리 | 나의 당근",
+      title: "계정 관리",
     },
     header: {
       title: "계정 관리",
