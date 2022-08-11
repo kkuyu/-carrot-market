@@ -34,7 +34,13 @@ export interface PostUserResponse extends ResponseDataType {}
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { user } = req.session;
+      const { user, dummyUser: _dummyUser } = req.session;
+
+      if (req?.cookies?.["carrot-market-session"] && !user && !_dummyUser) {
+        const error = new Error("InvalidCookie");
+        error.name = "InvalidCookie";
+        throw error;
+      }
 
       // fetch data
       const foundUser = user?.id
@@ -44,7 +50,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
             },
           })
         : null;
-      const dummyUser = !foundUser && req.session.dummyUser ? req.session.dummyUser : null;
+      const dummyUser = !foundUser && _dummyUser ? _dummyUser : null;
 
       // result
       const result: GetUserResponse = {

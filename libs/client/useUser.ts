@@ -1,3 +1,5 @@
+import { useRouter } from "next/router";
+import { useEffect } from "react";
 import useSWR, { KeyedMutator } from "swr";
 import { User } from "@prisma/client";
 // @api
@@ -12,7 +14,14 @@ export interface UserProfile {
 }
 
 const useUser = (): UserProfile => {
+  const router = useRouter();
   const { data, error, mutate } = useSWR<GetUserResponse>("/api/user");
+
+  useEffect(() => {
+    if (data?.error?.name === "InvalidCookie") {
+      router.replace("/account/logout");
+    }
+  }, [data?.error]);
 
   return {
     loading: !data && !error,
