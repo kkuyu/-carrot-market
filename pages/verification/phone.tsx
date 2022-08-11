@@ -39,7 +39,7 @@ const VerificationPhonePage: NextPage = () => {
           router.replace("/verification/email");
           return;
         case "SameAccount":
-        case "AlreadySubscribedAccount":
+        case "AlreadyRegisteredAccount":
           verifyPhoneForm.setError("phone", { type: "validate", message: data.error.message });
           verifyPhoneForm.setFocus("phone");
           return;

@@ -7,18 +7,20 @@ export interface MessageModalProps {
   message: string;
   cancelBtn?: string;
   confirmBtn?: string;
+  onCancel?: () => void;
   onConfirm: () => void;
 }
 
 const MessageModal = (props: MessageModalProps & ModalComponentProps) => {
-  const { name, type, hasBackdrop = true, message = "message", cancelBtn = "취소", confirmBtn = "확인", onConfirm, onOpen, onClose } = props;
+  const { name, type, hasBackdrop = true, message = "message", cancelBtn = "취소", confirmBtn = "확인", onCancel, onConfirm, onOpen, onClose } = props;
 
   const clickConfirm = async () => {
     if (onConfirm) await onConfirm();
     onClose();
   };
 
-  const clickCancel = () => {
+  const clickCancel = async () => {
+    if (onCancel) await onCancel();
     onClose();
   };
 

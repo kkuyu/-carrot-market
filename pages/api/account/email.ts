@@ -3,58 +3,54 @@ import { NextApiRequest, NextApiResponse } from "next";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
-import sendMessage from "@libs/server/sendMessage";
+import { EmailTemplateKey } from "@libs/server/getUtilsNcp";
+import sendEmail from "@libs/server/sendEmail";
 
-export interface PostVerificationPhoneResponse extends ResponseDataType {}
+export interface PostAccountEmailResponse extends ResponseDataType {}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { phone, targetEmail } = req.body;
+    const { user } = req.session;
+    const { email } = req.body;
 
     // invalid
-    if (!phone || phone.length < 8) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
-    }
-    if (!targetEmail || !targetEmail.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    if (!email || !email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // fetch data
-    const foundUserByEmail = await client.user.findUnique({
+    const foundUser = await client.user.findUnique({
       where: {
-        email: targetEmail,
+        id: user?.id,
       },
       select: {
         id: true,
-        phone: true,
+        email: true,
       },
     });
-    if (!foundUserByEmail) {
+    if (!foundUser) {
       const error = new Error("계정 정보를 다시 확인해주세요.");
       error.name = "NotFoundUser";
       throw error;
     }
-    if (foundUserByEmail && foundUserByEmail.phone === phone) {
-      const error = new Error("등록된 휴대폰 번호와 같은 번호예요. 변경하실 휴대폰 번호를 입력해주세요.");
+    if (foundUser && foundUser.email === email) {
+      const error = new Error("등록된 이메일 주소와 같은 주소예요. 변경하실 이메일 주소를 입력해주세요.");
       error.name = "SameAccount";
       throw error;
     }
 
     // fetch user
-    const foundUserByPhone = await client.user.findUnique({
+    const foundUserByEmail = await client.user.findUnique({
       where: {
-        phone,
+        email,
       },
       select: {
         id: true,
       },
     });
-    if (foundUserByPhone) {
+    if (foundUserByEmail) {
       const error = new Error("이미 가입한 휴대폰 번호예요. 휴대폰 번호를 다시 확인해주세요.");
       error.name = "AlreadyRegisteredAccount";
       throw error;
@@ -66,23 +62,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         payload: Math.floor(100000 + Math.random() * 900000) + "",
         user: {
           connect: {
-            id: foundUserByEmail.id,
+            id: foundUser.id,
           },
         },
       },
     });
 
-    // send message
-    sendMessage({
-      templateId: MessageTemplateKey.verificationPhone,
-      sendTo: phone,
+    // send email
+    sendEmail({
+      sendTo: email,
+      templateId: EmailTemplateKey.accountEmail,
       parameters: {
         token: newToken.payload,
       },
     });
 
     // result
-    const result: PostVerificationPhoneResponse = {
+    const result: PostAccountEmailResponse = {
       success: true,
     };
     return res.status(200).json(result);

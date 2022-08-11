@@ -14,6 +14,7 @@ interface SignatureParams {
 
 export const enum EmailTemplateKey {
   verificationEmail = "6955",
+  accountEmail = "8146",
 }
 
 export const enum MessageTemplateKey {

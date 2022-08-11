@@ -18,9 +18,9 @@ import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import Buttons from "@components/buttons";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
+import Buttons from "@components/buttons";
 
 const AccountJoinPage: NextPage = () => {
   const router = useRouter();

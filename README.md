@@ -28,12 +28,6 @@ npx prisma studio
 
 #### DB
 
-- [x] Record Kind.Favorite -> Record Kind.ProductLike
-- [x] Record Kind.Sale -> Record Kind.ProductSale
-- [x] Record Kind.Purchase -> Record Kind.ProductPurchase
-- [x] Curiosity, Emotion -> Record Kind.StoryLike
-- [x] Review -> ProductReview
-- [x] Comment -> StoryComment
 - [ ] Stream -> Streams
 - [ ] Message -> StreamsMessages
 - [ ] @relation(onDelete: Cascade)
@@ -44,25 +38,25 @@ npx prisma studio
 - [ ] 검색하기
 - [ ] 카테고리 메뉴
 
+### User
+
+- [ ] 본인인증정보
+- [ ] 휴대폰 번호 6개월이내 변경 금지
+
 #### Product
 
 - [ ] 가격제안
 - [ ] 무료나눔
-- [ ] 리뷰
 - [ ] 예약
 - [ ] 숨기기
 
 #### Story
 
-- [ ] 댓글 삭제, 수정
+- [ ] 장소추가
 
 #### Profile
 
 - [ ] 매너온도
-
-#### Chats
-
-- [ ] Chats
 
 #### Streams
 
@@ -76,4 +70,3 @@ npx prisma studio
 #### Etc
 
 - [ ] 404, 500
-- [ ] 회원 가입 후 최초 진입 시, 프로필 수정 안내 가이드 모달

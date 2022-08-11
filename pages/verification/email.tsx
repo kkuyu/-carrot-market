@@ -13,19 +13,19 @@ import { PostVerificationTokenResponse } from "@api/verification/token";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import Buttons from "@components/buttons";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
+import Buttons from "@components/buttons";
 
 const VerificationEmailPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
-  // Email
+  // email
   const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
   const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostVerificationEmailResponse>("/api/verification/email", {
     onSuccess: () => {
-      verifyTokenFocus("token");
+      verifyTokenForm.setFocus("token");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -42,7 +42,6 @@ const VerificationEmailPage: NextPage = () => {
 
   // token
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
-  const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
       router.push({
@@ -53,8 +52,8 @@ const VerificationEmailPage: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          verifyTokenError("token", { type: "validate", message: data.error.message });
-          verifyTokenFocus("token");
+          verifyTokenForm.setError("token", { type: "validate", message: data.error.message });
+          verifyTokenForm.setFocus("token");
           return;
         default:
           console.error(data.error);
