@@ -130,7 +130,9 @@ const UserEditPage: NextPage = () => {
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        submitId: "edit-profile",
+      },
       navBar: {},
     });
   }, []);
@@ -173,7 +175,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "프로필 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "edit-profile",
     },
     navBar: {
       utils: [],

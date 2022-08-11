@@ -33,7 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // early return result
-      if (!user?.id || _productId) {
+      if (_productId && !user?.id) {
         // result
         const result: GetChatsResponse = {
           success: false,

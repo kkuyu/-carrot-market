@@ -130,7 +130,7 @@ const CommentsDetailPage: NextPage = () => {
   }
 
   return (
-    <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
+    <article className={`container ${user?.id ? "pb-16" : "pb-5"}`}>
       <h1 className="sr-only">{truncateStr(commentTreeList?.[0]?.content, 15)} | 댓글</h1>
 
       {commentTreeList?.[0]?.story && (
@@ -161,8 +161,8 @@ const CommentsDetailPage: NextPage = () => {
       {/* 답글 입력 */}
       {user?.id && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
-          <div className="relative flex items-center mx-auto w-full h-16 max-w-screen-sm border-t bg-white">
-            <EditComment type="post" formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType="답글" className="w-full pl-5 pr-3" />
+          <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
+            <EditComment formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType="답글" className="w-full px-5" />
           </div>
         </div>
       )}

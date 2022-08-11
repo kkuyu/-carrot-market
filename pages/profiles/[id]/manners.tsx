@@ -41,17 +41,21 @@ const ProfilesMannersPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <h2 className="">받은 매너</h2>
-      <div className="mt-2">
-        {Boolean(goodManners.length) && <MannerList list={goodManners} />}
-        {!Boolean(goodManners.length) && <p>받은 매너 칭찬이 아직 없어요</p>}
+      <div>
+        <h2 className="">받은 매너</h2>
+        <div className="mt-2">
+          {Boolean(goodManners.length) && <MannerList list={goodManners} />}
+          {!Boolean(goodManners.length) && <p>받은 매너 칭찬이 아직 없어요</p>}
+        </div>
       </div>
 
-      <h2 className="mt-5 pt-5 border-t">받은 비매너</h2>
-      <div className="mt-2">
-        {user?.id !== profileData?.profile.id && <p>받은 비매너는 본인에게만 보여요</p>}
-        {user?.id === profileData?.profile.id && Boolean(badManners.length) && <MannerList list={badManners}></MannerList>}
-        {user?.id === profileData?.profile.id && !Boolean(badManners.length) && <p>받은 비매너가 없어요</p>}
+      <div className="mt-5 pt-5 border-t">
+        <h2 className="">받은 비매너</h2>
+        <div className="mt-2">
+          {user?.id !== profileData?.profile.id && <p>받은 비매너는 본인에게만 보여요</p>}
+          {user?.id === profileData?.profile.id && Boolean(badManners.length) && <MannerList list={badManners}></MannerList>}
+          {user?.id === profileData?.profile.id && !Boolean(badManners.length) && <p>받은 비매너가 없어요</p>}
+        </div>
       </div>
 
       {/* todo: 당근마켓 거래매너 보기 */}
@@ -61,7 +65,7 @@ const ProfilesMannersPage: NextPage = () => {
           <br />
           당근마켓 거래매너를 확인해보세요
         </p>
-        <Buttons text="당근마켓 거래매너 보기" className="mt-5" />
+        <Buttons tag="button" text="당근마켓 거래매너 보기" className="mt-5" />
       </div>
     </div>
   );

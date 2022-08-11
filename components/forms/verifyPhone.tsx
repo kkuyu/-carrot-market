@@ -15,11 +15,12 @@ interface VerifyPhoneProps extends React.HTMLAttributes<HTMLFormElement> {
   isLoading?: boolean;
 }
 
-const VerifyPhone = ({ formData, onValid, isSuccess, isLoading, ...rest }: VerifyPhoneProps) => {
+const VerifyPhone = (props: VerifyPhoneProps) => {
+  const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <div className="space-y-1">
         <Inputs
           register={register("phone", {
@@ -34,7 +35,6 @@ const VerifyPhone = ({ formData, onValid, isSuccess, isLoading, ...rest }: Verif
           })}
           name="phone"
           type="number"
-          kind="text"
           required={true}
           placeholder="휴대폰 번호(-없이 숫자만 입력)"
         />

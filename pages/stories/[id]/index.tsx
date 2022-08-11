@@ -184,7 +184,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
   }
 
   return (
-    <article className={`container ${user?.id ? "pb-20" : "pb-5"}`}>
+    <article className={`container ${user?.id ? "pb-16" : "pb-5"}`}>
       <h1 className="sr-only">{truncateStr(storyData?.story?.content, 15)} | 동네생활</h1>
 
       {/* 게시글 정보 */}
@@ -249,8 +249,8 @@ const StoriesDetailPage: NextPage<{}> = () => {
       {/* 댓글/답변 입력 */}
       {user?.id && (
         <div className="fixed-container bottom-0 z-[50]">
-          <div className="fixed-inner flex items-center h-16 border-t bg-white">
-            <EditComment type="post" formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType={category?.commentType} className="w-full pl-5 pr-3" />
+          <div className="fixed-inner flex items-center h-14 border-t bg-white">
+            <EditComment formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType={category?.commentType} className="w-full px-5" />
           </div>
         </div>
       )}

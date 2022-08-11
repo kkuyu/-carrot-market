@@ -23,9 +23,8 @@ interface DistanceForm {
   range: number;
 }
 
-const HometownUpdate = ({}: HometownUpdateProps) => {
+const HometownUpdate = (props: HometownUpdateProps) => {
   const { user, currentAddr, type: userType, mutate: mutateUser } = useUser();
-
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
 
@@ -170,18 +169,19 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
   }, [user?.emdType]);
 
   return (
-    <section className="container space-y-6 divide-y">
+    <section className="container pt-5 pb-5">
       {/* 주소 변경 */}
-      <div ref={addressWrapper} className="pt-6 text-center">
+      <div ref={addressWrapper} className="text-center">
         <h2 className="text-lg">동네 선택</h2>
         <p className="mt-1 text-gray-500">최소 1개 이상 최대 2개까지 설정할 수 있어요.</p>
-        <div className="mt-6 flex space-x-2">
+        <div className="mt-5 flex space-x-2">
           {addressStructure.map(({ key, text, selectItem, removeItem }) => {
             return (
-              <div key={key} className={`relative grow ${key === "SUB" && !user?.SUB_emdPosNm ? "hidden" : ""} ${key === "ANOTHER" && user?.SUB_emdPosNm ? "hidden" : ""}`}>
+              <div key={key} className={`relative grow shrink basis-0 w-0 ${key === "SUB" && !user?.SUB_emdPosNm ? "hidden" : ""} ${key === "ANOTHER" && user?.SUB_emdPosNm ? "hidden" : ""}`}>
                 {key === "ANOTHER" && (
                   <>
                     <Buttons
+                      tag="button"
                       type="button"
                       sort="round-box"
                       status="default"
@@ -199,25 +199,28 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
                 {key !== "ANOTHER" && (
                   <>
                     <Buttons
+                      tag="button"
                       type="button"
                       sort="round-box"
                       status={user?.emdType === key ? "primary" : "default"}
                       text={text}
                       onClick={selectItem}
-                      className={`${key}-select-button !text-left`}
+                      className={`${key}-select-button pr-12 !text-left overflow-hidden whitespace-nowrap overflow-ellipsis`}
                       aria-label={`${text} ${user?.emdType === key ? "선택 됨" : "선택"}`}
                     />
                     <Buttons
+                      tag="button"
                       type="button"
                       sort="icon-block"
-                      status="transparent"
+                      status="default"
+                      size="sm"
                       text={
                         <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                         </svg>
                       }
                       onClick={removeItem}
-                      className={`${key}-select-button absolute top-1/2 right-1 flex -translate-y-1/2 ${user?.emdType === key ? "text-white" : ""}`}
+                      className={`${key}-select-button absolute top-1/2 right-1.5 flex -translate-y-1/2 ${user?.emdType === key ? "text-white" : ""}`}
                       aria-label={`${text} 삭제`}
                     />
                   </>
@@ -229,13 +232,13 @@ const HometownUpdate = ({}: HometownUpdateProps) => {
       </div>
 
       {/* 검색범위 변경 */}
-      <div className="pt-6 text-center">
+      <div className="mt-5 pt-5 text-center border-t">
         <form onChange={handleSubmit(distanceSubmit)} onSubmit={handleSubmit(distanceSubmit)} noValidate>
           <h2 className="text-lg">
             {currentAddr.emdPosNm} <span className="inline-block min-w-[6.8rem] text-left underline">근처 동네 {`${boundaryData?.record?.total ? boundaryData?.record?.total + "개" : ""}`}</span>
           </h2>
           <p className="mt-1 text-gray-500">선택한 범위의 게시글만 볼 수 있어요</p>
-          <div className="mt-6">
+          <div className="mt-5">
             <input type="range" {...register("range", { required: true, min: 0.01, max: 0.05, valueAsNumber: true })} step={0.01} min={0.01} max={0.05} className="block w-full" />
             <div className="mt-1 flex justify-between text-sm text-gray-500 before:content-['내_동네'] after:content-['근처_동네']" aria-hidden="true" />
           </div>

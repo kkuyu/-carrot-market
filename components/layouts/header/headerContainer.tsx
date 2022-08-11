@@ -11,27 +11,27 @@ import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/a
 
 export interface HeaderProps extends HeaderOptions {}
 
-const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, submitId }: HeaderProps) => {
+const Header = (props: HeaderProps) => {
+  const { title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, submitId } = props;
   const router = useRouter();
   const { user, currentAddr, type: userType } = useUser();
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
   const getUtils = (name: HeaderUtils) => {
+    if (!utils?.includes(name)) return null;
     switch (name) {
       case "address":
         if (!currentAddr?.emdPosNm) return null;
+        const clickAddress = () => {
+          if (userType === "member" && user?.SUB_emdPosNm) {
+            openModal<HometownDropdownModalProps>(HometownDropdownModal, HometownDropdownModalName, {});
+            return;
+          }
+          openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});
+        };
         return (
-          <button
-            className="h-12 flex items-center px-5"
-            onClick={() => {
-              if (userType === "member" && user?.SUB_emdPosNm) {
-                openModal<HometownDropdownModalProps>(HometownDropdownModal, HometownDropdownModalName, {});
-                return;
-              }
-              openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});
-            }}
-          >
+          <button className="h-12 flex items-center px-5" onClick={clickAddress}>
             <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
@@ -39,16 +39,18 @@ const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = []
           </button>
         );
       case "back":
+        const clickBack = () => router.back();
         return (
-          <button className="p-3" onClick={() => router.back()}>
+          <button className="p-3" onClick={clickBack}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
             </svg>
           </button>
         );
       case "home":
+        const clickHome = () => router.push("/");
         return (
-          <button className="p-3" onClick={() => router.push("/")}>
+          <button className="p-3" onClick={clickHome}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 strokeLinecap="round"
@@ -60,18 +62,15 @@ const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = []
           </button>
         );
       case "kebab":
+        const clickKebab = () => {
+          openPanel<ActionPanelProps>(ActionPanel, name, {
+            hasBackdrop: true,
+            actions: kebabActions || [],
+            cancelBtn: "취소",
+          });
+        };
         return (
-          <button
-            type="button"
-            className="p-3"
-            onClick={() => {
-              openPanel<ActionPanelProps>(ActionPanel, name, {
-                hasBackdrop: true,
-                actions: kebabActions || [],
-                cancelBtn: "취소",
-              });
-            }}
-          >
+          <button type="button" className="p-3" onClick={clickKebab}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 strokeLinecap="round"
@@ -103,29 +102,28 @@ const Header = ({ title = "", titleTag = "h1", isTransparent = false, utils = []
     }
   };
 
-  if (!utils?.length) {
-    return null;
-  }
+  if (!utils?.length) return null;
 
   return (
     <div id="layout-header" className={`fixed-container top-0 z-[100] ${isTransparent ? "is-transparent" : ""}`}>
       <header className={`fixed-inner h-12 ${isTransparent ? "bg-gradient-to-b from-black/20  text-white" : "bg-white border-b text-black"}`}>
         {/* left utils */}
         <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
-          {utils?.includes(HeaderUtils["Back"]) && <>{getUtils(HeaderUtils["Back"])}</>}
-          {utils?.includes(HeaderUtils["Address"]) && <>{getUtils(HeaderUtils["Address"])}</>}
+          {getUtils(HeaderUtils["Back"])}
+          {getUtils(HeaderUtils["Address"])}
         </div>
 
-        {/* center utils */}
-        <div className="flex justify-center items-center w-full h-full px-20">{utils?.includes(HeaderUtils["Title"]) && <>{getUtils(HeaderUtils["Title"])}</>}</div>
+        {/* title utils */}
+        <div className="empty:hidden flex justify-center items-center w-full h-full pl-24 pr-24">{getUtils(HeaderUtils["Title"])}</div>
+
 
         {/* right utils */}
         <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
-          {utils?.includes(HeaderUtils["Home"]) && <>{getUtils(HeaderUtils["Home"])}</>}
-          {utils?.includes(HeaderUtils["Share"]) && <>{getUtils(HeaderUtils["Share"])}</>}
-          {utils?.includes(HeaderUtils["Search"]) && <>{getUtils(HeaderUtils["Search"])}</>}
-          {utils?.includes(HeaderUtils["Kebab"]) && <>{getUtils(HeaderUtils["Kebab"])}</>}
-          {utils?.includes(HeaderUtils["Submit"]) && <>{getUtils(HeaderUtils["Submit"])}</>}
+          {getUtils(HeaderUtils["Home"])}
+          {getUtils(HeaderUtils["Share"])}
+          {getUtils(HeaderUtils["Search"])}
+          {getUtils(HeaderUtils["Kebab"])}
+          {getUtils(HeaderUtils["Submit"])}
         </div>
       </header>
     </div>

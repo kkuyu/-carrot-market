@@ -57,14 +57,14 @@ const UserPurchasesPage: NextPage = () => {
       {/* 구매내역: List */}
       {products && Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductList list={products}>
+          <ProductList list={products} className="border-b">
             <FeedbackProduct key="FeedbackProduct" />
           </ProductList>
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">구매내역을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">구매내역을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">구매내역을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">구매내역을 불러오고있어요</span>
           ) : null}
         </div>
       )}

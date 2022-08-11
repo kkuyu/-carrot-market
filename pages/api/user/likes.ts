@@ -39,7 +39,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // search
     const where = {
       userId: user?.id,
-      kind: Kind.ProductPurchase,
+      kind: Kind.ProductLike,
     };
 
     // fetch data

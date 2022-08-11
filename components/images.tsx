@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 
-interface ImagesProps {
+interface ImagesProps extends React.HTMLAttributes<HTMLDivElement> {
   alt: string;
   size?: string;
   ratioX?: number;
@@ -11,7 +11,9 @@ interface ImagesProps {
   cloudVariant?: string;
 }
 
-const Images = ({ alt = "", size = "3.5rem", ratioX = 1, ratioY = 1, rounded = "full", cloudId: _cloudId, cloudVariant = "public" }: ImagesProps) => {
+const Images = (props: ImagesProps) => {
+  const { alt = "", size = "3.5rem", ratioX = 1, ratioY = 1, rounded = "full", cloudId: _cloudId, cloudVariant = "public", className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
   const [cloudId, setCloudId] = useState<string | null>(null);
 
@@ -28,7 +30,7 @@ const Images = ({ alt = "", size = "3.5rem", ratioX = 1, ratioY = 1, rounded = "
   }, []);
 
   return (
-    <div className={`relative bg-slate-300 overflow-hidden ${rounded ? `rounded-${rounded}` : ""}`} style={{ width: size, height: size }}>
+    <div className={`relative bg-slate-300 overflow-hidden ${rounded ? `rounded-${rounded}` : ""} ${className}`} style={{ width: size, height: size }} {...restProps}>
       <span className="block" style={{ paddingBottom: `${(ratioY / ratioX) * 100}%` }}></span>
       {cloudId ? (
         <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${cloudId}/${cloudVariant}`} alt={alt} layout="fill" objectFit="cover" onError={onError} />

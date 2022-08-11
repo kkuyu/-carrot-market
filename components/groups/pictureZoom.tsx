@@ -5,7 +5,7 @@ import "@egjs/react-flicking/dist/flicking.min.css";
 // @components
 import Images from "@components/images";
 
-export interface PictureSliderItem {
+export interface PictureZoomItem {
   src: string;
   index: number;
   key: string;
@@ -13,12 +13,14 @@ export interface PictureSliderItem {
   name: string;
 }
 
-interface PictureSliderProps {
-  list: PictureSliderItem[];
+interface PictureZoomProps extends React.HTMLAttributes<HTMLDivElement> {
+  list: PictureZoomItem[];
   defaultIndex: number;
 }
 
-const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
+const PictureZoom = (props: PictureZoomProps) => {
+  const { list, defaultIndex, className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
 
   // zoom
@@ -28,7 +30,7 @@ const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
 
-  const makeSliderItem = (item: PictureSliderItem, index: number, array: PictureSliderItem[]) => {
+  const makeSliderItem = (item: PictureZoomItem, index: number, array: PictureZoomItem[]) => {
     return (
       <button
         type="button"
@@ -84,12 +86,10 @@ const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
     resetZoom();
   }, []);
 
-  if (!list.length) {
-    return null;
-  }
+  if (!list.length) return null;
 
   return (
-    <div className="relative w-full h-full bg-slate-300">
+    <div className={`relative w-full h-full bg-slate-300 ${className}`} {...restProps}>
       <div id={list[flickingIndex].key} role="tabpanel" aria-label={list[flickingIndex].label} style={{ height: "calc(100% - 8rem)" }}>
         <TransformWrapper
           ref={zoomRef}
@@ -121,4 +121,4 @@ const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
   );
 };
 
-export default PictureSlider;
+export default PictureZoom;

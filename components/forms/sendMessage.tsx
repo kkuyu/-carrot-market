@@ -14,11 +14,12 @@ interface SendMessageProps extends React.HTMLAttributes<HTMLFormElement> {
   isLoading?: boolean;
 }
 
-const SendMessage = ({ formData, onValid, isSuccess, isLoading, ...rest }: SendMessageProps) => {
+const SendMessage = (props: SendMessageProps) => {
+  const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <Inputs
         register={register("text", {
           required: {
@@ -30,15 +31,15 @@ const SendMessage = ({ formData, onValid, isSuccess, isLoading, ...rest }: SendM
         placeholder=""
         name="text"
         type="text"
-        kind="text"
         appendButtons={
           <Buttons
             tag="button"
             type="submit"
             sort="icon-block"
+            size="sm"
             status="default"
             text={
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             }

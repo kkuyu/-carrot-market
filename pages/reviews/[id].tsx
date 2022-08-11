@@ -64,12 +64,16 @@ const ReviewsDetailPage: NextPage = () => {
         {data.review.text && <p className="pb-3 whitespace-pre-wrap">{data.review.text}</p>}
         {Boolean(data.review.manners.length) && (
           <ul className="space-y-1">
-            {data.review.manners.map((manner) => (
-              <li key={manner.id} className="relative pl-2.5">
-                <span className="before:absolute before:top-1/2 before:left-0 before:-mt-0.5 before:w-1 before:h-1 before:bg-black before:rounded-full" />
-                {getReviewManners(manner.value)?.text}
-              </li>
-            ))}
+            {data.review.manners.map((item) => {
+              const manner = getReviewManners(item.value);
+              if (!manner) return null;
+              return (
+                <li key={item.id} className="relative pl-2.5">
+                  <span className="before:absolute before:top-1/2 before:left-0 before:-mt-0.5 before:w-1 before:h-1 before:bg-black before:rounded-full" />
+                  {manner.text}
+                </li>
+              );
+            })}
           </ul>
         )}
       </div>
@@ -216,7 +220,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     header: {
       title: `${review?.role === role ? "보낸" : "받은"} 거래 후기`,
       titleTag: "strong",
-      utils: ["back", "title"],
+      utils: ["back", "title", "home"],
     },
     navBar: {
       utils: [],

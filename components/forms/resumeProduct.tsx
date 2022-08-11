@@ -17,7 +17,8 @@ interface ResumeProductProps extends React.HTMLAttributes<HTMLFormElement> {
   diffTime: string[];
 }
 
-const ResumeProduct = ({ formData, onValid, isSuccess, isLoading, originalPrice, targetDate, diffTime, ...rest }: ResumeProductProps) => {
+const ResumeProduct = (props: ResumeProductProps) => {
+  const { formData, onValid, isSuccess, isLoading, originalPrice, targetDate, diffTime, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue } = formData;
 
   const discounts = originalPrice > 10000 ? ["5%", "10%", "15%"] : originalPrice >= 4000 ? ["1000원", "2000원", "3000원"] : [];
@@ -27,7 +28,7 @@ const ResumeProduct = ({ formData, onValid, isSuccess, isLoading, originalPrice,
   };
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       <div className="space-y-1">
         <Labels text="가격" htmlFor="price" className="sr-only" />
         <Inputs
@@ -42,7 +43,7 @@ const ResumeProduct = ({ formData, onValid, isSuccess, isLoading, originalPrice,
           placeholder=""
           name="price"
           type="number"
-          kind="price"
+          prependText="₩"
         />
         <span className="empty:hidden invalid">{formState.errors.price?.message}</span>
         {!Boolean(discounts.length) && (
@@ -66,7 +67,7 @@ const ResumeProduct = ({ formData, onValid, isSuccess, isLoading, originalPrice,
           다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
         </p>
       )}
-      <Buttons type="submit" text="끌어올리기" disabled={isLoading} />
+      <Buttons tag="button" type="submit" text="끌어올리기" disabled={isLoading} />
     </form>
   );
 };

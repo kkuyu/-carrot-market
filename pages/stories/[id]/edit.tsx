@@ -105,10 +105,6 @@ const StoriesEditPage: NextPage = () => {
 
   useEffect(() => {
     if (!storyData?.story) return;
-    if (storyData.story.userId !== user?.id) {
-      router.push(`/stories/${router.query.id}`);
-      return;
-    }
     setPhotoLoading(true);
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
@@ -118,7 +114,9 @@ const StoriesEditPage: NextPage = () => {
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        submitId: "edit-story",
+      },
       navBar: {},
     });
   }, []);
@@ -213,7 +211,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "동네생활 글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "edit-story",
     },
     navBar: {
       utils: [],

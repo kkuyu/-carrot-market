@@ -58,14 +58,8 @@ const ProfilesReviewsPage: NextPage = () => {
   const changeFilter = (tab: ReviewTab) => {
     setCurrentTab(tab);
     window.scrollTo(0, 0);
-    router.replace(
-      {
-        pathname: router.pathname,
-        query: { ...router.query, filter: tab.value },
-      },
-      undefined,
-      { shallow: true }
-    );
+    const route = { pathname: router.pathname, query: { ...router.query, filter: tab.value } };
+    router.replace(route, undefined, { shallow: true });
   };
 
   useEffect(() => {
@@ -107,12 +101,12 @@ const ProfilesReviewsPage: NextPage = () => {
       {/* 거래후기: List */}
       {reviews && Boolean(reviews.length) && (
         <div className="mt-3">
-          <ReviewList list={reviews} />
+          <ReviewList list={reviews} className="border-b" />
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}를 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}를 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}를 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}를 불러오고있어요</span>
           ) : null}
         </div>
       )}

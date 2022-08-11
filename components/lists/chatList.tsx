@@ -4,7 +4,7 @@ import useUser from "@libs/client/useUser";
 // @components
 import Chat, { ChatItem, ChatProps } from "@components/cards/chat";
 
-interface ChatListProps {
+interface ChatListProps extends React.HTMLAttributes<HTMLUListElement> {
   type: "link" | "button";
   list: ChatItem[];
   content: ChatProps["content"];
@@ -12,7 +12,8 @@ interface ChatListProps {
   selectItem?: (item: ChatItem, user: ChatItem["users"][0]) => void;
 }
 
-const ChatList = ({ list, content, type = "link", isSingleUser = false, selectItem }: ChatListProps) => {
+const ChatList = (props: ChatListProps) => {
+  const { list, content, type = "link", isSingleUser = false, selectItem, className = "", ...restProps } = props;
   const { user } = useUser();
 
   const makeListItem = (item: ChatItem, users: ChatItem["users"]) => {
@@ -26,8 +27,16 @@ const ChatList = ({ list, content, type = "link", isSingleUser = false, selectIt
           </Link>
         );
       case "button":
+        if (!selectItem) {
+          console.error("makeListItem", item, users);
+          return (
+            <div className="block-arrow py-3">
+              <Chat item={item} users={users} content={content} isVisibleProduct={false} />
+            </div>
+          );
+        }
         return (
-          <button type="button" className="block-arrow py-3" onClick={() => (selectItem ? selectItem(item, users[0]) : console.log("selectItem", item, user))}>
+          <button type="button" className="block-arrow py-3" onClick={() => selectItem(item, users[0])}>
             <Chat item={item} users={users} content={content} isVisibleProduct={false} />
           </button>
         );
@@ -37,12 +46,10 @@ const ChatList = ({ list, content, type = "link", isSingleUser = false, selectIt
     }
   };
 
-  if (!Boolean(list.length)) {
-    return null;
-  }
+  if (!Boolean(list.length)) return null;
 
   return (
-    <ul className="divide-y">
+    <ul className={`divide-y ${className}`} {...restProps}>
       {list
         .filter((item) => item.chatMessages.length)
         .map((item) => {

@@ -20,15 +20,17 @@ export interface HeaderOptions {
   title?: string;
   titleTag?: "h1" | "strong";
   isTransparent?: boolean;
-  kebabActions?: { key: string; text: string; onClick: () => void }[];
   submitId?: string;
+  kebabActions?: { key: string; text: string; onClick: () => void }[];
 }
 
 interface HeaderWrapperProps {
   defaultHeaderState: HeaderOptions | null;
 }
 
-const HeaderWrapper = ({ defaultHeaderState }: HeaderWrapperProps) => {
+const HeaderWrapper = (props: HeaderWrapperProps) => {
+  const { defaultHeaderState } = props;
+
   const currentState = useContext(LayoutStateContext);
   const { change } = useContext(LayoutDispatchContext);
 
@@ -43,8 +45,8 @@ const HeaderWrapper = ({ defaultHeaderState }: HeaderWrapperProps) => {
         title: "",
         titleTag: "h1",
         isTransparent: false,
-        kebabActions: [],
-        submitId: "",
+        // submitId: "",
+        // kebabActions: [],
         ...defaultHeaderState,
       },
       navBar: {},

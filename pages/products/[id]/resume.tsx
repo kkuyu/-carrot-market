@@ -80,10 +80,6 @@ const ProductsResumePage: NextPage = () => {
 
   useEffect(() => {
     if (!productData?.product) return;
-    if (productData.product.userId !== user?.id) {
-      router.push(`/products/${router.query.id}`);
-      return;
-    }
     setState(() => {
       if (targetDate[0] === null) return "MaxCount";
       if (today > targetDate[0]) return productData?.product?.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct";
@@ -132,7 +128,7 @@ const ProductsResumePage: NextPage = () => {
               <Buttons tag="a" sort="text-link" text="판매 확률 높이는 꿀팁보기" status="default" className="pl-0" />
             </Link>
           </p>
-          <Buttons type="button" text="끌어올리기" className="mt-5" disabled={true} />
+          <Buttons tag="button" type="button" text="끌어올리기" className="mt-5" disabled={true} />
         </div>
       )}
 
@@ -157,7 +153,7 @@ const ProductsResumePage: NextPage = () => {
               <Buttons tag="a" sort="text-link" text="판매 확률 높이는 꿀팁보기" status="default" className="pl-0" />
             </Link>
           </p>
-          <Buttons type="button" text="끌어올리기" className="mt-5" disabled={true} />
+          <Buttons tag="button" type="button" text="끌어올리기" className="mt-5" disabled={true} />
         </div>
       )}
 
@@ -170,7 +166,7 @@ const ProductsResumePage: NextPage = () => {
               다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
             </p>
           )}
-          <Buttons type="submit" text="끌어올리기" className="mt-5" disabled={loading} onClick={submitResumeProduct} />
+          <Buttons tag="button" type="submit" text="끌어올리기" className="mt-5" disabled={loading} onClick={submitResumeProduct} />
         </div>
       )}
 
@@ -283,7 +279,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   // invalidCondition
   let invalidCondition = false;
-  if (saleRecord) invalidCondition = true;
+  if (!saleRecord) invalidCondition = true;
   // redirect `/products/${productId}`
   if (invalidCondition) {
     return {

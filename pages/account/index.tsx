@@ -72,43 +72,47 @@ const AccountIndexPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <h2 className="">계정 정보</h2>
-      <ul className="mt-2 space-y-2">
-        <li className="flex">
-          <div className="grow shrink basis-auto min-w-0 ">
-            <strong className="block font-normal">휴대폰 번호</strong>
-            <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.phone}</span>
-          </div>
-          <Link href="/account/phone" passHref>
-            <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "등록 및 회원가입"} className="flex-none pl-2 pr-0" />
-          </Link>
-        </li>
-        {userType === "member" && (
+      <div>
+        <h2 className="">계정 정보</h2>
+        <ul className="mt-2 space-y-2">
           <li className="flex">
             <div className="grow shrink basis-auto min-w-0 ">
-              <strong className="block font-normal">이메일</strong>
-              <span className="mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500 empty:hidden">{user?.email}</span>
+              <strong className="block font-normal">휴대폰 번호</strong>
+              <span className="empty:hidden mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500">{user?.phone}</span>
             </div>
-            <Link href="/account/email" passHref>
-              <Buttons tag="a" sort="text-link" status="primary" text={user?.email ? "변경" : "등록"} className="flex-none pl-2 pr-0" />
+            <Link href="/account/phone" passHref>
+              <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "등록 및 회원가입"} className="flex-none pl-2 pr-0" />
             </Link>
           </li>
-        )}
-      </ul>
+          {userType === "member" && (
+            <li className="flex">
+              <div className="grow shrink basis-auto min-w-0 ">
+                <strong className="block font-normal">이메일</strong>
+                <span className="empty:hidden mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500">{user?.email}</span>
+              </div>
+              <Link href="/account/email" passHref>
+                <Buttons tag="a" sort="text-link" status="primary" text={user?.email ? "변경" : "등록"} className="flex-none pl-2 pr-0" />
+              </Link>
+            </li>
+          )}
+        </ul>
+      </div>
 
-      <h2 className="mt-5 pt-5 border-t">기타</h2>
-      <ul className="mt-2 space-y-2">
-        <li>
-          <Buttons tag="button" sort="text-link" status="default" text="로그아웃" onClick={openLogoutModal} className="pl-0 pr-0 no-underline" />
-        </li>
-        {userType === "member" && (
+      <div className="mt-5 pt-5 border-t">
+        <h2 className="">기타</h2>
+        <ul className="mt-2 space-y-2">
           <li>
-            <Link href="/account/delete" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="탈퇴하기" className="pl-0 pr-0 no-underline" />
-            </Link>
+            <Buttons tag="button" sort="text-link" status="unset" text="로그아웃" onClick={openLogoutModal} />
           </li>
-        )}
-      </ul>
+          {userType === "member" && (
+            <li>
+              <Link href="/account/delete" passHref>
+                <Buttons tag="a" sort="text-link" status="unset" text="탈퇴하기" />
+              </Link>
+            </li>
+          )}
+        </ul>
+      </div>
     </div>
   );
 };

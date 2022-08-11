@@ -14,11 +14,12 @@ interface VerifyEmailProps extends React.HTMLAttributes<HTMLFormElement> {
   isLoading?: boolean;
 }
 
-const VerifyEmail = ({ formData, onValid, isSuccess, isLoading, ...rest }: VerifyEmailProps) => {
+const VerifyEmail = (props: VerifyEmailProps) => {
+  const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <div className="space-y-1">
         <Inputs
           register={register("email", {
@@ -33,7 +34,6 @@ const VerifyEmail = ({ formData, onValid, isSuccess, isLoading, ...rest }: Verif
           })}
           name="email"
           type="email"
-          kind="text"
           required={true}
           placeholder="username@example.com"
         />

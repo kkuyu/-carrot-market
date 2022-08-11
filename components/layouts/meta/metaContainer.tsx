@@ -4,7 +4,9 @@ import { MetaOptions } from "@components/layouts/meta/metaWrapper";
 
 export interface MetaProps extends MetaOptions {}
 
-const Meta = ({ title = "", description = "" }: MetaProps) => {
+const Meta = (props: MetaProps) => {
+  const { title = "", description = "" } = props;
+
   return (
     <>
       <Head>

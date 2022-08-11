@@ -20,7 +20,9 @@ interface NavBarWrapperProps {
   defaultNavBarState: NavBarOptions | null;
 }
 
-const NavBarWrapper = ({ defaultNavBarState }: NavBarWrapperProps) => {
+const NavBarWrapper = (props: NavBarWrapperProps) => {
+  const { defaultNavBarState } = props;
+
   const currentState = useContext(LayoutStateContext);
   const { change } = useContext(LayoutDispatchContext);
 

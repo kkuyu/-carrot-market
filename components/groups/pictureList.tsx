@@ -13,11 +13,12 @@ export type PictureListItem = {
   name: string;
 };
 
-interface PictureListProps {
+interface PictureListProps extends React.HTMLAttributes<HTMLDivElement> {
   list: PictureListItem[];
 }
 
-const PictureList = ({ list }: PictureListProps) => {
+const PictureList = (props: PictureListProps) => {
+  const { list, className = "", ...restProps } = props;
   const { openModal } = useModal();
 
   const grids = list.slice(0, 3).map((item, index, array) => {
@@ -44,12 +45,10 @@ const PictureList = ({ list }: PictureListProps) => {
     });
   };
 
-  if (!list.length) {
-    return null;
-  }
+  if (!list.length) return null;
 
   return (
-    <div className="relative overflow-hidden rounded-md">
+    <div className={`relative overflow-hidden rounded-md ${className}`} {...restProps}>
       <div className="grid grid-cols-2 gap-1">
         {list.slice(0, 3).map((item, index) => {
           return (

@@ -13,9 +13,8 @@ import MessageToast, { MessageToastProps } from "@components/commons/toasts/case
 
 export interface HometownDropdownProps {}
 
-const HometownDropdown = ({}: HometownDropdownProps) => {
+const HometownDropdown = (props: HometownDropdownProps) => {
   const { user, type: userType, mutate: mutateUser } = useUser();
-
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
 

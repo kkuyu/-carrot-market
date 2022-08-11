@@ -79,7 +79,9 @@ const ProductsUploadPage: NextPage = () => {
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        submitId: "upload-product",
+      },
       navBar: {},
     });
   }, []);
@@ -135,7 +137,6 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       title: "중고거래 글 쓰기",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "upload-product",
     },
     navBar: {
       utils: [],

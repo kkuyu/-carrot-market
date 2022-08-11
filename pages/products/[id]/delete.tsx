@@ -55,9 +55,7 @@ const ProductsDeletePage: NextPage = () => {
     });
   }, []);
 
-  if (!productData?.product) {
-    return null;
-  }
+  if (!productData?.product) return null;
 
   return (
     <div className="container pb-5">
@@ -104,7 +102,7 @@ const ProductsDeletePage: NextPage = () => {
         </ul>
       </div>
 
-      <Buttons type="button" text="삭제하기" className="mt-5" disabled={false} onClick={clickDelete} />
+      <Buttons tag="button" type="button" text="삭제하기" className="mt-5" disabled={false} onClick={clickDelete} />
     </div>
   );
 };

@@ -6,7 +6,9 @@ interface PanelContainerProps extends Pick<PanelComponentProps, "onClose"> {
   children: React.ReactNode;
 }
 
-const PanelContainer = ({ children, onClose }: PanelContainerProps) => {
+const PanelContainer = (props: PanelContainerProps) => {
+  const { children, onClose } = props;
+
   const container = useRef<HTMLDivElement>(null);
   const baseEl = useRef<HTMLElement | null>(null);
   const focusAbleEls = useRef<NodeListOf<HTMLElement> | null>(null);

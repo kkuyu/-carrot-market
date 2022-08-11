@@ -64,12 +64,12 @@ const ProductsIndexPage: NextPage = () => {
       {/* 판매상품: List */}
       {products && Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductList list={products} />
+          <ProductList list={products} className="border-b" />
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">판매 상품을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">판매 상품을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 불러오고있어요</span>
           ) : null}
         </div>
       )}
@@ -86,11 +86,7 @@ const ProductsIndexPage: NextPage = () => {
       )}
 
       {/* 글쓰기 */}
-      <FloatingButtons href="/products/upload">
-        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-      </FloatingButtons>
+      <FloatingButtons />
     </div>
   );
 };
@@ -127,7 +123,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     return {
       redirect: {
         permanent: false,
-        destination: req?.cookies?.["carrot-market-session"] ? `/account/logout` : `/welcome`,
+        destination: Object.keys(req.session).length ? `/account/logout` : `/welcome`,
       },
     };
   }

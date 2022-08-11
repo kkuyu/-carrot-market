@@ -22,13 +22,13 @@ interface FilesProps extends React.HTMLAttributes<HTMLInputElement> {
   accept?: string;
   multiple?: boolean;
   register?: UseFormRegisterReturn;
-  [key: string]: any;
 }
 
-const Files = ({ name, required = false, disabled, fileOptions, currentFiles, changeFiles, accept, multiple = false, register, ...rest }: FilesProps) => {
-  const [preview, setPreview] = useState<PreviewItem[]>([]);
-
+const Files = (props: FilesProps) => {
+  const { name, required = false, disabled, fileOptions, currentFiles, changeFiles, accept, multiple = false, register, className = "", ...restProps } = props;
   const { openToast } = useToast();
+
+  const [preview, setPreview] = useState<PreviewItem[]>([]);
 
   const updatePreview = () => {
     // empty
@@ -88,9 +88,9 @@ const Files = ({ name, required = false, disabled, fileOptions, currentFiles, ch
   }, [currentFiles]);
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`}>
       <div className="absolute top-2 left-0">
-        <input id={name} type="file" name={name} required={required} disabled={disabled} accept={accept} multiple={multiple} className="peer sr-only" {...rest} onChange={onChangeInput} />
+        <input id={name} type="file" name={name} required={required} disabled={disabled} accept={accept} multiple={multiple} className="peer sr-only" {...restProps} onChange={onChangeInput} />
         <label
           htmlFor={name}
           className="relative flex flex-col items-center justify-center w-20 h-20 bg-white border border-gray-300 rounded-md

@@ -109,10 +109,6 @@ const ProductsEditPage: NextPage = () => {
 
   useEffect(() => {
     if (!productData?.product) return;
-    if (productData.product.userId !== user?.id) {
-      router.push(`/products/${router.query.id}`);
-      return;
-    }
     setPhotoLoading(true);
     formData.setValue("category", productData?.product?.category as EditProductTypes["category"]);
     formData.setValue("name", productData?.product?.name);
@@ -124,7 +120,9 @@ const ProductsEditPage: NextPage = () => {
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        submitId: "edit-product",
+      },
       navBar: {},
     });
   }, []);
@@ -219,7 +217,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "중고거래 글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "edit-product",
     },
     navBar: {
       utils: [],

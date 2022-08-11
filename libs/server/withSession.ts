@@ -1,22 +1,35 @@
 import { GetServerSidePropsContext, GetServerSidePropsResult, NextApiHandler } from "next";
 import { withIronSessionApiRoute, withIronSessionSsr } from "iron-session/next";
 
+export type IronUserType = {
+  id: number;
+};
+
+export type IronDummyUserType = {
+  id: number;
+  name: string;
+  avatar: "";
+  emdType: "MAIN";
+  MAIN_emdAddrNm: string;
+  MAIN_emdPosNm: string;
+  MAIN_emdPosDx: number;
+  MAIN_emdPosX: number;
+  MAIN_emdPosY: number;
+};
+
+export type IronSearchType = {
+  history: {
+    keyword: string;
+    createdAt: string;
+    updatedAt: string;
+  }[];
+};
+
 declare module "iron-session" {
   interface IronSessionData {
-    user?: {
-      id: number;
-    };
-    dummyUser?: {
-      id: number;
-      name: string;
-      avatar: "";
-      emdType: "MAIN";
-      MAIN_emdAddrNm: string;
-      MAIN_emdPosNm: string;
-      MAIN_emdPosDx: number;
-      MAIN_emdPosX: number;
-      MAIN_emdPosY: number;
-    };
+    user?: IronUserType;
+    dummyUser?: IronDummyUserType;
+    search?: IronSearchType;
   }
 }
 

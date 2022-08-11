@@ -159,7 +159,7 @@ const ProductsDetailPage: NextPage = () => {
   }
 
   return (
-    <article className="container pb-20">
+    <article className="container pb-16">
       {/* 썸네일 */}
       {Boolean(data?.product?.photos?.length) && (
         <div className="-mx-5">
@@ -204,8 +204,8 @@ const ProductsDetailPage: NextPage = () => {
 
         {/* 가격, 채팅 */}
         <div className="fixed-container bottom-0 z-[50]">
-          <div className="fixed-inner flex items-center h-16 border-t bg-white">
-            <div className="relative grow pl-16 before:absolute before:top-1/2 before:left-16 before:-mt-2.5 before:-ml-2.5 before:w-[1px] before:h-5 before:bg-gray-300">
+          <div className="fixed-inner flex items-center h-14 border-t bg-white">
+            <div className="relative grow ml-14 pl-3 border-l">
               {/* todo: 가격 제안 가능 여부 */}
               <strong>₩{data?.product?.price}</strong>
             </div>

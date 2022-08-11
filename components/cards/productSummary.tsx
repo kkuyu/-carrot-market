@@ -7,18 +7,20 @@ import Images from "@components/images";
 
 export type ProductSummaryItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
 
-export interface ProductSummaryProps {
+export interface ProductSummaryProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: ProductSummaryItem;
 }
 
-const ProductSummary = ({ item }: ProductSummaryProps) => {
+const ProductSummary = (props: ProductSummaryProps) => {
+  const { item, className = "", ...restProps } = props;
+
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
   const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
 
   if (!item) return null;
 
   return (
-    <div className="flex items-start">
+    <div className={`flex items-start ${className}`} {...restProps}>
       <div className="flex-none">
         <Images size="2.75rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
       </div>

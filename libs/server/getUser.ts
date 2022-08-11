@@ -1,13 +1,13 @@
 import { IncomingMessage } from "http";
 import { User } from "@prisma/client";
-import { IronSessionData } from "iron-session";
 // @libs
+import { IronDummyUserType } from "@libs/server/withSession";
 import client from "@libs/server/client";
 
 export interface SsrUserResponse {
   success: boolean;
   profile: User | null;
-  dummyProfile: IronSessionData["dummyUser"] | null;
+  dummyProfile: IronDummyUserType | null;
   currentAddr: {
     emdAddrNm: string | null;
     emdPosNm: string | null;

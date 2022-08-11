@@ -12,7 +12,9 @@ interface MetaWrapperProps {
   defaultMetaState: MetaOptions | null;
 }
 
-const MetaWrapper = ({ defaultMetaState }: MetaWrapperProps) => {
+const MetaWrapper = (props: MetaWrapperProps) => {
+  const { defaultMetaState } = props;
+
   const currentState = useContext(LayoutStateContext);
   const { change } = useContext(LayoutDispatchContext);
 

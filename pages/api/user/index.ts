@@ -1,17 +1,16 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { EmdType, User } from "@prisma/client";
-import { IronSessionData } from "iron-session";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
-import { withSessionRoute } from "@libs/server/withSession";
+import { withSessionRoute, IronDummyUserType } from "@libs/server/withSession";
 import { getAbsoluteUrl, isInstance } from "@libs/utils";
 // @api
 import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
 
 export interface GetUserResponse extends ResponseDataType {
   profile: User | null;
-  dummyProfile: IronSessionData["dummyUser"] | null;
+  dummyProfile: IronDummyUserType | null;
   currentAddr: {
     emdAddrNm: string | null;
     emdPosNm: string | null;

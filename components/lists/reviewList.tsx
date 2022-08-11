@@ -12,11 +12,12 @@ import Profiles from "@components/profiles";
 
 type ReviewListItem = GetProfilesDetailResponse["reviews"][0] | GetProfilesReviewsResponse["reviews"][0];
 
-interface ReviewListProps {
+interface ReviewListProps extends React.HTMLAttributes<HTMLUListElement> {
   list: ReviewListItem[];
 }
 
-const ReviewList = ({ list }: ReviewListProps) => {
+const ReviewList = (props: ReviewListProps) => {
+  const { list, className = "", ...restProps } = props;
   const router = useRouter();
   const { user } = useUser();
 
@@ -26,24 +27,20 @@ const ReviewList = ({ list }: ReviewListProps) => {
     setMounted(true);
   }, []);
 
-  if (!Boolean(list.length)) {
-    return null;
-  }
+  if (!Boolean(list.length)) return null;
 
   return (
-    <ul className="">
+    <ul className={`${className}`} {...restProps}>
       {list.map((item) => {
         const profile = item.role === "sellUser" ? item.sellUser : item.role === "purchaseUser" ? item.purchaseUser : null;
         const signature = item.role === "sellUser" ? "판매자" : item.role === "purchaseUser" ? "구매자" : null;
 
-        if (!profile || !signature || item.text === "") {
-          console.error("ReviewList", item);
-          return null;
-        }
+        if (!profile || !signature || item.text === "") return null;
 
         const today = new Date();
         const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
 
+        // user review
         if (user?.id?.toString() !== router.query.id) {
           return (
             <li key={item?.id}>
@@ -57,6 +54,7 @@ const ReviewList = ({ list }: ReviewListProps) => {
           );
         }
 
+        // profiles review
         return (
           <li key={item?.id}>
             <Link href={`/profiles/${profile?.id}`}>

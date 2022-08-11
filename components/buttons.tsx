@@ -8,43 +8,41 @@ type Props<T extends keyof JSX.IntrinsicElements> = {
   size?: "sm" | "base";
   status?: "primary" | "default" | "danger" | "unset";
   text: string | ReactNode;
-  [key: string]: any;
+  disabled?: boolean;
 } & JSX.IntrinsicElements[T];
 
 const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRef<Element<Tag>>) => {
-  const { tag: TagName = "button", sort = "round-box", status = "primary", size = "base", text, className, ...rest } = props;
-  const { type, disabled, ...refineProps } = rest;
-  const optionalProps = {
-    ...(TagName === "a" && {}),
-    ...(TagName === "button" && { type, disabled }),
-  };
+  const { tag: TagName = "button", sort = "round-box", status = "primary", size = "base", text, className = "", ...restProps } = props;
+
+  const { type, disabled, ...refineProps } = restProps;
+  const optionalProps = { ...(TagName === "a" && {}), ...(TagName === "button" && { type, disabled }) };
 
   const Component = TagName as React.ElementType;
   const classNames = {
     "round-box": {
       basic: "block w-full px-4 font-semibold text-center border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
       sm: "py-1.5 text-sm",
-      base: "py-2 text-base",
+      base: "py-[0.33rem] text-base",
       primary: "text-white bg-orange-500 border-transparent hover:bg-orange-600 focus:ring-orange-500",
       default: "text-black bg-white border border-gray-300 hover:border-gray-500 focus:ring-gray-300",
       danger: "text-red-600 bg-red-100 border border-red-300 hover:border-red-500 focus:ring-red-300",
       unset: "border-none",
     },
     "text-link": {
-      basic: "px-1 font-semibold",
+      basic: "inline-block px-1 font-semibold text-left",
       sm: "text-sm",
       base: "text-base",
       primary: "text-orange-500",
-      default: "text-black font-normal underline",
+      default: "font-normal underline",
       danger: "text-red-500",
-      unset: "",
+      unset: "pl-0 pr-0 font-normal",
     },
     "icon-block": {
       basic: "flex items-center justify-center rounded-md",
-      sm: "w-8 h-8",
+      sm: "w-7 h-7",
       base: "w-10 h-10",
       primary: "text-white bg-orange-500 border-transparent hover:bg-orange-600",
-      default: "text-gray-500 hover:bg-gray-200 focus:bg-gray-200",
+      default: "text-gray-500 hover:bg-black hover:bg-opacity-[0.15] focus:bg-black focus:bg-opacity-[0.15]",
       danger: "text-red-500 hover:bg-red-200 focus:bg-red-200",
       unset: "",
     },

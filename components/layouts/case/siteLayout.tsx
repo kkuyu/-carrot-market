@@ -14,7 +14,8 @@ export interface SiteLayoutProps {
   }>;
 }
 
-const SiteLayout = ({ children }: SiteLayoutProps) => {
+const SiteLayout = (props: SiteLayoutProps) => {
+  const { children } = props;
   return (
     <>
       <MetaWrapper defaultMetaState={children?.props?.defaultLayout?.meta || null} />

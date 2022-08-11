@@ -59,6 +59,41 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
+    // fetch token
+    const foundUserByToken = dummyUser
+      ? await client.token.findMany({
+          where: {
+            user: {
+              name,
+            },
+          },
+          select: {
+            id: true,
+            user: {
+              select: {
+                id: true,
+                emdType: true,
+                MAIN_emdAddrNm: true,
+                _count: {
+                  select: {
+                    products: true,
+                    stories: true,
+                    chats: true,
+                    records: true,
+                    searchRecords: true,
+                  },
+                },
+              },
+            },
+          },
+        })
+      : null;
+    if (foundUserByToken && foundUserByToken.length) {
+      const tokens = foundUserByToken.filter(({ user }) => Math.max(...Object.values(user._count)) === 0) || null;
+      const token = tokens.length === 1 ? tokens[0] : tokens.find(({ user }) => user.emdType === emdType && user.MAIN_emdAddrNm === mainAddrNm);
+      if (token) await client.user.delete({ where: { id: token?.user?.id } });
+    }
+
     // fetch user
     const foundUserByPhone = await client.user.findUnique({
       where: {
@@ -66,6 +101,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       },
       select: {
         id: true,
+        name: true,
       },
     });
     if (foundUserByPhone) {

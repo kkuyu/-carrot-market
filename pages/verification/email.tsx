@@ -44,10 +44,7 @@ const VerificationEmailPage: NextPage = () => {
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
     onSuccess: () => {
-      router.push({
-        pathname: "/verification/phone",
-        query: { targetEmail: verifyEmailForm.getValues("email") },
-      });
+      router.push({ pathname: "/verification/phone", query: { targetEmail: verifyEmailForm.getValues("email") } });
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -71,7 +68,7 @@ const VerificationEmailPage: NextPage = () => {
   }, []);
 
   return (
-    <section className="container py-5">
+    <section className="container pt-5 pb-5">
       <h1 className="text-2xl font-bold">
         등록하신 이메일 주소를
         <br />
@@ -79,7 +76,7 @@ const VerificationEmailPage: NextPage = () => {
       </h1>
 
       {/* 이메일 입력 */}
-      <div className="mt-6">
+      <div className="mt-5">
         <VerifyEmail
           formData={verifyEmailForm}
           onValid={(data: VerifyEmailTypes) => {
@@ -91,14 +88,14 @@ const VerificationEmailPage: NextPage = () => {
         />
       </div>
 
-      <div className="empty:hidden mt-6 text-center space-y-1">
+      <div className="empty:hidden mt-5 text-center space-y-1">
         {/* 문의하기 */}
         {/* todo: 문의하기(자주 묻는 질문) */}
         {!emailData?.success && (
           <p>
             <span className="text-gray-500">이메일을 등록한 적이 없으세요?</span>
             <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="문의하기" className="underline" />
+              <Buttons tag="a" sort="text-link" status="default" text="문의하기" />
             </Link>
           </p>
         )}

@@ -63,14 +63,14 @@ const StoriesIndexPage: NextPage = () => {
       {/* 동네생활: List */}
       {stories && Boolean(stories.length) && (
         <div className="-mx-5">
-          <StoryList list={stories}>
+          <StoryList list={stories} className="border-b">
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">게시글을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">게시글을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">게시글을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">게시글을 불러오고있어요</span>
           ) : null}
         </div>
       )}
@@ -87,11 +87,7 @@ const StoriesIndexPage: NextPage = () => {
       )}
 
       {/* 글쓰기 */}
-      <FloatingButtons href="/stories/upload">
-        <svg className="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-        </svg>
-      </FloatingButtons>
+      <FloatingButtons />
     </div>
   );
 };

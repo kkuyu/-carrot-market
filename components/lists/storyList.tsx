@@ -7,18 +7,18 @@ import Story, { StoryItem, StoryProps } from "@components/cards/story";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import { FeedbackStoryProps } from "@components/groups/feedbackStory";
 
-interface StoryListProps {
+interface StoryListProps extends React.HTMLAttributes<HTMLUListElement> {
   list: StoryItem[];
   children?: React.ReactNode;
 }
 
-const StoryList = ({ list, children = [] }: StoryListProps) => {
-  if (!Boolean(list.length)) {
-    return null;
-  }
+const StoryList = (props: StoryListProps) => {
+  const { list, children = [], className = "", ...restProps } = props;
+
+  if (!Boolean(list.length)) return null;
 
   return (
-    <ul className="divide-y-8">
+    <ul className={`divide-y-8 ${className}`} {...restProps}>
       {list.map((item) => {
         let includeFeedbackStory = false;
         const childrenWithProps = Children.map(children, (child) => {

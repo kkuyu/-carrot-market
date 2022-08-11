@@ -44,7 +44,7 @@ const ProductsPurchasePage: NextPage = () => {
 
   const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
     onSuccess: (data) => {
-      router.push(`/products/${router.query.id}/review`);
+      router.replace(`/products/${router.query.id}/review`);
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -98,12 +98,12 @@ const ProductsPurchasePage: NextPage = () => {
       {/* 대화중인 채팅방: List */}
       {chats && Boolean(chats.length) && (
         <div className="-mx-5 mt-5 border-t">
-          <ChatList type="button" list={chats} content="timestamp" isSingleUser={true} selectItem={purchaseItem} />
+          <ChatList type="button" list={chats} content="timestamp" isSingleUser={true} selectItem={purchaseItem} className="border-b" />
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 불러오고있어요</span>
           ) : null}
         </div>
       )}

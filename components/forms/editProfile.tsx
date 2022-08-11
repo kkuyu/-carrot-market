@@ -25,9 +25,10 @@ interface EditProfileProps extends React.HTMLAttributes<HTMLFormElement> {
   isLoading?: boolean;
 }
 
-const EditProfile = ({ formId, formData, onValid, isSuccess, isLoading, ...rest }: EditProfileProps) => {
-  const { type: userType } = useUser();
+const EditProfile = (props: EditProfileProps) => {
+  const { formId, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, setValue } = formData;
+  const { type: userType } = useUser();
 
   const fileOptions = {
     maxLength: 10,
@@ -41,7 +42,7 @@ const EditProfile = ({ formId, formData, onValid, isSuccess, isLoading, ...rest 
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {userType !== "member" && (
         <p className="text-notice">
           프로필 사진 및 관심사 설정은
@@ -76,9 +77,10 @@ const EditProfile = ({ formId, formData, onValid, isSuccess, isLoading, ...rest 
               tag="button"
               type="button"
               sort="icon-block"
+              size="sm"
               status="default"
               text={
-                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
                 </svg>
               }

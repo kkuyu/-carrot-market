@@ -101,7 +101,7 @@ const AccountJoinPage: NextPage = () => {
   }, []);
 
   return (
-    <section className="container py-5">
+    <section className="container pt-5 pb-5">
       <h1 className="text-2xl font-bold">
         안녕하세요!
         <br />
@@ -110,7 +110,7 @@ const AccountJoinPage: NextPage = () => {
       <p className="mt-2">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
       {/* 전화번호 입력 */}
-      <div className="mt-6">
+      <div className="mt-5">
         <VerifyPhone
           formData={verifyPhoneForm}
           onValid={(data: VerifyPhoneTypes) => {
@@ -129,7 +129,7 @@ const AccountJoinPage: NextPage = () => {
         />
       </div>
 
-      <div className="empty:hidden mt-6 text-center space-y-1">
+      <div className="empty:hidden mt-5 text-center space-y-1">
         {/* 둘러보기 */}
         {!userData?.success && (
           <p>
@@ -140,7 +140,6 @@ const AccountJoinPage: NextPage = () => {
               sort="text-link"
               status="default"
               text="회원가입 없이 둘러보기"
-              className="underline"
               onClick={() => {
                 if (dummyLoading) return;
                 joinDummy({
@@ -158,7 +157,7 @@ const AccountJoinPage: NextPage = () => {
           <p>
             <span className="text-gray-500">전화번호가 변경되었나요?</span>
             <Link href="/verification/email" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" className="underline" />
+              <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" />
             </Link>
           </p>
         )}

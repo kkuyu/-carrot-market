@@ -23,7 +23,8 @@ interface EditStoryProps extends React.HTMLAttributes<HTMLFormElement> {
   emdPosNm: string;
 }
 
-const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm, ...rest }: EditStoryProps) => {
+const EditStory = (props: EditStoryProps) => {
+  const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
 
   const fileOptions = {
@@ -39,7 +40,7 @@ const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm, 
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files
@@ -86,7 +87,7 @@ const EditStory = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm, 
             },
           })}
           required
-          minLength="10"
+          minLength={10}
           name="content"
           placeholder={emdPosNm ? `${emdPosNm}에 올릴 게시글 내용을 작성해주세요.` : `게시글 내용을 작성해주세요.`}
         />

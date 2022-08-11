@@ -8,14 +8,16 @@ import Images from "@components/images";
 
 export type ChatItem = GetChatsResponse["chats"][0];
 
-export interface ChatProps {
+export interface ChatProps extends React.HTMLAttributes<HTMLDivElement> {
   item: ChatItem;
   users: ChatItem["users"];
   content: "message" | "timestamp";
   isVisibleProduct?: boolean;
 }
 
-const Chat = ({ item, users, content, isVisibleProduct = true }: ChatProps) => {
+const Chat = (props: ChatProps) => {
+  const { item, users, content, isVisibleProduct = true, className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
 
   const today = new Date();
@@ -29,7 +31,7 @@ const Chat = ({ item, users, content, isVisibleProduct = true }: ChatProps) => {
   if (!item) return null;
 
   return (
-    <div className="flex w-full items-center text-left gap-3">
+    <div className={`flex w-full items-center text-left gap-3 ${className}`} {...restProps}>
       <div className="flex-none">
         <Images cloudId={users.length === 1 ? users[0].avatar : null} cloudVariant="avatar" alt="" />
       </div>
@@ -42,7 +44,9 @@ const Chat = ({ item, users, content, isVisibleProduct = true }: ChatProps) => {
         {content === "timestamp" && <span className="block text-sm text-gray-500">{mounted ? diffTime : null}</span>}
       </div>
       {isVisibleProduct && Boolean(item.product?.photos.length) && (
-        <Images size="2.5rem" cloudId={item.product?.photos.length ? item.product?.photos.split(",")[0] : null} cloudVariant="avatar" rounded="md" alt="" />
+        <div className="flex-none">
+          <Images size="2.5rem" cloudId={item.product?.photos.length ? item.product?.photos.split(",")[0] : null} cloudVariant="avatar" rounded="md" alt="" />
+        </div>
       )}
     </div>
   );

@@ -6,23 +6,21 @@ import { GetCommentsDetailResponse } from "@api/comments/[id]";
 
 export type StorySummaryItem = GetStoriesResponse["stories"][0] | GetCommentsDetailResponse["comment"]["story"];
 
-export interface StorySummaryProps {
+export interface StorySummaryProps extends React.HTMLAttributes<HTMLDivElement> {
   item: StorySummaryItem;
 }
 
-const StorySummary = ({ item }: StorySummaryProps) => {
+const StorySummary = (props: StorySummaryProps) => {
+  const { item, className = "", ...restProps } = props;
+
   const category = getStoryCategory(item?.category || "");
 
   if (!item) return null;
 
   return (
-    <div className="relative">
-      <div>
-        <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">{item?.content}</strong>
-      </div>
-      <div className="block">
-        <span className="text-sm text-gray-500">{[category?.text, item?.user?.name, item?.emdPosNm].filter((v) => !!v).join(" · ")}</span>
-      </div>
+    <div className={`relative ${className}`} {...restProps}>
+      <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">{item?.content}</strong>
+      <span className="block text-sm text-gray-500 overflow-hidden whitespace-nowrap overflow-ellipsis">{[category?.text, item?.user?.name, item?.emdPosNm].filter((v) => !!v).join(" · ")}</span>
     </div>
   );
 };

@@ -26,7 +26,8 @@ interface EditProductProps extends React.HTMLAttributes<HTMLFormElement> {
   emdPosNm: string;
 }
 
-const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm, ...rest }: EditProductProps) => {
+const EditProduct = (props: EditProductProps) => {
+  const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
 
   const fileOptions = {
@@ -42,7 +43,7 @@ const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm
   };
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files
@@ -105,7 +106,7 @@ const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm
           placeholder=""
           name="price"
           type="number"
-          kind="price"
+          prependText="₩"
         />
         <span className="empty:hidden invalid">{formState.errors.price?.message}</span>
       </div>
@@ -124,7 +125,7 @@ const EditProduct = ({ formId, formData, onValid, isSuccess, isLoading, emdPosNm
             },
           })}
           required
-          minLength="10"
+          minLength={10}
           name="description"
           placeholder={emdPosNm ? `${emdPosNm}에 올릴 게시글 내용을 작성해주세요.` : `게시글 내용을 작성해주세요.`}
         />

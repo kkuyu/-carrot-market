@@ -3,40 +3,24 @@ import type { UseFormRegisterReturn } from "react-hook-form";
 
 interface InputsProps extends React.HTMLAttributes<HTMLInputElement> {
   name: string;
-  kind?: "text" | "price";
   type: string;
   required?: boolean;
   disabled?: boolean;
   register?: UseFormRegisterReturn;
+  prependText?: string;
   appendButtons?: ReactNode;
-  [key: string]: any;
 }
 
-const Inputs = ({ name, kind = "text", type, required = false, disabled, register, appendButtons, ...rest }: InputsProps) => {
-  if (kind === "price") {
-    return (
-      <div className="relative flex items-center rounded-md shadow-sm">
-        <div className="absolute left-0 flex items-center justify-center pl-3 pointer-events-none">
-          <span className="text-sm text-gray-500">₩</span>
-        </div>
-        <input
-          {...register}
-          id={name}
-          type={type}
-          name={name}
-          required={required}
-          disabled={disabled}
-          className={`w-full pl-7 pr-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
-            focus:outline-none focus:ring-orange-500 focus:border-orange-500 ${disabled ? "opacity-80" : ""}`}
-          {...rest}
-        />
-        {appendButtons && <div className="ml-2 flex space-x-2">{appendButtons}</div>}
-      </div>
-    );
-  }
+const Inputs = (props: InputsProps) => {
+  const { name, type, required = false, disabled, register, prependText, appendButtons, className = "", ...restProps } = props;
 
   return (
-    <div className="relative flex items-center rounded-md">
+    <div className={`relative flex items-center ${className}`}>
+      {prependText && (
+        <div className="absolute top-1/2 left-3 -translate-y-1/2">
+          <span className="text-sm text-gray-500">{prependText}</span>
+        </div>
+      )}
       <input
         {...register}
         id={name}
@@ -44,11 +28,16 @@ const Inputs = ({ name, kind = "text", type, required = false, disabled, registe
         name={name}
         required={required}
         disabled={disabled}
-        className={`w-full px-3 py-2 appearance-none border border-gray-300 rounded-md placeholder-gray-400
-          focus:ring-orange-500 focus:border-orange-500 ${disabled ? "opacity-80" : ""}`}
-        {...rest}
+        className={`peer w-full px-3 py-1.5 placeholder-gray-400 bg-transparent border-none appearance-none rounded-md
+        focus:border-none focus:outline-none focus:ring-0 ${disabled ? "opacity-80" : ""}`}
+        style={{ ...(prependText ? { paddingLeft: `calc(0.75rem + ${prependText.length * 0.75}rem + 0.45rem)` } : {}) }}
+        {...restProps}
       />
-      {appendButtons && <div className="ml-2 flex space-x-2">{appendButtons}</div>}
+      {appendButtons && <div className="mx-1 flex space-x-2">{appendButtons}</div>}
+      <span
+        className={`absolute top-0 left-0 right-0 bottom-0 border border-gray-300 rounded-md pointer-events-none
+      peer-focus:border-orange-500 peer-focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]`}
+      />
     </div>
   );
 };

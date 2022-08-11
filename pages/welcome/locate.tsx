@@ -14,31 +14,28 @@ import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
-import SearchAddress, { SearchAddressTypes } from "@components/forms/searchAddress";
+import SearchKeyword, { SearchKeywordTypes } from "@components/forms/searchKeyword";
 
 const WelcomeLocatePage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
   const { state, longitude, latitude } = useCoords();
 
-  const [searchedKeyword, setSearchedKeyword] = useState("");
-  const searchAddressForm = useForm<SearchAddressTypes>();
-  const { data: keywordData, error: keywordError } = useSWR<GetSearchKeywordResponse>(Boolean(searchedKeyword.length) ? `/api/address/searchKeyword?keyword=${searchedKeyword}` : null);
+  const [recentlyKeyword, setRecentlyKeyword] = useState("");
+  const searchKeywordForm = useForm<SearchKeywordTypes>();
+  const { data: keywordData, error: keywordError } = useSWR<GetSearchKeywordResponse>(Boolean(recentlyKeyword.length) ? `/api/address/searchKeyword?keyword=${recentlyKeyword}` : null);
   const { data: boundaryData, error: boundaryError } = useSWR<GetSearchBoundaryResponse>(
     longitude && latitude ? `/api/address/searchBoundary?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
   );
 
   const resetForm = () => {
-    setSearchedKeyword("");
-    searchAddressForm.setValue("keyword", "");
-    searchAddressForm.setFocus("keyword");
+    setRecentlyKeyword("");
+    searchKeywordForm.setValue("keyword", "");
+    searchKeywordForm.setFocus("keyword");
   };
 
   const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
-    router.push({
-      pathname: "/account/join",
-      query: { addrNm: itemData?.addrNm },
-    });
+    router.push({ pathname: "/account/join", query: { addrNm: itemData?.addrNm } });
   };
 
   useEffect(() => {
@@ -53,19 +50,23 @@ const WelcomeLocatePage: NextPage = () => {
     <div className="container pb-5">
       {/* 읍면동 검색 폼 */}
       <div className="sticky top-12 left-0 -mx-5 px-5 pt-5 bg-white">
-        <SearchAddress
-          formData={searchAddressForm}
-          onValid={(data: SearchAddressTypes) => {
-            setSearchedKeyword(data.keyword);
+        <SearchKeyword
+          formData={searchKeywordForm}
+          onValid={(data: SearchKeywordTypes) => {
+            setRecentlyKeyword(data.keyword);
           }}
-          onReset={resetForm}
-          searchedKeyword={searchedKeyword}
-        />
+          placeholder="동명(읍,면)으로 검색 (ex. 서초동)"
+        >
+          <Buttons tag="button" type="reset" text="현재위치로 찾기" onClick={resetForm} />
+        </SearchKeyword>
+        <div className="mt-5">
+          <strong>{Boolean(recentlyKeyword?.length) ? `'${recentlyKeyword}' 검색 결과` : `근처 동네`}</strong>
+        </div>
         <span className="absolute top-full left-0 w-full h-2 bg-gradient-to-b from-white" />
       </div>
 
       {/* 키워드 검색 결과 */}
-      {Boolean(searchedKeyword.length) && (
+      {Boolean(recentlyKeyword.length) && (
         <div className="mt-1">
           {!keywordData && !keywordError ? (
             // 로딩중
@@ -98,7 +99,7 @@ const WelcomeLocatePage: NextPage = () => {
       )}
 
       {/* 위치 검색 결과 */}
-      {!Boolean(searchedKeyword.length) && (
+      {!Boolean(recentlyKeyword.length) && (
         <div className="mt-1">
           {state === "denied" || state === "error" ? (
             // 위치 정보 수집 불가

@@ -70,12 +70,6 @@ const ProductsReviewPage: NextPage = () => {
   }, [role]);
 
   useEffect(() => {
-    if (saleRecord) router.replace(`/products/${productData?.product?.id}`);
-    if (!purchaseRecord) router.replace(`/products/${productData?.product?.id}/purchase`);
-    if (purchaseRecord && existedReview) router.replace(`/reviews/${existedReview.id}`);
-  }, [saleRecord, purchaseRecord, existedReview]);
-
-  useEffect(() => {
     changeLayout({
       meta: {},
       header: {},

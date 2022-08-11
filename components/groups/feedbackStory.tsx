@@ -18,11 +18,12 @@ import RegisterModal, { RegisterModalProps, RegisterModalName } from "@component
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
-export interface FeedbackStoryProps {
+export interface FeedbackStoryProps extends React.HTMLAttributes<HTMLDivElement> {
   item?: FeedbackStoryItem;
 }
 
-const FeedbackStory = ({ item }: FeedbackStoryProps) => {
+const FeedbackStory = (props: FeedbackStoryProps) => {
+  const { item, className = "", ...restProps } = props;
   const router = useRouter();
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
@@ -103,7 +104,7 @@ const FeedbackStory = ({ item }: FeedbackStoryProps) => {
   if (!item) return null;
 
   return (
-    <div className="relative px-5 border-t">
+    <div className={`relative px-5 border-t ${className}`} {...restProps}>
       {/* 궁금해요: button */}
       {!category?.isLikeWithEmotion && (
         <button type="button" onClick={clickLike} className="py-2">

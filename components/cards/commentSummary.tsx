@@ -11,7 +11,9 @@ export interface CommentProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: CommentSummaryItem;
 }
 
-const Comment = ({ item, ...rest }: CommentProps) => {
+const Comment = (props: CommentProps) => {
+  const { item, className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
 
   const today = new Date();
@@ -23,13 +25,13 @@ const Comment = ({ item, ...rest }: CommentProps) => {
   }, []);
 
   if (!item) return null;
-  if (item.depth < StoryCommentMinimumDepth) null;
-  if (item.depth > StoryCommentMaximumDepth) null;
+  if (item.depth < StoryCommentMinimumDepth) return null;
+  if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <div className="relative" {...rest}>
+    <div className={`relative ${className}`} {...restProps}>
       <p>{item.content}</p>
-      <span className="block mt-2 text-gray-500 text-sm">{`"${truncateStr(item?.story?.content, 10)}"에서 ${mounted ? diffTime : ""}`}</span>
+      <span className="block text-gray-500 text-sm">{`"${truncateStr(item?.story?.content, 10)}"에서 ${mounted ? diffTime : ""}`}</span>
     </div>
   );
 };

@@ -134,7 +134,7 @@ const AccountPhonePage: NextPage = () => {
   }, []);
 
   return (
-    <section className="container py-5">
+    <section className="container pt-5 pb-5">
       <h1 className="text-2xl font-bold">{originalUser.current.userType === "member" ? "새로운" : ""} 휴대폰 번호를 입력해주세요</h1>
       <p className="mt-2">
         휴대폰 번호는 안전하게 보관되며 어디에도 공개되지 않아요.
@@ -142,7 +142,7 @@ const AccountPhonePage: NextPage = () => {
       </p>
 
       {/* 전화번호 입력 */}
-      <div className="mt-6">
+      <div className="mt-5">
         <VerifyPhone
           formData={verifyPhoneForm}
           onValid={(data: VerifyPhoneTypes) => {

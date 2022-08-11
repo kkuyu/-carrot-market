@@ -1,7 +1,7 @@
 // @components
 import Images from "@components/images";
 
-export interface ProfilesProps {
+export interface ProfilesProps extends React.HTMLAttributes<HTMLDivElement> {
   user: {
     id: number;
     name: string;
@@ -14,39 +14,40 @@ export interface ProfilesProps {
   size?: "tiny" | "sm" | "base";
 }
 
-const Profiles = ({ user, signature, uuid, emdPosNm, diffTime, size = "base" }: ProfilesProps) => {
-  if (size === "tiny") {
-    return (
-      <div className="flex items-center w-full">
-        <Images size="2.25rem" cloudId={user?.avatar} alt="" />
-        <div className="grow shrink basis-auto min-w-0 pl-2">
-          <strong className="block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis text-sm">{user?.name}</strong>
-          <span className="block text-gray-500 text-xs">{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
-          {/* <div>todo: 매너온도</div> */}
-        </div>
-      </div>
-    );
-  }
+const Profiles = (props: ProfilesProps) => {
+  const { user, signature, uuid, emdPosNm, diffTime, size = "base", className = "", ...restProps } = props;
 
-  if (size === "sm") {
-    return (
-      <div className="flex items-center w-full">
-        <Images size="2.75rem" cloudId={user?.avatar} alt="" />
-        <div className="grow shrink basis-auto min-w-0 pl-3">
-          <strong className="block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis text-sm">{user?.name}</strong>
-          <span className="block text-gray-500 text-xs">{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
-          {/* <div>todo: 매너온도</div> */}
-        </div>
-      </div>
-    );
-  }
+  const classNames = {
+    tiny: {
+      imageGap: "mr-2",
+      imageSize: "2.25rem",
+      userName: "text-sm",
+      userInfo: "text-xs",
+    },
+    sm: {
+      imageGap: "mr-3",
+      imageSize: "2.75rem",
+      userName: "text-sm",
+      userInfo: "text-xs",
+    },
+    base: {
+      imageGap: "mr-3",
+      imageSize: "3.5rem",
+      userName: "text-base",
+      userInfo: "text-sm",
+    },
+  };
 
   return (
-    <div className="flex items-center w-full">
-      <Images cloudId={user?.avatar} alt="" />
-      <div className="grow shrink basis-auto min-w-0 pl-3">
-        <strong className="block font-semibold overflow-hidden whitespace-nowrap overflow-ellipsis text-base">{user?.name}</strong>
-        <span className="block text-gray-500 text-sm">{[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}</span>
+    <div className={`flex items-center w-full ${className}`} {...restProps}>
+      <div className={`flex-none ${classNames[size].imageGap}`}>
+        <Images size={classNames[size].imageSize} cloudId={user?.avatar} alt="" />
+      </div>
+      <div className="grow shrink basis-auto min-w-0">
+        <strong className={`block font-semibold text-sm overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].userName}`}>{user?.name}</strong>
+        <span className={`block text-gray-500 overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].userInfo}`}>
+          {[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}
+        </span>
         {/* <div>todo: 매너온도</div> */}
       </div>
     </div>

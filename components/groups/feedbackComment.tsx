@@ -17,11 +17,12 @@ import RegisterModal, { RegisterModalProps, RegisterModalName } from "@component
 
 export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
-export interface FeedbackCommentProps {
+export interface FeedbackCommentProps extends React.HTMLAttributes<HTMLDivElement> {
   item?: FeedbackCommentItem;
 }
 
-const FeedbackComment = ({ item }: FeedbackCommentProps) => {
+const FeedbackComment = (props: FeedbackCommentProps) => {
+  const { item, className = "", ...restProps } = props;
   const router = useRouter();
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
@@ -78,7 +79,7 @@ const FeedbackComment = ({ item }: FeedbackCommentProps) => {
   if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <div className="pl-11 space-x-2">
+    <div className={`pl-11 space-x-2 ${className}`} {...restProps}>
       {/* 좋아요: button */}
       <button type="button" onClick={clickLike}>
         <span className={`text-sm ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>좋아요 {likeRecords.length || null}</span>

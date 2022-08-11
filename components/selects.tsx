@@ -13,16 +13,22 @@ interface SelectsProps extends React.HTMLAttributes<HTMLSelectElement> {
   updateValue: (name: string, value: string) => void;
   required?: boolean;
   register?: UseFormRegisterReturn;
-  [key: string]: any;
 }
 
-const Selects = ({ name, options, currentValue = "", updateValue, required = false, register }: SelectsProps) => {
+const Selects = (props: SelectsProps) => {
+  const { name, options, currentValue = "", updateValue, required = false, register, className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
   const [open, setOpen] = useState(false);
 
   const currentText = options.find((option) => option.value === currentValue)?.text;
   const combobox = useRef<HTMLButtonElement>(null);
   const listbox = useRef<HTMLDivElement>(null);
+
+  const classNames = {
+    comboboxOpen: "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)] focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]",
+    comboboxClose: "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]",
+  };
 
   const selectItem = (item: OptionItem) => {
     updateValue(name, item.value);
@@ -52,11 +58,7 @@ const Selects = ({ name, options, currentValue = "", updateValue, required = fal
         type="button"
         id={name}
         onClick={() => setOpen((prev) => !prev)}
-        className={`relative w-full px-3 py-2 text-left border border-gray-300 rounded-md outline-none ${
-          open
-            ? "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)] focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]"
-            : "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]"
-        }`}
+        className={`relative w-full px-3 py-2 text-left border border-gray-300 rounded-md outline-none ${open ? classNames.comboboxOpen : classNames.comboboxClose} ${className}`}
         aria-expanded={open ? "true" : "false"}
         aria-haspopup="listbox"
       >
@@ -89,7 +91,7 @@ const Selects = ({ name, options, currentValue = "", updateValue, required = fal
       </div>
 
       {/* original select */}
-      <select className="hidden" {...register} name={name} required={required}>
+      <select className="hidden" {...register} name={name} required={required} {...restProps}>
         {options.map((option) => (
           <option key={option.value} value={option.value}>
             {option.text}

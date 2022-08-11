@@ -79,7 +79,9 @@ const StoriesUploadPage: NextPage = () => {
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        submitId: "upload-story",
+      },
       navBar: {},
     });
   }, []);
@@ -135,7 +137,6 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       title: "동네생활 글 쓰기",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "upload-story",
     },
     navBar: {
       utils: [],

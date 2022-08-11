@@ -12,11 +12,12 @@ import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
 
-export interface FeedbackProductProps {
+export interface FeedbackProductProps extends React.HTMLAttributes<HTMLDivElement> {
   item?: FeedbackProductItem;
 }
 
-const FeedbackProduct = ({ item }: FeedbackProductProps) => {
+const FeedbackProduct = (props: FeedbackProductProps) => {
+  const { item, className = "", ...restProps } = props;
   const router = useRouter();
   const { user } = useUser();
 
@@ -57,7 +58,7 @@ const FeedbackProduct = ({ item }: FeedbackProductProps) => {
   if (!item) return null;
 
   return (
-    <div className="flex border-t divide-x empty:pt-9">
+    <div className={`empty:pt-9 flex border-t divide-x ${className}`} {...restProps}>
       {data && saleRecord && (
         <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
           끌어올리기

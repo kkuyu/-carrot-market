@@ -5,17 +5,19 @@ import Images from "@components/images";
 
 export type RelateItem = GetProductsDetailOthersResponse["otherProducts"][0];
 
-interface RelateProps {
+interface RelateProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: RelateItem;
 }
 
-const Relate = ({ item }: RelateProps) => {
+const Relate = (props: RelateProps) => {
+  const { item, className = "", ...restProps } = props;
+
   const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
 
   if (!item) return null;
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`} {...restProps}>
       <div className="">
         <Images size="100%" ratioX={16} ratioY={9} cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
       </div>

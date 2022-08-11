@@ -15,11 +15,12 @@ interface VerifyTokenProps extends React.HTMLAttributes<HTMLFormElement> {
   submitButtonText?: string;
 }
 
-const VerifyToken = ({ formData, onValid, isSuccess, isLoading, submitButtonText = "인증번호 확인", ...rest }: VerifyTokenProps) => {
+const VerifyToken = (props: VerifyTokenProps) => {
+  const { formData, onValid, isSuccess, isLoading, submitButtonText = "인증번호 확인", className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-4" {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <div className="space-y-1">
         <Inputs
           register={register("token", {
@@ -27,7 +28,6 @@ const VerifyToken = ({ formData, onValid, isSuccess, isLoading, submitButtonText
           })}
           name="token"
           type="number"
-          kind="text"
           required={true}
           placeholder="인증번호 입력"
         />

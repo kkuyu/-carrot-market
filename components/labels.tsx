@@ -1,32 +1,26 @@
 import React from "react";
 
-interface LabelsProps extends React.HTMLAttributes<HTMLLabelElement> {
+interface LabelsProps extends React.HTMLAttributes<HTMLLabelElement | HTMLSpanElement> {
   tag?: "label" | "span";
   text?: string;
   htmlFor: string;
-  [key: string]: any;
 }
 
-const Labels = ({ tag = "label", text, htmlFor, ...rest }: LabelsProps) => {
-  if (tag === "span") {
-    return (
-      <span
-        className="block text-base font-semibold text-gray-700 cursor-pointer"
-        {...rest}
-        onClick={() => {
-          const targetEl = document.querySelector(`#${htmlFor}`) as HTMLElement;
-          targetEl?.focus();
-        }}
-      >
-        {text}
-      </span>
-    );
-  }
+const Labels = (props: LabelsProps) => {
+  const { tag: Tag = "label", text, htmlFor, className = "", ...restProps } = props;
 
   return (
-    <label className="block text-base font-semibold text-gray-700" htmlFor={htmlFor} {...rest}>
+    <Tag
+      onClick={() => {
+        if (props.tag === "label") return;
+        const targetEl = document.querySelector(`#${htmlFor}`) as HTMLElement;
+        targetEl?.focus();
+      }}
+      className={`block text-base font-semibold text-gray-700 ${props.tag === "label" ? "" : "cursor-pointer"} ${className}`}
+      {...restProps}
+    >
       {text}
-    </label>
+    </Tag>
   );
 };
 

@@ -42,8 +42,10 @@ const ProfilesDetailPage: NextPage = () => {
   }
 
   return (
-    <article className="container pt-5 pb-5">
-      <Profiles user={profileData?.profile} uuid={profileData?.profile?.id === -1 ? "" : `#${profileData?.profile?.id}`} />
+    <article className="container pb-5">
+      <div className="mt-3">
+        <Profiles user={profileData?.profile} uuid={profileData?.profile?.id === -1 ? "" : `#${profileData?.profile?.id}`} />
+      </div>
 
       {/* 관심사 */}
       {(profileData?.profile?.concerns || user?.id === profileData?.profile?.id) && (

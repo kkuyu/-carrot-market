@@ -6,27 +6,26 @@ import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
 
 type MannerListItem = GetProfilesMannersResponse["manners"][0] | GetProfilesDetailResponse["manners"][0];
 
-interface MannerListProps {
+interface MannerListProps extends React.HTMLAttributes<HTMLUListElement> {
   list: MannerListItem[];
 }
 
-const MannerList = ({ list }: MannerListProps) => {
-  if (!Boolean(list.length)) {
-    return null;
-  }
+const MannerList = (props: MannerListProps) => {
+  const { list, className = "", ...restProps } = props;
+
+  if (!Boolean(list.length)) return null;
 
   return (
-    <ul className="space-y-1">
+    <ul className={`space-y-1 ${className}`} {...restProps}>
       {list.map((item) => {
+        const manner = getReviewManners(item.value);
         const count = item?.reviews?.length;
-        if (count === 0) {
-          console.error("MannerList", item);
-          return null;
-        }
+        if (!manner) return null;
+        if (count === 0) return null;
         return (
           <li key={item.id}>
             <div className="flex items-start">
-              <span className="grow">{getReviewManners(item.value)?.text}</span>
+              <span className="grow pr-2">{manner.text}</span>
               <svg className="flex-none w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                 <path
                   strokeLinecap="round"

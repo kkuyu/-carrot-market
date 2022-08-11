@@ -108,7 +108,7 @@ const AccountEmailPage: NextPage = () => {
   }, []);
 
   return (
-    <section className="container py-5">
+    <section className="container pt-5 pb-5">
       <h1 className="text-2xl font-bold">{originalUser.current.userType === "member" ? "새로운" : ""} 이메일 주소를 입력해주세요</h1>
       <p className="mt-2">
         안전한 계정 관리를 위해 이메일을 등록해주세요!
@@ -119,7 +119,7 @@ const AccountEmailPage: NextPage = () => {
       </p>
 
       {/* 이메일 입력 */}
-      <div className="mt-6">
+      <div className="mt-5">
         <VerifyEmail
           formData={verifyEmailForm}
           onValid={(data: VerifyEmailTypes) => {
@@ -131,13 +131,13 @@ const AccountEmailPage: NextPage = () => {
         />
       </div>
 
-      <div className="empty:hidden mt-6 text-center space-y-1">
+      <div className="empty:hidden mt-5 text-center space-y-1">
         {/* 문의하기 */}
         {/* todo: 문의하기(자주 묻는 질문) */}
         {!emailData?.success && (
           <p>
             <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="이메일 계정에 대해 자세히 알고 싶으신가요?" className="underline" />
+              <Buttons tag="a" sort="text-link" status="default" text="이메일 계정에 대해 자세히 알고 싶으신가요?" />
             </Link>
           </p>
         )}

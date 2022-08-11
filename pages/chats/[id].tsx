@@ -132,12 +132,10 @@ const ChatsDetailPage: NextPage = () => {
     });
   }, []);
 
-  if (!data) {
-    return null;
-  }
+  if (!data) return null;
 
   return (
-    <article className="container pb-20">
+    <section className="container pb-16">
       <h1 className="sr-only">{truncateStr(chatUsers.map((chatUser) => chatUser.name).join(", "), 15)} | 채팅</h1>
 
       {/* 상품 정보 */}
@@ -148,10 +146,18 @@ const ChatsDetailPage: NextPage = () => {
               <ProductSummary item={data.chat.product} />
             </a>
           </Link>
-          <div className="mt-2 empty:hidden">
+          <div className="empty:hidden mt-2">
             {/* 판매완료, 구매완료 */}
             {saleRecord && (
-              <Buttons type="button" text={role === "sellUser" ? "판매완료" : "구매완료"} size="sm" status="default" className="!inline-block !w-auto !text-left" onClick={openSoldProductModal} />
+              <Buttons
+                tag="button"
+                type="button"
+                text={role === "sellUser" ? "판매완료" : "구매완료"}
+                size="sm"
+                status="default"
+                className="!inline-block !w-auto !text-left"
+                onClick={openSoldProductModal}
+              />
             )}
             {/* 거래 후기 보내기 */}
             {!saleRecord && purchaseRecord && !existedReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
@@ -185,11 +191,11 @@ const ChatsDetailPage: NextPage = () => {
       )}
       {/* 채팅 입력 */}
       <div className="fixed-container bottom-0 z-[50]">
-        <div className="fixed-inner flex items-center h-16 border-t bg-white">
-          <SendMessage formData={formData} onValid={submitChatMessage} isLoading={sendChatMessageLoading} className="w-full pl-5 pr-3" />
+        <div className="fixed-inner flex items-center h-14 border-t bg-white">
+          <SendMessage formData={formData} onValid={submitChatMessage} isLoading={sendChatMessageLoading} className="w-full px-5" />
         </div>
       </div>
-    </article>
+    </section>
   );
 };
 

@@ -1,7 +1,4 @@
-import { useRouter } from "next/router";
-import { Children, cloneElement, isValidElement, useEffect, useMemo, useState } from "react";
-// @libs
-import useUser from "@libs/client/useUser";
+import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
 // @components
@@ -9,7 +6,7 @@ import Comment, { CommentItem } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
 import { FeedbackCommentProps } from "@components/groups/feedbackComment";
 
-interface CommentTreeListProps {
+interface CommentTreeListProps extends React.HTMLAttributes<HTMLDivElement> {
   list?: CommentItem[];
   depth?: number;
   reCommentRefId?: number;
@@ -18,9 +15,8 @@ interface CommentTreeListProps {
   children?: React.ReactNode;
 }
 
-const CommentTreeList = ({ list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, children }: CommentTreeListProps) => {
-  const router = useRouter();
-  const { user } = useUser();
+const CommentTreeList = (props: CommentTreeListProps) => {
+  const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, children, className = "", ...restProps } = props;
 
   const [isLoading, setIsLoading] = useState(false);
   const [readType, setReadType] = useState<StoryCommentReadType>("more");
@@ -30,10 +26,6 @@ const CommentTreeList = ({ list = [], depth = StoryCommentMinimumDepth, reCommen
     if (!moreReComments) return;
     setIsLoading(true);
     moreReComments(readType, reCommentRefId, !list.length ? 0 : list[list.length - 1].id);
-  };
-
-  const clickComment = () => {
-    router.push(`/comments/${reCommentRefId}`);
   };
 
   useEffect(() => {
@@ -47,10 +39,10 @@ const CommentTreeList = ({ list = [], depth = StoryCommentMinimumDepth, reCommen
   if (depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <div className={`${depth !== 0 ? "pl-11" : ""}`}>
+    <div className={`${depth !== 0 ? "pl-11" : ""} ${className}`} {...restProps}>
       {/* 답글: list */}
       {Boolean(list.length) && (
-        <ul className="mt-2 space-y-2">
+        <ul className="mt-2 space-y-3">
           {list?.map((item) => {
             let includeHandleComment = false;
             const { reComments: list, _count, ...itemData } = item;

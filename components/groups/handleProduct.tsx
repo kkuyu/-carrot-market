@@ -19,7 +19,8 @@ export interface HandleProductProps extends React.HTMLAttributes<HTMLButtonEleme
   item?: HandleProductItem;
 }
 
-const HandleProduct = ({ item, className }: HandleProductProps) => {
+const HandleProduct = (props: HandleProductProps) => {
+  const { item, className = "", ...restProps } = props;
   const router = useRouter();
   const { user } = useUser();
   const { openModal } = useModal();
@@ -80,7 +81,7 @@ const HandleProduct = ({ item, className }: HandleProductProps) => {
   if (!item) return null;
 
   return (
-    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandlePanel} disabled={saleLoading}>
+    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandlePanel} disabled={saleLoading} {...restProps}>
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
       </svg>

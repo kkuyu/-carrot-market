@@ -71,12 +71,12 @@ const ProductsChatsPage: NextPage = () => {
       {/* 채팅: List */}
       {chats && Boolean(chats.length) && (
         <div className="-mx-5">
-          <ChatList type="link" list={chats} content="message" isSingleUser={false} />
+          <ChatList type="link" list={chats} content="message" isSingleUser={false} className="border-b" />
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">채팅을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 불러오고있어요</span>
           ) : null}
         </div>
       )}

@@ -64,14 +64,8 @@ const ProfilesStoriesPage: NextPage = () => {
   const changeFilter = (tab: StoryTab) => {
     setCurrentTab(tab);
     window.scrollTo(0, 0);
-    router.replace(
-      {
-        pathname: router.pathname,
-        query: { ...router.query, filter: tab.value },
-      },
-      undefined,
-      { shallow: true }
-    );
+    const route = { pathname: router.pathname, query: { ...router.query, filter: tab.value } };
+    router.replace(route, undefined, { shallow: true });
   };
 
   useEffect(() => {
@@ -115,13 +109,13 @@ const ProfilesStoriesPage: NextPage = () => {
       {/* 게시글: List */}
       {results && (Boolean(results.stories.length) || Boolean(results.comments.length)) && (
         <div className="-mx-5">
-          {Boolean(results.stories.length) && <StoryList list={results.stories} />}
-          {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} />}
+          {Boolean(results.stories.length) && <StoryList list={results.stories} className="border-b" />}
+          {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} className="border-b" />}
           <div ref={infiniteRef} />
           {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
+            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
           ) : null}
         </div>
       )}

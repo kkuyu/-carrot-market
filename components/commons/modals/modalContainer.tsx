@@ -6,7 +6,9 @@ interface ModalContainerProps extends Pick<ModalComponentProps, "onClose"> {
   children: React.ReactNode;
 }
 
-const ModalContainer = ({ children, onClose }: ModalContainerProps) => {
+const ModalContainer = (props: ModalContainerProps) => {
+  const { children, onClose } = props;
+
   const container = useRef<HTMLDivElement>(null);
   const baseEl = useRef<HTMLElement | null>(null);
   const focusAbleEls = useRef<NodeListOf<HTMLElement> | null>(null);

@@ -21,7 +21,8 @@ interface ReviewProductProps extends React.HTMLAttributes<HTMLFormElement> {
   isLoading?: boolean;
 }
 
-const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: ReviewProductProps) => {
+const ReviewProduct = (props: ReviewProductProps) => {
+  const { formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, getValues, resetField } = formData;
 
   const satisfaction = watch("satisfaction");
@@ -35,7 +36,7 @@ const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: Rev
   }, [satisfaction]);
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className="space-y-5" {...rest}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 선호도 */}
       <div>
         {ReviewSatisfaction.map((satisfaction) => (
@@ -91,7 +92,7 @@ const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: Rev
               },
             })}
             required
-            minLength="10"
+            minLength={10}
             name="text"
             placeholder={"여기에 적어주세요(선택사항)"}
           />
@@ -111,14 +112,14 @@ const ReviewProduct = ({ formData, onValid, isLoading, isSuccess, ...rest }: Rev
               },
             })}
             required
-            minLength="10"
+            minLength={10}
             name="text"
             placeholder={"여기에 적어주세요(선택사항)"}
           />
           <span className="empty:hidden invalid">{formState.errors.text?.message}</span>
         </div>
       )}
-      {satisfaction && <Buttons type="submit" text="후기 남기기" disabled={isLoading} />}
+      {satisfaction && <Buttons tag="button" type="submit" text="후기 남기기" disabled={isLoading} />}
     </form>
   );
 };

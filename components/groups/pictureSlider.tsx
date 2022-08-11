@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import Flicking, { ViewportSlot } from "@egjs/react-flicking";
+import Flicking, { FlickingOptions, FlickingProps, ViewportSlot } from "@egjs/react-flicking";
 import "@egjs/react-flicking/dist/flicking.min.css";
 // @libs
 import useModal from "@libs/client/useModal";
@@ -16,12 +16,13 @@ export interface PictureSliderItem {
   name: string;
 }
 
-interface PictureSliderProps {
+interface PictureSliderProps extends Partial<FlickingProps & FlickingOptions> {
   list: PictureSliderItem[];
   defaultIndex: number;
 }
 
-const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
+const PictureSlider = (props: PictureSliderProps) => {
+  const { list, defaultIndex, className = "", ...restProps } = props;
   const { openModal } = useModal();
   const [mounted, setMounted] = useState(false);
 
@@ -85,9 +86,7 @@ const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
     updateSlider();
   }, []);
 
-  if (!list.length) {
-    return null;
-  }
+  if (!list.length) return null;
 
   if (list.length === 1) {
     return <div className="relative block w-full">{makeSliderItem(list[0], 0, list)}</div>;
@@ -110,9 +109,11 @@ const PictureSlider = ({ list, defaultIndex }: PictureSliderProps) => {
         flickingRef.current?.moveTo(defaultIndex, 0);
       }}
       style={{ width: "100%" }}
+      className={`${className}`}
+      {...restProps}
     >
       {list.map((item, index, array) => (
-        <li key={item.key} id={item.key} role="tabpanel" className="relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
+        <li key={item.key} id={item.key} role="tabpanel" className="aaa relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
           {makeSliderItem(item, index, array)}
         </li>
       ))}

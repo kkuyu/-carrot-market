@@ -14,7 +14,9 @@ export interface ProductProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: ProductItem;
 }
 
-const Product = ({ item, className }: ProductProps) => {
+const Product = (props: ProductProps) => {
+  const { item, className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
 
   const today = new Date();
@@ -32,7 +34,7 @@ const Product = ({ item, className }: ProductProps) => {
   if (!item) return null;
 
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative ${className}`} {...restProps}>
       <div className="flex items-start">
         <div className="flex-none">
           <Images size="6rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />

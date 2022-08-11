@@ -49,24 +49,22 @@ const CommentsEditPage: NextPage = () => {
 
   useEffect(() => {
     if (!commentData?.comment) return;
-    if (commentData.comment.userId !== user?.id) {
-      router.push(`/comments/${router.query.id}`);
-      return;
-    }
     formData.setValue("content", commentData?.comment?.content);
   }, [commentData, user?.id]);
 
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        submitId: "edit-comment",
+      },
       navBar: {},
     });
   }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <EditComment type="edit" formId="edit-comment" formData={formData} onValid={submitUploadComment} isLoading={loading} />
+      <EditComment formId="edit-comment" formData={formData} onValid={submitUploadComment} isLoading={loading} />
     </div>
   );
 };
@@ -154,7 +152,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "댓글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "edit-comment",
     },
     navBar: {
       utils: [],

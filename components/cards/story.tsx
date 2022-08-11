@@ -7,12 +7,14 @@ import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 
 export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0];
 
-export interface StoryProps {
+export interface StoryProps extends React.HTMLAttributes<HTMLDivElement> {
   item: StoryItem;
   isVisibleAuthor?: boolean;
 }
 
-const Story = ({ item, isVisibleAuthor = true }: StoryProps) => {
+const Story = (props: StoryProps) => {
+  const { item, isVisibleAuthor = true, className = "", ...restProps } = props;
+
   const [mounted, setMounted] = useState(false);
 
   const today = new Date();
@@ -26,7 +28,7 @@ const Story = ({ item, isVisibleAuthor = true }: StoryProps) => {
   if (!item) return null;
 
   return (
-    <div className="relative">
+    <div className={`relative ${className}`} {...restProps}>
       <div>
         <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
         <strong className="mt-2 block font-normal">{item?.content}</strong>
@@ -34,7 +36,7 @@ const Story = ({ item, isVisibleAuthor = true }: StoryProps) => {
       {isVisibleAuthor && (
         <div className="mt-2 flex justify-between">
           <span className="text-sm text-gray-500">{[item?.user?.name, item?.emdPosNm].filter((v) => !!v).join(" · ")}</span>
-          <span className="text-sm text-gray-500">{mounted ? diffTime : null}</span>
+          <span className="flex-none text-sm text-gray-500">{mounted ? diffTime : null}</span>
         </div>
       )}
     </div>

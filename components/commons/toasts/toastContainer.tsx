@@ -8,7 +8,9 @@ export interface ToastExtraProps {
   order: number;
 }
 
-const ToastContainer = ({ children }: ToastContainerProps) => {
+const ToastContainer = (props: ToastContainerProps) => {
+  const { children } = props;
+
   const childrenWithProps = Children.map(children, (child, index) => {
     if (isValidElement(child)) {
       return cloneElement(child as React.ReactElement<ToastExtraProps>, { order: child.props.placement === "top" ? index : 100 - index });
