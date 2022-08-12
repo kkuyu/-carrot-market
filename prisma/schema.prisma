@@ -38,6 +38,7 @@ model User {
   createdAt          DateTime        @default(now())
   updatedAt          DateTime        @updatedAt
   tokens             Token[]
+  searchRecords      SearchRecord[]
   products           Product[]
   chats              Chat[]
   chatMessages       ChatMessage[]
@@ -58,6 +59,15 @@ model Token {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
+}
+
+model SearchRecord {
+  id        Int      @id @default(autoincrement())
+  count     Int
+  keyword   String
+  user      User[]
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt()
 }
 
 model Product {

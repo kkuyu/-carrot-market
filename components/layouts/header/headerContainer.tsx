@@ -1,13 +1,19 @@
 import { useRouter } from "next/router";
+import { useEffect } from "react";
+import { useForm } from "react-hook-form";
 // @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import usePanel from "@libs/client/usePanel";
+import useMutation from "@libs/client/useMutation";
+// @api
+import { PostSearchResponse } from "@api/search";
 // @components
 import { HeaderOptions, HeaderUtils } from "@components/layouts/header/headerWrapper";
 import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/case/hometownDropdownModal";
 import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
 import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
+import SearchKeyword, { SearchKeywordTypes } from "@components/forms/searchKeyword";
 
 export interface HeaderProps extends HeaderOptions {}
 
@@ -18,10 +24,26 @@ const Header = (props: HeaderProps) => {
   const { openModal } = useModal();
   const { openPanel } = usePanel();
 
+  const searchKeywordForm = useForm<SearchKeywordTypes>();
+
+  const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
+    onSuccess: (data) => {
+      const keyword = data?.history?.[0]?.keyword || "";
+      router.replace({ pathname: "/search/result", query: { ...router.query, keyword } });
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
   const getUtils = (name: HeaderUtils) => {
     if (!utils?.includes(name)) return null;
     switch (name) {
-      case "address":
+      case HeaderUtils["Address"]:
         if (!currentAddr?.emdPosNm) return null;
         const clickAddress = () => {
           if (userType === "member" && user?.SUB_emdPosNm) {
@@ -38,7 +60,7 @@ const Header = (props: HeaderProps) => {
             </svg>
           </button>
         );
-      case "back":
+      case HeaderUtils["Back"]:
         const clickBack = () => router.back();
         return (
           <button className="p-3" onClick={clickBack}>
@@ -47,7 +69,7 @@ const Header = (props: HeaderProps) => {
             </svg>
           </button>
         );
-      case "home":
+      case HeaderUtils["Home"]:
         const clickHome = () => router.push("/");
         return (
           <button className="p-3" onClick={clickHome}>
@@ -61,7 +83,7 @@ const Header = (props: HeaderProps) => {
             </svg>
           </button>
         );
-      case "kebab":
+      case HeaderUtils["Kebab"]:
         const clickKebab = () => {
           openPanel<ActionPanelProps>(ActionPanel, name, {
             hasBackdrop: true,
@@ -81,19 +103,35 @@ const Header = (props: HeaderProps) => {
             </svg>
           </button>
         );
-      case "share":
+      case HeaderUtils["Keyword"]:
+        const validForm = (data: SearchKeywordTypes) => {
+          if (saveLoading) return;
+          saveSearch({ ...data });
+        };
+        if (!currentAddr?.emdPosNm) return null;
+        return <SearchKeyword formData={searchKeywordForm} onValid={validForm} placeholder={`${currentAddr?.emdPosNm} 근처에서 검색`} className="w-full" />;
+      case HeaderUtils["Search"]:
+        const clickSearch = () => {
+          searchKeywordForm.setValue("keyword", "");
+          router.push("/search");
+        };
+        return (
+          <button className="p-3" onClick={clickSearch}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+          </button>
+        );
+      case HeaderUtils["Share"]:
         // todo: share
         return <span>share</span>;
-      case "search":
-        // todo: search
-        return <span>search</span>;
-      case "submit":
+      case HeaderUtils["Submit"]:
         return (
           <button type="submit" form={submitId} className="h-12 px-5 font-semibold text-base text-orange-500">
             완료
           </button>
         );
-      case "title":
+      case HeaderUtils["Title"]:
         const Tag = titleTag;
         if (!title) return null;
         return <Tag className="text-base font-semibold truncate">{title}</Tag>;
@@ -101,6 +139,16 @@ const Header = (props: HeaderProps) => {
         return null;
     }
   };
+
+  useEffect(() => {
+    if (!utils?.includes(HeaderUtils["Keyword"])) return;
+    if (!router.isReady) return;
+    if (!router.query?.keyword) return;
+    const recentlyKeyword = router.query.keyword.toString();
+    if (searchKeywordForm.getValues("keyword") !== recentlyKeyword) {
+      searchKeywordForm.setValue("keyword", recentlyKeyword);
+    }
+  }, [router.isReady, router.query]);
 
   if (!utils?.length) return null;
 
@@ -116,6 +164,8 @@ const Header = (props: HeaderProps) => {
         {/* title utils */}
         <div className="empty:hidden flex justify-center items-center w-full h-full pl-24 pr-24">{getUtils(HeaderUtils["Title"])}</div>
 
+        {/* search utils */}
+        <div className="empty:hidden flex justify-center items-center w-full h-full pl-12 pr-5">{getUtils(HeaderUtils["Keyword"])}</div>
 
         {/* right utils */}
         <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
