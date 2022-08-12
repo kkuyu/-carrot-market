@@ -9,6 +9,7 @@ import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetSearchResponse, PostSearchResponse } from "@api/search";
+import { PostSearchDeleteResponse } from "@api/search/delete";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -35,13 +36,31 @@ const SearchIndexPage: NextPage = () => {
     },
   });
 
+  const [deleteSearch, { loading: deleteLoading }] = useMutation<PostSearchDeleteResponse>(`/api/search/delete`, {
+    onSuccess: (data) => {
+      boundMutate();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
   const clickSave = (record: GetSearchResponse["history"][0] | GetSearchResponse["record"][0]) => {
     if (saveLoading) return;
     saveSearch({ keyword: record.keyword });
   };
 
   const clickDelete = (records: GetSearchResponse["history"]) => {
-    console.log("delete", records);
+    if (deleteLoading) return;
+    const keywords = records.map((record) => record.keyword);
+    boundMutate((prev) => {
+      return prev && { ...prev, history: [...prev.history].filter((record) => !keywords.includes(record.keyword)) };
+    }, false);
+    deleteSearch({ keywords });
   };
 
   useEffect(() => {
