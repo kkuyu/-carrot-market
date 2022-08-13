@@ -242,7 +242,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
                 ...review,
                 product: {
                   ...review?.product,
-                  reviews: review?.product?.reviews?.filter((review) => review.role !== role && review.satisfaction === "dislike"),
+                  reviews: review?.product?.reviews?.filter((review) => review.satisfaction !== "dislike"),
                 },
               } || {}
             )
