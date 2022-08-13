@@ -6,10 +6,11 @@ import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
 import { EmotionIcon } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
+import { GetSearchResultResponse } from "@api/search/result";
 // @components
 import Highlights from "@components/highlights";
 
-export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0];
+export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0] | GetSearchResultResponse["stories"][0];
 
 export interface StoryProps extends React.HTMLAttributes<HTMLDivElement> {
   item: StoryItem;

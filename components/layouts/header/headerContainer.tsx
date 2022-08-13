@@ -147,6 +147,7 @@ const Header = (props: HeaderProps) => {
     const recentlyKeyword = router.query.keyword.toString();
     if (searchKeywordForm.getValues("keyword") !== recentlyKeyword) {
       searchKeywordForm.setValue("keyword", recentlyKeyword);
+      saveSearch({ keyword: recentlyKeyword });
     }
   }, [router.isReady, router.query]);
 

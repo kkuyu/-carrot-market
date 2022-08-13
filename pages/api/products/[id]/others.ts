@@ -85,9 +85,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         price: true,
       },
       where: {
-        OR: product.name.split(" ").map((word) => ({
-          name: { contains: word },
-        })),
+        OR: [
+          ...product.name.split(" ").map((word) => ({
+            name: { contains: word },
+          })),
+        ],
         AND: {
           id: { not: product.id },
           records: { some: { kind: Kind.ProductSale } },

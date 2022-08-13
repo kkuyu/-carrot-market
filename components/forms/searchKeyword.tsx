@@ -22,7 +22,9 @@ const SearchKeyword = (props: SearchKeywordProps) => {
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <div className="space-y-1">
         <Inputs
-          register={register("keyword", {})}
+          register={register("keyword", {
+            required: true,
+          })}
           name="keyword"
           type="text"
           placeholder={placeholder}

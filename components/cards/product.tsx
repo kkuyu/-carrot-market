@@ -5,11 +5,12 @@ import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetProductsResponse } from "@api/products";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { GetSearchResultResponse } from "@api/search/result";
 // @components
 import Images from "@components/images";
 import Highlights from "@components/highlights";
 
-export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
+export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0] | GetSearchResultResponse["products"][0];
 
 export interface ProductProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
   item: ProductItem;

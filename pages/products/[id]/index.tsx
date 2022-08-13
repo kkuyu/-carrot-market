@@ -243,10 +243,10 @@ const ProductsDetailPage: NextPage = () => {
               ? `최근 등록된 판매 상품`
               : ""}
           </h2>
-          <ul className="-m-2 mt-4 block after:block after:clear-both">
+          <ul className="-m-2 mt-4 flex flex-wrap">
             {othersData?.otherProducts.map((item) => {
               return (
-                <li key={item?.id} className="float-left w-1/2 p-2">
+                <li key={item?.id} className="w-1/2 p-2">
                   <Link href={`/products/${item.id}`}>
                     <a className="block">
                       <Relate item={item} />

@@ -1,72 +1,90 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Record, Story, StoryComment, User } from "@prisma/client";
+import { Kind } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
-import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 // @api
+import { GetSearchResultResponse } from "@api/search/result";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
-
-export interface GetProfilesStoriesResponse extends ResponseDataType {
-  totalCount: number;
-  lastCursor: number;
-  stories: (Story & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments?: (Pick<StoryComment, "id"> & Pick<Partial<StoryComment>, "userId" | "content">)[];
-  })[];
-  comments: (StoryComment & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    story: Pick<Story, "id" | "content" | "createdAt">;
-    records: Pick<Record, "id" | "kind" | "userId">[];
-  })[];
-}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { id: _id, prevCursor: _prevCursor } = req.query;
+    const { prevCursor: _prevCursor, keyword: _keyword, pageSize: _pageSize, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
     // invalid
-    if (!_id || !_prevCursor) {
+    if (!_prevCursor) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (!_keyword) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
+    // early return result
+    if (!_posX || !_posY || !_distance) {
+      const result: GetSearchResultResponse = {
+        success: false,
+        totalCount: 0,
+        lastCursor: 0,
+        products: [],
+        stories: [],
+      };
+      return res.status(200).json(result);
+    }
+
     // page
     const prevCursor = +_prevCursor.toString();
-    const pageSize = 10;
+    const pageSize = _pageSize ? +_pageSize.toString() : 10;
     if (isNaN(prevCursor) || prevCursor === -1) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (isNaN(pageSize)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // params
-    const id = +_id.toString();
-    if (isNaN(id)) {
+    const keyword = _keyword.toString() || "";
+    const posX = +_posX.toString();
+    const posY = +_posY.toString();
+    const distance = +_distance.toString();
+    const boundaryArea = {
+      emdPosX: { gte: posX - distance, lte: posX + distance },
+      emdPosY: { gte: posY - distance, lte: posY + distance },
+    };
+    if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // search
+    // where
     const where = {
-      userId: id,
+      ...boundaryArea,
+      OR: [
+        ...keyword.split(" ").map((word: string) => ({
+          content: { contains: word },
+        })),
+      ],
     };
 
-    // fetch data
-    const totalCount = await client.story.count({
+    // fetch story
+    const totalCount = await await client.story.count({
       where,
     });
-    const stories = await client.story.findMany({
+    const stories = await await client.story.findMany({
       where,
       take: pageSize,
       skip: prevCursor ? 1 : 0,
       ...(prevCursor && { cursor: { id: prevCursor } }),
-      orderBy: {
-        createdAt: "desc",
-      },
+      orderBy: [{ records: { _count: "desc" } }, { createdAt: "desc" }],
       include: {
         user: {
           select: {
@@ -87,33 +105,43 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           },
         },
         comments: {
+          take: 1,
+          orderBy: [{ depth: "asc" }, { createdAt: "asc" }],
           where: {
             AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
             NOT: [{ content: "" }],
+            OR: [
+              ...keyword.split(" ").map((word: string) => ({
+                content: { contains: word },
+              })),
+            ],
           },
           select: {
             id: true,
+            userId: true,
+            content: true,
           },
         },
       },
     });
 
     // result
-    const result: GetProfilesStoriesResponse = {
+    const result: GetSearchResultResponse = {
       success: true,
       totalCount,
       lastCursor: stories.length ? stories[stories.length - 1].id : -1,
+      products: [],
       stories,
-      comments: [],
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
     // error
     if (error instanceof Error) {
+      const date = Date.now().toString();
       const result = {
         success: false,
         error: {
-          timestamp: Date.now().toString(),
+          timestamp: date,
           name: error.name,
           message: error.message,
         },
