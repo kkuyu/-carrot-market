@@ -65,7 +65,7 @@ const ProductsIndexPage: NextPage = () => {
       {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} className="border-b" />
-          <div ref={infiniteRef} />
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 모두 확인하였어요</span>
           ) : isLoading ? (

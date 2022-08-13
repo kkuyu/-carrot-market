@@ -109,9 +109,14 @@ const ProfilesStoriesPage: NextPage = () => {
       {/* 게시글: List */}
       {results && (Boolean(results.stories.length) || Boolean(results.comments.length)) && (
         <div className="-mx-5">
+          {/* 게시글 */}
+          {Boolean(results.stories.length) && <h2 className="sr-only">게시글</h2>}
           {Boolean(results.stories.length) && <StoryList list={results.stories} className="border-b" />}
+          {/* 댓글 */}
+          {Boolean(results.comments.length) && <h2 className="sr-only">댓글</h2>}
           {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} className="border-b" />}
-          <div ref={infiniteRef} />
+          {/* infinite */}
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (

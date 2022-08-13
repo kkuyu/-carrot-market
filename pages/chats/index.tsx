@@ -74,7 +74,7 @@ const ChatsIndexPage: NextPage = () => {
       {chats && Boolean(chats.length) && (
         <div className="-mx-5">
           <ChatList type="link" list={chats} content="message" isSingleUser={false} className="border-b" />
-          <div ref={infiniteRef} />
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 모두 확인하였어요</span>
           ) : isLoading ? (

@@ -60,7 +60,7 @@ const UserLikesPage: NextPage = () => {
           <ProductList list={products} className="border-b">
             <LikeProduct key="LikeProduct" className="absolute top-3 right-3 p-2" />
           </ProductList>
-          <div ref={infiniteRef} />
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">관심목록을 모두 확인하였어요</span>
           ) : isLoading ? (

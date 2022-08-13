@@ -60,7 +60,7 @@ const UserPurchasesPage: NextPage = () => {
           <ProductList list={products} className="border-b">
             <FeedbackProduct key="FeedbackProduct" />
           </ProductList>
-          <div ref={infiniteRef} />
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">구매내역을 모두 확인하였어요</span>
           ) : isLoading ? (

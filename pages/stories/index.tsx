@@ -66,7 +66,7 @@ const StoriesIndexPage: NextPage = () => {
           <StoryList list={stories} className="border-b">
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
-          <div ref={infiniteRef} />
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">게시글을 모두 확인하였어요</span>
           ) : isLoading ? (

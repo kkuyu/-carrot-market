@@ -102,7 +102,7 @@ const ProfilesReviewsPage: NextPage = () => {
       {reviews && Boolean(reviews.length) && (
         <div className="mt-3">
           <ReviewList list={reviews} className="border-b" />
-          <div ref={infiniteRef} />
+          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}를 모두 확인하였어요</span>
           ) : isLoading ? (
