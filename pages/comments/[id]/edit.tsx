@@ -18,7 +18,7 @@ import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import EditComment, { EditCommentTypes } from "@components/forms/editComment";
+import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editStoryComment";
 
 const CommentsEditPage: NextPage = () => {
   const router = useRouter();
@@ -27,8 +27,8 @@ const CommentsEditPage: NextPage = () => {
 
   const { data: commentData, mutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}` : null);
 
-  const formData = useForm<EditCommentTypes>();
-  const [editComment, { loading }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
+  const formData = useForm<EditStoryCommentTypes>();
+  const [editStoryComment, { loading }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutate((prev) => prev && { ...prev, comment: { ...prev?.comment } });
       router.replace(`/comments/${data.comment.id}`);
@@ -42,9 +42,9 @@ const CommentsEditPage: NextPage = () => {
     },
   });
 
-  const submitUploadComment = async ({ ...data }: EditCommentTypes) => {
+  const submitStoryComment = async ({ ...data }: EditStoryCommentTypes) => {
     if (!user || loading) return;
-    editComment({ ...data });
+    editStoryComment({ ...data });
   };
 
   useEffect(() => {
@@ -64,7 +64,7 @@ const CommentsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditComment formId="edit-comment" formData={formData} onValid={submitUploadComment} isLoading={loading} />
+      <EditStoryComment formId="edit-comment" formData={formData} onValid={submitStoryComment} isLoading={loading} />
     </div>
   );
 };

@@ -63,7 +63,7 @@ const ProductsEditPage: NextPage = () => {
     setPhotoLoading(false);
   };
 
-  const submitEditProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
+  const submitProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (!user || loading || photoLoading) return;
 
     if (!_photos?.length) {
@@ -129,7 +129,7 @@ const ProductsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="edit-product" formData={formData} onValid={submitEditProduct} isLoading={loading || photoLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
+      <EditProduct formId="edit-product" formData={formData} onValid={submitProduct} isLoading={loading || photoLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
   );
 };

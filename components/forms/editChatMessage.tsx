@@ -3,18 +3,18 @@ import { UseFormReturn } from "react-hook-form";
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
 
-export interface SendMessageTypes {
+export interface EditChatMessageTypes {
   text: string;
 }
 
-interface SendMessageProps extends React.HTMLAttributes<HTMLFormElement> {
-  formData: UseFormReturn<SendMessageTypes, object>;
-  onValid: (validForm: SendMessageTypes) => void;
+interface EditChatMessageProps extends React.HTMLAttributes<HTMLFormElement> {
+  formData: UseFormReturn<EditChatMessageTypes, object>;
+  onValid: (validForm: EditChatMessageTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const SendMessage = (props: SendMessageProps) => {
+const EditChatMessage = (props: EditChatMessageProps) => {
   const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit } = formData;
 
@@ -51,4 +51,4 @@ const SendMessage = (props: SendMessageProps) => {
   );
 };
 
-export default SendMessage;
+export default EditChatMessage;

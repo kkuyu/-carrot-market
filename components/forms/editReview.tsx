@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @api
 import { ReviewManners, ReviewMannersEnum, ReviewSatisfaction, ReviewSatisfactionEnum } from "@api/reviews/types";
@@ -6,34 +5,29 @@ import { ReviewManners, ReviewMannersEnum, ReviewSatisfaction, ReviewSatisfactio
 import Buttons from "@components/buttons";
 import Labels from "@components/labels";
 import TextAreas from "@components/textareas";
+import CheckBoxes from "@components/checkBoxes";
 
-export interface ReviewProductTypes {
+export interface EditReviewTypes {
   role: "sellUser" | "purchaseUser";
   satisfaction: ReviewSatisfactionEnum;
   manners: ReviewMannersEnum[];
   text: string;
 }
 
-interface ReviewProductProps extends React.HTMLAttributes<HTMLFormElement> {
-  formData: UseFormReturn<ReviewProductTypes, object>;
-  onValid: (validForm: ReviewProductTypes) => void;
+interface EditReviewProps extends React.HTMLAttributes<HTMLFormElement> {
+  formData: UseFormReturn<EditReviewTypes, object>;
+  onValid: (validForm: EditReviewTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
-const ReviewProduct = (props: ReviewProductProps) => {
+const EditReview = (props: EditReviewProps) => {
   const { formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, getValues, resetField } = formData;
 
   const satisfaction = watch("satisfaction");
-
   const mannersLabel = `어떤점이 ${satisfaction === "best" ? "최고였나요?" : satisfaction === "good" ? "좋았나요?" : satisfaction === "dislike" ? "별로였나요?" : ""}`;
   const mannersItems = !satisfaction ? [] : ReviewManners.filter((assessment) => assessment.role.includes(getValues("role")) && assessment.satisfaction.includes(satisfaction));
-
-  useEffect(() => {
-    resetField("manners");
-    resetField("text");
-  }, [satisfaction]);
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
@@ -41,7 +35,18 @@ const ReviewProduct = (props: ReviewProductProps) => {
       <div>
         {ReviewSatisfaction.map((satisfaction) => (
           <span key={satisfaction.value}>
-            <input {...register("satisfaction")} type="radio" id={satisfaction.value} value={satisfaction.value} className="peer sr-only" />
+            <input
+              {...register("satisfaction", {
+                onChange: () => {
+                  resetField("manners");
+                  resetField("text");
+                },
+              })}
+              type="radio"
+              id={satisfaction.value}
+              value={satisfaction.value}
+              className="peer sr-only"
+            />
             <label htmlFor={satisfaction.value} className="inline-block mr-2 px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-orange-500 peer-checked:border-orange-500">
               {satisfaction.text}
             </label>
@@ -54,26 +59,20 @@ const ReviewProduct = (props: ReviewProductProps) => {
           <Labels tag="span" htmlFor="manners" text={mannersLabel} />
           <div className="space-y-1">
             {mannersItems.map((item) => (
-              <span key={item.value} className="relative block">
-                <input
-                  {...register("manners", {
-                    required: {
-                      value: true,
-                      message: "한 개 이상 선택해주세요",
-                    },
-                  })}
-                  type="checkbox"
-                  id={item.value}
-                  value={item.value}
-                  className="peer sr-only"
-                />
-                <svg className="absolute top-0.5 l-0 w-5 h-5 text-gray-300 peer-checked:text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <label htmlFor={item.value} className="pl-6">
-                  {item.text}
-                </label>
-              </span>
+              <CheckBoxes
+                key={item.value}
+                register={register("manners", {
+                  required: {
+                    value: true,
+                    message: "한 개 이상 선택해주세요",
+                  },
+                })}
+                id={item.value}
+                name="manners"
+                value={item.value}
+                text={item.text}
+                required={true}
+              />
             ))}
           </div>
           <span className="empty:hidden invalid">{formState.errors.manners?.message}</span>
@@ -124,4 +123,4 @@ const ReviewProduct = (props: ReviewProductProps) => {
   );
 };
 
-export default ReviewProduct;
+export default EditReview;

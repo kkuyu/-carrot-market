@@ -70,7 +70,7 @@ const ProductsResumePage: NextPage = () => {
     },
   });
 
-  const submitResumeProduct = () => {
+  const submitProduct = () => {
     if (!user || loading) return;
     editProduct({
       resume: true,
@@ -166,7 +166,7 @@ const ProductsResumePage: NextPage = () => {
               다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
             </p>
           )}
-          <Buttons tag="button" type="submit" text="끌어올리기" className="mt-5" disabled={loading} onClick={submitResumeProduct} />
+          <Buttons tag="button" type="submit" text="끌어올리기" className="mt-5" disabled={loading} onClick={submitProduct} />
         </div>
       )}
 
@@ -179,7 +179,7 @@ const ProductsResumePage: NextPage = () => {
             가격을 낮춰보세요
           </strong>
           <div className="mt-5">
-            <ResumeProduct formData={formData} onValid={submitResumeProduct} isLoading={loading} originalPrice={productData?.product?.price} targetDate={targetDate} diffTime={diffTime} />
+            <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loading} originalPrice={productData?.product?.price} targetDate={targetDate} diffTime={diffTime} />
           </div>
         </div>
       )}

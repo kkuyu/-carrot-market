@@ -5,21 +5,21 @@ import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
 import Buttons from "@components/buttons";
 
-export interface EditCommentTypes {
+export interface EditStoryCommentTypes {
   content: string;
   reCommentRefId?: number | null;
 }
 
-interface EditCommentProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditStoryCommentProps extends React.HTMLAttributes<HTMLFormElement> {
   formId?: string;
-  formData: UseFormReturn<EditCommentTypes, object>;
-  onValid: (validForm: EditCommentTypes) => void;
+  formData: UseFormReturn<EditStoryCommentTypes, object>;
+  onValid: (validForm: EditStoryCommentTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
   commentType?: "댓글" | "답변" | "답글";
 }
 
-const EditComment = (props: EditCommentProps) => {
+const EditStoryComment = (props: EditStoryCommentProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, commentType = "댓글", className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
@@ -82,4 +82,4 @@ const EditComment = (props: EditCommentProps) => {
   );
 };
 
-export default EditComment;
+export default EditStoryComment;

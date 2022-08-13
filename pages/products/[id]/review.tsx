@@ -23,7 +23,7 @@ import type { NextPageWithLayout } from "@app";
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
-import ReviewProduct, { ReviewProductTypes } from "@components/forms/reviewProduct";
+import EditReview, { EditReviewTypes } from "@components/forms/editReview";
 
 const ProductsReviewPage: NextPage = () => {
   const router = useRouter();
@@ -40,7 +40,7 @@ const ProductsReviewPage: NextPage = () => {
   const { data: sellUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? user?.id : productData?.product?.userId}` : null);
   const { data: purchaseUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? purchaseRecord?.userId : user?.id}` : null);
 
-  const formData = useForm<ReviewProductTypes>();
+  const formData = useForm<EditReviewTypes>();
   const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
     onSuccess: (data) => {
       router.replace(`/reviews/${data.review?.id}`);
@@ -54,7 +54,7 @@ const ProductsReviewPage: NextPage = () => {
     },
   });
 
-  const submitReviewProduct = (data: ReviewProductTypes) => {
+  const submitReview = (data: EditReviewTypes) => {
     if (!user || loading) return;
     uploadReview({
       ...data,
@@ -117,7 +117,7 @@ const ProductsReviewPage: NextPage = () => {
 
       {/* 리뷰 */}
       <div className="mt-5">
-        <ReviewProduct formData={formData} onValid={submitReviewProduct} />
+        <EditReview formData={formData} onValid={submitReview} />
       </div>
     </div>
   );

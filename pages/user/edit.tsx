@@ -74,7 +74,7 @@ const UserEditPage: NextPage = () => {
     setPhotoLoading(false);
   };
 
-  const submitProfileUpdate = async ({ photos: _photos, ...data }: EditProfileTypes) => {
+  const submitUser = async ({ photos: _photos, ...data }: EditProfileTypes) => {
     if (!user || updateUserLoading || updateDummyLoading || photoLoading) return;
 
     if (userType !== "member") {
@@ -139,7 +139,7 @@ const UserEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProfile formId="edit-profile" formData={formData} onValid={submitProfileUpdate} isLoading={(userType === "member" ? updateUserLoading : updateDummyLoading) || photoLoading} />
+      <EditProfile formId="edit-profile" formData={formData} onValid={submitUser} isLoading={(userType === "member" ? updateUserLoading : updateDummyLoading) || photoLoading} />
     </div>
   );
 };

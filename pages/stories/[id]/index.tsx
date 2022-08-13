@@ -28,7 +28,7 @@ import PictureList from "@components/groups/pictureList";
 import FeedbackStory from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
-import EditComment, { EditCommentTypes } from "@components/forms/editComment";
+import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editStoryComment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import Profiles from "@components/profiles";
 
@@ -60,8 +60,8 @@ const StoriesDetailPage: NextPage<{}> = () => {
   }, [commentFlatList]);
 
   // new comment
-  const formData = useForm<EditCommentTypes>({ defaultValues: { reCommentRefId: null } });
-  const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
+  const formData = useForm<EditStoryCommentTypes>({ defaultValues: { reCommentRefId: null } });
+  const [uploadStoryComment, { loading: uploadLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
     onSuccess: () => {
       mutateStoryDetail();
       mutateStoryComments();
@@ -100,7 +100,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
     });
   };
 
-  const validReComment = (data: EditCommentTypes) => {
+  const validReComment = (data: EditStoryCommentTypes) => {
     if (userType === "member") {
       submitReComment(data);
       return;
@@ -108,8 +108,8 @@ const StoriesDetailPage: NextPage<{}> = () => {
     openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
   };
 
-  const submitReComment = (data: EditCommentTypes) => {
-    if (!user || commentLoading || sendCommentLoading) return;
+  const submitReComment = (data: EditStoryCommentTypes) => {
+    if (!user || commentLoading || uploadLoading) return;
     if (!storyData?.story) return;
     mutateStoryDetail((prev) => {
       return prev && { ...prev, story: { ...prev.story, comments: [...prev.story.comments, { id: 0 }] } };
@@ -122,7 +122,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
       return prev && { ...prev, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
     formData.setValue("content", "");
-    sendComment({ ...data, ...currentAddr });
+    uploadStoryComment({ ...data, ...currentAddr });
   };
 
   // modal: delete
@@ -250,7 +250,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
       {user?.id && (
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-14 border-t bg-white">
-            <EditComment formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType={category?.commentType} className="w-full px-5" />
+            <EditStoryComment formData={formData} onValid={validReComment} isLoading={commentLoading || uploadLoading} commentType={category?.commentType} className="w-full px-5" />
           </div>
         </div>
       )}

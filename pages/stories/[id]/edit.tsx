@@ -63,7 +63,7 @@ const StoriesEditPage: NextPage = () => {
     setPhotoLoading(false);
   };
 
-  const submitUploadStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
+  const submitStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
     if (!user || loading || photoLoading) return;
 
     if (!_photos?.length) {
@@ -123,7 +123,7 @@ const StoriesEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="edit-story" formData={formData} onValid={submitUploadStory} isLoading={loading || photoLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
+      <EditStory formId="edit-story" formData={formData} onValid={submitStory} isLoading={loading || photoLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
     </div>
   );
 };

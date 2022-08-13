@@ -25,7 +25,7 @@ import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import SendMessage, { SendMessageTypes } from "@components/forms/sendMessage";
+import EditChatMessage, { EditChatMessageTypes } from "@components/forms/editChatMessage";
 import ChatMessageList from "@components/lists/chatMessageList";
 import ProductSummary from "@components/cards/productSummary";
 import Buttons from "@components/buttons";
@@ -73,8 +73,8 @@ const ChatsDetailPage: NextPage = () => {
   });
 
   // chat message form
-  const formData = useForm<SendMessageTypes>({});
-  const [sendChatMessage, { loading: sendChatMessageLoading }] = useMutation<PostChatsMessageResponse>(`/api/chats/${router.query.id}/message`, {
+  const formData = useForm<EditChatMessageTypes>({});
+  const [uploadChatMessage, { loading: uploadLoading }] = useMutation<PostChatsMessageResponse>(`/api/chats/${router.query.id}/message`, {
     onSuccess: (data) => {
       boundMutate();
       window.scrollTo({ behavior: "smooth", top: document.body.scrollHeight });
@@ -112,14 +112,14 @@ const ChatsDetailPage: NextPage = () => {
     });
   };
 
-  const submitChatMessage = (data: SendMessageTypes) => {
-    if (!user || sendChatMessageLoading) return;
+  const submitChatMessage = (data: EditChatMessageTypes) => {
+    if (!user || uploadLoading) return;
     boundMutate((prev) => {
       const time = new Date();
       const newMessage = { id: time.getTime(), text: data.text, userId: user?.id, chatId: 1, createdAt: time, updatedAt: time };
       return prev && { ...prev, chat: { ...prev.chat, chatMessages: [...prev.chat.chatMessages, { ...newMessage, user: { id: user?.id, name: user?.name, avatar: "" } }] } };
     }, false);
-    sendChatMessage(data);
+    uploadChatMessage(data);
     formData.setValue("text", "");
     window.scrollTo({ behavior: "smooth", top: document.body.scrollHeight });
   };
@@ -192,7 +192,7 @@ const ChatsDetailPage: NextPage = () => {
       {/* 채팅 입력 */}
       <div className="fixed-container bottom-0 z-[50]">
         <div className="fixed-inner flex items-center h-14 border-t bg-white">
-          <SendMessage formData={formData} onValid={submitChatMessage} isLoading={sendChatMessageLoading} className="w-full px-5" />
+          <EditChatMessage formData={formData} onValid={submitChatMessage} isLoading={uploadLoading} className="w-full px-5" />
         </div>
       </div>
     </section>

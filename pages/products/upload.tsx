@@ -41,7 +41,7 @@ const ProductsUploadPage: NextPage = () => {
     },
   });
 
-  const submitUploadProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
+  const submitProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
     if (!user || loading || photoLoading) return;
 
     if (!_photos?.length) {
@@ -88,7 +88,7 @@ const ProductsUploadPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="upload-product" formData={formData} onValid={submitUploadProduct} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditProduct formId="upload-product" formData={formData} onValid={submitProduct} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };

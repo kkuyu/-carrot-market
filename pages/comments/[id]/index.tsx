@@ -24,7 +24,7 @@ import Comment from "@components/cards/comment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
-import EditComment, { EditCommentTypes } from "@components/forms/editComment";
+import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editStoryComment";
 import StorySummary from "@components/cards/storySummary";
 import Link from "next/link";
 
@@ -52,8 +52,8 @@ const CommentsDetailPage: NextPage = () => {
   }, [commentFlatList]);
 
   // new comment
-  const formData = useForm<EditCommentTypes>();
-  const [sendComment, { loading: sendCommentLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
+  const formData = useForm<EditStoryCommentTypes>();
+  const [uploadStoryComment, { loading: uploadLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
     onSuccess: () => {
       mutateCommentDetail();
     },
@@ -77,7 +77,7 @@ const CommentsDetailPage: NextPage = () => {
     });
   };
 
-  const validReComment = (data: EditCommentTypes) => {
+  const validReComment = (data: EditStoryCommentTypes) => {
     if (userType === "member") {
       submitReComment(data);
       return;
@@ -85,8 +85,8 @@ const CommentsDetailPage: NextPage = () => {
     openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
   };
 
-  const submitReComment = (data: EditCommentTypes) => {
-    if (!user || commentLoading || sendCommentLoading) return;
+  const submitReComment = (data: EditStoryCommentTypes) => {
+    if (!user || commentLoading || uploadLoading) return;
     if (!commentData?.comment) return;
     mutateCommentDetail((prev) => {
       const time = new Date();
@@ -96,7 +96,7 @@ const CommentsDetailPage: NextPage = () => {
       return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
     }, false);
     formData?.setValue("content", "");
-    sendComment({ ...data, ...currentAddr });
+    uploadStoryComment({ ...data, ...currentAddr });
   };
 
   // merge comment data
@@ -162,7 +162,7 @@ const CommentsDetailPage: NextPage = () => {
       {user?.id && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
-            <EditComment formData={formData} onValid={validReComment} isLoading={commentLoading || sendCommentLoading} commentType="답글" className="w-full px-5" />
+            <EditStoryComment formData={formData} onValid={validReComment} isLoading={commentLoading || uploadLoading} commentType="답글" className="w-full px-5" />
           </div>
         </div>
       )}
