@@ -104,11 +104,11 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   if (!item) return null;
 
   return (
-    <div className={`relative px-5 border-t ${className}`} {...restProps}>
+    <div className={`relative flex px-5 border-t ${className}`} {...restProps}>
       {/* 궁금해요: button */}
       {!category?.isLikeWithEmotion && (
-        <button type="button" onClick={clickLike} className="py-2">
-          <svg className={`inline-block w-5 h-5 ${likeRecord ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+        <button type="button" onClick={clickLike} className="inline-flex items-center py-2">
+          <svg className={`w-5 h-5 ${likeRecord ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
           </svg>
           <span className={`ml-1 text-sm ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
@@ -116,13 +116,13 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
       )}
       {/* 공감하기: button */}
       {category?.isLikeWithEmotion && (
-        <button type="button" onClick={clickEmotionButton} onBlur={blurEmotionButton} className="py-2">
+        <button type="button" onClick={clickEmotionButton} onBlur={blurEmotionButton} className="inline-flex items-center py-2">
           {!likeRecord ? (
-            <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
           ) : (
-            <span className="inline-block w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>
+            <span className="w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>
           )}
           {!likeRecord ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
         </button>
@@ -143,21 +143,23 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
       )}
       {/* 공감하기: result */}
       {category?.isLikeWithEmotion && Boolean(likeRecords.length) && (
-        <div className="absolute bottom-0 right-0 flex items-center h-10 pr-5">
-          <span className="text-sm">
+        <div className="absolute top-1/2 right-0 inline-flex items-center pr-5 -translate-y-1/2">
+          <span>
             {Object.entries(EmotionIcon)
               .sort(([, a], [, b]) => a.index - b.index)
               .filter(([key]) => likeRecords.find((i) => i.emotion === key))
               .map(([key, emotion]) => (
-                <span key={key}>{emotion.text}</span>
+                <span key={key} className="w-5 h-5 text-sm">
+                  {emotion.text}
+                </span>
               ))}
           </span>
-          <span className="ml-1 block text-sm text-gray-500">{likeRecords.length}</span>
+          <span className="ml-1 text-sm text-gray-500">{likeRecords.length}</span>
         </div>
       )}
       {/* 댓글/답변 */}
-      <button type="button" className="ml-4 py-2" onClick={clickComment}>
-        <svg className="inline-block w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+      <button type="button" className="inline-flex items-center py-2 last:ml-4" onClick={clickComment}>
+        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"

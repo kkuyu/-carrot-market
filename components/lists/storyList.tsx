@@ -9,16 +9,17 @@ import { FeedbackStoryProps } from "@components/groups/feedbackStory";
 
 interface StoryListProps extends React.HTMLAttributes<HTMLUListElement> {
   list: StoryItem[];
+  highlight?: string[];
   children?: React.ReactNode;
 }
 
 const StoryList = (props: StoryListProps) => {
-  const { list, children = [], className = "", ...restProps } = props;
+  const { list, children = [], highlight = [], className = "", ...restProps } = props;
 
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y-8 ${className}`} {...restProps}>
+    <ul className={`divide-y-4 ${className}`} {...restProps}>
       {list.map((item) => {
         let includeFeedbackStory = false;
         const childrenWithProps = Children.map(children, (child) => {
@@ -40,18 +41,13 @@ const StoryList = (props: StoryListProps) => {
         return (
           <li key={item?.id} className="relative">
             <Link href={`/stories/${item?.id}`}>
-              <a className="block pt-5 px-5 pb-3 last:pb-5">
-                <Story item={item} isVisibleAuthor={includeFeedbackStory} />
+              <a className="block pt-3 pb-3 px-5">
+                <Story item={item} isVisibleFeedback={includeFeedbackStory} highlight={highlight} />
               </a>
             </Link>
             {Boolean(thumbnails.length) && (
-              <div className="empty:hidden px-5 pb-3 last:pb-5">
+              <div className="empty:hidden px-5 pb-3">
                 <PictureList list={thumbnails} />
-              </div>
-            )}
-            {!includeFeedbackStory && (
-              <div className="empty:hidden px-5 pb-3 last:pb-5 text-sm text-gray-500">
-                {[item?.records?.length ? `관심 ${item?.records?.length}` : null, item.comments?.length ? `댓글 ${item.comments.length}` : null].filter((v) => !!v).join(" · ")}
               </div>
             )}
             {childrenWithProps}

@@ -12,7 +12,7 @@ const CommentSummaryList = (props: CommentSummaryListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y-8 ${className}`} {...restProps}>
+    <ul className={`divide-y-4 ${className}`} {...restProps}>
       {list?.map((item) => {
         return (
           <li key={item.id} className="relative">

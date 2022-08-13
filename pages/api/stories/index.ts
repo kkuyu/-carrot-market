@@ -13,7 +13,7 @@ export interface GetStoriesResponse extends ResponseDataType {
   stories: (Story & {
     user: Pick<User, "id" | "name">;
     records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments?: Pick<StoryComment, "id">[];
+    comments?: (Pick<StoryComment, "id"> & Pick<Partial<StoryComment>, "userId" | "content">)[];
   })[];
 }
 

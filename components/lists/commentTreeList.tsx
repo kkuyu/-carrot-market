@@ -71,7 +71,7 @@ const CommentTreeList = (props: CommentTreeListProps) => {
           <button type="button" onClick={readMoreReComments} disabled={isLoading} className="text-sm text-gray-500">
             {isLoading ? "답글을 불러오고있어요" : list?.length === countReComments ? "답글 숨기기" : list.length > 2 ? "이전 답글 더보기" : `답글 ${countReComments - list.length}개 보기`}
           </button>
-          <span className="absolute top-1/4 left-0 w-2 h-2 border-l border-b border-gray-400" />
+          <span className="absolute top-1.5 left-0 w-2 h-2 border-l border-b border-gray-400" />
         </div>
       )}
     </div>

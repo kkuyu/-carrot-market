@@ -7,11 +7,12 @@ import { LikeProductProps } from "@components/groups/likeProduct";
 
 interface ProductListProps extends React.HTMLAttributes<HTMLUListElement> {
   list: ProductItem[];
+  highlight?: string[];
   children?: React.ReactNode;
 }
 
 const ProductList = (props: ProductListProps) => {
-  const { list, children = [], className = "", ...restProps } = props;
+  const { list, children = [], highlight = [], className = "", ...restProps } = props;
 
   if (!Boolean(list.length)) return null;
 
@@ -31,7 +32,7 @@ const ProductList = (props: ProductListProps) => {
           <li key={item?.id} className="relative">
             <Link href={`/products/${item?.id}`}>
               <a className="block px-5 py-3">
-                <Product item={item} className={includeLikeProduct ? "pr-8" : ""} />
+                <Product item={item} className={includeLikeProduct ? "pr-8" : ""} highlight={highlight} />
               </a>
             </Link>
             {childrenWithProps}
