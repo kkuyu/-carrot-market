@@ -19,6 +19,7 @@ import { GetSearchResultResponse } from "@api/search/result";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
+import Buttons from "@components/buttons";
 import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 import ProductList from "@components/lists/productList";
 import StoryList from "@components/lists/storyList";
@@ -68,7 +69,8 @@ const SearchPage: NextPage = () => {
       }
     : null;
 
-  const changeFilter = (tab: SearchTab) => {
+  const changeTab = (options: { tab?: SearchTab; tabValue?: SearchTab["value"] }) => {
+    const tab = options?.tab || searchTabs.find((tab) => tab.value === options.tabValue) || searchTabs.find((tab) => tab.index === 0) || searchTabs[0];
     setCurrentTab(tab);
     window.scrollTo(0, 0);
     router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
@@ -80,6 +82,7 @@ const SearchPage: NextPage = () => {
   };
 
   useEffect(() => {
+    if (currentTab.value === "result") return;
     if (isVisible && !isReachingEnd) {
       setSize((size) => size + 1);
     }
@@ -106,7 +109,7 @@ const SearchPage: NextPage = () => {
               key={tab.index}
               type="button"
               className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeFilter(tab)}
+              onClick={() => changeTab({ tab })}
             >
               {tab.text}
             </button>
@@ -121,20 +124,35 @@ const SearchPage: NextPage = () => {
 
       {/* 게시글: List */}
       {results && (Boolean(results.products.length) || Boolean(results.stories.length)) && (
-        <div className="-mx-5">
+        <div>
           {/* 중고거래 */}
-          {Boolean(results.products.length) && <h2 className={`px-5 pt-3 ${currentTab.value !== "result" ? "sr-only" : ""}`}>중고거래</h2>}
-          {Boolean(results.products.length) && <FilterProduct formData={formData} onValid={inputFilter} className={`px-5 pt-3 ${currentTab.value !== "result/products" ? "hidden" : ""}`} />}
-          {Boolean(results.products.length) && <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} />}
+          {Boolean(results.products.length) && (
+            <>
+              <h2 className={`pt-3 ${currentTab.value === "result" ? "" : "sr-only"}`}>중고거래</h2>
+              <FilterProduct formData={formData} onValid={inputFilter} className={`pt-3 ${currentTab.value === "result/products" ? "" : "hidden"}`} />
+              <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />
+              {currentTab.value === "result" && results.products.length < data?.[data.length - 1]?.productTotalCount! && (
+                <Buttons tag="button" type="button" status="default" size="sm" text="중고거래 더보기" onClick={() => changeTab({ tabValue: "result/products" })} />
+              )}
+            </>
+          )}
           {/* 동네생활 */}
-          {Boolean(results.stories.length) && <h2 className={`px-5 pt-3 ${currentTab.value !== "result" ? "sr-only" : ""}`}>동네생활</h2>}
-          {Boolean(results.stories.length) && <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} />}
+          {Boolean(results.stories.length) && (
+            <>
+              {currentTab.value === "result" && Boolean(results.products.length) && <div className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
+              <h2 className={`pt-3 ${currentTab.value === "result" ? "" : "sr-only"}`}>동네생활</h2>
+              <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />
+              {currentTab.value === "result" && results.stories.length < data?.[data.length - 1]?.storyTotalCount! && (
+                <Buttons tag="button" type="button" status="default" size="sm" text="동네생활 더보기" onClick={() => changeTab({ tabValue: "result/stories" })} className="mb-3" />
+              )}
+            </>
+          )}
           {/* infinite */}
           <div id="infiniteRef" ref={infiniteRef} />
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
+          {currentTab.value === "result" ? null : isReachingEnd ? (
+            <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
+            <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
           ) : null}
         </div>
       )}

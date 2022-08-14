@@ -57,11 +57,11 @@ const ProfilesProductsPage: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
 
-  const changeFilter = (tab: ProductTab) => {
+  const changeTab = (options: { tab?: ProductTab; tabValue?: ProductTab["value"] }) => {
+    const tab = options?.tab || productTabs.find((tab) => tab.value === options.tabValue) || productTabs.find((tab) => tab.index === 0) || productTabs[0];
     setCurrentTab(tab);
     window.scrollTo(0, 0);
-    const route = { pathname: router.pathname, query: { ...router.query, filter: tab.value } };
-    router.replace(route, undefined, { shallow: true });
+    router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
   };
 
   useEffect(() => {
@@ -89,7 +89,7 @@ const ProfilesProductsPage: NextPage = () => {
               key={tab.index}
               type="button"
               className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeFilter(tab)}
+              onClick={() => changeTab({ tab })}
             >
               {tab.text}
             </button>

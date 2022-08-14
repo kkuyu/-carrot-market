@@ -61,11 +61,11 @@ const ProfilesStoriesPage: NextPage = () => {
       }
     : null;
 
-  const changeFilter = (tab: StoryTab) => {
+  const changeTab = (options: { tab?: StoryTab; tabValue?: StoryTab["value"] }) => {
+    const tab = options?.tab || storyTabs.find((tab) => tab.value === options.tabValue) || storyTabs.find((tab) => tab.index === 0) || storyTabs[0];
     setCurrentTab(tab);
     window.scrollTo(0, 0);
-    const route = { pathname: router.pathname, query: { ...router.query, filter: tab.value } };
-    router.replace(route, undefined, { shallow: true });
+    router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
   };
 
   useEffect(() => {
@@ -93,7 +93,7 @@ const ProfilesStoriesPage: NextPage = () => {
               key={tab.index}
               type="button"
               className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeFilter(tab)}
+              onClick={() => changeTab({ tab })}
             >
               {tab.text}
             </button>
@@ -111,10 +111,10 @@ const ProfilesStoriesPage: NextPage = () => {
         <div className="-mx-5">
           {/* 게시글 */}
           {Boolean(results.stories.length) && <h2 className="sr-only">게시글</h2>}
-          {Boolean(results.stories.length) && <StoryList list={results.stories} className="border-b" />}
+          {Boolean(results.stories.length) && <StoryList list={results.stories} className="border-b divide-y-4" />}
           {/* 댓글 */}
           {Boolean(results.comments.length) && <h2 className="sr-only">댓글</h2>}
-          {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} className="border-b" />}
+          {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} className="border-b divide-y-4" />}
           {/* infinite */}
           <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (

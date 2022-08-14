@@ -19,7 +19,7 @@ const StoryList = (props: StoryListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y-4 ${className}`} {...restProps}>
+    <ul className={`divide-y ${className}`} {...restProps}>
       {list.map((item) => {
         let includeFeedbackStory = false;
         const childrenWithProps = Children.map(children, (child) => {

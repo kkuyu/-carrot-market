@@ -9,7 +9,7 @@ import { GetSearchResultResponse } from "@api/search/result";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { prevCursor: _prevCursor, keyword: _keyword, includeSold: _includeSold, pageSize: _pageSize, posX: _posX, posY: _posY, distance: _distance } = req.query;
+    const { pageSize: _pageSize, prevCursor: _prevCursor, keyword: _keyword, includeSold: _includeSold, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
     // invalid
     if (!_prevCursor) {
