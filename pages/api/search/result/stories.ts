@@ -84,7 +84,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       take: pageSize,
       skip: prevCursor ? 1 : 0,
       ...(prevCursor && { cursor: { id: prevCursor } }),
-      orderBy: [{ records: { _count: "desc" } }, { createdAt: "desc" }],
+      orderBy: [{ records: { _count: "desc" } }, { comments: { _count: "desc" } }, { createdAt: "desc" }],
       include: {
         user: {
           select: {

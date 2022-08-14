@@ -1,6 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
@@ -18,6 +19,7 @@ import { GetSearchResultResponse } from "@api/search/result";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
+import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 import ProductList from "@components/lists/productList";
 import StoryList from "@components/lists/storyList";
 
@@ -41,12 +43,16 @@ const SearchPage: NextPage = () => {
   const [currentTab, setCurrentTab] = useState<SearchTab>(() => {
     return searchTabs.find((tab) => tab.value === router?.query?.filter) || searchTabs.find((tab) => tab.index === 0) || searchTabs[0];
   });
+
+  const formData = useForm<FilterProductTypes>();
   const recentlyKeyword = router?.query?.keyword?.toString();
 
   const { data, setSize, mutate } = useSWRInfinite<GetSearchResultResponse>((...arg: [index: number, previousPageData: GetSearchResultResponse]) => {
+    const excludeSold = formData.getValues("excludeSold") || false;
     const options = {
       url: `/api/search/${currentTab.value}`,
-      query: `keyword=${recentlyKeyword}&` + `${currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
+      query:
+        `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&` + `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
     };
     return getKey<GetSearchResultResponse>(...arg, options);
   });
@@ -66,6 +72,11 @@ const SearchPage: NextPage = () => {
     setCurrentTab(tab);
     window.scrollTo(0, 0);
     router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
+  };
+
+  const inputFilter = (data: FilterProductTypes) => {
+    window.scrollTo(0, 0);
+    mutate();
   };
 
   useEffect(() => {
@@ -110,35 +121,22 @@ const SearchPage: NextPage = () => {
 
       {/* 게시글: List */}
       {results && (Boolean(results.products.length) || Boolean(results.stories.length)) && (
-        <>
-          {currentTab.value === "result" ? (
-            <div className="-mx-5 divide-y-8">
-              {Boolean(results.products.length) && (
-                <div>
-                  <h2 className="px-5 pt-3">중고거래</h2>
-                  <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} />
-                </div>
-              )}
-              {Boolean(results.stories.length) && (
-                <div>
-                  <h2 className="px-5 pt-3">동네생활</h2>
-                  <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} />
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="-mx-5">
-              {Boolean(results.products.length) && <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} />}
-              {Boolean(results.stories.length) && <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} />}
-              <div ref={infiniteRef} />
-              {isReachingEnd ? (
-                <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
-              ) : isLoading ? (
-                <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
-              ) : null}
-            </div>
-          )}
-        </>
+        <div className="-mx-5">
+          {/* 중고거래 */}
+          {Boolean(results.products.length) && <h2 className={`px-5 pt-3 ${currentTab.value !== "result" ? "sr-only" : ""}`}>중고거래</h2>}
+          {Boolean(results.products.length) && <FilterProduct formData={formData} onValid={inputFilter} className={`px-5 pt-3 ${currentTab.value !== "result/products" ? "hidden" : ""}`} />}
+          {Boolean(results.products.length) && <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} />}
+          {/* 동네생활 */}
+          {Boolean(results.stories.length) && <h2 className={`px-5 pt-3 ${currentTab.value !== "result" ? "sr-only" : ""}`}>동네생활</h2>}
+          {Boolean(results.stories.length) && <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} />}
+          {/* infinite */}
+          <div id="infiniteRef" ref={infiniteRef} />
+          {isReachingEnd ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="block px-5 py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
+          ) : null}
+        </div>
       )}
 
       {/* 게시글: Empty */}

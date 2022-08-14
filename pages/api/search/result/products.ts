@@ -9,7 +9,7 @@ import { GetSearchResultResponse } from "@api/search/result";
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { prevCursor: _prevCursor, keyword: _keyword, pageSize: _pageSize, posX: _posX, posY: _posY, distance: _distance } = req.query;
+    const { prevCursor: _prevCursor, keyword: _keyword, includeSold: _includeSold, pageSize: _pageSize, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
     // invalid
     if (!_prevCursor) {
@@ -17,14 +17,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!_keyword) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
-    }
 
     // early return result
-    if (!_posX || !_posY || !_distance) {
+    if (!_keyword || !_includeSold || !_posX || !_posY || !_distance) {
       const result: GetSearchResultResponse = {
         success: false,
         totalCount: 0,
@@ -51,6 +46,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const keyword = _keyword.toString() || "";
+    const includeSold = JSON.parse(_includeSold.toString());
     const posX = +_posX.toString();
     const posY = +_posY.toString();
     const distance = +_distance.toString();
@@ -72,6 +68,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           name: { contains: word },
         })),
       ],
+      ...(!includeSold
+        ? {
+            AND: {
+              records: { some: { kind: Kind.ProductSale } },
+            },
+          }
+        : {}),
     };
 
     // fetch product
