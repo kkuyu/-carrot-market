@@ -2,8 +2,9 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
-import useSWR, { SWRConfig } from "swr";
+import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
+import { Kind } from "@prisma/client";
 // @lib
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
@@ -15,14 +16,15 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetSearchResultResponse } from "@api/search/result";
+import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
-import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 import ProductList from "@components/lists/productList";
 import StoryList from "@components/lists/storyList";
+import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 
 type SearchTab = {
   index: number;
@@ -53,7 +55,7 @@ const SearchPage: NextPage = () => {
     const options = {
       url: `/api/search/${currentTab.value}`,
       query:
-        `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&` + `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
+        `keyword=${recentlyKeyword}&includeSold=${!excludeSold}` + `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
     };
     return getKey<GetSearchResultResponse>(...arg, options);
   });
@@ -169,12 +171,18 @@ const SearchPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-}> = ({ getUser }) => {
+  getResults: { options: { url: string; query?: string }; response: GetSearchResultResponse };
+  getProducts: { options: { url: string; query?: string }; response: GetSearchResultResponse };
+  getStories: { options: { url: string; query?: string }; response: GetSearchResultResponse };
+}> = ({ getUser, getResults, getProducts, getStories }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetSearchResultResponse]) => getKey<GetSearchResultResponse>(...arg, getResults.options))]: [getResults.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetSearchResultResponse]) => getKey<GetSearchResultResponse>(...arg, getProducts.options))]: [getProducts.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetSearchResultResponse]) => getKey<GetSearchResultResponse>(...arg, getStories.options))]: [getStories.response],
         },
       }}
     >
@@ -205,6 +213,101 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
     };
   }
 
+  const excludeSold = false;
+  const posX = ssrUser?.currentAddr?.emdPosX;
+  const posY = ssrUser?.currentAddr?.emdPosY;
+  const distance = ssrUser?.currentAddr?.emdPosDx;
+
+  // getProducts
+  const products =
+    !posX || !posY || !distance
+      ? []
+      : await client.product.findMany({
+          take: 10,
+          skip: 0,
+          orderBy: {
+            resumeAt: "desc",
+          },
+          where: {
+            emdPosX: { gte: posX - distance, lte: posX + distance },
+            emdPosY: { gte: posY - distance, lte: posY + distance },
+            AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
+          },
+          include: {
+            records: {
+              where: {
+                OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
+              },
+              select: {
+                id: true,
+                kind: true,
+                userId: true,
+              },
+            },
+            chats: {
+              include: {
+                _count: {
+                  select: {
+                    chatMessages: true,
+                  },
+                },
+              },
+            },
+          },
+        });
+
+  // getStories
+  const stories =
+    !posX || !posY || !distance
+      ? []
+      : await client.story.findMany({
+          take: 10,
+          skip: 0,
+          orderBy: [{ records: { _count: "desc" } }, { comments: { _count: "desc" } }, { createdAt: "desc" }],
+          include: {
+            user: {
+              select: {
+                id: true,
+                name: true,
+                avatar: true,
+              },
+            },
+            records: {
+              where: {
+                kind: Kind.StoryLike,
+              },
+              select: {
+                id: true,
+                kind: true,
+                emotion: true,
+                userId: true,
+              },
+            },
+            comments: {
+              take: 1,
+              orderBy: [{ depth: "asc" }, { createdAt: "asc" }],
+              where: {
+                AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+                NOT: [{ content: "" }],
+                OR: [
+                  ...recentlyKeyword.split(" ").map((word: string) => ({
+                    content: { contains: word },
+                  })),
+                ],
+              },
+              select: {
+                id: true,
+                userId: true,
+                content: true,
+              },
+            },
+          },
+          where: {
+            emdPosX: { gte: posX - distance, lte: posX + distance },
+            emdPosY: { gte: posY - distance, lte: posY + distance },
+          },
+        });
+
   // defaultLayout
   const defaultLayout = {
     meta: {
@@ -225,6 +328,47 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       defaultLayout,
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
+      getResults: {
+        options: {
+          url: "/api/search/result",
+          query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
+        },
+        response: {
+          success: true,
+          totalCount: 0,
+          lastCursor: -1,
+          productTotalCount: products.length,
+          products: JSON.parse(JSON.stringify(products.slice(0, 4) || [])),
+          storyTotalCount: stories.length,
+          stories: JSON.parse(JSON.stringify(stories.slice(0, 4) || [])),
+        },
+      },
+      getProducts: {
+        options: {
+          url: "/api/search/result/products",
+          query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
+        },
+        response: {
+          success: true,
+          totalCount: 0,
+          lastCursor: products.length ? products?.[products.length - 1]?.id : -1,
+          products: JSON.parse(JSON.stringify(products || [])),
+          stories: JSON.parse(JSON.stringify([])),
+        },
+      },
+      getStories: {
+        options: {
+          url: "/api/search/result/stories",
+          query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
+        },
+        response: {
+          success: true,
+          totalCount: 0,
+          lastCursor: stories.length ? stories?.[stories.length - 1]?.id : -1,
+          products: JSON.parse(JSON.stringify([])),
+          stories: JSON.parse(JSON.stringify(stories || [])),
+        },
       },
     },
   };
