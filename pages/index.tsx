@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -30,8 +30,7 @@ const ProductsIndexPage: NextPage = () => {
     return getKey<GetProductsResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
@@ -65,7 +64,6 @@ const ProductsIndexPage: NextPage = () => {
       {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} className="border-b" />
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -85,6 +83,9 @@ const ProductsIndexPage: NextPage = () => {
         </div>
       )}
 
+      {/* 판매상품: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
+
       {/* 글쓰기 */}
       <FloatingButtons />
     </div>
@@ -93,14 +94,14 @@ const ProductsIndexPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { options: { url: string; query?: string }; response: GetProductsResponse };
-}> = ({ getUser, getProduct }) => {
+  getProducts: { options: { url: string; query?: string }; response: GetProductsResponse };
+}> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsResponse]) => getKey<GetProductsResponse>(...arg, getProduct.options))]: [getProduct.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsResponse]) => getKey<GetProductsResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
     >
@@ -128,7 +129,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     };
   }
 
-  // getProduct
+  // getProducts
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
@@ -190,7 +191,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getProduct: {
+      getProducts: {
         options: {
           url: "/api/products",
           query: `posX=${posX}&posY=${posY}&distance=${distance}`,

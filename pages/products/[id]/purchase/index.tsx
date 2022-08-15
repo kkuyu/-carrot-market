@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -36,8 +36,7 @@ const ProductsPurchasePage: NextPage = () => {
     return getKey<GetChatsResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
@@ -99,7 +98,6 @@ const ProductsPurchasePage: NextPage = () => {
       {chats && Boolean(chats.length) && (
         <div className="-mx-5 mt-5 border-t">
           <ChatList type="button" list={chats} content="timestamp" isSingleUser={true} selectItem={purchaseItem} className="border-b" />
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -114,6 +112,9 @@ const ProductsPurchasePage: NextPage = () => {
           <p className="text-gray-500">대화 중인 이웃이 없어요.</p>
         </div>
       )}
+
+      {/* 대화중인 채팅방: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
 
       {chats && (!Boolean(chats.length) || isReachingEnd) && (
         <div className="text-center">

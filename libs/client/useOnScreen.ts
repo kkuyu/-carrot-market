@@ -1,21 +1,18 @@
-import { useState, useEffect, MutableRefObject } from "react";
+import { useState, useEffect, useRef } from "react";
 
-interface useOnScreenProps {
-  ref: MutableRefObject<HTMLDivElement | null>;
+interface UseOnScreenProps {
   rootMargin: string;
 }
 
-export default function useOnScreen({ ref, rootMargin = "0px" }: useOnScreenProps) {
+export default function useOnScreen({ rootMargin = "0px" }: UseOnScreenProps) {
+  const infiniteRef = useRef<HTMLDivElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
   const [observer, setObserver] = useState<null | IntersectionObserver>(null);
 
   const updateObserver = () => {
-    if (!ref.current) {
-      setObserver(() => null);
-      return;
-    }
+    if (!infiniteRef.current) return;
     const io = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { rootMargin });
-    io.observe(ref.current);
+    io.observe(infiniteRef.current);
     setObserver(() => io);
   };
 
@@ -31,10 +28,5 @@ export default function useOnScreen({ ref, rootMargin = "0px" }: useOnScreenProp
     };
   }, []);
 
-  useEffect(() => {
-    removeObserver();
-    updateObserver();
-  }, [ref.current]);
-
-  return { isVisible };
+  return { infiniteRef, isVisible };
 }

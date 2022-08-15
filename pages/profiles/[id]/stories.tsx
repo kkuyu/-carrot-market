@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -50,8 +50,7 @@ const ProfilesStoriesPage: NextPage = () => {
     return getKey<GetProfilesStoriesResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const results = data
@@ -106,17 +105,15 @@ const ProfilesStoriesPage: NextPage = () => {
         />
       </div>
 
-      {/* 게시글: List */}
+      {/* 동네생활: List */}
       {results && (Boolean(results.stories.length) || Boolean(results.comments.length)) && (
         <div className="-mx-5">
-          {/* 게시글 */}
+          {/* 동네생활 */}
           {Boolean(results.stories.length) && <h2 className="sr-only">게시글</h2>}
           {Boolean(results.stories.length) && <StoryList list={results.stories} className="border-b divide-y-4" />}
-          {/* 댓글 */}
+          {/* 동네생활 댓글 */}
           {Boolean(results.comments.length) && <h2 className="sr-only">댓글</h2>}
           {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} className="border-b divide-y-4" />}
-          {/* infinite */}
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -125,12 +122,15 @@ const ProfilesStoriesPage: NextPage = () => {
         </div>
       )}
 
-      {/* 게시글: Empty */}
+      {/* 동네생활: Empty */}
       {results && !(Boolean(results.stories.length) || Boolean(results.comments.length)) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}
+
+      {/* 동네생활: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
 };

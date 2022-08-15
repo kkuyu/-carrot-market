@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @libs
@@ -32,8 +32,7 @@ const ChatsIndexPage: NextPage = () => {
     return getKey<GetChatsResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
@@ -74,7 +73,6 @@ const ChatsIndexPage: NextPage = () => {
       {chats && Boolean(chats.length) && (
         <div className="-mx-5">
           <ChatList type="link" list={chats} content="message" isSingleUser={false} className="border-b" />
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -89,6 +87,9 @@ const ChatsIndexPage: NextPage = () => {
           <p className="text-gray-500">채팅한 이웃이 없어요.</p>
         </div>
       )}
+
+      {/* 채팅: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
 };

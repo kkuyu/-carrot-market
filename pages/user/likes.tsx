@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -32,8 +32,7 @@ const UserLikesPage: NextPage = () => {
     return getKey<GetUserLikeResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
@@ -60,7 +59,6 @@ const UserLikesPage: NextPage = () => {
           <ProductList list={products} className="border-b">
             <LikeProduct key="LikeProduct" className="absolute top-3 right-3 p-2" />
           </ProductList>
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">관심목록을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -75,6 +73,9 @@ const UserLikesPage: NextPage = () => {
           <p className="text-gray-500">{`관심목록이 존재하지 않아요`}</p>
         </div>
       )}
+
+      {/* 관심목록: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
 };

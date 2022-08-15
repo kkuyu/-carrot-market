@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
@@ -49,8 +49,7 @@ const ProfilesReviewsPage: NextPage = () => {
     return getKey<GetProfilesReviewsResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const reviews = data ? data.flatMap((item) => item.reviews) : null;
@@ -102,7 +101,6 @@ const ProfilesReviewsPage: NextPage = () => {
       {reviews && Boolean(reviews.length) && (
         <div className="mt-3">
           <ReviewList list={reviews} className="border-b" />
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}를 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -117,6 +115,9 @@ const ProfilesReviewsPage: NextPage = () => {
           <p className="text-gray-500">{`${currentTab?.name}가 존재하지 않아요`}</p>
         </div>
       )}
+
+      {/* 거래후기: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
 };

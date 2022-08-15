@@ -1,5 +1,5 @@
 import type { NextPage } from "next";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -32,8 +32,7 @@ const StoriesIndexPage: NextPage = () => {
     return getKey<GetStoriesResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "-44px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : null;
@@ -66,7 +65,6 @@ const StoriesIndexPage: NextPage = () => {
           <StoryList list={stories} className="border-b divide-y-4">
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">게시글을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -85,6 +83,9 @@ const StoriesIndexPage: NextPage = () => {
           </p>
         </div>
       )}
+
+      {/* 동네생활: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
 
       {/* 글쓰기 */}
       <FloatingButtons />

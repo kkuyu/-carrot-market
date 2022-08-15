@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -51,8 +51,7 @@ const ProfilesProductsPage: NextPage = () => {
     return getKey<GetProfilesProductsResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
@@ -109,7 +108,6 @@ const ProfilesProductsPage: NextPage = () => {
             {profileData?.profile.id === user?.id && <FeedbackProduct key="FeedbackProduct" />}
             {profileData?.profile.id === user?.id && <HandleProduct key="HandleProduct" className="p-3" />}
           </ProductList>
-          <div id="infiniteRef" ref={infiniteRef} />
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -117,12 +115,16 @@ const ProfilesProductsPage: NextPage = () => {
           ) : null}
         </div>
       )}
+
       {/* 판매상품: Empty */}
       {products && !Boolean(products.length) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}
+
+      {/* 판매상품: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
 };

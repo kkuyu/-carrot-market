@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
@@ -60,8 +60,7 @@ const SearchPage: NextPage = () => {
     return getKey<GetSearchResultResponse>(...arg, options);
   });
 
-  const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const { isVisible } = useOnScreen({ ref: infiniteRef, rootMargin: "20px" });
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const results = data
@@ -124,7 +123,7 @@ const SearchPage: NextPage = () => {
         />
       </div>
 
-      {/* 게시글: List */}
+      {/* 검색결과: List */}
       {results && (Boolean(results.products.length) || Boolean(results.stories.length)) && (
         <div>
           {/* 중고거래 */}
@@ -149,8 +148,6 @@ const SearchPage: NextPage = () => {
               )}
             </>
           )}
-          {/* infinite */}
-          <div id="infiniteRef" ref={infiniteRef} />
           {currentTab.value === "result" ? null : isReachingEnd ? (
             <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -159,12 +156,15 @@ const SearchPage: NextPage = () => {
         </div>
       )}
 
-      {/* 게시글: Empty */}
+      {/* 검색결과: Empty */}
       {results && !(Boolean(results.products.length) || Boolean(results.stories.length)) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}
+
+      {/* 검색결과: InfiniteRef */}
+      <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
 };
