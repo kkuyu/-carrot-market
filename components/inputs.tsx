@@ -1,14 +1,14 @@
-import React, { ReactNode } from "react";
+import type { HTMLAttributes, ReactElement } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
-interface InputsProps extends React.HTMLAttributes<HTMLInputElement> {
+interface InputsProps extends HTMLAttributes<HTMLInputElement> {
   name: string;
   type: string;
   required?: boolean;
   disabled?: boolean;
   register?: UseFormRegisterReturn;
   prependText?: string;
-  appendButtons?: ReactNode;
+  appendButtons?: ReactElement;
 }
 
 const Inputs = (props: InputsProps) => {

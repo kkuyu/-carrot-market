@@ -1,7 +1,8 @@
 import Image from "next/image";
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 
-interface ImagesProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ImagesProps extends HTMLAttributes<HTMLDivElement> {
   alt: string;
   size?: string;
   ratioX?: number;

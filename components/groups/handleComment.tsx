@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
-import React from "react";
+import type { HTMLAttributes } from "react";
+import { memo } from "react";
 import useSWR, { KeyedMutator } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
@@ -113,7 +114,7 @@ const HandleComment = (props: HandleCommentProps) => {
   );
 };
 
-export default React.memo(HandleComment, (prev, next) => {
+export default memo(HandleComment, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
   if (prev?.item?.content !== next?.item?.content) return false;
   if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;

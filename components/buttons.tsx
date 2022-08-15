@@ -1,4 +1,5 @@
-import React, { ForwardedRef, ReactNode } from "react";
+import type { ForwardedRef, ReactElement, ElementType } from "react";
+import { forwardRef } from "react";
 
 type As = "button" | "a";
 type Element<T extends As> = T extends "a" ? HTMLAnchorElement : HTMLButtonElement;
@@ -7,7 +8,7 @@ type Props<T extends keyof JSX.IntrinsicElements> = {
   sort?: "round-box" | "text-link" | "icon-block";
   size?: "sm" | "base";
   status?: "primary" | "default" | "danger" | "unset";
-  text: string | ReactNode;
+  text: string | ReactElement;
   disabled?: boolean;
 } & JSX.IntrinsicElements[T];
 
@@ -17,7 +18,7 @@ const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRe
   const { type, disabled, ...refineProps } = restProps;
   const optionalProps = { ...(TagName === "a" && {}), ...(TagName === "button" && { type, disabled }) };
 
-  const Component = TagName as React.ElementType;
+  const Component = TagName as ElementType;
   const classNames = {
     "round-box": {
       basic: "block w-full px-4 font-semibold text-center border rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
@@ -35,7 +36,7 @@ const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRe
       primary: "text-orange-500",
       default: "font-normal underline",
       danger: "text-red-500",
-      unset: "pl-0 pr-0 font-normal",
+      unset: "px-0 font-normal",
     },
     "icon-block": {
       basic: "flex items-center justify-center rounded-md",
@@ -55,4 +56,4 @@ const Buttons = <Tag extends As = "button">(props: Props<Tag>, ref?: ForwardedRe
   );
 };
 
-export default React.forwardRef(Buttons);
+export default forwardRef(Buttons);

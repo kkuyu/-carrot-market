@@ -1,5 +1,6 @@
+import { useEffect, useState } from "react";
 import Image from "next/image";
-import React, { ChangeEvent, useEffect, useState } from "react";
+import type { HTMLAttributes, ChangeEvent, SyntheticEvent } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 // @libs
 import { FileOptions, validateFiles } from "@libs/utils";
@@ -12,7 +13,7 @@ interface PreviewItem {
   raw: File;
 }
 
-interface FilesProps extends React.HTMLAttributes<HTMLInputElement> {
+interface FilesProps extends HTMLAttributes<HTMLInputElement> {
   name: string;
   required?: boolean;
   disabled?: boolean;
@@ -74,7 +75,7 @@ const Files = (props: FilesProps) => {
     if (changeFiles) changeFiles(validFiles);
   };
 
-  const onErrorImage = (e: React.SyntheticEvent<HTMLImageElement, Event>) => {
+  const onErrorImage = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     const img = e.target as HTMLImageElement;
     img?.setAttribute("class", "error-image");
     openToast<MessageToastProps>(MessageToast, "InvalidImage", {

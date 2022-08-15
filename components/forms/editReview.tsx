@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @api
 import { ReviewManners, ReviewMannersEnum, ReviewSatisfaction, ReviewSatisfactionEnum } from "@api/reviews/types";
@@ -14,7 +15,7 @@ export interface EditReviewTypes {
   text: string;
 }
 
-interface EditReviewProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditReviewProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<EditReviewTypes, object>;
   onValid: (validForm: EditReviewTypes) => void;
   isSuccess?: boolean;

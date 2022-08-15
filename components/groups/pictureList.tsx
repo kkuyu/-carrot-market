@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 // @libs
 import useModal from "@libs/client/useModal";
 // @components
@@ -13,7 +14,7 @@ export type PictureListItem = {
   name: string;
 };
 
-interface PictureListProps extends React.HTMLAttributes<HTMLDivElement> {
+interface PictureListProps extends HTMLAttributes<HTMLDivElement> {
   list: PictureListItem[];
 }
 

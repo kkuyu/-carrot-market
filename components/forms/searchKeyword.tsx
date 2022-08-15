@@ -1,3 +1,4 @@
+import type { HTMLAttributes, ReactElement } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @components
 import Buttons from "@components/buttons";
@@ -7,11 +8,11 @@ export interface SearchKeywordTypes {
   keyword: string;
 }
 
-interface SearchKeywordProps extends React.HTMLAttributes<HTMLFormElement> {
+interface SearchKeywordProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<SearchKeywordTypes, object>;
   onValid: (validForm: SearchKeywordTypes) => void;
   placeholder?: string;
-  children?: React.ReactNode;
+  children?: ReactElement;
 }
 
 const SearchKeyword = (props: SearchKeywordProps) => {

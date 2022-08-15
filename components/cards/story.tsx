@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 import { Kind } from "@prisma/client";
 // @libs
@@ -12,7 +13,7 @@ import Highlights from "@components/highlights";
 
 export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0] | GetSearchResultResponse["stories"][0];
 
-export interface StoryProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   item: StoryItem;
   highlight?: string[];
   isVisibleFeedback?: boolean;

@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @components
 import Labels from "@components/labels";
@@ -10,7 +11,7 @@ export interface EditStoryCommentTypes {
   reCommentRefId?: number | null;
 }
 
-interface EditStoryCommentProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditStoryCommentProps extends HTMLAttributes<HTMLFormElement> {
   formId?: string;
   formData: UseFormReturn<EditStoryCommentTypes, object>;
   onValid: (validForm: EditStoryCommentTypes) => void;

@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useEffect, useRef, useState } from "react";
 import { ReactZoomPanPinchRef, TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import Flicking from "@egjs/react-flicking";
@@ -13,7 +14,7 @@ export interface PictureZoomItem {
   name: string;
 }
 
-interface PictureZoomProps extends React.HTMLAttributes<HTMLDivElement> {
+interface PictureZoomProps extends HTMLAttributes<HTMLDivElement> {
   list: PictureZoomItem[];
   defaultIndex: number;
 }
@@ -30,11 +31,28 @@ const PictureZoom = (props: PictureZoomProps) => {
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
 
-  const makeSliderItem = (item: PictureZoomItem, index: number, array: PictureZoomItem[]) => {
+  const updateSlider = () => {
+    if (list.length <= 1) return;
+
+    if (!flickingRef) return;
+    if (!flickingRef?.current) return;
+    if (flickingRef?.current?.initialized) return;
+
+    setFlickingIndex(defaultIndex);
+    flickingRef.current.init();
+  };
+
+  const resetZoom = () => {
+    if (!zoomRef.current) return;
+    zoomRef.current.resetTransform();
+  };
+
+  const SliderItem = (itemProps: HTMLAttributes<HTMLButtonElement> & { item: PictureZoomItem; index: number; array: PictureZoomItem[] }) => {
+    const { className: itemClassName = "", item, index, array } = itemProps;
     return (
       <button
         type="button"
-        className={`relative block border-2 rounded-md ${item.index === flickingIndex ? "border-orange-500" : "border-transparent"}`}
+        className={`relative block border-2 rounded-md ${item.index === flickingIndex ? "border-orange-500" : "border-transparent"} ${itemClassName}`}
         onClick={() => {
           if (!flickingRef.current) return;
           flickingRef.current.viewport.element.scrollLeft = 0;
@@ -50,22 +68,6 @@ const PictureZoom = (props: PictureZoomProps) => {
         <Images cloudId={item.src} cloudVariant="public" size="6rem" rounded="md" alt={item.name} />
       </button>
     );
-  };
-
-  const updateSlider = () => {
-    if (list.length <= 1) return;
-
-    if (!flickingRef) return;
-    if (!flickingRef?.current) return;
-    if (flickingRef?.current?.initialized) return;
-
-    setFlickingIndex(defaultIndex);
-    flickingRef.current.init();
-  };
-
-  const resetZoom = () => {
-    if (!zoomRef.current) return;
-    zoomRef.current.resetTransform();
   };
 
   useEffect(() => {
@@ -112,7 +114,7 @@ const PictureZoom = (props: PictureZoomProps) => {
         <Flicking ref={flickingRef} cameraTag="ul" align="center" defaultIndex={defaultIndex} autoInit={false} moveType="freeScroll" onAfterResize={() => resetZoom()} style={{ width: "100%" }}>
           {list.map((item, index, array) => (
             <li key={item.key} id={item.key} role="tab" className="relative block panel px-1" aria-label={item.label} aria-controls={item.key} aria-selected={item.index === flickingIndex}>
-              {makeSliderItem(item, index, array)}
+              <SliderItem item={item} index={index} array={array} />
             </li>
           ))}
         </Flicking>

@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @components
 import Inputs from "@components/inputs";
@@ -7,7 +8,7 @@ export interface VerifyTokenTypes {
   token: string;
 }
 
-interface VerifyTokenProps extends React.HTMLAttributes<HTMLFormElement> {
+interface VerifyTokenProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<VerifyTokenTypes, object>;
   onValid: (validForm: VerifyTokenTypes) => void;
   isSuccess?: boolean;

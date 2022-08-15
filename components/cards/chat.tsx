@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
@@ -8,7 +9,7 @@ import Images from "@components/images";
 
 export type ChatItem = GetChatsResponse["chats"][0];
 
-export interface ChatProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ChatProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatItem;
   users: ChatItem["users"];
   content: "message" | "timestamp";

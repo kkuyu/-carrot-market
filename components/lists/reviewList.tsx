@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
@@ -12,7 +13,7 @@ import Profiles from "@components/profiles";
 
 type ReviewListItem = GetProfilesDetailResponse["reviews"][0] | GetProfilesReviewsResponse["reviews"][0];
 
-interface ReviewListProps extends React.HTMLAttributes<HTMLUListElement> {
+interface ReviewListProps extends HTMLAttributes<HTMLUListElement> {
   list: ReviewListItem[];
 }
 

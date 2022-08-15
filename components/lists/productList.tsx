@@ -1,14 +1,16 @@
 import Link from "next/link";
+import type { HTMLAttributes, ReactElement } from "react";
 import { Children, cloneElement, isValidElement } from "react";
 // @components
 import Product, { ProductItem } from "@components/cards/product";
 import { FeedbackProductProps } from "@components/groups/feedbackProduct";
 import { LikeProductProps } from "@components/groups/likeProduct";
+import { HandleProductProps } from "@components/groups/handleProduct";
 
-interface ProductListProps extends React.HTMLAttributes<HTMLUListElement> {
+interface ProductListProps extends HTMLAttributes<HTMLUListElement> {
   list: ProductItem[];
   highlight?: string[];
-  children?: React.ReactNode;
+  children?: ReactElement | ReactElement[];
 }
 
 const ProductList = (props: ProductListProps) => {
@@ -23,8 +25,9 @@ const ProductList = (props: ProductListProps) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
             if (child.key === "LikeProduct") includeLikeProduct = true;
-            if (child.key === "LikeProduct") return cloneElement(child as React.ReactElement<LikeProductProps>, { item });
-            if (child.key === "FeedbackProduct") return cloneElement(child as React.ReactElement<FeedbackProductProps>, { item });
+            if (child.key === "LikeProduct") return cloneElement(child as ReactElement<LikeProductProps>, { item });
+            if (child.key === "FeedbackProduct") return cloneElement(child as ReactElement<FeedbackProductProps>, { item });
+            if (child.key === "HandleProduct") return cloneElement(child as ReactElement<HandleProductProps>, { item });
           }
           return child;
         });

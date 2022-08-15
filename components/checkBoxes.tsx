@@ -1,6 +1,7 @@
+import type { HTMLAttributes } from "react";
 import { UseFormRegisterReturn } from "react-hook-form";
 
-interface CheckBoxesProps extends React.HTMLAttributes<HTMLInputElement> {
+interface CheckBoxesProps extends HTMLAttributes<HTMLInputElement> {
   name: string;
   id: string;
   text: string;

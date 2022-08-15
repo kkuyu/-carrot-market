@@ -1,6 +1,6 @@
-import React from "react";
+import type { HTMLAttributes } from "react";
 
-interface LabelsProps extends React.HTMLAttributes<HTMLLabelElement | HTMLSpanElement> {
+interface LabelsProps extends HTMLAttributes<HTMLLabelElement | HTMLSpanElement> {
   tag?: "label" | "span";
   text?: string;
   htmlFor: string;

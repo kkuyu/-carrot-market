@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @api
 import { StoryCategoryEnum, StoryCategory } from "@api/stories/types";
@@ -14,7 +15,7 @@ export interface EditStoryTypes {
   content: string;
 }
 
-interface EditStoryProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditStoryProps extends HTMLAttributes<HTMLFormElement> {
   formId: string;
   formData: UseFormReturn<EditStoryTypes, object>;
   onValid: (validForm: EditStoryTypes) => void;

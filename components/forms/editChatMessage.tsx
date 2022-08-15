@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @components
 import Buttons from "@components/buttons";
@@ -7,7 +8,7 @@ export interface EditChatMessageTypes {
   text: string;
 }
 
-interface EditChatMessageProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditChatMessageProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<EditChatMessageTypes, object>;
   onValid: (validForm: EditChatMessageTypes) => void;
   isSuccess?: boolean;

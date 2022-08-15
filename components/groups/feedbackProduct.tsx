@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
-import React from "react";
+import type { HTMLAttributes } from "react";
+import { memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
@@ -12,7 +13,7 @@ import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
 
-export interface FeedbackProductProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface FeedbackProductProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackProductItem;
 }
 
@@ -83,7 +84,7 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   );
 };
 
-export default React.memo(FeedbackProduct, (prev, next) => {
+export default memo(FeedbackProduct, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
   if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;
   return true;

@@ -1,4 +1,6 @@
-interface HighlightsProps extends React.HTMLAttributes<HTMLSpanElement> {
+import type { HTMLAttributes } from "react";
+
+interface HighlightsProps extends HTMLAttributes<HTMLSpanElement> {
   text: string;
   highlight: string[];
 }

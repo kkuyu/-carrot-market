@@ -1,4 +1,5 @@
 import { IncomingMessage } from "http";
+import type { MutableRefObject } from "react";
 // @libs
 import name from "@libs/name.json";
 import { ResponseDataType } from "@libs/server/withHandler";
@@ -161,7 +162,7 @@ export const convertPhotoToFile = async (photoId: string, variant: string = "pub
   }
 };
 
-export type TimerRef = React.MutableRefObject<NodeJS.Timeout | null>;
+export type TimerRef = MutableRefObject<NodeJS.Timeout | null>;
 
 export const setTimer = (ref: TimerRef, timeToDelay: number) =>
   new Promise((resolve) => {

@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr, truncateStr } from "@libs/utils";
@@ -7,7 +8,7 @@ import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
 
 export type CommentSummaryItem = GetProfilesStoriesResponse["comments"][0];
 
-export interface CommentProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface CommentProps extends HTMLAttributes<HTMLDivElement> {
   item: CommentSummaryItem;
 }
 

@@ -1,8 +1,9 @@
 import Link from "next/link";
+import type { HTMLAttributes } from "react";
 // @components
 import CommentSummary, { CommentSummaryItem } from "@components/cards/commentSummary";
 
-interface CommentSummaryListProps extends React.HTMLAttributes<HTMLUListElement> {
+interface CommentSummaryListProps extends HTMLAttributes<HTMLUListElement> {
   list?: CommentSummaryItem[];
 }
 

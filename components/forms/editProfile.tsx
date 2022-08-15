@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @libs
 import { getRandomName } from "@libs/utils";
@@ -17,7 +18,7 @@ export interface EditProfileTypes {
   concerns?: ProfilesConcernEnum[];
 }
 
-interface EditProfileProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditProfileProps extends HTMLAttributes<HTMLFormElement> {
   formId: string;
   formData: UseFormReturn<EditProfileTypes, object>;
   onValid: (validForm: EditProfileTypes) => void;

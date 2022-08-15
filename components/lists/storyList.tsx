@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { HTMLAttributes, ReactElement } from "react";
 import { Children, cloneElement, isValidElement } from "react";
 // @libs
 import { truncateStr } from "@libs/utils";
@@ -7,10 +8,10 @@ import Story, { StoryItem, StoryProps } from "@components/cards/story";
 import PictureList, { PictureListItem } from "@components/groups/pictureList";
 import { FeedbackStoryProps } from "@components/groups/feedbackStory";
 
-interface StoryListProps extends React.HTMLAttributes<HTMLUListElement> {
+interface StoryListProps extends HTMLAttributes<HTMLUListElement> {
   list: StoryItem[];
   highlight?: string[];
-  children?: React.ReactNode;
+  children?: ReactElement | ReactElement[];
 }
 
 const StoryList = (props: StoryListProps) => {
@@ -25,7 +26,7 @@ const StoryList = (props: StoryListProps) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
             if (child.key === "FeedbackStory") includeFeedbackStory = true;
-            if (child.key === "FeedbackStory") return cloneElement(child as React.ReactElement<FeedbackStoryProps>, { item });
+            if (child.key === "FeedbackStory") return cloneElement(child as ReactElement<FeedbackStoryProps>, { item });
           }
           return child;
         });

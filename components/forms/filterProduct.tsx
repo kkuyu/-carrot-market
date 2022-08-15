@@ -1,11 +1,13 @@
-import CheckBoxes from "@components/checkBoxes";
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
+// @components
+import CheckBoxes from "@components/checkBoxes";
 
 export interface FilterProductTypes {
   excludeSold: boolean;
 }
 
-interface FilterProductProps extends React.HTMLAttributes<HTMLFormElement> {
+interface FilterProductProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<FilterProductTypes, object>;
   onValid: (validForm: FilterProductTypes) => void;
   isSuccess?: boolean;

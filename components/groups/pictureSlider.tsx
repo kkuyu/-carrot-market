@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useEffect, useRef, useState } from "react";
 import Flicking, { FlickingOptions, FlickingProps, ViewportSlot } from "@egjs/react-flicking";
 import "@egjs/react-flicking/dist/flicking.min.css";
@@ -30,25 +31,6 @@ const PictureSlider = (props: PictureSliderProps) => {
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
 
-  const makeSliderItem = (item: PictureSliderItem, index: number, array: PictureSliderItem[]) => {
-    return (
-      <button
-        type="button"
-        className="relative block w-full bg-slate-300"
-        onClick={() => {
-          openPictureModal(list, index);
-        }}
-        onFocus={() => {
-          if (!flickingRef.current) return;
-          flickingRef.current.viewport.element.scrollLeft = 0;
-          flickingRef.current.moveTo(index, 0);
-        }}
-      >
-        <Images cloudId={item.src} cloudVariant="public" size="100%" ratioX={5} ratioY={3} rounded="none" alt={item.name} />
-      </button>
-    );
-  };
-
   const updateSlider = () => {
     if (list.length <= 1) return;
 
@@ -74,6 +56,26 @@ const PictureSlider = (props: PictureSliderProps) => {
     });
   };
 
+  const SliderItem = (itemProps: HTMLAttributes<HTMLButtonElement> & { item: PictureSliderItem; index: number; array: PictureSliderItem[] }) => {
+    const { className: itemClassName = "", item, index, array } = itemProps;
+    return (
+      <button
+        type="button"
+        className={`relative block w-full bg-slate-300 ${itemClassName}`}
+        onClick={() => {
+          openPictureModal(list, index);
+        }}
+        onFocus={() => {
+          if (!flickingRef.current) return;
+          flickingRef.current.viewport.element.scrollLeft = 0;
+          flickingRef.current.moveTo(index, 0);
+        }}
+      >
+        <Images cloudId={item.src} cloudVariant="public" size="100%" ratioX={5} ratioY={3} rounded="none" alt={item.name} />
+      </button>
+    );
+  };
+
   useEffect(() => {
     setTimeout(() => {
       if (!mounted) return;
@@ -89,7 +91,11 @@ const PictureSlider = (props: PictureSliderProps) => {
   if (!list.length) return null;
 
   if (list.length === 1) {
-    return <div className="relative block w-full">{makeSliderItem(list[0], 0, list)}</div>;
+    return (
+      <div className="relative block w-full">
+        <SliderItem item={list[0]} index={0} array={list} />
+      </div>
+    );
   }
 
   return (
@@ -114,7 +120,7 @@ const PictureSlider = (props: PictureSliderProps) => {
     >
       {list.map((item, index, array) => (
         <li key={item.key} id={item.key} role="tabpanel" className="aaa relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
-          {makeSliderItem(item, index, array)}
+          <SliderItem item={item} index={index} array={array} />
         </li>
       ))}
       <ViewportSlot>

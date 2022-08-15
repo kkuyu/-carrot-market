@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { Kind } from "@prisma/client";
 // @api
 import { GetProductsResponse } from "@api/products";
@@ -7,7 +8,7 @@ import Images from "@components/images";
 
 export type ProductSummaryItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
 
-export interface ProductSummaryProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface ProductSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductSummaryItem;
 }
 

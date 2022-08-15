@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 // @libs
 import { getReviewManners } from "@libs/utils";
 // @api
@@ -6,7 +7,7 @@ import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
 
 type MannerListItem = GetProfilesMannersResponse["manners"][0] | GetProfilesDetailResponse["manners"][0];
 
-interface MannerListProps extends React.HTMLAttributes<HTMLUListElement> {
+interface MannerListProps extends HTMLAttributes<HTMLUListElement> {
   list: MannerListItem[];
 }
 

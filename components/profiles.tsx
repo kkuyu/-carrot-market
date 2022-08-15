@@ -1,7 +1,8 @@
+import type { HTMLAttributes } from "react";
 // @components
 import Images from "@components/images";
 
-export interface ProfilesProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ProfilesProps extends HTMLAttributes<HTMLDivElement> {
   user: {
     id: number;
     name: string;

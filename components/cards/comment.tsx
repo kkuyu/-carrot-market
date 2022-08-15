@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 // @libs
 import { getDiffTimeStr } from "@libs/utils";
@@ -11,7 +12,7 @@ import Profiles, { ProfilesProps } from "@components/profiles";
 
 export type CommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
-export interface CommentProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface CommentProps extends HTMLAttributes<HTMLDivElement> {
   item: CommentItem;
 }
 

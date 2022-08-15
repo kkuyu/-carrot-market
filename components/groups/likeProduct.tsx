@@ -1,4 +1,5 @@
-import React from "react";
+import type { HTMLAttributes } from "react";
+import { memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
@@ -84,7 +85,7 @@ const LikeProduct = (props: LikeProductProps) => {
   );
 };
 
-export default React.memo(LikeProduct, (prev, next) => {
+export default memo(LikeProduct, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
   if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;
   return true;

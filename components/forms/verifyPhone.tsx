@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @components
 import Inputs from "@components/inputs";
@@ -8,7 +9,7 @@ export interface VerifyPhoneTypes {
   targetEmail?: string;
 }
 
-interface VerifyPhoneProps extends React.HTMLAttributes<HTMLFormElement> {
+interface VerifyPhoneProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<VerifyPhoneTypes, object>;
   onValid: (validForm: VerifyPhoneTypes) => void;
   isSuccess?: boolean;

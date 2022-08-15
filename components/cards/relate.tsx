@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 // @api
 import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 // @components
@@ -5,7 +6,7 @@ import Images from "@components/images";
 
 export type RelateItem = GetProductsDetailOthersResponse["otherProducts"][0];
 
-interface RelateProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+interface RelateProps extends HTMLAttributes<HTMLDivElement> {
   item: RelateItem;
 }
 

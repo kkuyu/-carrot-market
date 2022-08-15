@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @components
 import Inputs from "@components/inputs";
@@ -7,7 +8,7 @@ export interface VerifyEmailTypes {
   email: string;
 }
 
-interface VerifyEmailProps extends React.HTMLAttributes<HTMLFormElement> {
+interface VerifyEmailProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<VerifyEmailTypes, object>;
   onValid: (validForm: VerifyEmailTypes) => void;
   isSuccess?: boolean;

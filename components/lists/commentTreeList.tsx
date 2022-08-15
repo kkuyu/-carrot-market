@@ -1,3 +1,4 @@
+import type { HTMLAttributes, ReactElement } from "react";
 import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
@@ -6,13 +7,13 @@ import Comment, { CommentItem } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
 import { FeedbackCommentProps } from "@components/groups/feedbackComment";
 
-interface CommentTreeListProps extends React.HTMLAttributes<HTMLDivElement> {
+interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
   list?: CommentItem[];
   depth?: number;
   reCommentRefId?: number;
   countReComments?: number;
   moreReComments?: (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => void;
-  children?: React.ReactNode;
+  children?: ReactElement | ReactElement[];
 }
 
 const CommentTreeList = (props: CommentTreeListProps) => {
@@ -50,9 +51,9 @@ const CommentTreeList = (props: CommentTreeListProps) => {
             const childrenWithProps = Children.map(children, (child) => {
               if (isValidElement(child)) {
                 if (child.key === "HandleComment") includeHandleComment = true;
-                if (child.key === "HandleComment") return cloneElement(child as React.ReactElement<HandleCommentProps>, { item: itemData });
-                if (child.key === "FeedbackComment") return cloneElement(child as React.ReactElement<FeedbackCommentProps>, { item: itemData });
-                if (child.key === "CommentTreeList") return cloneElement(child as React.ReactElement<CommentTreeListProps>, { list, moreReComments, children, ...childInfo });
+                if (child.key === "HandleComment") return cloneElement(child as ReactElement<HandleCommentProps>, { item: itemData });
+                if (child.key === "FeedbackComment") return cloneElement(child as ReactElement<FeedbackCommentProps>, { item: itemData });
+                if (child.key === "CommentTreeList") return cloneElement(child as ReactElement<CommentTreeListProps>, { list, moreReComments, children, ...childInfo });
               }
               return child;
             });

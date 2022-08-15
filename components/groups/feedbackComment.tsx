@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
-import React from "react";
+import type { HTMLAttributes } from "react";
+import { memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
@@ -17,7 +18,7 @@ import RegisterModal, { RegisterModalProps, RegisterModalName } from "@component
 
 export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
-export interface FeedbackCommentProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface FeedbackCommentProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackCommentItem;
 }
 
@@ -94,7 +95,7 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
   );
 };
 
-export default React.memo(FeedbackComment, (prev, next) => {
+export default memo(FeedbackComment, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
   if (prev?.item?.content !== next?.item?.content) return false;
   if (prev?.item?.updatedAt !== next?.item?.updatedAt) return false;

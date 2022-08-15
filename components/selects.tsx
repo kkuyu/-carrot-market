@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useRef, useState, useEffect } from "react";
 import { UseFormRegisterReturn } from "react-hook-form";
 
@@ -6,7 +7,7 @@ interface OptionItem {
   text: string;
 }
 
-interface SelectsProps extends React.HTMLAttributes<HTMLSelectElement> {
+interface SelectsProps extends HTMLAttributes<HTMLSelectElement> {
   name: string;
   options: OptionItem[];
   currentValue: string;
@@ -24,11 +25,6 @@ const Selects = (props: SelectsProps) => {
   const currentText = options.find((option) => option.value === currentValue)?.text;
   const combobox = useRef<HTMLButtonElement>(null);
   const listbox = useRef<HTMLDivElement>(null);
-
-  const classNames = {
-    comboboxOpen: "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)] focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]",
-    comboboxClose: "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]",
-  };
 
   const selectItem = (item: OptionItem) => {
     updateValue(name, item.value);
@@ -58,7 +54,10 @@ const Selects = (props: SelectsProps) => {
         type="button"
         id={name}
         onClick={() => setOpen((prev) => !prev)}
-        className={`relative w-full px-3 py-2 text-left border border-gray-300 rounded-md outline-none ${open ? classNames.comboboxOpen : classNames.comboboxClose} ${className}`}
+        className={`relative w-full px-3 py-2 text-left border rounded-md outline-none
+        ${open ? "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)]" : "border-gray-300"}
+        ${open ? "focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]" : "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]"}
+        ${className}`}
         aria-expanded={open ? "true" : "false"}
         aria-haspopup="listbox"
       >

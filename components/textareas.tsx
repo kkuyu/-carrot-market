@@ -1,6 +1,7 @@
+import type { HTMLAttributes } from "react";
 import { UseFormRegisterReturn } from "react-hook-form";
 
-interface TextAreasProps extends React.HTMLAttributes<HTMLTextAreaElement> {
+interface TextAreasProps extends HTMLAttributes<HTMLTextAreaElement> {
   name?: string;
   required?: boolean;
   disabled?: boolean;

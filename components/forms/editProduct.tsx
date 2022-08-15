@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 // @api
 import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
@@ -17,7 +18,7 @@ export interface EditProductTypes {
   description: string;
 }
 
-interface EditProductProps extends React.HTMLAttributes<HTMLFormElement> {
+interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
   formId: string;
   formData: UseFormReturn<EditProductTypes, object>;
   onValid: (validForm: EditProductTypes) => void;

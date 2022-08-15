@@ -1,13 +1,15 @@
+import type { HTMLAttributes } from "react";
+import { UseFormReturn } from "react-hook-form";
+// @components
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
 import Labels from "@components/labels";
-import { UseFormReturn } from "react-hook-form";
 
 export interface ResumeProductTypes {
   price: number;
 }
 
-interface ResumeProductProps extends React.HTMLAttributes<HTMLFormElement> {
+interface ResumeProductProps extends HTMLAttributes<HTMLFormElement> {
   formData: UseFormReturn<ResumeProductTypes, object>;
   onValid: (validForm: ResumeProductTypes) => void;
   isSuccess?: boolean;

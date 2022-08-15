@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 import { Kind } from "@prisma/client";
 // @libs
@@ -12,7 +13,7 @@ import Highlights from "@components/highlights";
 
 export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0] | GetSearchResultResponse["products"][0];
 
-export interface ProductProps extends React.HtmlHTMLAttributes<HTMLDivElement> {
+export interface ProductProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductItem;
   highlight?: string[];
 }

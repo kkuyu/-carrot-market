@@ -1,3 +1,4 @@
+import type { HTMLAttributes } from "react";
 // @libs
 import { getStoryCategory } from "@libs/utils";
 // @api
@@ -6,7 +7,7 @@ import { GetCommentsDetailResponse } from "@api/comments/[id]";
 
 export type StorySummaryItem = GetStoriesResponse["stories"][0] | GetCommentsDetailResponse["comment"]["story"];
 
-export interface StorySummaryProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface StorySummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: StorySummaryItem;
 }
 

@@ -1,8 +1,10 @@
+import type { HTMLAttributes } from "react";
+// @api
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 
 export type ChatMessageItem = GetChatsDetailResponse["chat"]["chatMessages"][0];
 
-export interface ChatMessageProps extends React.HTMLAttributes<HTMLDivElement> {
+export interface ChatMessageProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatMessageItem;
   direction: "forward" | "reverse";
   isDifferentDate: boolean;

@@ -1,7 +1,10 @@
-import ChatMessage, { ChatMessageItem, ChatMessageProps } from "@components/cards/chatMessage";
+import type { HTMLAttributes } from "react";
+// @libs
 import useUser from "@libs/client/useUser";
+// @components
+import ChatMessage, { ChatMessageItem, ChatMessageProps } from "@components/cards/chatMessage";
 
-interface ChatMessageListProps extends React.HTMLAttributes<HTMLDivElement> {
+interface ChatMessageListProps extends HTMLAttributes<HTMLDivElement> {
   list: ChatMessageItem[];
 }
 
