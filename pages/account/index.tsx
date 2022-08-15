@@ -18,7 +18,7 @@ import { PostAccountLogoutResponse } from "@api/account/logout";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import AlertModal, { AlertStyleEnum, AlertModalProps } from "@components/commons/modals/case/alertModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import Buttons from "@components/buttons";
 
@@ -49,16 +49,25 @@ const AccountIndexPage: NextPage = () => {
   });
 
   const openLogoutModal = () => {
-    openModal<MessageModalProps>(MessageModal, "LogoutUser", {
-      type: "confirm",
+    openModal<AlertModalProps>(AlertModal, "LogoutUser", {
       message: "정말 로그아웃하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "로그아웃",
-      hasBackdrop: true,
-      onConfirm: () => {
-        if (logoutUserLoading) return;
-        logoutUser({});
-      },
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: null,
+        },
+        {
+          key: "destructive",
+          style: AlertStyleEnum["destructive"],
+          text: "로그아웃",
+          handler: () => {
+            if (logoutUserLoading) return;
+            logoutUser({});
+          },
+        },
+      ],
     });
   };
 

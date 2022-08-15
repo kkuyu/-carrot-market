@@ -7,13 +7,16 @@ import useMutation from "@libs/client/useMutation";
 import { PostUserRequestBody, PostUserResponse } from "@api/user";
 import { PostDummyResponse } from "@api/user/dummy";
 // @components
-import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/case/hometownDropdownModal";
-import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
+import { ModalComponentProps } from "@components/commons";
+import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
+import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 
-export interface HometownDropdownProps {}
+export interface HometownDropdownModalProps {}
 
-const HometownDropdown = (props: HometownDropdownProps) => {
+export const HometownDropdownModalName = "HometownDropdown";
+
+const HometownDropdownModal = (props: HometownDropdownModalProps & CustomModalProps & ModalComponentProps) => {
   const { user, type: userType, mutate: mutateUser } = useUser();
   const { openModal, closeModal } = useModal();
   const { openToast } = useToast();
@@ -67,6 +70,17 @@ const HometownDropdown = (props: HometownDropdownProps) => {
     updateDummy(updateData);
   };
 
+  const modalOptions: HometownDropdownModalProps & CustomModalProps = {
+    ...props,
+  };
+
+  const modalProps: HometownDropdownModalProps & CustomModalProps & ModalComponentProps = {
+    ...modalOptions,
+    name: props?.name || HometownDropdownModalName,
+    onOpen: () => openModal<HometownDropdownModalProps>(HometownDropdownModal, HometownDropdownModalName, modalOptions),
+    onClose: () => closeModal(HometownDropdownModal, HometownDropdownModalName),
+  };
+
   const addressButtons = [
     {
       key: "MAIN",
@@ -98,16 +112,18 @@ const HometownDropdown = (props: HometownDropdownProps) => {
   ];
 
   return (
-    <div className="absolute top-12 left-3 py-2 bg-white rounded-md" tabIndex={0}>
-      {addressButtons.map(({ key, text, isActive, selectItem }) => {
-        return (
-          <button key={key} type="button" className={`block w-full px-5 py-2 text-left ${isActive ? "font-semibold text-black" : ""}`} onClick={selectItem}>
-            {text}
-          </button>
-        );
-      })}
-    </div>
+    <CustomModal {...modalProps}>
+      <div className="absolute top-12 left-3 py-2 bg-white rounded-md pointer-events-auto" tabIndex={0}>
+        {addressButtons.map(({ key, text, isActive, selectItem }) => {
+          return (
+            <button key={key} type="button" className={`block w-full px-5 py-2 text-left ${isActive ? "font-semibold text-black" : ""}`} onClick={selectItem}>
+              {text}
+            </button>
+          );
+        })}
+      </div>
+    </CustomModal>
   );
 };
 
-export default HometownDropdown;
+export default HometownDropdownModal;

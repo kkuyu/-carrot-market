@@ -47,8 +47,8 @@ const PictureSlider = (props: PictureSliderProps) => {
   const openPictureModal = (list: PictureSliderItem[], index: number) => {
     openModal<LayerModalProps>(LayerModal, "PictureZoom", {
       headerType: "transparent",
-      closeColor: "white",
-      contents: (
+      closeBtnColor: "white",
+      children: (
         <div className="absolute top-0 left-0 right-0 bottom-0">
           <PictureZoom list={list} defaultIndex={index} />
         </div>

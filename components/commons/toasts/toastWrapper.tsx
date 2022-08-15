@@ -13,12 +13,12 @@ const ToastWrapper = () => {
 
   return (
     <ToastContainer>
-      {currentToast?.map(({ Type, Component, name, props }) => {
-        const onOpen = () => open(Type, Component, name, props);
-        const onClose = () => close(Type, Component, name);
+        {currentToast?.map(({ Type, Component, name, props }) => {
+          const onOpen = () => open(Type, Component, name, props);
+          const onClose = () => close(Type, Component, name);
 
-        return <Component key={name} {...props} {...{ name, onOpen, onClose }} />;
-      })}
+          return <Component key={name} {...props} {...{ name, onOpen, onClose }} />;
+        })}
     </ToastContainer>
   );
 };

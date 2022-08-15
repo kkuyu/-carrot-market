@@ -5,7 +5,7 @@ import type { HTMLAttributes } from "react";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 // @components
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 
 interface FloatingButtonsProps extends HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> {}
 
@@ -20,7 +20,7 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
     const pathname = router.pathname === "/" ? "/products/upload" : router.pathname === "/stories" ? "/stories/upload" : null;
     if (userType !== "member" || !pathname) {
       return (
-        <button type="button" className={`${buttonClassName} ${className}`} onClick={() => openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {})} {...restProps}>
+        <button type="button" className={`${buttonClassName} ${className}`} onClick={() => openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {})} {...restProps}>
           {children}
         </button>
       );

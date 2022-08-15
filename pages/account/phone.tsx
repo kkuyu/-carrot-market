@@ -20,7 +20,7 @@ import { PostVerificationUpdateResponse } from "@api/verification/update";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyPhone, { VerifyPhoneTypes } from "@components/forms/verifyPhone";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
@@ -104,24 +104,32 @@ const AccountPhonePage: NextPage = () => {
   });
 
   const openConfirmUpdateModal = () => {
-    openModal<MessageModalProps>(MessageModal, "ConfirmUpdate", {
-      type: "confirm",
+    openModal<AlertModalProps>(AlertModal, "ConfirmUpdate", {
       message: `${verifyPhoneForm.getValues("phone")} 로 변경할까요?`,
-      cancelBtn: "취소",
-      confirmBtn: "변경하기",
-      hasBackdrop: true,
-      onCancel: () => {
-        verifyTokenForm.setValue("token", "");
-        setTimeout(() => {
-          (document.querySelector(".container button[type='submit']") as HTMLButtonElement)?.focus();
-        }, 0);
-      },
-      onConfirm: () => {
-        updateUser({
-          originData: { phone: user?.phone },
-          updateData: { phone: verifyPhoneForm.getValues("phone") },
-        });
-      },
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: () => {
+            verifyTokenForm.setValue("token", "");
+            setTimeout(() => {
+              (document.querySelector(".container button[type='submit']") as HTMLButtonElement)?.focus();
+            }, 0);
+          },
+        },
+        {
+          key: "default",
+          style: AlertStyleEnum["primary"],
+          text: "변경하기",
+          handler: () => {
+            updateUser({
+              originData: { phone: user?.phone },
+              updateData: { phone: verifyPhoneForm.getValues("phone") },
+            });
+          },
+        },
+      ],
     });
   };
 

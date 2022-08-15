@@ -24,7 +24,9 @@ function CustomApp({ Component, pageProps }: AppPropsWithLayout<{}>) {
     <>
       <SWRConfig value={{ fetcher: (url: string) => fetch(url).then((response) => response.json()) }}>
         <CommonProvider>
-          <LayoutProvider>{getLayout(<Component {...pageProps} />)}</LayoutProvider>
+          <LayoutProvider>
+            <>{getLayout(<Component {...pageProps} />)}</>
+          </LayoutProvider>
         </CommonProvider>
       </SWRConfig>
       {/* todo: remove */}

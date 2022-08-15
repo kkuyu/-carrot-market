@@ -37,8 +37,8 @@ const PictureList = (props: PictureListProps) => {
   const openThumbnailModal = (list: PictureListItem[], index: number) => {
     openModal<LayerModalProps>(LayerModal, "PictureZoom", {
       headerType: "transparent",
-      closeColor: "black",
-      contents: (
+      closeBtnColor: "black",
+      children: (
         <div className="absolute top-0 left-0 right-0 bottom-0">
           <PictureZoom list={list} defaultIndex={index} />
         </div>

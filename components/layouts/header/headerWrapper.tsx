@@ -2,6 +2,7 @@ import React, { useContext, useEffect, useMemo } from "react";
 // @components
 import { LayoutDispatchContext, LayoutStateContext } from "@components/layouts/layoutContext";
 import HeaderContainer from "@components/layouts/header/headerContainer";
+import { ActionModalProps } from "@components/commons/modals/case/actionModal";
 
 export const HeaderUtils = {
   Address: "address",
@@ -22,7 +23,7 @@ export interface HeaderOptions {
   titleTag?: "h1" | "strong";
   isTransparent?: boolean;
   submitId?: string;
-  kebabActions?: { key: string; text: string; onClick: () => void }[];
+  kebabActions?: ActionModalProps["actions"];
 }
 
 interface HeaderWrapperProps {

@@ -13,8 +13,8 @@ import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsLikeResponse } from "@api/comments/[id]/like";
 // @components
-import WelcomeModal, { WelcomeModalProps, WelcomeModalName } from "@components/commons/modals/case/welcomeModal";
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 
 export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
@@ -48,8 +48,8 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
   // like
   const clickLike = () => {
     if (userType === "member") toggleLike();
-    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
-    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
+    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
   };
   const toggleLike = () => {
     if (!data) return;

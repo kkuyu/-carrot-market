@@ -11,12 +11,12 @@ import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 import { PostProductsLikeResponse } from "@api/products/[id]/like";
 // @components
-import WelcomeModal, { WelcomeModalProps, WelcomeModalName } from "@components/commons/modals/case/welcomeModal";
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 
 export type LikeProductItem = GetProfilesProductsResponse["products"][0];
 
-export interface LikeProductProps extends React.HTMLAttributes<HTMLButtonElement> {
+export interface LikeProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: LikeProductItem;
 }
 
@@ -45,8 +45,8 @@ const LikeProduct = (props: LikeProductProps) => {
   // like
   const clickLike = () => {
     if (userType === "member") toggleLike();
-    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
-    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
+    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
   };
   const toggleLike = () => {
     if (!data?.product) return;

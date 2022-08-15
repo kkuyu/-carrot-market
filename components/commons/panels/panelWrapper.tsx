@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo } from "react";
 // @components
+import { PanelDefaultProps } from "@components/commons";
 import { CommonDispatchContext, CommonStateContext } from "@components/commons/commonContext";
 import PanelContainer from "@components/commons/panels/panelContainer";
 
@@ -7,10 +8,19 @@ const PanelWrapper = () => {
   const currentState = useContext(CommonStateContext);
   const { open, close } = useContext(CommonDispatchContext);
 
-  const currentPanel = useMemo(() => currentState.get("Panel"), [currentState]);
+  const currentPanel = useMemo(() => {
+    return currentState.get("Panel")?.map((panel) => ({
+      ...panel,
+      props: {
+        ...panel.props,
+        scrim: panel?.props?.scrim || PanelDefaultProps.scrim,
+      },
+    }));
+  }, [currentState]);
 
   useEffect(() => {
     if (currentPanel?.length) {
+      if (!currentPanel.find((panel) => panel.props.scrim === "modal")) return;
       document.body.classList.add("panel-open");
     } else {
       document.body.classList.remove("panel-open");

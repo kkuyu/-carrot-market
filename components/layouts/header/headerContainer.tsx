@@ -4,15 +4,14 @@ import { useForm } from "react-hook-form";
 // @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
-import usePanel from "@libs/client/usePanel";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { PostSearchResponse } from "@api/search";
 // @components
 import { HeaderOptions, HeaderUtils } from "@components/layouts/header/headerWrapper";
-import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/case/hometownDropdownModal";
-import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
-import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
+import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
+import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/instance/hometownDropdownModal";
+import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import SearchKeyword, { SearchKeywordTypes } from "@components/forms/searchKeyword";
 
 export interface HeaderProps extends HeaderOptions {}
@@ -22,7 +21,6 @@ const Header = (props: HeaderProps) => {
   const router = useRouter();
   const { user, currentAddr, type: userType } = useUser();
   const { openModal } = useModal();
-  const { openPanel } = usePanel();
 
   const searchKeywordForm = useForm<SearchKeywordTypes>();
 
@@ -85,10 +83,8 @@ const Header = (props: HeaderProps) => {
         );
       case HeaderUtils["Kebab"]:
         const clickKebab = () => {
-          openPanel<ActionPanelProps>(ActionPanel, name, {
-            hasBackdrop: true,
+          openModal<ActionModalProps>(ActionModal, "handleProduct", {
             actions: kebabActions || [],
-            cancelBtn: "취소",
           });
         };
         return (

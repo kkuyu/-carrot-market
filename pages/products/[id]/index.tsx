@@ -21,8 +21,9 @@ import { PostChatsResponse } from "@api/chats";
 import { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import { ActionStyleEnum } from "@components/commons/modals/case/actionModal";
+import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
@@ -98,7 +99,7 @@ const ProductsDetailPage: NextPage = () => {
       moveChat();
       return;
     }
-    openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
   };
   const moveChat = () => {
     if (createChatLoading) return;
@@ -110,12 +111,22 @@ const ProductsDetailPage: NextPage = () => {
 
   // modal: sale
   const openSaleModal = () => {
-    openModal<MessageModalProps>(MessageModal, "ConfirmSoldToSale", {
-      type: "confirm",
-      hasBackdrop: true,
-      message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
-      confirmBtn: "변경",
-      onConfirm: () => toggleSale(),
+    openModal<AlertModalProps>(AlertModal, "ConfirmSoldToSale", {
+      message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요.\n그래도 변경하시겠어요?",
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: null,
+        },
+        {
+          key: "destructive",
+          style: AlertStyleEnum["destructive"],
+          text: "변경",
+          handler: () => toggleSale(),
+        },
+      ],
     });
   };
 
@@ -124,27 +135,28 @@ const ProductsDetailPage: NextPage = () => {
     if (!userType) return;
     if (!data?.product) return;
     const kebabActions = [
-      { key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) },
-      { key: "report", text: "신고", onClick: () => console.log("신고") },
-      { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
-      { key: "sold", text: "판매완료", onClick: () => toggleSale() },
-      { key: "edit", text: "게시글 수정", onClick: () => router.push(`/products/${data?.product?.id}/edit`) },
-      { key: "resume", text: "끌어올리기", onClick: () => router.push(`/products/${data?.product?.id}/resume`) },
-      { key: "delete", text: "삭제", onClick: () => router.push(`/products/${data?.product?.id}/delete`) },
-      { key: "sale", text: "판매중", onClick: () => (data?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
-      { key: "review", text: "거래 후기 보내기", onClick: () => router.push(`/products/${data?.product?.id}/review`) },
+      { key: "welcome", style: ActionStyleEnum["primary"], text: "당근마켓 시작하기", handler: () => router.push(`/welcome`) },
+      { key: "report", style: ActionStyleEnum["destructive"], text: "신고", handler: () => console.log("신고") },
+      { key: "block", style: ActionStyleEnum["default"], text: "이 사용자의 글 보지 않기", handler: () => console.log("이 사용자의 글 보지 않기") },
+      { key: "sold", style: ActionStyleEnum["default"], text: "판매완료", handler: () => toggleSale() },
+      { key: "edit", style: ActionStyleEnum["default"], text: "게시글 수정", handler: () => router.push(`/products/${data?.product?.id}/edit`) },
+      { key: "resume", style: ActionStyleEnum["default"], text: "끌어올리기", handler: () => router.push(`/products/${data?.product?.id}/resume`) },
+      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${data?.product?.id}/delete`) },
+      { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (data?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
+      { key: "review", style: ActionStyleEnum["default"], text: "거래 후기 보내기", handler: () => router.push(`/products/${data?.product?.id}/review`) },
+      { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
     ];
     changeLayout({
       meta: {},
       header: {
         kebabActions:
           userType === "guest"
-            ? kebabActions.filter((action) => ["welcome"].includes(action.key))
+            ? kebabActions.filter((action) => ["welcome", "cancel"].includes(action.key))
             : user?.id !== data?.product?.userId
-            ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
+            ? kebabActions.filter((action) => ["report", "block", "cancel"].includes(action.key))
             : saleRecord
-            ? kebabActions.filter((action) => ["sold", "edit", "resume", "delete"].includes(action.key))
-            : kebabActions.filter((action) => ["sale", "edit", "review", "delete"].includes(action.key)),
+            ? kebabActions.filter((action) => ["sold", "edit", "resume", "delete", "cancel"].includes(action.key))
+            : kebabActions.filter((action) => ["sale", "edit", "review", "delete", "cancel"].includes(action.key)),
       },
       navBar: {},
     });

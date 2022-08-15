@@ -12,28 +12,6 @@ body.modal-open {
   @apply overflow-y-hidden;
 }
 
-body.panel-open .main,
-body.modal-open .main,
-body.panel-open .fixed-container .fixed-inner,
-body.modal-open .fixed-container .fixed-inner {
-  @apply overflow-y-scroll;
-}
-
-@screen sm {
-  body.panel-open .main,
-  body.modal-open .main,
-  body.panel-open .fixed-container .fixed-inner,
-  body.modal-open .fixed-container .fixed-inner {
-    @apply overflow-y-visible;
-  }
-  body.panel-open #__next,
-  body.modal-open #__next,
-  body.panel-open .fixed-container,
-  body.modal-open .fixed-container {
-    @apply overflow-y-scroll;
-  }
-}
-
 .fixed-container {
   @apply fixed left-0 right-0 w-full;
 }

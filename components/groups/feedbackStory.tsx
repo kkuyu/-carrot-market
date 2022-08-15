@@ -14,8 +14,8 @@ import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
 // @components
-import WelcomeModal, { WelcomeModalProps, WelcomeModalName } from "@components/commons/modals/case/welcomeModal";
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
@@ -52,8 +52,8 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   // like
   const clickLike = () => {
     if (userType === "member") toggleLike();
-    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
-    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
+    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
   };
   const toggleLike = (emotion: null | EmotionKeys = null) => {
     if (!data) return;
@@ -80,8 +80,8 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   };
   const clickEmotionIcon = (key: EmotionKeys) => {
     if (userType === "member") toggleLike(key);
-    if (userType === "non-member") openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
-    if (userType === "guest") openModal<WelcomeModalProps>(WelcomeModal, WelcomeModalName, {});
+    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
     setIsVisibleBox(false);
   };
   const blurEmotionBox = (e: FocusEvent<HTMLDivElement, Element>) => {

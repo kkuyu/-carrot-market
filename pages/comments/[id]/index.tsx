@@ -19,7 +19,7 @@ import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 import Comment from "@components/cards/comment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import FeedbackComment from "@components/groups/feedbackComment";
@@ -82,7 +82,7 @@ const CommentsDetailPage: NextPage = () => {
       submitReComment(data);
       return;
     }
-    openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
   };
 
   const submitReComment = (data: EditStoryCommentTypes) => {
@@ -152,7 +152,7 @@ const CommentsDetailPage: NextPage = () => {
         <div className="mt-2">
           <CommentTreeList list={commentTreeList?.[0]?.reComments} moreReComments={moreReComments} depth={commentTreeList?.[0]?.depth + 1}>
             <FeedbackComment key="FeedbackComment" />
-            {user?.id && <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} />}
+            {user?.id ? <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} /> : <></>}
             <CommentTreeList key="CommentTreeList" />
           </CommentTreeList>
         </div>

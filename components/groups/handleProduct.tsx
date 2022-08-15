@@ -1,21 +1,21 @@
 import { useRouter } from "next/router";
-import React from "react";
+import type { HTMLAttributes } from "react";
+import { memo } from "react";
 import { Kind } from "@prisma/client";
 // @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
-import usePanel from "@libs/client/usePanel";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import ActionPanel, { ActionPanelProps } from "@components/commons/panels/case/actionPanel";
+import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
+import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
 
 export type HandleProductItem = GetProfilesProductsResponse["products"][0];
 
-export interface HandleProductProps extends React.HTMLAttributes<HTMLButtonElement> {
+export interface HandleProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleProductItem;
 }
 
@@ -24,7 +24,6 @@ const HandleProduct = (props: HandleProductProps) => {
   const router = useRouter();
   const { user } = useUser();
   const { openModal } = useModal();
-  const { openPanel } = usePanel();
 
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: (data) => {
@@ -51,37 +50,44 @@ const HandleProduct = (props: HandleProductProps) => {
     updateSale({ sale: !Boolean(saleRecord) });
   };
 
-  const openHandlePanel = () => {
-    openPanel<ActionPanelProps>(ActionPanel, "handleProduct", {
-      hasBackdrop: true,
+  const openHandleModal = () => {
+    const modalActions = [
+      { key: "sale", style: ActionStyleEnum["primary"], text: "판매중", handler: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
+      { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/products/${item?.id}/edit`) },
+      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${item?.id}/delete`) },
+      { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
+    ];
+    openModal<ActionModalProps>(ActionModal, "handleProduct", {
       actions: saleRecord
-        ? [
-            { key: "update", text: "수정", onClick: () => router.push(`/products/${item?.id}/edit`) },
-            { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item?.id}/delete`) },
-          ]
-        : [
-            { key: "sale", text: "판매중", onClick: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
-            { key: "update", text: "수정", onClick: () => router.push(`/products/${item?.id}/edit`) },
-            { key: "delete", text: "삭제", onClick: () => router.push(`/products/${item?.id}/delete`) },
-          ],
-      cancelBtn: "닫기",
+        ? modalActions.filter((action) => ["update", "delete", "cancel"].includes(action.key))
+        : modalActions.filter((action) => ["sale", "update", "delete", "cancel"].includes(action.key)),
     });
   };
 
   const openSaleModal = () => {
-    openModal<MessageModalProps>(MessageModal, "ConfirmSaleToSold", {
-      type: "confirm",
-      hasBackdrop: true,
+    openModal<AlertModalProps>(AlertModal, "ConfirmSaleToSold", {
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
-      confirmBtn: "변경",
-      onConfirm: () => toggleSale(),
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: null,
+        },
+        {
+          key: "destructive",
+          style: AlertStyleEnum["destructive"],
+          text: "변경",
+          handler: () => toggleSale(),
+        },
+      ],
     });
   };
 
   if (!item) return null;
 
   return (
-    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandlePanel} disabled={saleLoading} {...restProps}>
+    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandleModal} disabled={saleLoading} {...restProps}>
       <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
       </svg>
@@ -89,7 +95,7 @@ const HandleProduct = (props: HandleProductProps) => {
   );
 };
 
-export default React.memo(HandleProduct, (prev, next) => {
+export default memo(HandleProduct, (prev, next) => {
   if (prev?.item?.id !== next?.item?.id) return false;
   return true;
 });

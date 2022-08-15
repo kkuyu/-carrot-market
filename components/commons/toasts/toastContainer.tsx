@@ -1,11 +1,10 @@
-import React, { Children, cloneElement, isValidElement } from "react";
+import type { ReactElement } from "react";
+import { Children, cloneElement, isValidElement } from "react";
+// @components
+import { ToastComponentProps } from "@components/commons";
 
 interface ToastContainerProps {
-  children: React.ReactNode;
-}
-
-export interface ToastExtraProps {
-  order: number;
+  children: ReactElement | ReactElement[];
 }
 
 const ToastContainer = (props: ToastContainerProps) => {
@@ -13,7 +12,9 @@ const ToastContainer = (props: ToastContainerProps) => {
 
   const childrenWithProps = Children.map(children, (child, index) => {
     if (isValidElement(child)) {
-      return cloneElement(child as React.ReactElement<ToastExtraProps>, { order: child.props.placement === "top" ? index : 100 - index });
+      return cloneElement(child as ReactElement<ToastComponentProps>, {
+        order: (child as ReactElement<ToastComponentProps>)?.props?.placement === "top" ? index : 100 - index,
+      });
     }
     return child;
   });

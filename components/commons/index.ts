@@ -21,7 +21,9 @@ export interface CommonDispatch {
 export type CommonState = Map<CommonType, CommonStructure[]>;
 
 // modal
-export interface ModalInitialProps {}
+export interface ModalInitialProps {
+  scrim?: "modal" | "non-modal";
+}
 export interface ModalStructure extends CommonStructure {
   Type: "Modal";
   props: ModalInitialProps;
@@ -31,9 +33,14 @@ export interface ModalComponentProps extends ModalInitialProps {
   onOpen: () => void;
   onClose: () => void;
 }
+export const ModalDefaultProps: ModalInitialProps = {
+  scrim: "modal",
+};
 
 // panel
-export interface PanelInitialProps {}
+export interface PanelInitialProps {
+  scrim?: "modal" | "non-modal";
+}
 export interface PanelStructure extends CommonStructure {
   Type: "Panel";
   props: PanelInitialProps;
@@ -43,10 +50,14 @@ export interface PanelComponentProps extends PanelInitialProps {
   onOpen: () => void;
   onClose: () => void;
 }
+export const PanelDefaultProps: PanelInitialProps = {
+  scrim: "modal",
+};
 
 // toast
 export interface ToastInitialProps {
   placement: "top" | "bottom";
+  order?: number;
   isAutoHide?: boolean;
   duration?: number;
   delay?: number;

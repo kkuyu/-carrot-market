@@ -1,11 +1,11 @@
-import React from "react";
+import type { ReactElement } from "react";
 // @components
 import MetaWrapper, { MetaOptions } from "@components/layouts/meta/metaWrapper";
 import HeaderWrapper, { HeaderOptions } from "@components/layouts/header/headerWrapper";
 import NavBarWrapper, { NavBarOptions } from "@components/layouts/navBar/navBarWrapper";
 
 export interface SiteLayoutProps {
-  children: React.ReactElement<{
+  children: ReactElement<{
     defaultLayout?: {
       meta?: MetaOptions;
       header?: HeaderOptions;
@@ -26,6 +26,6 @@ const SiteLayout = (props: SiteLayoutProps) => {
   );
 };
 
-export const getLayout = (page: React.ReactElement) => <SiteLayout>{page}</SiteLayout>;
+export const getLayout = (page: ReactElement) => <SiteLayout>{page}</SiteLayout>;
 
 export default SiteLayout;

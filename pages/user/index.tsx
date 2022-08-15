@@ -13,7 +13,7 @@ import getSsrUser from "@libs/server/getUser";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/case/hometownUpdateModal";
+import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import Profiles from "@components/profiles";
 
 const UserIndexPage: NextPage = () => {

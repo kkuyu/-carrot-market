@@ -22,8 +22,9 @@ import { PostStoriesDeleteResponse } from "@api/stories/[id]/delete";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
-import RegisterModal, { RegisterModalProps, RegisterModalName } from "@components/commons/modals/case/registerModal";
+import { ActionStyleEnum } from "@components/commons/modals/case/actionModal";
+import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
+import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 import PictureList from "@components/groups/pictureList";
 import FeedbackStory from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
@@ -105,7 +106,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
       submitReComment(data);
       return;
     }
-    openModal<RegisterModalProps>(RegisterModal, RegisterModalName, {});
+    openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
   };
 
   const submitReComment = (data: EditStoryCommentTypes) => {
@@ -127,16 +128,24 @@ const StoriesDetailPage: NextPage<{}> = () => {
 
   // modal: delete
   const openDeleteModal = () => {
-    openModal<MessageModalProps>(MessageModal, "ConfirmDeleteStory", {
-      type: "confirm",
-      message: "게시글을 정말 삭제하시겠어요?",
-      cancelBtn: "취소",
-      confirmBtn: "삭제",
-      hasBackdrop: true,
-      onConfirm: () => {
-        if (deleteLoading) return;
-        deleteStory({});
-      },
+    openModal<AlertModalProps>(AlertModal, "ConfirmDeleteStory", {
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: null,
+        },
+        {
+          key: "destructive",
+          style: AlertStyleEnum["destructive"],
+          text: "삭제",
+          handler: () => {
+            if (deleteLoading) return;
+            deleteStory({});
+          },
+        },
+      ],
     });
   };
 
@@ -155,21 +164,22 @@ const StoriesDetailPage: NextPage<{}> = () => {
   useEffect(() => {
     if (!userType) return;
     const kebabActions = [
-      { key: "welcome", text: "당근마켓 시작하기", onClick: () => router.push(`/welcome`) },
-      { key: "report", text: "신고", onClick: () => console.log("신고") },
-      { key: "block", text: "이 사용자의 글 보지 않기", onClick: () => console.log("이 사용자의 글 보지 않기") },
-      { key: "edit", text: "수정", onClick: () => router.push(`/stories/${storyData?.story?.id}/edit`) },
-      { key: "delete", text: "삭제", onClick: () => openDeleteModal() },
+      { key: "welcome", style: ActionStyleEnum["primary"], text: "당근마켓 시작하기", handler: () => router.push(`/welcome`) },
+      { key: "report", style: ActionStyleEnum["default"], text: "신고", handler: () => console.log("신고") },
+      { key: "block", style: ActionStyleEnum["default"], text: "이 사용자의 글 보지 않기", handler: () => console.log("이 사용자의 글 보지 않기") },
+      { key: "edit", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/stories/${storyData?.story?.id}/edit`) },
+      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => openDeleteModal() },
+      { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
     ];
     changeLayout({
       meta: {},
       header: {
         kebabActions:
           userType === "guest"
-            ? kebabActions.filter((action) => ["welcome"].includes(action.key))
+            ? kebabActions.filter((action) => ["welcome", "cancel"].includes(action.key))
             : user?.id !== storyData?.story?.userId
-            ? kebabActions.filter((action) => ["report", "block"].includes(action.key))
-            : kebabActions.filter((action) => ["edit", "delete"].includes(action.key)),
+            ? kebabActions.filter((action) => ["report", "block", "cancel"].includes(action.key))
+            : kebabActions.filter((action) => ["edit", "delete", "cancel"].includes(action.key)),
       },
       navBar: {},
     });
@@ -229,7 +239,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
         <div className="mt-5">
           <CommentTreeList list={commentTreeList} moreReComments={moreReComments}>
             <FeedbackComment key="FeedbackComment" />
-            {user?.id && <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" />}
+            {user?.id ? <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" /> : <></>}
             <CommentTreeList key="CommentTreeList" />
           </CommentTreeList>
         </div>

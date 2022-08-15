@@ -1,9 +1,10 @@
-import React, { useRef, useEffect } from "react";
+import type { ReactElement } from "react";
+import React, { useEffect, useRef } from "react";
 // @components
 import { PanelComponentProps } from "@components/commons";
 
 interface PanelContainerProps extends Pick<PanelComponentProps, "onClose"> {
-  children: React.ReactNode;
+  children: ReactElement;
 }
 
 const PanelContainer = (props: PanelContainerProps) => {
@@ -57,7 +58,7 @@ const PanelContainer = (props: PanelContainerProps) => {
   }, []);
 
   return (
-    <section ref={container} id="layout-panel" className="fixed-container top-0 bottom-0 z-[200]">
+    <section ref={container} id="layout-panel" className="fixed-container top-0 bottom-0 z-[200] pointer-events-none">
       <div className="fixed-inner h-full">{children}</div>
     </section>
   );

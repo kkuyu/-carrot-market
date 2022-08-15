@@ -1,9 +1,16 @@
-import React, { useState, useMemo } from "react";
+import type { ReactElement } from "react";
+import { useState, useMemo } from "react";
 // @components
 import { LayoutDispatch, LayoutState } from "@components/layouts";
 import { LayoutDispatchContext, LayoutStateContext } from "@components/layouts/layoutContext";
 
-const LayoutProvider = ({ children }: { children: React.ReactNode }) => {
+interface LayoutProviderProps {
+  children: ReactElement;
+}
+
+const LayoutProvider = (props: LayoutProviderProps) => {
+  const { children } = props;
+
   const [currentState, setCurrentState] = useState<LayoutState>({
     meta: {},
     header: {},

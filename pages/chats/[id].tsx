@@ -24,7 +24,7 @@ import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import MessageModal, { MessageModalProps } from "@components/commons/modals/case/messageModal";
+import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import EditChatMessage, { EditChatMessageTypes } from "@components/forms/editChatMessage";
 import ChatMessageList from "@components/lists/chatMessageList";
 import ProductSummary from "@components/cards/productSummary";
@@ -97,18 +97,25 @@ const ChatsDetailPage: NextPage = () => {
   const openSoldProductModal = () => {
     if (saleLoading) return;
     if (updatePurchaseLoading) return;
-    openModal<MessageModalProps>(MessageModal, "ConfirmSoldProduct", {
-      type: "confirm",
+    openModal<AlertModalProps>(AlertModal, "ConfirmSoldProduct", {
       message:
         role === "sellUser"
           ? `${data?.chat?.product?.user.name}님에게 '${chatUsers[0].name}' 상품을 판매하셨나요?`
           : `${data?.chat?.product?.name}님에게 '${data?.chat?.product?.name}' 상품을 구매하셨나요?`,
-      cancelBtn: "취소",
-      confirmBtn: role === "sellUser" ? "판매완료" : "구매완료",
-      hasBackdrop: true,
-      onConfirm: () => {
-        toggleSale();
-      },
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: null,
+        },
+        {
+          key: "primary",
+          style: AlertStyleEnum["primary"],
+          text: role === "sellUser" ? "판매완료" : "구매완료",
+          handler: () => toggleSale(),
+        },
+      ],
     });
   };
 
