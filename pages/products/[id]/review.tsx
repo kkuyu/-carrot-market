@@ -40,7 +40,12 @@ const ProductsReviewPage: NextPage = () => {
   const { data: sellUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? user?.id : productData?.product?.userId}` : null);
   const { data: purchaseUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? purchaseRecord?.userId : user?.id}` : null);
 
-  const formData = useForm<EditReviewTypes>();
+  const formData = useForm<EditReviewTypes>({
+    defaultValues: {
+      role: role,
+    },
+  });
+
   const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
     onSuccess: (data) => {
       router.replace(`/reviews/${data.review?.id}`);

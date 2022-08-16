@@ -47,8 +47,8 @@ const PictureZoom = (props: PictureZoomProps) => {
     zoomRef.current.resetTransform();
   };
 
-  const SliderItem = (itemProps: HTMLAttributes<HTMLButtonElement> & { item: PictureZoomItem; index: number; array: PictureZoomItem[] }) => {
-    const { className: itemClassName = "", item, index, array } = itemProps;
+  const SliderItem = (itemProps: { item: PictureZoomItem; index: number; array: PictureZoomItem[] } & HTMLAttributes<HTMLButtonElement>) => {
+    const { item, index, array, className: itemClassName = "" } = itemProps;
     return (
       <button
         type="button"

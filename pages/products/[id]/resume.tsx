@@ -56,7 +56,12 @@ const ProductsResumePage: NextPage = () => {
     return [target, nextTarget];
   })();
 
-  const formData = useForm<ResumeProductTypes>();
+  const formData = useForm<ResumeProductTypes>({
+    defaultValues: {
+      price: productData?.product?.price,
+    },
+  });
+
   const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: (data) => {
       router.replace(`/profiles/${data.product.userId}/products`);

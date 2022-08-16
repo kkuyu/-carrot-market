@@ -47,7 +47,7 @@ const AlertModal = (props: AlertModalProps & ModalComponentProps) => {
     destroyAlertModal();
   };
 
-  const ActionGroups = (groupProps: HTMLAttributes<HTMLDivElement> & { groupActions: AlertModalProps["actions"] }) => {
+  const ActionGroups = (groupProps: { groupActions: AlertModalProps["actions"] } & HTMLAttributes<HTMLDivElement>) => {
     const { groupActions, className: groupClassName = "" } = groupProps;
     if (!groupActions.length) return null;
     return (

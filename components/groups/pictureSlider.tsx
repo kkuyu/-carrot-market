@@ -56,8 +56,8 @@ const PictureSlider = (props: PictureSliderProps) => {
     });
   };
 
-  const SliderItem = (itemProps: HTMLAttributes<HTMLButtonElement> & { item: PictureSliderItem; index: number; array: PictureSliderItem[] }) => {
-    const { className: itemClassName = "", item, index, array } = itemProps;
+  const SliderItem = (itemProps: { item: PictureSliderItem; index: number; array: PictureSliderItem[] } & HTMLAttributes<HTMLButtonElement>) => {
+    const { item, index, array, className: itemClassName = "" } = itemProps;
     return (
       <button
         type="button"

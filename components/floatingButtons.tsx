@@ -15,7 +15,7 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
   const { type: userType } = useUser();
   const { openModal } = useModal();
 
-  const IconButton = (buttonProps: HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & { children: JSX.Element }) => {
+  const IconButton = (buttonProps: { children: JSX.Element } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { className: buttonClassName = "", children } = buttonProps;
     const pathname = router.pathname === "/" ? "/products/upload" : router.pathname === "/stories" ? "/stories/upload" : null;
     if (userType !== "member" || !pathname) {

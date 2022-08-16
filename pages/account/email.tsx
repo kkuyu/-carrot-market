@@ -109,6 +109,16 @@ const AccountEmailPage: NextPage = () => {
 
   return (
     <section className="container pt-5 pb-5">
+      <button
+        onClick={() => {
+          openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
+            placement: "bottom",
+            message: "sdfsdf",
+          });
+        }}
+      >
+        ?????
+      </button>
       <h1 className="text-2xl font-bold">{originalUser.current.userType === "member" ? "새로운" : ""} 이메일 주소를 입력해주세요</h1>
       <p className="mt-2">
         안전한 계정 관리를 위해 이메일을 등록해주세요!

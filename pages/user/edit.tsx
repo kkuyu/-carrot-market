@@ -25,7 +25,12 @@ const UserEditPage: NextPage = () => {
   const { user, type: userType, mutate: mutateUser } = useUser();
   const { changeLayout } = useLayouts();
 
-  const formData = useForm<EditProfileTypes>();
+  const formData = useForm<EditProfileTypes>({
+    defaultValues: {
+      name: user?.name,
+      concerns: !user?.concerns ? [] : (user.concerns.split(",") as EditProfileTypes["concerns"]),
+    },
+  });
 
   const [photoLoading, setPhotoLoading] = useState(true);
   const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>(`/api/user`, {

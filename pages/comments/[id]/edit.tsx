@@ -27,7 +27,12 @@ const CommentsEditPage: NextPage = () => {
 
   const { data: commentData, mutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}` : null);
 
-  const formData = useForm<EditStoryCommentTypes>();
+  const formData = useForm<EditStoryCommentTypes>({
+    defaultValues: {
+      content: commentData?.comment?.content,
+    },
+  });
+
   const [editStoryComment, { loading }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutate((prev) => prev && { ...prev, comment: { ...prev?.comment } });
