@@ -26,18 +26,12 @@ interface EditStoryProps extends HTMLAttributes<HTMLFormElement> {
 
 const EditStory = (props: EditStoryProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
-  const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
+  const { register, handleSubmit, formState, watch, setValue } = formData;
 
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,
     acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
-
-  const updateValue = (name: string, value: any) => {
-    const registerName = name as keyof EditStoryTypes;
-    resetField(registerName);
-    setValue(registerName, value);
   };
 
   return (
@@ -58,16 +52,17 @@ const EditStory = (props: EditStoryProps) => {
       {/* 카테고리 */}
       <div className="space-y-1">
         <Labels tag="span" text="카테고리" htmlFor="category" />
-        <Selects
+        <Selects<EditStoryTypes["category"]>
           register={register("category", {
             required: {
               value: true,
               message: "카테고리를 선택해주세요",
             },
           })}
-          options={[{ value: "", text: "카테고리 선택" }, ...StoryCategory]}
-          currentValue={watch("category")}
-          updateValue={updateValue}
+          initialValue={formData.getValues("category")}
+          updateValue={(value) => setValue("category", value)}
+          placeholder="카테고리를 선택해주세요"
+          optionGroups={[{ label: "카테고리 선택", options: [...StoryCategory] }]}
           required
           name="category"
         />

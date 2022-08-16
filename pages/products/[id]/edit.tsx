@@ -29,7 +29,15 @@ const ProductsEditPage: NextPage = () => {
 
   const { data: productData, mutate } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
-  const formData = useForm<EditProductTypes>();
+  const formData = useForm<EditProductTypes>({
+    defaultValues: {
+      category: productData?.product?.category as EditProductTypes["category"],
+      name: productData?.product?.name,
+      description: productData?.product?.description,
+      price: productData?.product?.price,
+    },
+  });
+
   const [photoLoading, setPhotoLoading] = useState(true);
   const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: async (data) => {

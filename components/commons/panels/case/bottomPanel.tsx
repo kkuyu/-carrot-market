@@ -7,8 +7,8 @@ import useTouch from "@libs/client/useTouch";
 import { PanelComponentProps } from "@components/commons";
 
 export interface BottomSheetProps {
-  isVisible: boolean | null;
-  closeBottomPanel: () => void;
+  isVisible?: boolean | null;
+  closeBottomPanel?: () => void;
 }
 
 export interface BottomPanelProps {

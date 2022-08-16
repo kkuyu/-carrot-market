@@ -29,18 +29,12 @@ interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
 
 const EditProduct = (props: EditProductProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
-  const { register, handleSubmit, formState, resetField, watch, getValues, setValue } = formData;
+  const { register, handleSubmit, formState, watch, setValue } = formData;
 
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,
     acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
-
-  const updateValue = (name: string, value: any) => {
-    const registerName = name as keyof EditProductTypes;
-    resetField(registerName);
-    setValue(registerName, value);
   };
 
   return (
@@ -77,16 +71,17 @@ const EditProduct = (props: EditProductProps) => {
       {/* 카테고리 */}
       <div className="space-y-1">
         <Labels tag="span" text="카테고리" htmlFor="category" />
-        <Selects
+        <Selects<EditProductTypes["category"]>
           register={register("category", {
             required: {
               value: true,
               message: "카테고리를 선택해주세요",
             },
           })}
-          options={[{ value: "", text: "카테고리 선택" }, ...ProductCategory]}
-          currentValue={watch("category")}
-          updateValue={updateValue}
+          initialValue={formData.getValues("category")}
+          updateValue={(value) => setValue("category", value)}
+          placeholder="카테고리를 선택해주세요"
+          optionGroups={[{ label: "카테고리 선택", options: [...ProductCategory] }]}
           required
           name="category"
         />

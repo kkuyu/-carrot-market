@@ -29,7 +29,13 @@ const StoriesEditPage: NextPage = () => {
 
   const { data: storyData, mutate } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
 
-  const formData = useForm<EditStoryTypes>();
+  const formData = useForm<EditStoryTypes>({
+    defaultValues: {
+      category: storyData?.story?.category as EditStoryTypes["category"],
+      content: storyData?.story?.content,
+    },
+  });
+
   const [photoLoading, setPhotoLoading] = useState(true);
   const [editStory, { loading }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: async (data) => {
