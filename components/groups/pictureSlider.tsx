@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import Flicking, { FlickingOptions, FlickingProps, ViewportSlot } from "@egjs/react-flicking";
 import "@egjs/react-flicking/dist/flicking.min.css";
 // @libs
+import { TimerRef, setTimer, clearTimer } from "@libs/utils";
 import useModal from "@libs/client/useModal";
 // @components
 import LayerModal, { LayerModalProps } from "@components/commons/modals/case/layerModal";
@@ -30,6 +31,7 @@ const PictureSlider = (props: PictureSliderProps) => {
   // slider
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
+  const delayTimer: TimerRef = useRef(null);
 
   const updateSlider = () => {
     if (list.length <= 1) return;
@@ -77,10 +79,11 @@ const PictureSlider = (props: PictureSliderProps) => {
   };
 
   useEffect(() => {
-    setTimeout(() => {
-      if (!mounted) return;
-      updateSlider();
-    }, 0);
+    const updateList = async () => {
+      await setTimer(delayTimer, 0);
+    };
+    clearTimer(delayTimer);
+    updateList();
   }, [list]);
 
   useEffect(() => {

@@ -3,6 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { ReactZoomPanPinchRef, TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import Flicking from "@egjs/react-flicking";
 import "@egjs/react-flicking/dist/flicking.min.css";
+// @libs
+import { TimerRef, setTimer, clearTimer } from "@libs/utils";
 // @components
 import Images from "@components/images";
 
@@ -30,6 +32,7 @@ const PictureZoom = (props: PictureZoomProps) => {
   // slider
   const flickingRef = useRef<Flicking>(null);
   const [flickingIndex, setFlickingIndex] = useState(defaultIndex);
+  const delayTimer: TimerRef = useRef(null);
 
   const updateSlider = () => {
     if (list.length <= 1) return;
@@ -75,11 +78,12 @@ const PictureZoom = (props: PictureZoomProps) => {
   }, [flickingIndex]);
 
   useEffect(() => {
-    setTimeout(() => {
-      if (!mounted) return;
-      updateSlider();
-      resetZoom();
-    }, 0);
+    const updateList = async () => {
+      await setTimer(delayTimer, 0);
+    };
+    clearTimer(delayTimer);
+    updateSlider();
+    resetZoom();
   }, [list]);
 
   useEffect(() => {
