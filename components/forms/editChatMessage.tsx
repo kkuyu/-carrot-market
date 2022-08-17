@@ -21,7 +21,7 @@ const EditChatMessage = (props: EditChatMessageProps) => {
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
-      <Inputs
+      <Inputs<EditChatMessageTypes["text"]>
         register={register("text", {
           required: {
             value: true,

@@ -60,7 +60,7 @@ const EditReview = (props: EditReviewProps) => {
           <Labels tag="span" htmlFor="manners" text={mannersLabel} />
           <div className="space-y-1">
             {mannersItems.map((item) => (
-              <CheckBoxes
+              <CheckBoxes<EditReviewTypes["manners"][number]>
                 key={item.value}
                 register={register("manners", {
                   required: {
@@ -84,7 +84,7 @@ const EditReview = (props: EditReviewProps) => {
         <div className="space-y-1">
           <Labels text="따뜻한 거래 경험을 알려주세요" htmlFor="text" />
           <span className="text-gray-500">남겨주신 거래 후기는 상대방의 프로필에 공개돼요</span>
-          <TextAreas
+          <TextAreas<EditReviewTypes["text"]>
             register={register("text", {
               minLength: {
                 value: 10,
@@ -104,7 +104,7 @@ const EditReview = (props: EditReviewProps) => {
         <div className="space-y-1">
           <Labels text="아쉬웠던 점을 적어주세요" htmlFor="text" />
           <span className="text-gray-500">작성한 내용은 상대방에게 전달되지 않으니 안심하세요</span>
-          <TextAreas
+          <TextAreas<EditReviewTypes["text"]>
             register={register("text", {
               minLength: {
                 value: 10,

@@ -55,7 +55,7 @@ const EditProduct = (props: EditProductProps) => {
       {/* 글 제목 */}
       <div className="space-y-1">
         <Labels text="글 제목" htmlFor="name" />
-        <Inputs
+        <Inputs<EditProductTypes["name"]>
           register={register("name", {
             required: {
               value: true,
@@ -90,7 +90,7 @@ const EditProduct = (props: EditProductProps) => {
       {/* 가격 */}
       <div className="space-y-1">
         <Labels text="가격" htmlFor="price" />
-        <Inputs
+        <Inputs<EditProductTypes["price"]>
           register={register("price", {
             required: {
               value: true,
@@ -109,7 +109,7 @@ const EditProduct = (props: EditProductProps) => {
       {/* 게시글 내용 */}
       <div className="space-y-1">
         <Labels text="게시글 내용" htmlFor="description" />
-        <TextAreas
+        <TextAreas<EditProductTypes["description"]>
           register={register("description", {
             required: {
               value: true,

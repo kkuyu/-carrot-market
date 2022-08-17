@@ -20,7 +20,7 @@ const FilterProduct = (props: FilterProductProps) => {
 
   return (
     <form onInput={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
-      <CheckBoxes register={register("excludeSold", {})} name="excludeSold" id="excludeSold" text="거래가능만 보기" />
+      <CheckBoxes<FilterProductTypes["excludeSold"]> register={register("excludeSold", {})} name="excludeSold" id="excludeSold" text="거래가능만 보기" />
     </form>
   );
 };

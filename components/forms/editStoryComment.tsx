@@ -29,7 +29,7 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
       <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
         {/* 댓글/답변/답글 */}
         <div className="space-y-1">
-          <Inputs
+          <Inputs<EditStoryCommentTypes["content"]>
             register={register("content", {
               required: true,
             })}
@@ -63,7 +63,7 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
       {/* 댓글/답변/답글 */}
       <div className="space-y-1">
         <Labels text={commentType} htmlFor="content" />
-        <TextAreas
+        <TextAreas<EditStoryCommentTypes["content"]>
           register={register("content", {
             required: {
               value: true,

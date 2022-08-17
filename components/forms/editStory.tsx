@@ -71,7 +71,7 @@ const EditStory = (props: EditStoryProps) => {
       {/* 게시글 내용 */}
       <div className="space-y-1">
         <Labels text="게시글 내용" htmlFor="content" />
-        <TextAreas
+        <TextAreas<EditStoryTypes["content"]>
           register={register("content", {
             required: {
               value: true,

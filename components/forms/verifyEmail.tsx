@@ -22,7 +22,7 @@ const VerifyEmail = (props: VerifyEmailProps) => {
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <div className="space-y-1">
-        <Inputs
+        <Inputs<VerifyEmailTypes["email"]>
           register={register("email", {
             required: {
               value: true,

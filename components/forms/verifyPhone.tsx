@@ -23,7 +23,7 @@ const VerifyPhone = (props: VerifyPhoneProps) => {
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>
       <div className="space-y-1">
-        <Inputs
+        <Inputs<VerifyPhoneTypes["phone"]>
           register={register("phone", {
             required: {
               value: true,

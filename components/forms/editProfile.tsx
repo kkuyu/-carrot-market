@@ -63,7 +63,7 @@ const EditProfile = (props: EditProfileProps) => {
       {/* 닉네임 */}
       <div className="space-y-1">
         <Labels text="닉네임" htmlFor="name" />
-        <Inputs
+        <Inputs<EditProfileTypes["name"]>
           register={register("name", {
             required: {
               value: true,

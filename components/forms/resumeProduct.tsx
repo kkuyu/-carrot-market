@@ -33,7 +33,7 @@ const ResumeProduct = (props: ResumeProductProps) => {
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       <div className="space-y-1">
         <Labels text="가격" htmlFor="price" className="sr-only" />
-        <Inputs
+        <Inputs<ResumeProductTypes["price"]>
           register={register("price", {
             required: {
               value: true,

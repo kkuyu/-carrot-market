@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactElement } from "react";
 import type { UseFormRegisterReturn } from "react-hook-form";
 
-interface InputsProps extends HTMLAttributes<HTMLInputElement> {
+interface InputsProps<T> extends HTMLAttributes<HTMLInputElement> {
   name: string;
   type: string;
   required?: boolean;
@@ -11,7 +11,7 @@ interface InputsProps extends HTMLAttributes<HTMLInputElement> {
   appendButtons?: ReactElement;
 }
 
-const Inputs = (props: InputsProps) => {
+const Inputs = <T extends string | number>(props: InputsProps<T>) => {
   const { name, type, required = false, disabled, register, prependText, appendButtons, className = "", ...restProps } = props;
 
   return (

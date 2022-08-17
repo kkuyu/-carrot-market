@@ -1,7 +1,7 @@
 import type { HTMLAttributes } from "react";
 import { UseFormRegisterReturn } from "react-hook-form";
 
-interface TextAreasProps extends HTMLAttributes<HTMLTextAreaElement> {
+interface TextAreasProps<T> extends HTMLAttributes<HTMLTextAreaElement> {
   name?: string;
   required?: boolean;
   disabled?: boolean;
@@ -9,7 +9,7 @@ interface TextAreasProps extends HTMLAttributes<HTMLTextAreaElement> {
   register?: UseFormRegisterReturn;
 }
 
-const TextAreas = (props: TextAreasProps) => {
+const TextAreas = <T extends string>(props: TextAreasProps<T>) => {
   const { name, required = false, register, disabled, minLength, className = "", ...restProps } = props;
 
   return (
