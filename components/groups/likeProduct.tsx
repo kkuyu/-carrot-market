@@ -8,7 +8,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsLikeResponse } from "@api/products/[id]/like";
 // @components
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";

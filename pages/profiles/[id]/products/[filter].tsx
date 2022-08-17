@@ -5,7 +5,7 @@ import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { getKey } from "@libs/utils";
+import { getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -15,7 +15,7 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { GetProfilesProductsResponse, ProductsFilterEnum } from "@api/profiles/[id]/products/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -23,31 +23,23 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import HandleProduct from "@components/groups/handleProduct";
 import ProductList from "@components/lists/productList";
-
-type ProductTab = {
-  index: number;
-  value: "products" | "products/sale" | "products/sold";
-  text: string;
-  name: string;
-};
+import Link from "next/link";
 
 const ProfilesProductsPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const productTabs: ProductTab[] = [
-    { value: "products", index: 0, text: "전체", name: "등록된 게시글" },
-    { value: "products/sale", index: 1, text: "판매중", name: "판매 중인 게시글" },
-    { value: "products/sold", index: 2, text: "판매완료", name: "판매 완료된 게시글" },
+  const productTabs = [
+    { value: "all", index: 0, text: "전체", name: "등록된 게시글" },
+    { value: "sale", index: 1, text: "판매중", name: "판매 중인 게시글" },
+    { value: "sold", index: 2, text: "판매완료", name: "판매 완료된 게시글" },
   ];
-  const [currentTab, setCurrentTab] = useState<ProductTab>(() => {
-    return productTabs.find((tab) => tab.value === router?.query?.filter) || productTabs.find((tab) => tab.index === 0) || productTabs[0];
-  });
+  const currentTab = productTabs.find((tab) => tab.value === router.query.filter)!;
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => {
-    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/${currentTab.value}` : "" };
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/products/${currentTab.value}` : "" };
     return getKey<GetProfilesProductsResponse>(...arg, options);
   });
 
@@ -55,13 +47,6 @@ const ProfilesProductsPage: NextPage = () => {
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
-
-  const changeTab = (options: { tab?: ProductTab; tabValue?: ProductTab["value"] }) => {
-    const tab = options?.tab || productTabs.find((tab) => tab.value === options.tabValue) || productTabs.find((tab) => tab.index === 0) || productTabs[0];
-    setCurrentTab(tab);
-    window.scrollTo(0, 0);
-    router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
-  };
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
@@ -84,14 +69,9 @@ const ProfilesProductsPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {productTabs.map((tab) => {
           return (
-            <button
-              key={tab.index}
-              type="button"
-              className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeTab({ tab })}
-            >
-              {tab.text}
-            </button>
+            <Link key={tab.value} href={router.pathname.replace("[id]", router?.query?.id?.toString() || "").replace("[filter]", tab.value)}>
+              <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
+            </Link>
           );
         })}
         <span
@@ -105,8 +85,8 @@ const ProfilesProductsPage: NextPage = () => {
       {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} className="border-b">
-            {profileData?.profile.id === user?.id && <FeedbackProduct key="FeedbackProduct" />}
-            {profileData?.profile.id === user?.id && <HandleProduct key="HandleProduct" className="p-3" />}
+            {profileData?.profile.id === user?.id ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
+            {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" className="p-3" /> : <></>}
           </ProductList>
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
@@ -167,6 +147,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   // profileId
   const profileId: string = params?.id?.toString() || "";
+  // filter
+  const filter: string = params?.filter?.toString() || "";
 
   // invalidUrl
   let invalidUrl = false;
@@ -177,6 +159,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       redirect: {
         permanent: false,
         destination: `/profiles/${profileId}`,
+      },
+    };
+  }
+
+  // invalidFilter
+  let invalidFilter = false;
+  if (!filter || !isInstance(filter, ProductsFilterEnum)) invalidFilter = true;
+  // redirect `/profiles/${profileId}/products/all`
+  if (invalidFilter) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/profiles/${profileId}/products/all`,
       },
     };
   }
@@ -332,7 +327,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getProductsByAll: {
         options: {
-          url: `/api/profiles/${profile?.id}/products`,
+          url: `/api/profiles/${profile?.id}/products/all`,
         },
         response: {
           success: true,

@@ -8,7 +8,7 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];

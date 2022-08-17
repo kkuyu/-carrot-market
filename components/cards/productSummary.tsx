@@ -2,7 +2,7 @@ import type { HTMLAttributes } from "react";
 import { Kind } from "@prisma/client";
 // @api
 import { GetProductsResponse } from "@api/products";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 // @components
 import Images from "@components/images";
 

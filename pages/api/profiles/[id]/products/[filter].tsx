@@ -1,18 +1,35 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind } from "@prisma/client";
+import { Chat, Kind, Product, Record, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-// @api
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { isInstance } from "@libs/utils";
+
+export interface GetProfilesProductsResponse extends ResponseDataType {
+  totalCount: number;
+  lastCursor: number;
+  products: (Product & {
+    records: Pick<Record, "id" | "kind" | "userId">[];
+    chats?: (Chat & { _count: { chatMessages: number } })[];
+    reviews?: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+  })[];
+}
+
+export const ProductsFilterEnum = {
+  ["all"]: "all",
+  ["sale"]: "sale",
+  ["sold"]: "sold",
+} as const;
+
+export type ProductsFilterEnum = typeof ProductsFilterEnum[keyof typeof ProductsFilterEnum];
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { id: _id, prevCursor: _prevCursor } = req.query;
+    const { filter: _filter, id: _id, prevCursor: _prevCursor } = req.query;
 
     // invalid
-    if (!_id || !_prevCursor) {
+    if (!_filter || !_id || !_prevCursor) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -29,6 +46,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const id = +_id.toString();
+    const filter = _filter.toString();
+    if (!isInstance(filter, ProductsFilterEnum)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
     if (isNaN(id)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -38,9 +61,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // search
     const where = {
       userId: id,
-      AND: {
-        records: { some: { kind: Kind.ProductSale } },
-      },
+      ...(filter === "all" ? {} : {}),
+      ...(filter === "sale" ? { AND: { records: { some: { kind: Kind.ProductSale } } } } : {}),
+      ...(filter === "sold" ? { NOT: { records: { some: { kind: Kind.ProductSale } } } } : {}),
     };
 
     // fetch data

@@ -7,7 +7,7 @@ import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
