@@ -12,7 +12,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @app
@@ -66,7 +66,7 @@ const CommentsDetailPage: NextPage = () => {
     },
   });
 
-  const moreReComments = (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => {
+  const moreReComments = (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => {
     const commentExistedList = readType === "more" ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setCommentFlatList(() => [...commentExistedList]);
     setCommentQuery(() => {
@@ -249,9 +249,8 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const comments = comment
     ? await client.storyComment.findMany({
         where: {
-          storyId: comment?.story.id,
-          ...(comment?.depth ? { depth: comment?.depth + 1 } : {}),
-          AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+          storyId: comment.story.id,
+          depth: comment.depth + 1,
         },
         orderBy: {
           createdAt: "asc",

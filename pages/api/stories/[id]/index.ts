@@ -61,8 +61,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
         comments: {
           where: {
-            AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
             NOT: [{ content: "" }],
+            AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
           },
           select: {
             id: true,

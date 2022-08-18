@@ -1,11 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { getKey } from "@libs/utils";
+import { getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -15,7 +16,7 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
+import { GetProfilesStoriesResponse, StoriesFilterEnum } from "@api/profiles/[id]/stories/[filter]";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -24,48 +25,28 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
 import CommentSummaryList from "@components/lists/commentSummaryList";
 
-type StoryTab = {
-  index: number;
-  value: "stories" | "stories/comments";
-  text: string;
-  name: string;
-};
-
 const ProfilesStoriesPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const storyTabs: StoryTab[] = [
-    { value: "stories", index: 0, text: "게시글", name: "등록된 게시글" },
-    { value: "stories/comments", index: 1, text: "댓글", name: "등록된 댓글" },
+  const storyTabs = [
+    { value: "index" as StoriesFilterEnum, index: 0, text: "게시글", name: "등록된 게시글" },
+    { value: "comment" as StoriesFilterEnum, index: 1, text: "댓글", name: "등록된 댓글" },
   ];
-  const [currentTab, setCurrentTab] = useState<StoryTab>(() => {
-    return storyTabs.find((tab) => tab.value === router?.query?.filter) || storyTabs.find((tab) => tab.index === 0) || storyTabs[0];
-  });
+  const currentTab = storyTabs.find((tab) => tab.value === router.query.filter)!;
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => {
-    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/${currentTab.value}` : "" };
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/stories/${currentTab.value}` : "" };
     return getKey<GetProfilesStoriesResponse>(...arg, options);
   });
 
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const results = data
-    ? {
-        stories: data.flatMap((item) => item.stories),
-        comments: data.flatMap((item) => item.comments),
-      }
-    : null;
-
-  const changeTab = (options: { tab?: StoryTab; tabValue?: StoryTab["value"] }) => {
-    const tab = options?.tab || storyTabs.find((tab) => tab.value === options.tabValue) || storyTabs.find((tab) => tab.index === 0) || storyTabs[0];
-    setCurrentTab(tab);
-    window.scrollTo(0, 0);
-    router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
-  };
+  const stories = data ? data.flatMap((item) => item.stories) : [];
+  const comments = data ? data.flatMap((item) => item.comments) : [];
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
@@ -88,14 +69,9 @@ const ProfilesStoriesPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {storyTabs.map((tab) => {
           return (
-            <button
-              key={tab.index}
-              type="button"
-              className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeTab({ tab })}
-            >
-              {tab.text}
-            </button>
+            <Link key={tab.value} href={router.pathname.replace("[id]", router?.query?.id?.toString() || "").replace("[filter]", tab.value)}>
+              <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
+            </Link>
           );
         })}
         <span
@@ -106,14 +82,14 @@ const ProfilesStoriesPage: NextPage = () => {
       </div>
 
       {/* 동네생활: List */}
-      {results && (Boolean(results.stories.length) || Boolean(results.comments.length)) && (
+      {data && (Boolean(stories.length) || Boolean(comments.length)) && (
         <div className="-mx-5">
           {/* 동네생활 */}
-          {Boolean(results.stories.length) && <h2 className="sr-only">게시글</h2>}
-          {Boolean(results.stories.length) && <StoryList list={results.stories} className="border-b divide-y-4" />}
+          {Boolean(stories.length) && <h2 className="sr-only">게시글</h2>}
+          {Boolean(stories.length) && <StoryList list={stories} className="border-b divide-y-4" />}
           {/* 동네생활 댓글 */}
-          {Boolean(results.comments.length) && <h2 className="sr-only">댓글</h2>}
-          {Boolean(results.comments.length) && <CommentSummaryList list={results.comments} className="border-b divide-y-4" />}
+          {Boolean(comments.length) && <h2 className="sr-only">댓글</h2>}
+          {Boolean(comments.length) && <CommentSummaryList list={comments} className="border-b divide-y-4" />}
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
@@ -123,7 +99,7 @@ const ProfilesStoriesPage: NextPage = () => {
       )}
 
       {/* 동네생활: Empty */}
-      {results && !(Boolean(results.stories.length) || Boolean(results.comments.length)) && (
+      {data && !(Boolean(stories.length) || Boolean(comments.length)) && (
         <div className="py-10 text-center">
           <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
         </div>
@@ -165,6 +141,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   // profileId
   const profileId: string = params?.id?.toString() || "";
+  // filter
+  const filter: string = params?.filter?.toString() || "";
 
   // invalidUrl
   let invalidUrl = false;
@@ -175,6 +153,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       redirect: {
         permanent: false,
         destination: `/profiles/${profileId}`,
+      },
+    };
+  }
+
+  // invalidFilter
+  let invalidFilter = false;
+  if (!filter || !isInstance(filter, StoriesFilterEnum)) invalidFilter = true;
+  // redirect `/profiles/${profileId}/stories/index`
+  if (invalidFilter) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/profiles/${profileId}/stories/index`,
       },
     };
   }
@@ -229,8 +220,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       comments: {
         where: {
-          AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
           NOT: [{ content: "" }],
+          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
         },
         select: {
           id: true,
@@ -249,6 +240,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     where: {
       userId: profile?.id,
       NOT: [{ content: "" }],
+      AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
     },
     include: {
       user: {
@@ -306,7 +298,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getStories: {
         options: {
-          url: `/api/profiles/${profile?.id}/stories`,
+          url: `/api/profiles/${profile?.id}/stories/index`,
         },
         response: {
           success: true,
@@ -317,7 +309,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getComments: {
         options: {
-          url: `/api/profiles/${profile?.id}/stories/comments`,
+          url: `/api/profiles/${profile?.id}/stories/comment`,
         },
         response: {
           success: true,

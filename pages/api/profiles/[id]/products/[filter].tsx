@@ -46,13 +46,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const id = +_id.toString();
-    const filter = _filter.toString();
-    if (!isInstance(filter, ProductsFilterEnum)) {
+    const filter = _filter.toString() as ProductsFilterEnum;
+    if (isNaN(id)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (isNaN(id)) {
+    if (!isInstance(filter, ProductsFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;

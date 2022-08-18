@@ -1,11 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Record, User, StoryComment, Story } from "@prisma/client";
 // @libs
+import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 
 export type StoryCommentItem = StoryComment & {
   user: Pick<User, "id" | "name" | "avatar">;
@@ -29,7 +30,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (_readType && !["more", "fold"].includes(_readType.toString())) {
+    if (_readType && !isInstance(_readType.toString(), StoryCommentReadTypeEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -110,7 +111,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // comment params
     let comments = [] as StoryCommentItem[];
     const existed: number[] = _existed ? JSON.parse(_existed?.toString()) : [];
-    const readType = _readType ? (_readType?.toString() as StoryCommentReadType) : null;
+    const readType = _readType ? (_readType?.toString() as StoryCommentReadTypeEnum) : null;
     const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : 0;
     const prevCursor = _prevCursor ? +_prevCursor?.toString() : 0;
     const pageSize = !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10;
@@ -151,7 +152,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       where: {
         storyId: comment.storyId,
         depth: comment.depth + 1,
-        AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
       },
       orderBy,
       include: {
@@ -176,7 +176,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       where: {
         storyId: comment.storyId,
         OR: existed.filter((id) => !comments.find((o) => o.id === id)).map((id) => ({ id })),
-        AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
       },
       orderBy,
       include,

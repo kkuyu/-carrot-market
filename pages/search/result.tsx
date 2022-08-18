@@ -287,8 +287,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
               take: 1,
               orderBy: [{ depth: "asc" }, { createdAt: "asc" }],
               where: {
-                AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
-                NOT: [{ content: "" }],
+                NOT: [{ content: "" }, { depth: { gte: StoryCommentMaximumDepth } }, { depth: { lte: StoryCommentMinimumDepth } }],
                 OR: [
                   ...recentlyKeyword.split(" ").map((word: string) => ({
                     content: { contains: word },
@@ -297,6 +296,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
               },
               select: {
                 id: true,
+                depth: true,
                 userId: true,
                 content: true,
               },

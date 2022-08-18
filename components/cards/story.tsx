@@ -6,7 +6,7 @@ import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
 // @api
 import { EmotionIcon } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
-import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 import { GetSearchResultResponse } from "@api/search/result";
 // @components
 import Highlights from "@components/highlights";

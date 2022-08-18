@@ -77,14 +77,14 @@ const ProfilesDetailPage: NextPage = () => {
       <div className="-mx-5 mt-5 border-t">
         <ul className="divide-y">
           <li>
-            <Link href={`/profiles/${profileData?.profile?.id}/products`}>
+            <Link href={`/profiles/${profileData?.profile?.id}/products/all`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">판매상품{profileData?.profile?._count?.products ? ` ${profileData?.profile?._count?.products}개` : ""}</span>
               </a>
             </Link>
           </li>
           <li>
-            <Link href={`/profiles/${profileData?.profile?.id}/stories`}>
+            <Link href={`/profiles/${profileData?.profile?.id}/stories/index`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">동네생활</span>
               </a>

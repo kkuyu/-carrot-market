@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactElement } from "react";
 import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadType } from "@api/stories/types";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 // @components
 import Comment, { CommentItem } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
@@ -12,7 +12,7 @@ interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
   depth?: number;
   reCommentRefId?: number;
   countReComments?: number;
-  moreReComments?: (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => void;
+  moreReComments?: (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => void;
   children?: ReactElement | ReactElement[];
 }
 
@@ -20,7 +20,7 @@ const CommentTreeList = (props: CommentTreeListProps) => {
   const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, children, className = "", ...restProps } = props;
 
   const [isLoading, setIsLoading] = useState(false);
-  const [readType, setReadType] = useState<StoryCommentReadType>("more");
+  const [readType, setReadType] = useState<StoryCommentReadTypeEnum>("more");
 
   const readMoreReComments = () => {
     if (!reCommentRefId) return;

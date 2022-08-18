@@ -1,6 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
@@ -23,7 +24,6 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import HandleProduct from "@components/groups/handleProduct";
 import ProductList from "@components/lists/productList";
-import Link from "next/link";
 
 const ProfilesProductsPage: NextPage = () => {
   const router = useRouter();
@@ -31,9 +31,9 @@ const ProfilesProductsPage: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   const productTabs = [
-    { value: "all", index: 0, text: "전체", name: "등록된 게시글" },
-    { value: "sale", index: 1, text: "판매중", name: "판매 중인 게시글" },
-    { value: "sold", index: 2, text: "판매완료", name: "판매 완료된 게시글" },
+    { value: "all" as ProductsFilterEnum, index: 0, text: "전체", name: "등록된 게시글" },
+    { value: "sale" as ProductsFilterEnum, index: 1, text: "판매중", name: "판매 중인 게시글" },
+    { value: "sold" as ProductsFilterEnum, index: 2, text: "판매완료", name: "판매 완료된 게시글" },
   ];
   const currentTab = productTabs.find((tab) => tab.value === router.query.filter)!;
 

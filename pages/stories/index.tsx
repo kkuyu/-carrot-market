@@ -150,8 +150,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
             },
             comments: {
               where: {
-                AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
                 NOT: [{ content: "" }],
+                AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
               },
               select: {
                 id: true,

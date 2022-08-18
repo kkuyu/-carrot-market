@@ -4,15 +4,15 @@ import { useEffect, useState } from "react";
 import { getDiffTimeStr, truncateStr } from "@libs/utils";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 
 export type CommentSummaryItem = GetProfilesStoriesResponse["comments"][0];
 
-export interface CommentProps extends HTMLAttributes<HTMLDivElement> {
+export interface CommentSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: CommentSummaryItem;
 }
 
-const Comment = (props: CommentProps) => {
+const CommentSummary = (props: CommentSummaryProps) => {
   const { item, className = "", ...restProps } = props;
 
   const [mounted, setMounted] = useState(false);
@@ -37,4 +37,4 @@ const Comment = (props: CommentProps) => {
   );
 };
 
-export default Comment;
+export default CommentSummary;

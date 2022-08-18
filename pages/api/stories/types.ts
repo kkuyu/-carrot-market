@@ -1,8 +1,14 @@
 import { Emotion } from "@prisma/client";
 
-export type StoryCommentReadType = "more" | "fold";
+export const StoryCommentReadTypeEnum = {
+  ["more"]: "more",
+  ["fold"]: "fold",
+} as const;
+
+export type StoryCommentReadTypeEnum = typeof StoryCommentReadTypeEnum[keyof typeof StoryCommentReadTypeEnum];
+
 export const StoryCommentMinimumDepth = 0;
-export const StoryCommentMaximumDepth = 1;
+export const StoryCommentMaximumDepth = 2;
 
 export const StoryCategoryEnum = {
   ["동네질문"]: "question",

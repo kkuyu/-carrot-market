@@ -108,16 +108,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           take: 1,
           orderBy: [{ depth: "asc" }, { createdAt: "asc" }],
           where: {
-            AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
-            NOT: [{ content: "" }],
             OR: [
               ...keyword.split(" ").map((word: string) => ({
                 content: { contains: word },
               })),
             ],
+            NOT: [{ content: "" }],
+            AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
           },
           select: {
             id: true,
+            depth: true,
             userId: true,
             content: true,
           },

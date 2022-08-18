@@ -14,7 +14,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
-import { StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadType } from "@api/stories/types";
+import { StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { PostStoriesDeleteResponse } from "@api/stories/[id]/delete";
@@ -90,7 +90,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
     },
   });
 
-  const moreReComments = (readType: StoryCommentReadType, reCommentRefId: number, prevCursor: number) => {
+  const moreReComments = (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => {
     const commentExistedList = readType === "more" ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
     setCommentFlatList(() => [...commentExistedList]);
     setCommentQuery(() => {
@@ -333,6 +333,15 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           userId: true,
         },
       },
+      comments: {
+        where: {
+          NOT: [{ content: "" }],
+          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+        },
+        select: {
+          id: true,
+        },
+      },
     },
   });
 
@@ -351,7 +360,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     where: {
       storyId: story?.id,
       depth: StoryCommentMinimumDepth,
-      AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+      NOT: [{ content: "" }],
     },
     orderBy: {
       createdAt: "asc",
