@@ -1,10 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
-import { getKey } from "@libs/utils";
+import { getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -14,19 +15,12 @@ import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
+import { GetProfilesReviewsResponse, ReviewsFilterEnum } from "@api/profiles/[id]/reviews/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import ReviewList from "@components/lists/reviewList";
-
-type ReviewTab = {
-  index: number;
-  value: "reviews" | "reviews/sellUser" | "reviews/purchaseUser";
-  text: string;
-  name: string;
-};
 
 const ProfilesReviewsPage: NextPage = () => {
   const router = useRouter();
@@ -34,18 +28,16 @@ const ProfilesReviewsPage: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   // profile review paging
-  const reviewTabs: ReviewTab[] = [
-    { value: "reviews", index: 0, text: "전체", name: "전체 후기" },
-    { value: "reviews/sellUser", index: 1, text: "판매자 후기", name: "판매자 후기" },
-    { value: "reviews/purchaseUser", index: 2, text: "구매자 후기", name: "구매자 후기" },
+  const reviewTabs = [
+    { value: "all" as ReviewsFilterEnum, index: 0, text: "전체", name: "전체 후기" },
+    { value: "sellUser" as ReviewsFilterEnum, index: 1, text: "판매자 후기", name: "판매자 후기" },
+    { value: "purchaseUser" as ReviewsFilterEnum, index: 2, text: "구매자 후기", name: "구매자 후기" },
   ];
-  const [currentTab, setCurrentTab] = useState<ReviewTab>(() => {
-    return reviewTabs.find((tab) => tab.value === router?.query?.filter) || reviewTabs.find((tab) => tab.index === 0) || reviewTabs[0];
-  });
+  const currentTab = reviewTabs.find((tab) => tab.value === router.query.filter)!;
 
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => {
-    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/${currentTab.value}` : "" };
+    const options = { url: router.query.id ? `/api/profiles/${router.query.id}/reviews/${currentTab.value}` : "" };
     return getKey<GetProfilesReviewsResponse>(...arg, options);
   });
 
@@ -53,13 +45,6 @@ const ProfilesReviewsPage: NextPage = () => {
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const reviews = data ? data.flatMap((item) => item.reviews) : null;
-
-  const changeTab = (options: { tab?: ReviewTab; tabValue?: ReviewTab["value"] }) => {
-    const tab = options?.tab || reviewTabs.find((tab) => tab.value === options.tabValue) || reviewTabs.find((tab) => tab.index === 0) || reviewTabs[0];
-    setCurrentTab(tab);
-    window.scrollTo(0, 0);
-    router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
-  };
 
   useEffect(() => {
     if (isVisible && !isReachingEnd) {
@@ -80,14 +65,9 @@ const ProfilesReviewsPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {reviewTabs.map((tab) => {
           return (
-            <button
-              key={tab.index}
-              type="button"
-              className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeTab({ tab })}
-            >
-              {tab.text}
-            </button>
+            <Link key={tab.value} href={router.pathname.replace("[id]", router?.query?.id?.toString() || "").replace("[filter]", tab.value)}>
+              <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
+            </Link>
           );
         })}
         <span
@@ -160,6 +140,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   // profileId
   const profileId: string = params?.id?.toString() || "";
+  // filter
+  const filter: string = params?.filter?.toString() || "";
 
   // invalidUrl
   let invalidUrl = false;
@@ -170,6 +152,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       redirect: {
         permanent: false,
         destination: `/profiles/${profileId}`,
+      },
+    };
+  }
+
+  // invalidFilter
+  let invalidFilter = false;
+  if (!filter || !isInstance(filter, ReviewsFilterEnum)) invalidFilter = true;
+  // redirect `/profiles/${profileId}/reviews/all`
+  if (invalidFilter) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/profiles/${profileId}/reviews/all`,
       },
     };
   }
@@ -328,7 +323,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getReviewsByAll: {
         options: {
-          url: `/api/profiles/${profile?.id}/reviews`,
+          url: `/api/profiles/${profile?.id}/reviews/all`,
         },
         response: {
           success: true,

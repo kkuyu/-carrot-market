@@ -1,17 +1,31 @@
 import { NextApiRequest, NextApiResponse } from "next";
+import { User, ProductReview } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-// @api
-import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
+import { isInstance } from "@libs/utils";
+
+export interface GetProfilesReviewsResponse extends ResponseDataType {
+  totalCount: number;
+  lastCursor: number;
+  reviews: (ProductReview & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
+}
+
+export const ReviewsFilterEnum = {
+  ["all"]: "all",
+  ["purchaseUser"]: "purchaseUser",
+  ["sellUser"]: "sellUser",
+} as const;
+
+export type ReviewsFilterEnum = typeof ReviewsFilterEnum[keyof typeof ReviewsFilterEnum];
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { id: _id, prevCursor: _prevCursor } = req.query;
+    const { filter: _filter, id: _id, prevCursor: _prevCursor } = req.query;
 
     // invalid
-    if (!_id || !_prevCursor) {
+    if (!_filter || !_id || !_prevCursor) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -28,7 +42,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const id = +_id.toString();
+    const filter = _filter.toString() as ReviewsFilterEnum;
     if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (!isInstance(filter, ReviewsFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -42,7 +62,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       text: {
         not: "",
       },
-      OR: [{ role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } }],
+      ...(filter === "all"
+        ? {
+            OR: [
+              { role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } },
+              { role: "purchaseUser", sellUserId: id, product: { userId: { equals: id } } },
+            ],
+          }
+        : {}),
+      ...(filter === "purchaseUser" ? { OR: [{ role: "purchaseUser", sellUserId: id, product: { userId: { equals: id } } }] } : {}),
+      ...(filter === "sellUser" ? { OR: [{ role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } }] } : {}),
     };
 
     // fetch data

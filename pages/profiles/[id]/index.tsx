@@ -103,7 +103,7 @@ const ProfilesDetailPage: NextPage = () => {
             </Link>
           </li>
           <li>
-            <Link href={`/profiles/${profileData?.profile?.id}/reviews`}>
+            <Link href={`/profiles/${profileData?.profile?.id}/reviews/all`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 후기</span>
               </a>

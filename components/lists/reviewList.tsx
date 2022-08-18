@@ -7,7 +7,7 @@ import { getDiffTimeStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 // @api
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews";
+import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews/[filter]";
 // @components
 import Profiles from "@components/profiles";
 
