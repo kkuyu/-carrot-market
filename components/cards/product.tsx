@@ -6,7 +6,7 @@ import { getDiffTimeStr } from "@libs/utils";
 // @api
 import { GetProductsResponse } from "@api/products";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
-import { GetSearchResultResponse } from "@api/search/result";
+import { GetSearchResultResponse } from "@api/search/result/[filter]";
 // @components
 import Images from "@components/images";
 import Highlights from "@components/highlights";

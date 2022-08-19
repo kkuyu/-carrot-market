@@ -77,7 +77,7 @@ const ProfilesDetailPage: NextPage = () => {
       <div className="-mx-5 mt-5 border-t">
         <ul className="divide-y">
           <li>
-            <Link href={`/profiles/${profileData?.profile?.id}/products/all`}>
+            <Link href={`/profiles/${profileData?.profile?.id}/products/index`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">판매상품{profileData?.profile?._count?.products ? ` ${profileData?.profile?._count?.products}개` : ""}</span>
               </a>
@@ -103,7 +103,7 @@ const ProfilesDetailPage: NextPage = () => {
             </Link>
           </li>
           <li>
-            <Link href={`/profiles/${profileData?.profile?.id}/reviews/all`}>
+            <Link href={`/profiles/${profileData?.profile?.id}/reviews/index`}>
               <a className="block py-3">
                 <span className="block-arrow font-semibold">받은 매너 후기</span>
               </a>

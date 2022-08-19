@@ -1,12 +1,13 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useState } from "react";
+import Link from "next/link";
+import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
-import { getKey } from "@libs/utils";
+import { getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
@@ -15,7 +16,7 @@ import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
-import { GetSearchResultResponse } from "@api/search/result";
+import { GetSearchResultResponse, ResultsFilterEnum } from "@api/search/result/[filter]";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -26,36 +27,31 @@ import ProductList from "@components/lists/productList";
 import StoryList from "@components/lists/storyList";
 import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 
-type SearchTab = {
-  index: number;
-  value: "result" | "result/products" | "result/stories";
-  text: string;
-  name: string;
-};
-
 const SearchPage: NextPage = () => {
   const router = useRouter();
   const { currentAddr, type: userType } = useUser();
   const { changeLayout } = useLayouts();
 
-  const searchTabs: SearchTab[] = [
-    { value: "result", index: 0, text: "통합", name: "게시글" },
-    { value: "result/products", index: 1, text: "중고거래", name: "게시글" },
-    { value: "result/stories", index: 2, text: "동네생활", name: "게시글" },
+  // tabs
+  const searchTabs: { value: ResultsFilterEnum; index: number; text: string; name: string }[] = [
+    { value: "index", index: 0, text: "통합", name: "게시글" },
+    { value: "product", index: 1, text: "중고거래", name: "중고거래 게시글" },
+    { value: "story", index: 2, text: "동네생활", name: "동네생활 게시글" },
   ];
-  const [currentTab, setCurrentTab] = useState<SearchTab>(() => {
-    return searchTabs.find((tab) => tab.value === router?.query?.filter) || searchTabs.find((tab) => tab.index === 0) || searchTabs[0];
-  });
+  const currentTab = searchTabs.find((tab) => tab.value === router.query.filter)!;
 
+  // form
   const formData = useForm<FilterProductTypes>();
   const recentlyKeyword = router?.query?.keyword?.toString();
 
+  // data
   const { data, setSize, mutate } = useSWRInfinite<GetSearchResultResponse>((...arg: [index: number, previousPageData: GetSearchResultResponse]) => {
     const excludeSold = formData.getValues("excludeSold") || false;
     const options = {
-      url: `/api/search/${currentTab.value}`,
+      url: `/api/search/result/${currentTab.value}`,
       query:
-        `keyword=${recentlyKeyword}&includeSold=${!excludeSold}` + `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
+        `${recentlyKeyword ? `keyword=${recentlyKeyword}&includeSold=${!excludeSold}` : ""}` +
+        `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
     };
     return getKey<GetSearchResultResponse>(...arg, options);
   });
@@ -70,20 +66,13 @@ const SearchPage: NextPage = () => {
       }
     : null;
 
-  const changeTab = (options: { tab?: SearchTab; tabValue?: SearchTab["value"] }) => {
-    const tab = options?.tab || searchTabs.find((tab) => tab.value === options.tabValue) || searchTabs.find((tab) => tab.index === 0) || searchTabs[0];
-    setCurrentTab(tab);
-    window.scrollTo(0, 0);
-    router.replace({ pathname: router.pathname, query: { ...router.query, filter: tab.value } }, undefined, { shallow: true });
-  };
-
   const inputFilter = (data: FilterProductTypes) => {
     window.scrollTo(0, 0);
     mutate();
   };
 
   useEffect(() => {
-    if (currentTab.value === "result") return;
+    if (currentTab.value === "index") return;
     if (isVisible && !isReachingEnd) {
       setSize((size) => size + 1);
     }
@@ -106,14 +95,9 @@ const SearchPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {searchTabs.map((tab) => {
           return (
-            <button
-              key={tab.index}
-              type="button"
-              className={`basis-full py-2 text-sm font-semibold ${tab.value === currentTab.value ? "text-black" : "text-gray-500"}`}
-              onClick={() => changeTab({ tab })}
-            >
-              {tab.text}
-            </button>
+            <Link key={tab.value} href={{ pathname: router.pathname, query: { filter: tab.value, keyword: recentlyKeyword } }} replace passHref>
+              <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
+            </Link>
           );
         })}
         <span
@@ -127,30 +111,26 @@ const SearchPage: NextPage = () => {
       {results && (Boolean(results.products.length) || Boolean(results.stories.length)) && (
         <div>
           {/* 중고거래 */}
-          {Boolean(results.products.length) && (
-            <>
-              <h2 className={`pt-3 ${currentTab.value === "result" ? "" : "sr-only"}`}>중고거래</h2>
-              <FilterProduct formData={formData} onValid={inputFilter} className={`pt-3 ${currentTab.value === "result/products" ? "" : "hidden"}`} />
-              <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />
-              {currentTab.value === "result" && results.products.length < data?.[data.length - 1]?.productTotalCount! && (
-                <Buttons tag="button" type="button" status="default" size="sm" text="중고거래 더보기" onClick={() => changeTab({ tabValue: "result/products" })} />
-              )}
-            </>
+          {Boolean(results.products.length) && <h2 className={`pt-3 ${currentTab.value === "index" ? "" : "sr-only"}`}>중고거래</h2>}
+          {Boolean(results.products.length) && <FilterProduct formData={formData} onValid={inputFilter} className={`pt-3 ${currentTab.value === "product" ? "" : "hidden"}`} />}
+          {Boolean(results.products.length) && <ProductList list={results.products} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(results.products.length) && currentTab.value === "index" && results.products.length < data?.[data.length - 1]?.productTotalCount! && (
+            <Link href={{ pathname: router.pathname, query: { filter: "product", keyword: recentlyKeyword } }} replace passHref>
+              <Buttons tag="a" status="default" size="sm" text="중고거래 더보기" />
+            </Link>
           )}
           {/* 동네생활 */}
-          {Boolean(results.stories.length) && (
-            <>
-              {currentTab.value === "result" && Boolean(results.products.length) && <div className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
-              <h2 className={`pt-3 ${currentTab.value === "result" ? "" : "sr-only"}`}>동네생활</h2>
-              <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />
-              {currentTab.value === "result" && results.stories.length < data?.[data.length - 1]?.storyTotalCount! && (
-                <Buttons tag="button" type="button" status="default" size="sm" text="동네생활 더보기" onClick={() => changeTab({ tabValue: "result/stories" })} className="mb-3" />
-              )}
-            </>
+          {Boolean(results.stories.length) && currentTab.value === "index" && Boolean(results.products.length) && <span className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
+          {Boolean(results.stories.length) && <h2 className={`pt-3 ${currentTab.value === "index" ? "" : "sr-only"} ${Boolean(results.products.length) ? "" : ""}`}>동네생활</h2>}
+          {Boolean(results.stories.length) && <StoryList list={results.stories} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(results.stories.length) && currentTab.value === "index" && results.stories.length < data?.[data.length - 1]?.storyTotalCount! && (
+            <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: recentlyKeyword } }} replace passHref>
+              <Buttons tag="a" status="default" size="sm" text="동네생활 더보기" className="pb-3" />
+            </Link>
           )}
-          {currentTab.value === "result" ? null : isReachingEnd ? (
+          {currentTab.value !== "index" && isReachingEnd ? (
             <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
-          ) : isLoading ? (
+          ) : currentTab.value !== "index" && isLoading ? (
             <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
           ) : null}
         </div>
@@ -199,6 +179,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
 
   // recentlyKeyword
   const recentlyKeyword: string = query?.keyword?.toString() || "";
+  // filter
+  const filter: string = params?.filter?.toString() || "";
 
   // invalidUrl
   let invalidUrl = false;
@@ -209,6 +191,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       redirect: {
         permanent: false,
         destination: `/search`,
+      },
+    };
+  }
+
+  // invalidFilter
+  let invalidFilter = false;
+  if (!filter || !isInstance(filter, ResultsFilterEnum)) invalidFilter = true;
+  // redirect `/search/result/index?`
+  if (invalidFilter) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/search/result/index?keyword=${recentlyKeyword}`,
       },
     };
   }
@@ -231,6 +226,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
           where: {
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
+            OR: [
+              ...recentlyKeyword.split(" ").map((word: string) => ({
+                name: { contains: word },
+              })),
+            ],
             AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
           },
           include: {
@@ -305,6 +305,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
           where: {
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
+            OR: [
+              ...recentlyKeyword.split(" ").map((word: string) => ({
+                content: { contains: word },
+              })),
+            ],
           },
         });
 
@@ -331,7 +336,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       },
       getResults: {
         options: {
-          url: "/api/search/result",
+          url: "/api/search/result/index",
           query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
@@ -346,7 +351,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       },
       getProducts: {
         options: {
-          url: "/api/search/result/products",
+          url: "/api/search/result/product",
           query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
@@ -359,7 +364,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       },
       getStories: {
         options: {
-          url: "/api/search/result/stories",
+          url: "/api/search/result/story",
           query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {

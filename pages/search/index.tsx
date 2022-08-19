@@ -25,7 +25,7 @@ const SearchIndexPage: NextPage = () => {
   const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
     onSuccess: (data) => {
       const keyword = data?.history?.[0]?.keyword || "";
-      router.replace({ pathname: "/search/result", query: { ...router.query, keyword } });
+      router.push({ pathname: "/search/result/index", query: { keyword } });
     },
     onError: (data) => {
       switch (data?.error?.name) {
