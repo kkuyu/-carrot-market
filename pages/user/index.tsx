@@ -109,7 +109,7 @@ const UserIndexPage: NextPage = () => {
           key: "stories",
           isVisible: userType === "member",
           content: (
-            <MenuItem pathname={`/profiles/${user?.id}/stories/index`}>
+            <MenuItem pathname={`/profiles/${user?.id}/stories/story`}>
               <>
                 <svg fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                   <path

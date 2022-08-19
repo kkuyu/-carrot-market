@@ -59,7 +59,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
         const { closeBottomPanel } = props;
         return (
           <>
-            <strong>{placeholder}</strong>
+            <strong className="block text-lg font-semibold">{placeholder}</strong>
             <Listbox
               lists={optionGroups}
               selectItem={async (item) => {
@@ -67,7 +67,6 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
                 setCurrentValue(item.value);
                 if (closeBottomPanel) await closeBottomPanel();
               }}
-              className="[&>button]:py-1"
             />
           </>
         );
@@ -84,22 +83,25 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
 
   const Listbox = (props: { lists: OptionGroupItem<T>[]; selectItem: (item: OptionGroupItem<T>["options"][0]) => void } & HTMLAttributes<HTMLDivElement>) => {
     const { lists, selectItem, className: listboxClassName = "", ...restProps } = props;
-    const Option = (props: { item: OptionGroupItem<T>["options"][0] } & HTMLAttributes<HTMLButtonElement>) => (
-      <button role="option" type="button" onClick={() => selectItem(props.item)} className="w-full text-left hover:font-semibold" aria-selected={props.item.value === currentValue}>
-        {props.item.text}
-      </button>
-    );
+    const Option = (props: { item: OptionGroupItem<T>["options"][0] } & HTMLAttributes<HTMLButtonElement>) => {
+      const { item, className: optionClassName = "" } = props;
+      return (
+        <button role="option" type="button" onClick={() => selectItem(item)} className={`w-full text-left hover:font-semibold ${optionClassName}`} aria-selected={item.value === currentValue}>
+          {item.text}
+        </button>
+      );
+    };
     return (
       <div ref={listbox} role="listbox" className={`${listboxClassName}`} {...restProps}>
         {lists.map((list, index) => {
-          if (lists.length === 1) return list.options.map((item) => <Option key={item.value} item={item} />);
+          if (lists.length === 1) return list.options.map((item) => <Option key={item.value} item={item} className="py-0.5" />);
           return (
             <div key={list.label} role="group" aria-labelledby={`${name}-${index}`}>
-              <span role="presentation" id={`${name}-${index}`}>
+              <span role="presentation" id={`${name}-${index}`} className={`block text-gray-500`}>
                 {list.label}
               </span>
               {list.options.map((item) => (
-                <Option key={item.value} item={item} />
+                <Option key={item.value} item={item} className="py-0.5" />
               ))}
             </div>
           );
@@ -146,7 +148,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
               setCurrentValue(item.value);
               setIsOpen(false);
             }}
-            className="max-h-28 py-2 border border-gray-300 rounded-md overflow-y-scroll focus:outline focus:outline-1 [&>button]:px-3 [&>button]:py-0.5"
+            className="max-h-28 py-2 px-3 border border-gray-300 rounded-md overflow-y-scroll focus:outline focus:outline-1"
             tabIndex={0}
           />
         </div>

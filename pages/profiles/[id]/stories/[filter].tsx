@@ -30,12 +30,15 @@ const ProfilesStoriesPage: NextPage = () => {
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const storyTabs = [
-    { value: "index" as StoriesFilterEnum, index: 0, text: "게시글", name: "등록된 게시글" },
-    { value: "comment" as StoriesFilterEnum, index: 1, text: "댓글", name: "등록된 댓글" },
+  // tabs
+  const storyTabs: { value: StoriesFilterEnum; text: string; name: string }[] = [
+    { value: "story", text: "게시글", name: "등록된 게시글" },
+    { value: "comment", text: "댓글", name: "등록된 댓글" },
   ];
+  const currentIndex = storyTabs.findIndex((tab) => tab.value === router.query.filter);
   const currentTab = storyTabs.find((tab) => tab.value === router.query.filter)!;
 
+  // data
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesStoriesResponse>((...arg: [index: number, previousPageData: GetProfilesStoriesResponse]) => {
     const options = { url: router.query.id ? `/api/profiles/${router.query.id}/stories/${currentTab.value}` : "" };
@@ -69,16 +72,12 @@ const ProfilesStoriesPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {storyTabs.map((tab) => {
           return (
-            <Link key={tab.value} href={router.pathname.replace("[id]", router?.query?.id?.toString() || "").replace("[filter]", tab.value)}>
+            <Link key={tab.value} href={{ pathname: router.pathname, query: { filter: tab.value, id: router.query.id } }} replace passHref>
               <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
             </Link>
           );
         })}
-        <span
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-          style={{ width: `${100 / storyTabs.length}%`, transform: `translateX(${100 * currentTab.index}%)` }}
-        />
+        <span className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform" style={{ width: `${100 / storyTabs.length}%`, transform: `translateX(${100 * currentIndex}%)` }} />
       </div>
 
       {/* 동네생활: List */}
@@ -160,12 +159,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // invalidFilter
   let invalidFilter = false;
   if (!filter || !isInstance(filter, StoriesFilterEnum)) invalidFilter = true;
-  // redirect `/profiles/${profileId}/stories/index`
+  // redirect `/profiles/${profileId}/stories/story`
   if (invalidFilter) {
     return {
       redirect: {
         permanent: false,
-        destination: `/profiles/${profileId}/stories/index`,
+        destination: `/profiles/${profileId}/stories/story`,
       },
     };
   }
@@ -298,7 +297,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getStories: {
         options: {
-          url: `/api/profiles/${profile?.id}/stories/index`,
+          url: `/api/profiles/${profile?.id}/stories/story`,
         },
         response: {
           success: true,

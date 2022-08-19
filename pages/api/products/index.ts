@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Chat, Kind, Product, Record } from "@prisma/client";
 // @libs
+import { getProductCategory } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { getProductCategory } from "@libs/utils";
 
 export interface GetProductsResponse extends ResponseDataType {
   totalCount: number;

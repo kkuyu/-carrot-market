@@ -2,10 +2,10 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Story, Record, User, StoryComment } from "@prisma/client";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @libs
+import { getStoryCategory } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { getStoryCategory } from "@libs/utils";
 
 export interface GetStoriesResponse extends ResponseDataType {
   totalCount: number;

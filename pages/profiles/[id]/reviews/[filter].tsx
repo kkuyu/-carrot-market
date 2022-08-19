@@ -1,7 +1,7 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
@@ -27,14 +27,16 @@ const ProfilesReviewsPage: NextPage = () => {
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  // profile review paging
-  const reviewTabs = [
-    { value: "all" as ReviewsFilterEnum, index: 0, text: "전체", name: "전체 후기" },
-    { value: "sellUser" as ReviewsFilterEnum, index: 1, text: "판매자 후기", name: "판매자 후기" },
-    { value: "purchaseUser" as ReviewsFilterEnum, index: 2, text: "구매자 후기", name: "구매자 후기" },
+  // tabs
+  const reviewTabs: { value: ReviewsFilterEnum; text: string; name: string }[] = [
+    { value: "all", text: "전체", name: "전체 후기" },
+    { value: "sellUser", text: "판매자 후기", name: "판매자 후기" },
+    { value: "purchaseUser", text: "구매자 후기", name: "구매자 후기" },
   ];
-  const currentTab = reviewTabs.find((tab) => tab.value === router.query.filter)!;
+  const currentIndex = reviewTabs.findIndex((tab) => tab.value === router.query.filter);
+  const currentTab = reviewTabs?.[currentIndex]!;
 
+  // data
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesReviewsResponse>((...arg: [index: number, previousPageData: GetProfilesReviewsResponse]) => {
     const options = { url: router.query.id ? `/api/profiles/${router.query.id}/reviews/${currentTab.value}` : "" };
@@ -65,16 +67,12 @@ const ProfilesReviewsPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {reviewTabs.map((tab) => {
           return (
-            <Link key={tab.value} href={router.pathname.replace("[id]", router?.query?.id?.toString() || "").replace("[filter]", tab.value)}>
+            <Link key={tab.value} href={{ pathname: router.pathname, query: { filter: tab.value, id: router.query.id } }} replace passHref>
               <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
             </Link>
           );
         })}
-        <span
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-          style={{ width: `${100 / reviewTabs.length}%`, transform: `translateX(${100 * currentTab.index}%)` }}
-        />
+        <span className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform" style={{ width: `${100 / reviewTabs.length}%`, transform: `translateX(${100 * currentIndex}%)` }} />
       </div>
 
       {/* 거래후기: List */}

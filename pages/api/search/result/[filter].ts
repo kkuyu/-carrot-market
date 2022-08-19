@@ -25,7 +25,7 @@ export interface GetSearchResultResponse extends ResponseDataType {
 }
 
 export const ResultsFilterEnum = {
-  ["index"]: "index",
+  ["all"]: "all",
   ["product"]: "product",
   ["story"]: "story",
 } as const;
@@ -58,7 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // page
     const filter = _filter.toString() as ResultsFilterEnum;
     const prevCursor = +_prevCursor.toString();
-    const pageSize = filter === "index" ? 4 : 10;
+    const pageSize = filter === "all" ? 4 : 10;
     if (!isInstance(filter, ResultsFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -113,13 +113,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // fetch product
     const productTotalCount =
-      filter === "index" || filter === "product"
+      filter === "all" || filter === "product"
         ? await client.product.count({
             where: whereByProduct,
           })
         : 0;
     const products =
-      filter === "index" || filter === "product"
+      filter === "all" || filter === "product"
         ? await client.product.findMany({
             where: whereByProduct,
             take: pageSize,
@@ -154,13 +154,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // fetch story
     const storyTotalCount =
-      filter === "index" || filter === "story"
+      filter === "all" || filter === "story"
         ? await await client.story.count({
             where: whereByStory,
           })
         : 0;
     const stories =
-      filter === "index" || filter === "story"
+      filter === "all" || filter === "story"
         ? await await client.story.findMany({
             where: whereByStory,
             take: pageSize,
@@ -214,7 +214,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       success: true,
       totalCount: filter === "product" ? productTotalCount : filter === "story" ? storyTotalCount : 0,
       lastCursor: filter === "product" ? (products.length ? products[products.length - 1].id : -1) : filter === "story" ? (stories.length ? stories[stories.length - 1].id : -1) : -1,
-      ...(filter === "index" ? { productTotalCount, storyTotalCount } : {}),
+      ...(filter === "all" ? { productTotalCount, storyTotalCount } : {}),
       products,
       stories,
     };

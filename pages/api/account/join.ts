@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { EmdType } from "@prisma/client";
 // @libs
+import { getRandomName } from "@libs/utils";
 import client from "@libs/server/client";
 import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
-import { getRandomName } from "@libs/utils";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 

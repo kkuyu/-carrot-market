@@ -30,13 +30,16 @@ const ProfilesProductsPage: NextPage = () => {
   const { user } = useUser();
   const { changeLayout } = useLayouts();
 
-  const productTabs = [
-    { value: "all" as ProductsFilterEnum, index: 0, text: "전체", name: "등록된 게시글" },
-    { value: "sale" as ProductsFilterEnum, index: 1, text: "판매중", name: "판매 중인 게시글" },
-    { value: "sold" as ProductsFilterEnum, index: 2, text: "판매완료", name: "판매 완료된 게시글" },
+  // tabs
+  const productTabs: { value: ProductsFilterEnum; text: string; name: string }[] = [
+    { value: "all", text: "전체", name: "등록된 게시글" },
+    { value: "sale", text: "판매중", name: "판매 중인 게시글" },
+    { value: "sold", text: "판매완료", name: "판매 완료된 게시글" },
   ];
-  const currentTab = productTabs.find((tab) => tab.value === router.query.filter)!;
+  const currentIndex = productTabs.findIndex((tab) => tab.value === router.query.filter);
+  const currentTab = productTabs?.[currentIndex]!;
 
+  // data
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}` : null);
   const { data, setSize } = useSWRInfinite<GetProfilesProductsResponse>((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => {
     const options = { url: router.query.id ? `/api/profiles/${router.query.id}/products/${currentTab.value}` : "" };
@@ -69,16 +72,12 @@ const ProfilesProductsPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {productTabs.map((tab) => {
           return (
-            <Link key={tab.value} href={router.pathname.replace("[id]", router?.query?.id?.toString() || "").replace("[filter]", tab.value)}>
+            <Link key={tab.value} href={{ pathname: router.pathname, query: { filter: tab.value, id: router.query.id } }} replace passHref>
               <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
             </Link>
           );
         })}
-        <span
-          aria-hidden="true"
-          className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-          style={{ width: `${100 / productTabs.length}%`, transform: `translateX(${100 * currentTab.index}%)` }}
-        />
+        <span className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform" style={{ width: `${100 / productTabs.length}%`, transform: `translateX(${100 * currentIndex}%)` }} />
       </div>
 
       {/* 판매상품: List */}

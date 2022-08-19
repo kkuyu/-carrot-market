@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Chat, Kind, Product, Record, ProductReview } from "@prisma/client";
 // @libs
+import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { isInstance } from "@libs/utils";
 
 export interface GetProfilesProductsResponse extends ResponseDataType {
   totalCount: number;
@@ -36,8 +36,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
+    const filter = _filter.toString() as ProductsFilterEnum;
     const prevCursor = +_prevCursor.toString();
     const pageSize = 10;
+    if (!isInstance(filter, ProductsFilterEnum)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
     if (isNaN(prevCursor) || prevCursor === -1) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -46,13 +52,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const id = +_id.toString();
-    const filter = _filter.toString() as ProductsFilterEnum;
     if (isNaN(id)) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
-    }
-    if (!isInstance(filter, ProductsFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;

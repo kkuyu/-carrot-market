@@ -5,8 +5,8 @@ import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { StoryCommentItem } from "@api/comments/[id]";
 // @api
+import { StoryCommentItem } from "@api/comments/[id]";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 
 export interface GetStoriesCommentsResponse extends ResponseDataType {

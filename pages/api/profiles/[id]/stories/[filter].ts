@@ -24,7 +24,7 @@ export interface GetProfilesStoriesResponse extends ResponseDataType {
 }
 
 export const StoriesFilterEnum = {
-  ["index"]: "index",
+  ["story"]: "story",
   ["comment"]: "comment",
 } as const;
 
@@ -42,8 +42,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
+    const filter = _filter.toString() as StoriesFilterEnum;
     const prevCursor = +_prevCursor.toString();
     const pageSize = 10;
+    if (!isInstance(filter, StoriesFilterEnum)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
     if (isNaN(prevCursor) || prevCursor === -1) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -52,13 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const id = +_id.toString();
-    const filter = _filter.toString() as StoriesFilterEnum;
     if (isNaN(id)) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
-    }
-    if (!isInstance(filter, StoriesFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -75,7 +75,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // fetch data
     const totalCount =
-      filter === "index"
+      filter === "story"
         ? await client.story.count({
             where: whereByStory,
           })
@@ -86,7 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         : 0;
 
     const stories =
-      filter === "index"
+      filter === "story"
         ? await client.story.findMany({
             where: whereByStory,
             take: pageSize,
@@ -170,7 +170,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: GetProfilesStoriesResponse = {
       success: true,
       totalCount,
-      lastCursor: filter === "index" ? (stories.length ? stories[stories.length - 1].id : -1) : filter === "comment" ? (comments.length ? comments[comments.length - 1].id : -1) : -1,
+      lastCursor: filter === "story" ? (stories.length ? stories[stories.length - 1].id : -1) : filter === "comment" ? (comments.length ? comments[comments.length - 1].id : -1) : -1,
       stories,
       comments,
     };
