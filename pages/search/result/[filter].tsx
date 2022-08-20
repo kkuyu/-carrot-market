@@ -1,21 +1,23 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
-import { SWRConfig } from "swr";
+import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { Kind } from "@prisma/client";
 // @lib
 import { getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
+import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
+import { GetSearchResponse, PostSearchResponse } from "@api/search";
 import { GetSearchResultResponse, ResultsFilterEnum } from "@api/search/result/[filter]";
 import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 // @app
@@ -41,18 +43,43 @@ const SearchPage: NextPage = () => {
   const currentIndex = searchTabs.findIndex((tab) => tab.value === router.query.filter);
   const currentTab = searchTabs?.[currentIndex]!;
 
+  // search
+  const { data: searchData, mutate: searchMutate } = useSWR<GetSearchResponse>("/api/search");
+  const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
+    onSuccess: (data) => {
+      searchMutate();
+    },
+    onError: (data) => {
+      switch (data?.error?.name) {
+        default:
+          console.error(data.error);
+          return;
+      }
+    },
+  });
+
   // form
-  const formData = useForm<FilterProductTypes>();
-  const recentlyKeyword = router?.query?.keyword?.toString();
+  const formData = useForm<FilterProductTypes>({
+    defaultValues: {
+      excludeSold: searchData?.productFilter?.excludeSold,
+    },
+  });
+  const searchFilter = useMemo(() => {
+    const keyword = router?.query?.keyword?.toString() || "";
+    const excludeSold = searchData?.productFilter?.excludeSold || false;
+    return {
+      recentlySearchKeyword: keyword,
+      highlightWords: keyword ? keyword.split(" ") : [],
+      excludeSold,
+      includeSold: !excludeSold,
+    };
+  }, [router?.query, searchData]);
 
   // data
   const { data, setSize, mutate } = useSWRInfinite<GetSearchResultResponse>((...arg: [index: number, previousPageData: GetSearchResultResponse]) => {
-    const excludeSold = formData.getValues("excludeSold") || false;
     const options = {
       url: `/api/search/result/${currentTab.value}`,
-      query:
-        `${recentlyKeyword ? `keyword=${recentlyKeyword}&includeSold=${!excludeSold}` : ""}` +
-        `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
+      query: `keyword=${searchFilter.recentlySearchKeyword}` + `${currentAddr?.emdAddrNm ? `&posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : ""}`,
     };
     return getKey<GetSearchResultResponse>(...arg, options);
   });
@@ -63,21 +90,20 @@ const SearchPage: NextPage = () => {
   const products = data ? data.flatMap((item) => item.products) : [];
   const stories = data ? data.flatMap((item) => item.stories) : [];
 
-  const inputFilter = (data: FilterProductTypes) => {
-    window.scrollTo(0, 0);
-    mutate();
-  };
-
   useEffect(() => {
     if (currentTab.value === "all") return;
     if (isVisible && !isReachingEnd) {
       setSize((size) => size + 1);
     }
-  }, [isVisible, isReachingEnd]);
+  }, [isVisible, isLoading, isReachingEnd]);
 
   useEffect(() => {
     if (!data?.[0].success && currentAddr?.emdAddrNm) mutate();
   }, [data, currentAddr, userType]);
+
+  useEffect(() => {
+    mutate();
+  }, [searchFilter.recentlySearchKeyword, searchFilter.excludeSold]);
 
   useEffect(() => {
     changeLayout({
@@ -92,7 +118,7 @@ const SearchPage: NextPage = () => {
       <div className="sticky top-12 left-0 -mx-5 flex bg-white border-b z-[1]">
         {searchTabs.map((tab) => {
           return (
-            <Link key={tab.value} href={{ pathname: router.pathname, query: { filter: tab.value, keyword: recentlyKeyword } }} replace passHref>
+            <Link key={tab.value} href={{ pathname: router.pathname, query: { filter: tab.value, keyword: router.query.keyword } }} replace passHref>
               <a className={`basis-full py-2 text-sm text-center font-semibold ${tab.value === router?.query?.filter ? "text-black" : "text-gray-500"}`}>{tab.text}</a>
             </Link>
           );
@@ -100,24 +126,35 @@ const SearchPage: NextPage = () => {
         <span className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform" style={{ width: `${100 / searchTabs.length}%`, transform: `translateX(${100 * currentIndex}%)` }} />
       </div>
 
+      {/* 필터 */}
+      {currentTab.value === "product" && (
+        <FilterProduct
+          formData={formData}
+          onValid={(data: FilterProductTypes) => {
+            if (saveLoading) return false;
+            saveSearch({ ...data });
+          }}
+          className={`pt-3`}
+        />
+      )}
+
       {/* 검색결과: List */}
       {data && (Boolean(products.length) || Boolean(stories.length)) && (
         <div>
           {/* 중고거래 */}
           {Boolean(products.length) && <h2 className={`pt-3 ${currentTab.value === "all" ? "" : "sr-only"}`}>중고거래</h2>}
-          {Boolean(products.length) && <FilterProduct formData={formData} onValid={inputFilter} className={`pt-3 ${currentTab.value === "product" ? "" : "hidden"}`} />}
-          {Boolean(products.length) && <ProductList list={products} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(products.length) && <ProductList list={products} highlight={searchData?.keyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
           {Boolean(products.length) && currentTab.value === "all" && products.length < data?.[data.length - 1]?.productTotalCount! && (
-            <Link href={{ pathname: router.pathname, query: { filter: "product", keyword: recentlyKeyword } }} replace passHref>
+            <Link href={{ pathname: router.pathname, query: { filter: "product", keyword: router.query.keyword } }} replace passHref>
               <Buttons tag="a" status="default" size="sm" text="중고거래 더보기" />
             </Link>
           )}
           {/* 동네생활 */}
           {Boolean(stories.length) && currentTab.value === "all" && Boolean(products.length) && <span className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
           {Boolean(stories.length) && <h2 className={`pt-3 ${currentTab.value === "all" ? "" : "sr-only"} ${Boolean(products.length) ? "" : ""}`}>동네생활</h2>}
-          {Boolean(stories.length) && <StoryList list={stories} highlight={recentlyKeyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(stories.length) && <StoryList list={stories} highlight={searchData?.keyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
           {Boolean(stories.length) && currentTab.value === "all" && stories.length < data?.[data.length - 1]?.storyTotalCount! && (
-            <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: recentlyKeyword } }} replace passHref>
+            <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: router.query.keyword } }} replace passHref>
               <Buttons tag="a" status="default" size="sm" text="동네생활 더보기" className="pb-3" />
             </Link>
           )}
@@ -144,15 +181,17 @@ const SearchPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
+  getSearch: { response: GetSearchResponse };
   getResults: { options: { url: string; query?: string }; response: GetSearchResultResponse };
   getProducts: { options: { url: string; query?: string }; response: GetSearchResultResponse };
   getStories: { options: { url: string; query?: string }; response: GetSearchResultResponse };
-}> = ({ getUser, getResults, getProducts, getStories }) => {
+}> = ({ getUser, getSearch, getResults, getProducts, getStories }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
+          "/api/search": getSearch.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetSearchResultResponse]) => getKey<GetSearchResultResponse>(...arg, getResults.options))]: [getResults.response],
           [unstable_serialize((...arg: [index: number, previousPageData: GetSearchResultResponse]) => getKey<GetSearchResultResponse>(...arg, getProducts.options))]: [getProducts.response],
           [unstable_serialize((...arg: [index: number, previousPageData: GetSearchResultResponse]) => getKey<GetSearchResultResponse>(...arg, getStories.options))]: [getStories.response],
@@ -170,14 +209,27 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   // getUser
   const ssrUser = await getSsrUser(req);
 
-  // recentlyKeyword
-  const recentlyKeyword: string = query?.keyword?.toString() || "";
+  // getSearch
+  const history = [...(req?.session?.search?.history || [])].reverse();
+  const productFilter = { ...req?.session?.search?.productFilter };
+  const records = await client.searchRecord.findMany({
+    take: 10,
+    orderBy: [{ count: "desc" }, { updatedAt: "desc" }],
+    select: {
+      id: true,
+      keyword: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
   // filter
-  const filter: string = params?.filter?.toString() || "";
+  const filter: string = query?.filter?.toString() || "";
+  const recentlySearchKeyword: string = query?.keyword?.toString() || "";
 
   // invalidUrl
   let invalidUrl = false;
-  if (!recentlyKeyword) invalidUrl = true;
+  if (!recentlySearchKeyword) invalidUrl = true;
   // redirect `/search`
   if (invalidUrl) {
     return {
@@ -191,17 +243,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   // invalidFilter
   let invalidFilter = false;
   if (!filter || !isInstance(filter, ResultsFilterEnum)) invalidFilter = true;
-  // redirect `/search/result/all?keyword=${recentlyKeyword}`,
+  // redirect `/search/result/all?keyword=${recentlySearchKeyword}`,
   if (invalidFilter) {
     return {
       redirect: {
         permanent: false,
-        destination: `/search/result/all?keyword=${recentlyKeyword}`,
+        destination: `/search/result/all?keyword=${recentlySearchKeyword}`,
       },
     };
   }
 
-  const excludeSold = false;
+  // params
+  const excludeSold = req?.session?.search?.productFilter?.excludeSold || false;
+  const includeSold = !excludeSold;
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
@@ -220,11 +274,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
             OR: [
-              ...recentlyKeyword.split(" ").map((word: string) => ({
+              ...recentlySearchKeyword.split(" ").map((word: string) => ({
                 name: { contains: word },
               })),
             ],
-            AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
+            ...(!includeSold ? { AND: { records: { some: { kind: Kind.ProductSale } } } } : {}),
           },
           include: {
             records: {
@@ -282,7 +336,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
               where: {
                 NOT: [{ content: "" }, { depth: { gte: StoryCommentMaximumDepth } }, { depth: { lte: StoryCommentMinimumDepth } }],
                 OR: [
-                  ...recentlyKeyword.split(" ").map((word: string) => ({
+                  ...recentlySearchKeyword.split(" ").map((word: string) => ({
                     content: { contains: word },
                   })),
                 ],
@@ -299,7 +353,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
             OR: [
-              ...recentlyKeyword.split(" ").map((word: string) => ({
+              ...recentlySearchKeyword.split(" ").map((word: string) => ({
                 content: { contains: word },
               })),
             ],
@@ -309,7 +363,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${recentlyKeyword} | 검색 결과`,
+      title: `${recentlySearchKeyword} | 검색 결과`,
     },
     header: {
       title: "",
@@ -327,30 +381,34 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
+      getSearch: {
+        response: {
+          success: true,
+          history: JSON.parse(JSON.stringify(history || [])),
+          productFilter: JSON.parse(JSON.stringify(productFilter || {})),
+          records: JSON.parse(JSON.stringify(records || [])),
+        },
+      },
       getResults: {
         options: {
           url: "/api/search/result/all",
-          query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
+          query: `keyword=${recentlySearchKeyword}&posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
           success: true,
-          totalCount: 0,
-          lastCursor: -1,
           productTotalCount: products.length,
-          products: JSON.parse(JSON.stringify(products.slice(0, 4) || [])),
+          products: JSON.parse(JSON.stringify([...products].slice(0, 4) || [])),
           storyTotalCount: stories.length,
-          stories: JSON.parse(JSON.stringify(stories.slice(0, 4) || [])),
+          stories: JSON.parse(JSON.stringify([...stories].slice(0, 4) || [])),
         },
       },
       getProducts: {
         options: {
           url: "/api/search/result/product",
-          query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
+          query: `keyword=${recentlySearchKeyword}&posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
           success: true,
-          totalCount: 0,
-          lastCursor: products.length ? products?.[products.length - 1]?.id : -1,
           products: JSON.parse(JSON.stringify(products || [])),
           stories: JSON.parse(JSON.stringify([])),
         },
@@ -358,12 +416,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
       getStories: {
         options: {
           url: "/api/search/result/story",
-          query: `keyword=${recentlyKeyword}&includeSold=${!excludeSold}&posX=${posX}&posY=${posY}&distance=${distance}`,
+          query: `keyword=${recentlySearchKeyword}&posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
           success: true,
-          totalCount: 0,
-          lastCursor: stories.length ? stories?.[stories.length - 1]?.id : -1,
           products: JSON.parse(JSON.stringify([])),
           stories: JSON.parse(JSON.stringify(stories || [])),
         },

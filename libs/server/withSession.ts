@@ -23,6 +23,9 @@ export type IronSearchType = {
     createdAt: string;
     updatedAt: string;
   }[];
+  productFilter: {
+    excludeSold?: boolean;
+  };
 };
 
 declare module "iron-session" {

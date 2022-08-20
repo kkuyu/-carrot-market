@@ -34,7 +34,8 @@ export type ResultsFilterEnum = typeof ResultsFilterEnum[keyof typeof ResultsFil
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { filter: _filter, prevCursor: _prevCursor, keyword: _keyword, includeSold: _includeSold, posX: _posX, posY: _posY, distance: _distance } = req.query;
+    const { search } = req.session;
+    const { filter: _filter, prevCursor: _prevCursor, keyword: _keyword, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
     // invalid
     if (!_filter || !_prevCursor) {
@@ -44,7 +45,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // early return result
-    if (!_keyword || !_includeSold || !_posX || !_posY || !_distance) {
+    if (!_keyword || !_posX || !_posY || !_distance) {
       const result: GetSearchResultResponse = {
         success: false,
         totalCount: 0,
@@ -72,7 +73,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const keyword = _keyword.toString() || "";
-    const includeSold = JSON.parse(_includeSold.toString());
+    const excludeSold = search?.productFilter?.excludeSold || false;
+    const includeSold = !excludeSold;
     const posX = +_posX.toString();
     const posY = +_posY.toString();
     const distance = +_distance.toString();
@@ -89,26 +91,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // search
     const whereByProduct = {
       ...boundaryArea,
-      OR: [
-        ...keyword.split(" ").map((word: string) => ({
-          name: { contains: word },
-        })),
-      ],
-      ...(!includeSold
-        ? {
-            AND: {
-              records: { some: { kind: Kind.ProductSale } },
-            },
-          }
-        : {}),
+      OR: [...keyword.split(" ").map((word: string) => ({ name: { contains: word } }))],
+      ...(!includeSold ? { AND: { records: { some: { kind: Kind.ProductSale } } } } : {}),
     };
     const whereByStory = {
       ...boundaryArea,
-      OR: [
-        ...keyword.split(" ").map((word: string) => ({
-          content: { contains: word },
-        })),
-      ],
+      OR: [...keyword.split(" ").map((word: string) => ({ content: { contains: word } }))],
     };
 
     // fetch product
@@ -210,13 +198,34 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         : [];
 
     // result
+    if (filter === "product") {
+      const result: GetSearchResultResponse = {
+        success: true,
+        totalCount: productTotalCount,
+        lastCursor: products.length ? products[products.length - 1].id : -1,
+        products,
+        stories: [],
+      };
+      return res.status(200).json(result);
+    }
+    if (filter === "story") {
+      const result: GetSearchResultResponse = {
+        success: true,
+        totalCount: storyTotalCount,
+        lastCursor: stories.length ? stories[stories.length - 1].id : -1,
+        products: [],
+        stories,
+      };
+      return res.status(200).json(result);
+    }
     const result: GetSearchResultResponse = {
       success: true,
-      totalCount: filter === "product" ? productTotalCount : filter === "story" ? storyTotalCount : 0,
-      lastCursor: filter === "product" ? (products.length ? products[products.length - 1].id : -1) : filter === "story" ? (stories.length ? stories[stories.length - 1].id : -1) : -1,
-      ...(filter === "all" ? { productTotalCount, storyTotalCount } : {}),
-      products,
-      stories,
+      totalCount: 0,
+      lastCursor: -1,
+      productTotalCount,
+      storyTotalCount,
+      products: products.slice(0, 4),
+      stories: stories.slice(0, 4),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

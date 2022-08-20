@@ -21,15 +21,15 @@ const WelcomeLocatePage: NextPage = () => {
   const { changeLayout } = useLayouts();
   const { state, longitude, latitude } = useCoords();
 
-  const [recentlyKeyword, setRecentlyKeyword] = useState("");
+  const [recentlyAddressKeyword, setRecentlyAddressKeyword] = useState("");
   const searchKeywordForm = useForm<SearchKeywordTypes>();
-  const { data: keywordData, error: keywordError } = useSWR<GetSearchKeywordResponse>(Boolean(recentlyKeyword.length) ? `/api/address/searchKeyword?keyword=${recentlyKeyword}` : null);
+  const { data: keywordData, error: keywordError } = useSWR<GetSearchKeywordResponse>(Boolean(recentlyAddressKeyword.length) ? `/api/address/searchKeyword?keyword=${recentlyAddressKeyword}` : null);
   const { data: boundaryData, error: boundaryError } = useSWR<GetSearchBoundaryResponse>(
     longitude && latitude ? `/api/address/searchBoundary?distance=${0.02}&posX=${longitude}&posY=${latitude}` : null
   );
 
   const resetForm = () => {
-    setRecentlyKeyword("");
+    setRecentlyAddressKeyword("");
     searchKeywordForm.setValue("keyword", "");
     searchKeywordForm.setFocus("keyword");
   };
@@ -53,20 +53,20 @@ const WelcomeLocatePage: NextPage = () => {
         <SearchKeyword
           formData={searchKeywordForm}
           onValid={(data: SearchKeywordTypes) => {
-            setRecentlyKeyword(data.keyword);
+            setRecentlyAddressKeyword(data.keyword);
           }}
           placeholder="동명(읍,면)으로 검색 (ex. 서초동)"
         >
           <Buttons tag="button" type="reset" text="현재위치로 찾기" onClick={resetForm} />
         </SearchKeyword>
         <div className="mt-5">
-          <strong>{Boolean(recentlyKeyword?.length) ? `'${recentlyKeyword}' 검색 결과` : `근처 동네`}</strong>
+          <strong>{Boolean(recentlyAddressKeyword?.length) ? `'${recentlyAddressKeyword}' 검색 결과` : `근처 동네`}</strong>
         </div>
         <span className="absolute top-full left-0 w-full h-2 bg-gradient-to-b from-white" />
       </div>
 
       {/* 키워드 검색 결과 */}
-      {Boolean(recentlyKeyword.length) && (
+      {Boolean(recentlyAddressKeyword.length) && (
         <div className="mt-1">
           {!keywordData && !keywordError ? (
             // 로딩중
@@ -99,7 +99,7 @@ const WelcomeLocatePage: NextPage = () => {
       )}
 
       {/* 위치 검색 결과 */}
-      {!Boolean(recentlyKeyword.length) && (
+      {!Boolean(recentlyAddressKeyword.length) && (
         <div className="mt-1">
           {state === "denied" || state === "error" ? (
             // 위치 정보 수집 불가

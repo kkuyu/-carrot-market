@@ -20,12 +20,24 @@ const SearchIndexPage: NextPage = () => {
   const router = useRouter();
   const { changeLayout } = useLayouts();
 
-  const { data, mutate: boundMutate } = useSWR<GetSearchResponse>("/api/search");
-
+  // search
+  const { data: searchData, mutate: searchMutate } = useSWR<GetSearchResponse>("/api/search");
   const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
     onSuccess: (data) => {
-      const keyword = data?.history?.[0]?.keyword || "";
-      router.push({ pathname: "/search/result/all", query: { keyword } });
+      const filter = router?.query?.filter || "all";
+      const [{ keyword }] = data?.history;
+      switch (router.pathname) {
+        case "/search":
+          router.push({ pathname: "/search/result/[filter]", query: { filter, keyword } });
+          break;
+        case "/search/result/[filter]":
+          if (router?.query?.keyword?.toString() === keyword) return;
+          searchMutate();
+          router.replace({ pathname: "/search/result/[filter]", query: { filter, keyword } });
+          break;
+        default:
+          break;
+      }
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -35,10 +47,9 @@ const SearchIndexPage: NextPage = () => {
       }
     },
   });
-
   const [deleteSearch, { loading: deleteLoading }] = useMutation<PostSearchDeleteResponse>(`/api/search/delete`, {
     onSuccess: (data) => {
-      boundMutate();
+      searchMutate();
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -57,7 +68,7 @@ const SearchIndexPage: NextPage = () => {
   const clickDelete = (records: GetSearchResponse["history"]) => {
     if (deleteLoading) return;
     const keywords = records.map((record) => record.keyword);
-    boundMutate((prev) => {
+    searchMutate((prev) => {
       return prev && { ...prev, history: [...prev.history].filter((record) => !keywords.includes(record.keyword)) };
     }, false);
     deleteSearch({ keywords });
@@ -78,7 +89,7 @@ const SearchIndexPage: NextPage = () => {
       <div>
         <h2>이웃들이 많이 찾고 있어요!</h2>
         <ul className="mt-3 -mx-1 overflow-x-auto whitespace-nowrap">
-          {[...(data && Boolean(data?.records?.length) ? [...data.records] : [{ id: 0, keyword: "당근마켓" }])].map((record) => (
+          {[...(searchData && Boolean(searchData?.records?.length) ? [...searchData.records] : [{ id: 0, keyword: "당근마켓" }])].map((record) => (
             <li key={record.id} className="inline-block px-1">
               <Buttons
                 tag="button"
@@ -95,11 +106,11 @@ const SearchIndexPage: NextPage = () => {
         </ul>
       </div>
 
-      {data && Boolean(data?.history?.length) && (
+      {searchData && Boolean(searchData?.history?.length) && (
         <div className="mt-5 relative">
           <h2>최근 검색어</h2>
           <ul className="mt-1.5 -mx-3 flex flex-wrap">
-            {data.history.map((record) => {
+            {searchData.history.map((record) => {
               return (
                 <li key={record.keyword} className="relative w-1/2 px-3 [&:nth-child(n+3)]:mt-1">
                   <Buttons
@@ -130,7 +141,7 @@ const SearchIndexPage: NextPage = () => {
               );
             })}
           </ul>
-          <Buttons tag="button" type="button" sort="text-link" status="unset" size="sm" text="모두 지우기" className="absolute top-0 right-0" onClick={() => clickDelete([...data.history])} />
+          <Buttons tag="button" type="button" sort="text-link" status="unset" size="sm" text="모두 지우기" className="absolute top-0 right-0" onClick={() => clickDelete([...searchData.history])} />
         </div>
       )}
     </div>
@@ -158,7 +169,7 @@ Page.getLayout = getLayout;
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getSearch
   const history = [...(req?.session?.search?.history || [])].reverse();
-
+  const productFilter = { ...req?.session?.search?.productFilter };
   const records = await client.searchRecord.findMany({
     take: 10,
     orderBy: [{ count: "desc" }, { updatedAt: "desc" }],
@@ -192,6 +203,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           history: JSON.parse(JSON.stringify(history || [])),
+          productFilter: JSON.parse(JSON.stringify(productFilter || {})),
           records: JSON.parse(JSON.stringify(records || [])),
         },
       },

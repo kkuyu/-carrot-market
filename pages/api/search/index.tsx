@@ -7,11 +7,13 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 
 export interface GetSearchResponse extends ResponseDataType {
   history: IronSearchType["history"];
+  productFilter: IronSearchType["productFilter"];
   records: Pick<SearchRecord, "id" | "keyword">[];
 }
 
 export interface PostSearchResponse extends ResponseDataType {
   history: IronSearchType["history"];
+  productFilter: IronSearchType["productFilter"];
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -31,6 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const result: GetSearchResponse = {
         success: true,
         history: [...(req?.session?.search?.history || [])].reverse(),
+        productFilter: { ...req?.session?.search?.productFilter },
         records,
       };
       return res.status(200).json(result);
@@ -53,71 +56,92 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
   if (req.method === "POST") {
     try {
       const { user, search } = req.session;
-      const { keyword: _keyword } = req.body;
+      const { keyword: _keyword, excludeSold: _excludeSold } = req.body;
 
       // invalid
-      if (!_keyword) {
+      if (typeof _keyword === "undefined" && typeof _excludeSold === "undefined") {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
 
       // params
-      const history = [...(search?.history || [])];
-      const keyword = _keyword.toString();
-      const currentDate = new Date().toString();
-      const idx = history.findIndex((record) => record.keyword === keyword);
+      const keyword = _keyword?.toString() || "";
+      const excludeSold = typeof _excludeSold !== "undefined" ? JSON.parse(_excludeSold.toString()) : undefined;
 
-      // update session search
-      if (idx === -1) {
-        history.push({ keyword, createdAt: currentDate, updatedAt: currentDate });
-      } else {
-        const existed = history.splice(idx, 1);
-        history.push({ ...existed[0], updatedAt: currentDate });
-      }
-      req.session.search = {
-        history: history.slice(-10),
+      let searchPayload = {
+        history: [...(search?.history || [])],
+        productFilter: { ...search?.productFilter },
       };
-      await req.session.save();
 
-      // searchRecord params
-      const records = await client.searchRecord.findMany();
-      const existed = records.find((record) => record.keyword === keyword);
+      // keyword
+      if (keyword.length) {
+        // update searchPayload
+        const history = [...(search?.history || [])];
+        const currentDate = new Date().toString();
+        const idx = history.findIndex((record) => record.keyword === keyword);
+        if (idx === -1) {
+          history.push({ keyword, createdAt: currentDate, updatedAt: currentDate });
+        } else {
+          const existed = history.splice(idx, 1);
+          history.push({ ...existed[0], updatedAt: currentDate });
+        }
+        searchPayload.history = history.slice(-10);
 
-      if (user?.id && existed) {
         // update searchRecord
-        await client.searchRecord.update({
+        const [existed] = await client.searchRecord.findMany({
           where: {
-            id: existed.id,
-          },
-          data: {
-            count: existed.count + 1,
-            user: {
-              connect: {
-                id: user.id,
-              },
-            },
-          },
-        });
-      } else if (user?.id && !existed) {
-        // create searchRecord
-        await client.searchRecord.create({
-          data: {
-            count: 1,
             keyword,
-            user: {
-              connect: {
-                id: user.id,
-              },
-            },
+          },
+          select: {
+            id: true,
+            count: true,
           },
         });
+        if (user?.id && existed) {
+          await client.searchRecord.update({
+            where: {
+              id: existed.id,
+            },
+            data: {
+              count: existed.count + 1,
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          });
+        } else if (user?.id && !existed) {
+          await client.searchRecord.create({
+            data: {
+              count: 1,
+              keyword,
+              user: {
+                connect: {
+                  id: user.id,
+                },
+              },
+            },
+          });
+        }
       }
+
+      // excludeSold
+      if (typeof excludeSold === "boolean") {
+        // update searchPayload
+        searchPayload.productFilter.excludeSold = excludeSold;
+      }
+
+      // update req.session.search
+      req.session.search = { ...searchPayload };
+      await req.session.save();
 
       // result
       const result: PostSearchResponse = {
         success: true,
-        history: [...(req?.session?.search?.history || [])].reverse(),
+        history: [...searchPayload.history].reverse(),
+        productFilter: searchPayload.productFilter,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {

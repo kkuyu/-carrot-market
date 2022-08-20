@@ -1,10 +1,12 @@
 import { useRouter } from "next/router";
+import Link from "next/link";
 import { useEffect } from "react";
+import type { HTMLAttributes } from "react";
 import { useForm } from "react-hook-form";
 // @libs
 import useUser from "@libs/client/useUser";
-import useModal from "@libs/client/useModal";
 import useMutation from "@libs/client/useMutation";
+import useModal from "@libs/client/useModal";
 // @api
 import { PostSearchResponse } from "@api/search";
 // @components
@@ -13,6 +15,7 @@ import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/comm
 import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/instance/hometownDropdownModal";
 import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import SearchKeyword, { SearchKeywordTypes } from "@components/forms/searchKeyword";
+import Buttons from "@components/buttons";
 
 export interface HeaderProps extends HeaderOptions {}
 
@@ -22,12 +25,23 @@ const Header = (props: HeaderProps) => {
   const { user, currentAddr, type: userType } = useUser();
   const { openModal } = useModal();
 
+  // search
   const searchKeywordForm = useForm<SearchKeywordTypes>();
-
   const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
     onSuccess: (data) => {
-      const keyword = data?.history?.[0]?.keyword || "";
-      router.replace({ pathname: "/search/result/all", query: { keyword } });
+      const filter = router?.query?.filter || "all";
+      const [{ keyword }] = data?.history;
+      switch (router.pathname) {
+        case "/search":
+          router.push({ pathname: "/search/result/[filter]", query: { filter, keyword } });
+          break;
+        case "/search/result/[filter]":
+          if (router?.query?.keyword?.toString() === keyword) return;
+          router.replace({ pathname: "/search/result/[filter]", query: { filter, keyword } });
+          break;
+        default:
+          break;
+      }
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -37,6 +51,18 @@ const Header = (props: HeaderProps) => {
       }
     },
   });
+
+  const HeaderButton = (buttonProps: { pathname?: string; children: JSX.Element } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+    const { pathname, onClick, className: buttonClassName = "", children, ...restButtonProps } = buttonProps;
+    if (!pathname) {
+      return <Buttons tag="button" type="button" sort="icon-block" status="unset" size="lg" text={children} onClick={onClick} className={`${buttonClassName}`} {...restButtonProps} />;
+    }
+    return (
+      <Link href={pathname} passHref>
+        <Buttons tag="a" sort="icon-block" status="unset" size="lg" text={children} onClick={onClick} className={`${buttonClassName}`} {...restButtonProps} />
+      </Link>
+    );
+  };
 
   const getUtils = (name: HeaderUtils) => {
     if (!utils?.includes(name)) return null;
@@ -59,18 +85,16 @@ const Header = (props: HeaderProps) => {
           </button>
         );
       case HeaderUtils["Back"]:
-        const clickBack = () => router.back();
         return (
-          <button className="p-3" onClick={clickBack}>
+          <HeaderButton onClick={() => router.back()}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
             </svg>
-          </button>
+          </HeaderButton>
         );
       case HeaderUtils["Home"]:
-        const clickHome = () => router.push("/");
         return (
-          <button className="p-3" onClick={clickHome}>
+          <HeaderButton pathname="/">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 strokeLinecap="round"
@@ -79,16 +103,11 @@ const Header = (props: HeaderProps) => {
                 d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
               ></path>
             </svg>
-          </button>
+          </HeaderButton>
         );
       case HeaderUtils["Kebab"]:
-        const clickKebab = () => {
-          openModal<ActionModalProps>(ActionModal, "handleProduct", {
-            actions: kebabActions || [],
-          });
-        };
         return (
-          <button type="button" className="p-3" onClick={clickKebab}>
+          <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "handleProduct", { actions: kebabActions || [] })}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path
                 strokeLinecap="round"
@@ -97,36 +116,34 @@ const Header = (props: HeaderProps) => {
                 d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
               />
             </svg>
-          </button>
+          </HeaderButton>
         );
       case HeaderUtils["Keyword"]:
-        const validForm = (data: SearchKeywordTypes) => {
-          if (saveLoading) return;
-          saveSearch({ ...data });
-        };
         if (!currentAddr?.emdPosNm) return null;
-        return <SearchKeyword formData={searchKeywordForm} onValid={validForm} placeholder={`${currentAddr?.emdPosNm} 근처에서 검색`} className="w-full" />;
-      case HeaderUtils["Search"]:
-        const clickSearch = () => {
-          searchKeywordForm.setValue("keyword", "");
-          router.push("/search");
-        };
         return (
-          <button className="p-3" onClick={clickSearch}>
+          <SearchKeyword
+            formData={searchKeywordForm}
+            onValid={(data: SearchKeywordTypes) => {
+              if (saveLoading) return;
+              saveSearch({ ...data });
+            }}
+            placeholder={`${currentAddr?.emdPosNm} 근처에서 검색`}
+            className="w-full"
+          />
+        );
+      case HeaderUtils["Search"]:
+        return (
+          <HeaderButton pathname="/search">
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-          </button>
+          </HeaderButton>
         );
       case HeaderUtils["Share"]:
         // todo: share
         return <span>share</span>;
       case HeaderUtils["Submit"]:
-        return (
-          <button type="submit" form={submitId} className="h-12 px-5 font-semibold text-base text-orange-500">
-            완료
-          </button>
-        );
+        return <Buttons tag="button" type="submit" size="base" sort="text-link" status="primary" form={submitId} className="h-12 pl-5 pr-5 font-semibold" text="완료" />;
       case HeaderUtils["Title"]:
         const Tag = titleTag;
         if (!title) return null;
@@ -137,15 +154,17 @@ const Header = (props: HeaderProps) => {
   };
 
   useEffect(() => {
-    if (!utils?.includes(HeaderUtils["Keyword"])) return;
     if (!router.isReady) return;
-    if (!router.query?.keyword) return;
-    const recentlyKeyword = router.query.keyword.toString();
-    if (searchKeywordForm.getValues("keyword") !== recentlyKeyword) {
-      searchKeywordForm.setValue("keyword", recentlyKeyword);
-      saveSearch({ keyword: recentlyKeyword });
-    }
-  }, [router.isReady, router.query]);
+    if (!utils?.includes(HeaderUtils["Keyword"])) return;
+
+    let recentlySearchKeyword = undefined;
+    if (router.pathname === "/search") recentlySearchKeyword = "";
+    if (router.pathname === "/search/result/[filter]") recentlySearchKeyword = router?.query?.keyword?.toString();
+
+    if (typeof recentlySearchKeyword === "undefined") return;
+    if (searchKeywordForm.getValues("keyword") === recentlySearchKeyword) return;
+    searchKeywordForm.setValue("keyword", recentlySearchKeyword);
+  }, [router.isReady, router.pathname, router.query]);
 
   if (!utils?.length) return null;
 
