@@ -12,14 +12,14 @@ const NavBar = (props: NavBarProps) => {
 
   const IconButton = (buttonProps: HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & { pathname: string; children: JSX.Element }) => {
     const { pathname, children } = buttonProps;
+    const classNames = {
+      wrapper: "basis-full h-full pt-2",
+      icon: "[&>svg]:m-auto [&>svg]:w-5 [&>svg]:h-5",
+      span: "[&>span]:block [&>span]:mt-0.5 [&>span]:text-sm [&>span]:text-center",
+    };
     return (
       <Link href={pathname}>
-        <a
-          className={`basis-full h-full pt-2 [&>svg]:m-auto [&>svg]:w-5 [&>svg]:h-5 [&>span]:block [&>span]:mt-0.5 [&>span]:text-sm [&>span]:text-center
-          ${router.pathname === pathname ? "text-orange-500" : "hover:text-gray-500 transition-colors"}`}
-        >
-          {children}
-        </a>
+        <a className={`${classNames.wrapper} ${classNames.icon} ${classNames.span} ${router.pathname === pathname ? "text-orange-500" : "hover:text-gray-500 transition-colors"}`}>{children}</a>
       </Link>
     );
   };

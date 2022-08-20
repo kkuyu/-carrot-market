@@ -331,7 +331,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(productsByAll || [])),
-          pages: 0,
         },
       },
       getProductsBySale: {
@@ -341,7 +340,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(productsBySale || [])),
-          pages: 0,
         },
       },
       getProductsBySold: {
@@ -351,7 +349,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(productsBySold || [])),
-          pages: 0,
         },
       },
     },

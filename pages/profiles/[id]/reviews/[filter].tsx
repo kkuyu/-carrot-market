@@ -326,7 +326,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           reviews: JSON.parse(JSON.stringify(reviewsByAll.map((review) => ({ ...review, satisfaction: "", productId: 0 })) || [])),
-          pages: 0,
         },
       },
       getReviewsBySellUser: {
@@ -336,7 +335,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           reviews: JSON.parse(JSON.stringify(reviewsBySellUser.map((review) => ({ ...review, satisfaction: "", productId: 0 })) || [])),
-          pages: 0,
         },
       },
       getReviewsByPurchaseUser: {
@@ -346,7 +344,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           reviews: JSON.parse(JSON.stringify(reviewsByPurchaseUser.map((review) => ({ ...review, satisfaction: "", productId: 0 })) || [])),
-          pages: 0,
         },
       },
     },

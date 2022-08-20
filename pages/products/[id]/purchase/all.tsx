@@ -299,7 +299,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           chats: JSON.parse(JSON.stringify(chats || [])),
-          pages: 0,
         },
       },
     },

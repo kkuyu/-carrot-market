@@ -195,7 +195,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           manners: JSON.parse(JSON.stringify(manners || [])),
-          pages: 0,
         },
       },
     },

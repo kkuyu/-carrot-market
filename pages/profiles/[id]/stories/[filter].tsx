@@ -303,7 +303,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           success: true,
           stories: JSON.parse(JSON.stringify(stories || [])),
           comments: [],
-          pages: 0,
         },
       },
       getComments: {
@@ -314,7 +313,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           success: true,
           stories: [],
           comments: JSON.parse(JSON.stringify(comments || [])),
-          pages: 0,
         },
       },
     },

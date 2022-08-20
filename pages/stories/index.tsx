@@ -193,7 +193,6 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         response: {
           success: true,
           stories: JSON.parse(JSON.stringify(stories || [])),
-          pages: 0,
         },
       },
     },

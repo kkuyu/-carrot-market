@@ -21,25 +21,26 @@ const UserIndexPage: NextPage = () => {
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
-  const MenuItem = (props: HTMLAttributes<HTMLButtonElement | HTMLLinkElement> & { pathname?: string | null; onClick?: () => void | null; children: JSX.Element }) => {
+  const MenuItem = (props: { pathname?: string | null; onClick?: () => void | null; children: JSX.Element } & HTMLAttributes<HTMLButtonElement | HTMLLinkElement>) => {
     const { pathname, onClick, children } = props;
-    if (pathname) {
+    const classNames = {
+      wrapper: "block w-full text-left",
+      inner: "relative block py-1 pl-12 pr-5 [&>svg]:absolute [&>svg]:top-1.5 [&>svg]:left-5 [&>svg]:w-5 [&>svg]:h-5",
+    };
+    if (!pathname) {
       return (
-        <Link href={pathname}>
-          <a className="block">
-            <div className="relative block py-1 pl-12 pr-5 [&>svg]:absolute [&>svg]:top-1.5 [&>svg]:left-5 [&>svg]:w-5 [&>svg]:h-5">{children}</div>
-          </a>
-        </Link>
-      );
-    }
-    if (onClick) {
-      return (
-        <button type="button" onClick={onClick} className="block w-full text-left">
-          <div className="relative block py-1 pl-12 pr-5 [&>svg]:absolute [&>svg]:top-1.5 [&>svg]:left-5 [&>svg]:w-5 [&>svg]:h-5">{children}</div>
+        <button type="button" onClick={onClick} className={classNames.wrapper}>
+          <div className={classNames.inner}>{children}</div>
         </button>
       );
     }
-    return null;
+    return (
+      <Link href={pathname} passHref>
+        <a className={classNames.wrapper}>
+          <div className={classNames.inner}>{children}</div>
+        </a>
+      </Link>
+    );
   };
 
   const userMenu = [

@@ -199,7 +199,6 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         response: {
           success: true,
           products: JSON.parse(JSON.stringify(products || [])),
-          pages: 0,
         },
       },
     },
