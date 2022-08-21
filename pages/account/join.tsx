@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
-import useSWR from "swr";
+import useSWR, { mutate } from "swr";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
 import useToast from "@libs/client/useToast";
@@ -49,11 +49,12 @@ const AccountJoinPage: NextPage = () => {
   const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
   const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
   const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
-    onSuccess: () => {
+    onSuccess: async () => {
       openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
         message: userData?.isExisted ? "기존 정보로 로그인 되었어요" : "회원가입이 완료되었어요",
       });
+      await mutate("/api/user");
       router.replace("/");
     },
     onError: (data) => {
