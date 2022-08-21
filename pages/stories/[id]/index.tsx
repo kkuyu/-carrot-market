@@ -194,7 +194,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
   }
 
   return (
-    <article className={`container ${user?.id ? "pb-16" : "pb-5"}`}>
+    <article className={`container ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
       <h1 className="sr-only">{truncateStr(storyData?.story?.content, 15)} | 동네생활</h1>
 
       {/* 게시글 정보 */}
@@ -237,9 +237,9 @@ const StoriesDetailPage: NextPage<{}> = () => {
       {/* 댓글/답변 목록: list */}
       {commentTreeList && Boolean(commentTreeList?.length) && (
         <div className="mt-5">
-          <CommentTreeList list={commentTreeList} moreReComments={moreReComments}>
+          <CommentTreeList list={commentTreeList} moreReComments={moreReComments} cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}>
             <FeedbackComment key="FeedbackComment" />
-            {user?.id ? <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" /> : <></>}
+            {userType === "member" ? <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" /> : <></>}
             <CommentTreeList key="CommentTreeList" />
           </CommentTreeList>
         </div>
@@ -257,7 +257,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
       )}
 
       {/* 댓글/답변 입력 */}
-      {user?.id && (
+      {userType !== "guest" && (
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-14 border-t bg-white">
             <EditStoryComment formData={formData} onValid={validReComment} isLoading={commentLoading || uploadLoading} commentType={category?.commentType} className="w-full px-5" />

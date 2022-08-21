@@ -9,18 +9,18 @@ import { GetStoriesResponse } from "@api/stories";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 import { GetSearchResultResponse } from "@api/search/result/[filter]";
 // @components
-import Highlights from "@components/highlights";
+import HighlightText from "@components/highlightText";
 
 export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0] | GetSearchResultResponse["stories"][0];
 
 export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   item: StoryItem;
-  highlight?: string[];
-  isVisibleFeedback?: boolean;
+  highlightWord?: string;
+  summaryType?: "record" | "report";
 }
 
 const Story = (props: StoryProps) => {
-  const { item, isVisibleFeedback = true, highlight = [], className = "", ...restProps } = props;
+  const { item, highlightWord = "", summaryType = "record", className = "", ...restProps } = props;
 
   const [mounted, setMounted] = useState(false);
 
@@ -40,14 +40,15 @@ const Story = (props: StoryProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <div>
         <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
-        <strong className="mt-2 block font-normal">{highlight ? <Highlights text={item?.content || ""} highlight={highlight} /> : item?.content}</strong>
+        <strong className="mt-2 block font-normal">{highlightWord ? <HighlightText originalText={item?.content || ""} highlightWord={highlightWord} /> : item?.content}</strong>
       </div>
-      {isVisibleFeedback ? (
+      {summaryType === "record" && (
         <div className="mt-2 flex flex-wrap justify-between">
           <span className="text-sm text-gray-500">{[item?.user?.name, item?.emdPosNm].filter((v) => !!v).join(" · ")}</span>
           <span className="text-sm text-gray-500">{[mounted ? diffTime : null].filter((v) => !!v).join(" · ")}</span>
         </div>
-      ) : (
+      )}
+      {summaryType === "report" && (
         <div className="mt-2 flex flex-wrap justify-between">
           <span className="text-sm text-gray-500">{[item?.user?.name, item?.emdPosNm, mounted ? diffTime : null].filter((v) => !!v).join(" · ")}</span>
           <div className="flex">
@@ -98,7 +99,7 @@ const Story = (props: StoryProps) => {
             {comments?.map((comment) => (
               <li key={comment.id} className="relative block py-1.5 pl-6 pr-2 border border-gray-300 rounded-lg">
                 <span className="absolute top-2.5 left-2.5 w-2 h-2 border-l border-b border-gray-300" />
-                <span>{highlight ? <Highlights text={comment?.content || ""} highlight={highlight} /> : comment?.content}</span>
+                <span>{highlightWord ? <HighlightText originalText={comment?.content || ""} highlightWord={highlightWord} /> : comment?.content}</span>
               </li>
             ))}
           </ul>

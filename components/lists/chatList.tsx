@@ -8,13 +8,14 @@ import Chat, { ChatItem, ChatProps } from "@components/cards/chat";
 interface ChatListProps extends HTMLAttributes<HTMLUListElement> {
   type: "link" | "button";
   list: ChatItem[];
-  content: ChatProps["content"];
+  sort: ChatProps["sort"];
   isSingleUser?: boolean;
+  cardProps?: Partial<ChatProps>;
   selectItem?: (item: ChatItem, user: ChatItem["users"][0]) => void;
 }
 
 const ChatList = (props: ChatListProps) => {
-  const { type = "link", list, content, isSingleUser = false, className = "", selectItem, ...restProps } = props;
+  const { type = "link", list, sort, isSingleUser = false, cardProps = {}, className = "", selectItem, ...restProps } = props;
   const { user } = useUser();
 
   const ListItem = (itemProps: { item: ChatItem; users: ChatItem["users"]; children: JSX.Element } & HTMLAttributes<HTMLLIElement>) => {
@@ -47,14 +48,14 @@ const ChatList = (props: ChatListProps) => {
           if (!isSingleUser) {
             return (
               <ListItem key={item.id} item={item} users={users}>
-                <Chat item={item} users={users} content={content} isVisibleProduct={type === "link" ? true : false} />
+                <Chat item={item} sort={sort} users={users} isVisibleProduct={type === "link" ? true : false} {...cardProps} />
               </ListItem>
             );
           }
           return users.map((user) => {
             return (
               <ListItem key={`${item.id}-${user.id}`} item={item} users={[user]}>
-                <Chat item={item} users={users} content={content} isVisibleProduct={type === "link" ? true : false} />
+                <Chat item={item} sort={sort} users={users} isVisibleProduct={type === "link" ? true : false} {...cardProps} />
               </ListItem>
             );
           });

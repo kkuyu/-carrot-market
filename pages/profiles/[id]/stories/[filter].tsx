@@ -85,7 +85,7 @@ const ProfilesStoriesPage: NextPage = () => {
         <div className="-mx-5">
           {/* 동네생활 */}
           {Boolean(stories.length) && <h2 className="sr-only">게시글</h2>}
-          {Boolean(stories.length) && <StoryList list={stories} className="border-b divide-y-4" />}
+          {Boolean(stories.length) && <StoryList list={stories} cardProps={{ summaryType: "report" }} className="border-b divide-y-4" />}
           {/* 동네생활 댓글 */}
           {Boolean(comments.length) && <h2 className="sr-only">댓글</h2>}
           {Boolean(comments.length) && <CommentSummaryList list={comments} className="border-b divide-y-4" />}

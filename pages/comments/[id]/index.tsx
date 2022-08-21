@@ -130,7 +130,7 @@ const CommentsDetailPage: NextPage = () => {
   }
 
   return (
-    <article className={`container ${user?.id ? "pb-16" : "pb-5"}`}>
+    <article className={`container ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
       <h1 className="sr-only">{truncateStr(commentTreeList?.[0]?.content, 15)} | 댓글</h1>
 
       {commentTreeList?.[0]?.story && (
@@ -142,24 +142,29 @@ const CommentsDetailPage: NextPage = () => {
       )}
 
       <div className="relative mt-5">
-        <Comment item={commentTreeList?.[0]} className={user?.id ? "pr-8" : ""} />
+        <Comment item={commentTreeList?.[0]} className={userType === "member" ? "pr-8" : ""} />
         <FeedbackComment item={commentTreeList?.[0]} />
-        {user?.id && <HandleComment item={commentTreeList?.[0]} mutateCommentDetail={mutateCommentDetail} />}
+        {userType === "member" && <HandleComment item={commentTreeList?.[0]} mutateCommentDetail={mutateCommentDetail} />}
       </div>
 
       {/* 답글 목록: list */}
       {Boolean(commentTreeList?.[0]?.reComments?.length) && (
         <div className="mt-2">
-          <CommentTreeList list={commentTreeList?.[0]?.reComments} moreReComments={moreReComments} depth={commentTreeList?.[0]?.depth + 1}>
+          <CommentTreeList
+            list={commentTreeList?.[0]?.reComments}
+            moreReComments={moreReComments}
+            depth={commentTreeList?.[0]?.depth + 1}
+            cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}
+          >
             <FeedbackComment key="FeedbackComment" />
-            {user?.id ? <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} /> : <></>}
+            {userType === "member" ? <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} /> : <></>}
             <CommentTreeList key="CommentTreeList" />
           </CommentTreeList>
         </div>
       )}
 
       {/* 답글 입력 */}
-      {user?.id && (
+      {userType !== "guest" && (
         <div className="fixed bottom-0 left-0 w-full z-[50]">
           <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
             <EditStoryComment formData={formData} onValid={validReComment} isLoading={commentLoading || uploadLoading} commentType="답글" className="w-full px-5" />

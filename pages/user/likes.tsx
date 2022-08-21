@@ -56,7 +56,7 @@ const UserLikesPage: NextPage = () => {
       {/* 관심목록: List */}
       {products && Boolean(products.length) && (
         <div className="-mx-5">
-          <ProductList list={products} className="border-b">
+          <ProductList list={products} cardProps={{ className: "pr-8" }} className="border-b">
             <LikeProduct key="LikeProduct" className="absolute top-3 right-3 p-2" />
           </ProductList>
           {isReachingEnd ? (

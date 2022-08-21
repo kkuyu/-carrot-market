@@ -12,12 +12,12 @@ export type ChatItem = GetChatsResponse["chats"][0];
 export interface ChatProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatItem;
   users: ChatItem["users"];
-  content: "message" | "timestamp";
+  sort: "message" | "timestamp";
   isVisibleProduct?: boolean;
 }
 
 const Chat = (props: ChatProps) => {
-  const { item, users, content, isVisibleProduct = true, className = "", ...restProps } = props;
+  const { item, users, sort, isVisibleProduct = true, className = "", ...restProps } = props;
 
   const [mounted, setMounted] = useState(false);
 
@@ -39,10 +39,10 @@ const Chat = (props: ChatProps) => {
       <div className="grow shrink basis-auto min-w-0">
         <div className="flex items-center">
           <strong className="overflow-hidden whitespace-nowrap overflow-ellipsis">{users.map((user) => user.name).join(", ")}</strong>
-          {content === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{mounted ? diffTime : null}</span>}
+          {sort === "message" && <span className="flex-none pl-1.5 text-sm text-gray-500">{mounted ? diffTime : null}</span>}
         </div>
-        {content === "message" && <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>}
-        {content === "timestamp" && <span className="block text-sm text-gray-500">{mounted ? diffTime : null}</span>}
+        {sort === "message" && <span className="block overflow-hidden whitespace-nowrap overflow-ellipsis">{item.chatMessages[0].text}</span>}
+        {sort === "timestamp" && <span className="block text-sm text-gray-500">{mounted ? diffTime : null}</span>}
       </div>
       {isVisibleProduct && Boolean(item.product?.photos.length) && (
         <div className="flex-none">

@@ -69,7 +69,7 @@ const SearchPage: NextPage = () => {
     const excludeSold = searchData?.productFilter?.excludeSold || false;
     return {
       recentlySearchKeyword: keyword,
-      highlightWords: keyword ? keyword.split(" ") : [],
+      highlightWord: keyword.replace(/\s+/g, ";"),
       excludeSold,
       includeSold: !excludeSold,
     };
@@ -143,7 +143,7 @@ const SearchPage: NextPage = () => {
         <div>
           {/* 중고거래 */}
           {Boolean(products.length) && <h2 className={`pt-3 ${currentTab.value === "all" ? "" : "sr-only"}`}>중고거래</h2>}
-          {Boolean(products.length) && <ProductList list={products} highlight={searchData?.keyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(products.length) && <ProductList list={products} cardProps={{ highlightWord: searchFilter.highlightWord }} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
           {Boolean(products.length) && currentTab.value === "all" && products.length < data?.[data.length - 1]?.productTotalCount! && (
             <Link href={{ pathname: router.pathname, query: { filter: "product", keyword: router.query.keyword } }} replace passHref>
               <Buttons tag="a" status="default" size="sm" text="중고거래 더보기" />
@@ -152,7 +152,7 @@ const SearchPage: NextPage = () => {
           {/* 동네생활 */}
           {Boolean(stories.length) && currentTab.value === "all" && Boolean(products.length) && <span className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
           {Boolean(stories.length) && <h2 className={`pt-3 ${currentTab.value === "all" ? "" : "sr-only"} ${Boolean(products.length) ? "" : ""}`}>동네생활</h2>}
-          {Boolean(stories.length) && <StoryList list={stories} highlight={searchData?.keyword?.split(" ")} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(stories.length) && <StoryList list={stories} cardProps={{ highlightWord: searchFilter.highlightWord, summaryType: "report" }} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
           {Boolean(stories.length) && currentTab.value === "all" && stories.length < data?.[data.length - 1]?.storyTotalCount! && (
             <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: router.query.keyword } }} replace passHref>
               <Buttons tag="a" status="default" size="sm" text="동네생활 더보기" className="pb-3" />

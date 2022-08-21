@@ -10,22 +10,20 @@ import { FeedbackStoryProps } from "@components/groups/feedbackStory";
 
 interface StoryListProps extends HTMLAttributes<HTMLUListElement> {
   list: StoryItem[];
-  highlight?: string[];
+  cardProps?: Partial<StoryProps>;
   children?: ReactElement | ReactElement[];
 }
 
 const StoryList = (props: StoryListProps) => {
-  const { list, children = [], highlight = [], className = "", ...restProps } = props;
+  const { list, children = [], cardProps = {}, className = "", ...restProps } = props;
 
   if (!Boolean(list.length)) return null;
 
   return (
     <ul className={`divide-y ${className}`} {...restProps}>
       {list.map((item) => {
-        let includeFeedbackStory = false;
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
-            if (child.key === "FeedbackStory") includeFeedbackStory = true;
             if (child.key === "FeedbackStory") return cloneElement(child as ReactElement<FeedbackStoryProps>, { item });
           }
           return child;
@@ -43,7 +41,7 @@ const StoryList = (props: StoryListProps) => {
           <li key={item?.id} className="relative">
             <Link href={`/stories/${item?.id}`}>
               <a className="block pt-3 pb-3 px-5">
-                <Story item={item} isVisibleFeedback={includeFeedbackStory} highlight={highlight} />
+                <Story item={item} {...cardProps} />
               </a>
             </Link>
             {Boolean(thumbnails.length) && (

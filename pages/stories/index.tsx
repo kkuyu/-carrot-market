@@ -62,7 +62,7 @@ const StoriesIndexPage: NextPage = () => {
       {/* 동네생활: List */}
       {stories && Boolean(stories.length) && (
         <div className="-mx-5">
-          <StoryList list={stories} className="border-b divide-y-4">
+          <StoryList list={stories} cardProps={{ summaryType: "record" }} className="border-b divide-y-4">
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
           {isReachingEnd ? (

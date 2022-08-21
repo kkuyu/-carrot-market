@@ -3,7 +3,7 @@ import { Children, cloneElement, isValidElement, useEffect, useState } from "rea
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 // @components
-import Comment, { CommentItem } from "@components/cards/comment";
+import Comment, { CommentItem, CommentProps } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
 import { FeedbackCommentProps } from "@components/groups/feedbackComment";
 
@@ -13,11 +13,12 @@ interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
   reCommentRefId?: number;
   countReComments?: number;
   moreReComments?: (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => void;
+  cardProps?: Partial<CommentProps>;
   children?: ReactElement | ReactElement[];
 }
 
 const CommentTreeList = (props: CommentTreeListProps) => {
-  const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, children, className = "", ...restProps } = props;
+  const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, cardProps = {}, children, className = "", ...restProps } = props;
 
   const [isLoading, setIsLoading] = useState(false);
   const [readType, setReadType] = useState<StoryCommentReadTypeEnum>("more");
@@ -45,21 +46,19 @@ const CommentTreeList = (props: CommentTreeListProps) => {
       {Boolean(list.length) && (
         <ul className="mt-2 space-y-3">
           {list?.map((item) => {
-            let includeHandleComment = false;
             const { reComments: list, _count, ...itemData } = item;
             const childInfo = { depth: item.depth + 1, reCommentRefId: item.id, countReComments: _count?.reComments };
             const childrenWithProps = Children.map(children, (child) => {
               if (isValidElement(child)) {
-                if (child.key === "HandleComment") includeHandleComment = true;
                 if (child.key === "HandleComment") return cloneElement(child as ReactElement<HandleCommentProps>, { item: itemData });
                 if (child.key === "FeedbackComment") return cloneElement(child as ReactElement<FeedbackCommentProps>, { item: itemData });
-                if (child.key === "CommentTreeList") return cloneElement(child as ReactElement<CommentTreeListProps>, { list, moreReComments, children, ...childInfo });
+                if (child.key === "CommentTreeList") return cloneElement(child as ReactElement<CommentTreeListProps>, { list, cardProps, moreReComments, children, ...childInfo });
               }
               return child;
             });
             return (
               <li key={item.id} className="relative">
-                <Comment item={itemData} className={includeHandleComment ? "pr-8" : ""} />
+                <Comment item={itemData} {...cardProps} />
                 {childrenWithProps}
               </li>
             );
