@@ -18,6 +18,7 @@ import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } f
 import HometownLocateModal, { HometownLocateModalProps, HometownLocateModalName } from "@components/commons/modals/instance/hometownLocateModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import Buttons from "@components/buttons";
+import Icons from "@components/icons";
 
 export interface HometownUpdateModalProps {}
 
@@ -224,11 +225,7 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                         type="button"
                         sort="round-box"
                         status="default"
-                        text={
-                          <svg className="m-auto w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
-                          </svg>
-                        }
+                        text={<Icons name="Plus" className="m-auto w-6 h-6" />}
                         onClick={selectItem}
                         className={`${key}-select-button`}
                         aria-label={text}
@@ -253,11 +250,7 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                         sort="icon-block"
                         status="default"
                         size="sm"
-                        text={
-                          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                          </svg>
-                        }
+                        text={<Icons name="XCircle" className="w-6 h-6" />}
                         onClick={removeItem}
                         className={`${key}-select-button absolute top-1/2 right-1.5 flex -translate-y-1/2 ${user?.emdType === key ? "text-white" : ""}`}
                         aria-label={`${text} 삭제`}

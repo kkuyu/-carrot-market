@@ -6,6 +6,7 @@ import { clearTimer, setTimer, TimerRef } from "@libs/utils";
 import usePanel from "@libs/client/usePanel";
 // @components
 import BottomPanel, { BottomPanelProps, BottomSheetProps } from "@components/commons/panels/case/bottomPanel";
+import Icons from "@components/icons";
 
 interface OptionGroupItem<T> {
   label: string;
@@ -131,10 +132,8 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
         aria-haspopup="listbox"
       >
         <span className={`${currentValue ? "text-black" : "text-gray-500"}`}>{currentText}</span>
-        <span className={`absolute top-1/2 right-3 -mt-3 ${isOpen ? "rotate-180" : "rotate-0"}`} aria-hidden="true">
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-          </svg>
+        <span className={`absolute top-1/2 right-3 -translate-y-1/2 ${isOpen ? "rotate-180" : "rotate-0"}`} aria-hidden="true">
+          <Icons name="ChevronDown" className="w-5 h-5" />
         </span>
       </button>
 

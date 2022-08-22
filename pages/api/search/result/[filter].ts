@@ -18,7 +18,7 @@ export interface GetSearchResultResponse extends ResponseDataType {
   stories: (Story & {
     user: Pick<User, "id" | "name" | "avatar">;
     records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments?: Pick<StoryComment, "id" | "userId" | "content">[];
+    comments?: (Pick<StoryComment, "id"> & Partial<Pick<StoryComment, "userId" | "content">>)[];
   })[];
   productTotalCount?: number;
   storyTotalCount?: number;
@@ -143,13 +143,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // fetch story
     const storyTotalCount =
       filter === "all" || filter === "story"
-        ? await await client.story.count({
+        ? await client.story.count({
             where: whereByStory,
           })
         : 0;
     const stories =
       filter === "all" || filter === "story"
-        ? await await client.story.findMany({
+        ? await client.story.findMany({
             where: whereByStory,
             take: pageSize,
             skip: prevCursor ? 1 : 0,
@@ -175,6 +175,27 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
                 },
               },
               comments: {
+                where: {
+                  NOT: [{ content: "" }],
+                  AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+                },
+                select: {
+                  id: true,
+                },
+              },
+            },
+          })
+        : [];
+    const extraStories =
+      filter === "all" || filter === "story"
+        ? await client.story.findMany({
+            where: whereByStory,
+            take: pageSize,
+            skip: prevCursor ? 1 : 0,
+            ...(prevCursor && { cursor: { id: prevCursor } }),
+            orderBy: [{ records: { _count: "desc" } }, { comments: { _count: "desc" } }, { createdAt: "desc" }],
+            select: {
+              comments: {
                 take: 1,
                 orderBy: [{ depth: "asc" }, { createdAt: "asc" }],
                 where: {
@@ -196,6 +217,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
             },
           })
         : [];
+    const resultStories = stories.map((story, index) => {
+      const { comments: extraComments } = { ...extraStories[index] };
+      return {
+        ...story,
+        comments: story.comments.map((comment) => {
+          const extraComment = extraComments.find((_comment) => _comment.id === comment.id);
+          return { ...comment, ...extraComment };
+        }),
+      };
+    });
 
     // result
     if (filter === "product") {
@@ -212,9 +243,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const result: GetSearchResultResponse = {
         success: true,
         totalCount: storyTotalCount,
-        lastCursor: stories.length ? stories[stories.length - 1].id : -1,
+        lastCursor: resultStories.length ? resultStories[resultStories.length - 1].id : -1,
         products: [],
-        stories,
+        stories: resultStories,
       };
       return res.status(200).json(result);
     }
@@ -225,7 +256,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       productTotalCount,
       storyTotalCount,
       products: products.slice(0, 4),
-      stories: stories.slice(0, 4),
+      stories: resultStories.slice(0, 4),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

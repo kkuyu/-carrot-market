@@ -1,4 +1,4 @@
-import type { ForwardedRef, ReactElement, ElementType } from "react";
+import type { ForwardedRef, ReactElement, ReactNode, ElementType } from "react";
 import { forwardRef } from "react";
 
 type As = "button" | "a";
@@ -8,7 +8,7 @@ type Props<T extends keyof JSX.IntrinsicElements> = {
   sort?: "round-box" | "text-link" | "icon-block";
   size?: "sm" | "base" | "lg";
   status?: "primary" | "default" | "danger" | "unset";
-  text: string | ReactElement;
+  text: string | ReactElement | ReactNode;
   disabled?: boolean;
 } & JSX.IntrinsicElements[T];
 

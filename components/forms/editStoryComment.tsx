@@ -5,6 +5,7 @@ import Labels from "@components/labels";
 import Inputs from "@components/inputs";
 import TextAreas from "@components/textareas";
 import Buttons from "@components/buttons";
+import Icons from "@components/icons";
 
 export interface EditStoryCommentTypes {
   content: string;
@@ -37,20 +38,7 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
             type="text"
             placeholder={`${commentType}을 입력해주세요`}
             appendButtons={
-              <Buttons
-                tag="button"
-                type="submit"
-                sort="icon-block"
-                size="sm"
-                status="default"
-                disabled={isLoading}
-                text={
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 11l3-3m0 0l3 3m-3-3v8m0-13a9 9 0 110 18 9 9 0 010-18z"></path>
-                  </svg>
-                }
-                aria-label="검색"
-              />
+              <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" disabled={isLoading} text={<Icons name="ArrowUpCircle" strokeWidth={1.5} className="w-6 h-6" />} />
             }
           />
         </div>

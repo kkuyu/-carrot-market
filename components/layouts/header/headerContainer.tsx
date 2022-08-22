@@ -16,6 +16,7 @@ import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModa
 import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import SearchKeyword, { SearchKeywordTypes } from "@components/forms/searchKeyword";
 import Buttons from "@components/buttons";
+import Icons from "@components/icons";
 
 export interface HeaderProps extends HeaderOptions {}
 
@@ -52,7 +53,7 @@ const Header = (props: HeaderProps) => {
     },
   });
 
-  const HeaderButton = (buttonProps: { pathname?: string; children: JSX.Element } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  const HeaderButton = (buttonProps: { pathname?: string } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...restButtonProps } = buttonProps;
     if (!pathname) {
       return <Buttons tag="button" type="button" sort="icon-block" status="unset" size="lg" text={children} onClick={onClick} className={`${buttonClassName}`} {...restButtonProps} />;
@@ -79,43 +80,25 @@ const Header = (props: HeaderProps) => {
         return (
           <button className="h-12 flex items-center px-5" onClick={clickAddress}>
             <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path>
-            </svg>
+            <Icons name="ChevronDown" className="w-4 h-4" />
           </button>
         );
       case HeaderUtils["Back"]:
         return (
           <HeaderButton onClick={() => router.back()}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7"></path>
-            </svg>
+            <Icons name="ChevronLeft" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Home"]:
         return (
           <HeaderButton pathname="/">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"
-              ></path>
-            </svg>
+            <Icons name="Home" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Kebab"]:
         return (
           <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "handleProduct", { actions: kebabActions || [] })}>
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-              />
-            </svg>
+            <Icons name="EllipsisVertical" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Keyword"]:
@@ -134,9 +117,7 @@ const Header = (props: HeaderProps) => {
       case HeaderUtils["Search"]:
         return (
           <HeaderButton pathname="/search">
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
+            <Icons name="MagnifyingGlass" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Share"]:

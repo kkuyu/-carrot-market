@@ -76,7 +76,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const totalCount = await client.story.count({
         where,
       });
-      const stories = await await client.story.findMany({
+      const stories = await client.story.findMany({
         where,
         take: pageSize,
         skip: prevCursor ? 1 : 0,

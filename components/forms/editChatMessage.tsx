@@ -3,6 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 // @components
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
+import Icons from "@components/icons";
 
 export interface EditChatMessageTypes {
   text: string;
@@ -32,21 +33,7 @@ const EditChatMessage = (props: EditChatMessageProps) => {
         placeholder=""
         name="text"
         type="text"
-        appendButtons={
-          <Buttons
-            tag="button"
-            type="submit"
-            sort="icon-block"
-            size="sm"
-            status="default"
-            text={
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-              </svg>
-            }
-            aria-label="전송"
-          />
-        }
+        appendButtons={<Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" text={<Icons name="ArrowUpCircle" strokeWidth={1.5} className="w-6 h-6" />} />}
       />
     </form>
   );

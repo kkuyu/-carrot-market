@@ -3,6 +3,7 @@ import { UseFormReturn } from "react-hook-form";
 // @components
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
+import Icons from "@components/icons";
 
 export interface SearchKeywordTypes {
   keyword: string;
@@ -29,21 +30,7 @@ const SearchKeyword = (props: SearchKeywordProps) => {
           name="keyword"
           type="text"
           placeholder={placeholder}
-          appendButtons={
-            <Buttons
-              tag="button"
-              type="submit"
-              sort="icon-block"
-              size="sm"
-              status="default"
-              text={
-                <svg role="img" className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-                </svg>
-              }
-              aria-label="검색"
-            />
-          }
+          appendButtons={<Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" text={<Icons name="MagnifyingGlass" className="w-5 h-5" />} />}
         />
       </div>
       {children}

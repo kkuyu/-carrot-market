@@ -10,6 +10,7 @@ import { GetSearchResultResponse } from "@api/search/result/[filter]";
 // @components
 import Images from "@components/images";
 import HighlightText from "@components/highlightText";
+import Icons from "@components/icons";
 
 export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0] | GetSearchResultResponse["products"][0];
 
@@ -55,27 +56,13 @@ const Product = (props: ProductProps) => {
       <div className="absolute bottom-0 right-0 flex items-center space-x-0.5 text-sm text-gray-400">
         {Boolean(likeRecords?.length) && (
           <>
-            <svg className="flex-none w-4 h-4 pl-1 box-content" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              ></path>
-            </svg>
+            <Icons name="Heart" className="flex-none w-5 h-5 pl-1" />
             <span>{likeRecords.length}</span>
           </>
         )}
         {Boolean(foundChats?.length) && (
           <>
-            <svg className="flex-none w-4 h-4 pl-1 box-content" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-              />
-            </svg>
+            <Icons name="ChatBubbleLeftRight" className="flex-none w-5 h-5 pl-1" />
             <span>{foundChats?.length}</span>
           </>
         )}

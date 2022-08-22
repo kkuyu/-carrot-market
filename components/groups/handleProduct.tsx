@@ -12,6 +12,7 @@ import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
+import Icons from "@components/icons";
 
 export type HandleProductItem = GetProfilesProductsResponse["products"][0];
 
@@ -88,9 +89,7 @@ const HandleProduct = (props: HandleProductProps) => {
 
   return (
     <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandleModal} disabled={saleLoading} {...restProps}>
-      <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z" />
-      </svg>
+      <Icons name="EllipsisVertical" className="w-5 h-5 text-gray-400" />
     </button>
   );
 };

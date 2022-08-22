@@ -18,7 +18,7 @@ const ChatList = (props: ChatListProps) => {
   const { type = "link", list, sort, isSingleUser = false, cardProps = {}, className = "", selectItem, ...restProps } = props;
   const { user } = useUser();
 
-  const ListItem = (itemProps: { item: ChatItem; users: ChatItem["users"]; children: JSX.Element } & HTMLAttributes<HTMLLIElement>) => {
+  const ListItem = (itemProps: { item: ChatItem; users: ChatItem["users"] } & HTMLAttributes<HTMLLIElement>) => {
     const { item, users, className: itemClassName = "", children } = itemProps;
     return (
       <li className={`${itemClassName}`}>

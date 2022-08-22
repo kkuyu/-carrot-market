@@ -11,6 +11,7 @@ import Labels from "@components/labels";
 import Files from "@components/files";
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
+import Icons from "@components/icons";
 
 export interface EditProfileTypes {
   photos?: FileList;
@@ -74,20 +75,7 @@ const EditProfile = (props: EditProfileProps) => {
           name="name"
           type="text"
           appendButtons={
-            <Buttons
-              tag="button"
-              type="button"
-              sort="icon-block"
-              size="sm"
-              status="default"
-              text={
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
-                </svg>
-              }
-              onClick={makeRandomName}
-              aria-label="랜덤"
-            />
+            <Buttons tag="button" type="button" sort="icon-block" size="sm" status="default" text={<Icons name="Sparkles" strokeWidth={1.5} className="w-6 h-6" />} onClick={makeRandomName} />
           }
         />
         <span className="empty:hidden invalid">{formState.errors.name?.message}</span>

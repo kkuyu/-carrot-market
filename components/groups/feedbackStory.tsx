@@ -16,6 +16,7 @@ import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
 // @components
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
+import Icons from "@components/icons";
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
@@ -109,23 +110,33 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
       {/* 궁금해요: button */}
       {!category?.isLikeWithEmotion && (
         <button type="button" onClick={clickLike} className="inline-flex items-center py-2">
-          <svg className={`w-5 h-5 ${likeRecord ? "text-orange-500" : "text-gray-500"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-          </svg>
-          <span className={`ml-1 text-sm ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
+          {likeRecord ? (
+            <>
+              <Icons name="QuestionMarkCircleSolid" className="w-5 h-5 text-orange-500" />
+              <span className="ml-1 text-sm text-orange-500">궁금해요 {likeRecords.length}</span>
+            </>
+          ) : (
+            <>
+              <Icons name="QuestionMarkCircle" className="w-5 h-5 text-gray-500" />
+              <span className="ml-1 text-sm text-gray-500">궁금해요</span>
+            </>
+          )}
         </button>
       )}
       {/* 공감하기: button */}
       {category?.isLikeWithEmotion && (
         <button type="button" onClick={clickEmotionButton} onBlur={blurEmotionButton} className="inline-flex items-center py-2">
           {!likeRecord ? (
-            <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <>
+              <Icons name="FaceSmile" className="w-5 h-5 text-gray-500" />
+              <span className="ml-1 text-sm text-gray-500">공감하기</span>
+            </>
           ) : (
-            <span className="w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>
+            <>
+              <span className="w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>
+              <span className="ml-1 text-sm text-orange-500">공감했어요</span>
+            </>
           )}
-          {!likeRecord ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
         </button>
       )}
       {/* 공감하기: box */}
@@ -160,14 +171,7 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
       )}
       {/* 댓글/답변 */}
       <button type="button" className="inline-flex items-center py-2 last:ml-4" onClick={clickComment}>
-        <svg className="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth="2"
-            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
-          ></path>
-        </svg>
+        <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
         <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
       </button>
     </div>
