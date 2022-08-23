@@ -6,6 +6,7 @@ import { clearTimer, setTimer, TimerRef } from "@libs/utils";
 import usePanel from "@libs/client/usePanel";
 // @components
 import BottomPanel, { BottomPanelProps, BottomSheetProps } from "@components/commons/panels/case/bottomPanel";
+import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
 interface OptionGroupItem<T> {
@@ -87,9 +88,18 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
     const Option = (props: { item: OptionGroupItem<T>["options"][0] } & HTMLAttributes<HTMLButtonElement>) => {
       const { item, className: optionClassName = "" } = props;
       return (
-        <button role="option" type="button" onClick={() => selectItem(item)} className={`w-full text-left hover:font-semibold ${optionClassName}`} aria-selected={item.value === currentValue}>
+        <Buttons
+          role="option"
+          tag="button"
+          type="button"
+          sort="text-link"
+          status="unset"
+          onClick={() => selectItem(item)}
+          className={`w-full text-left hover:font-semibold ${optionClassName}`}
+          aria-selected={item.value === currentValue}
+        >
           {item.text}
-        </button>
+        </Buttons>
       );
     };
     return (

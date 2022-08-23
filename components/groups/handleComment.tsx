@@ -15,12 +15,14 @@ import { PostCommentsDeleteResponse } from "@api/comments/[id]/delete";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
+import Buttons, { ButtonsProps } from "@components/buttons";
 import Icons from "@components/icons";
 
 export type HandleCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
 export interface HandleCommentProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleCommentItem;
+  size?: ButtonsProps<"button">["size"];
   mutateStoryDetail?: KeyedMutator<GetStoriesDetailResponse>;
   mutateStoryComments?: KeyedMutator<GetStoriesCommentsResponse>;
   mutateCommentDetail?: KeyedMutator<GetCommentsDetailResponse>;
@@ -55,7 +57,7 @@ const HandleComment = (props: HandleCommentProps) => {
       { key: "report", style: ActionStyleEnum["destructive"], text: "댓글 신고", handler: () => console.log("댓글 신고") },
       { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
     ];
-    openModal<ActionModalProps>(ActionModal, "handleProduct", {
+    openModal<ActionModalProps>(ActionModal, "handleComment", {
       actions:
         user?.id === item?.userId
           ? modalActions.filter((action) => ["place", "update", "delete", "cancel"].includes(action.key))
@@ -112,9 +114,9 @@ const HandleComment = (props: HandleCommentProps) => {
   if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandlePanel} {...restProps}>
+    <Buttons tag="button" type="button" sort="icon-block" size="sm" status="unset" onClick={openHandlePanel} className={`absolute top-0 right-0 ${className}`} {...restProps}>
       <Icons name="EllipsisVertical" className="w-5 h-5 text-gray-400" />
-    </button>
+    </Buttons>
   );
 };
 

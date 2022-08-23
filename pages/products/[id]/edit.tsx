@@ -123,7 +123,7 @@ const ProductsEditPage: NextPage = () => {
     formData.setValue("description", productData?.product?.description);
     formData.setValue("price", productData?.product?.price);
     setDefaultPhotos();
-  }, [productData, user?.id]);
+  }, [productData]);
 
   useEffect(() => {
     changeLayout({

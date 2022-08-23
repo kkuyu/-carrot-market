@@ -92,7 +92,7 @@ const ProductsResumePage: NextPage = () => {
       return null;
     });
     formData.setValue("price", productData?.product?.price);
-  }, [productData, user?.id]);
+  }, [productData]);
 
   useEffect(() => {
     changeLayout({
@@ -130,10 +130,14 @@ const ProductsResumePage: NextPage = () => {
             <br />
             {/* todo: 판매 확률 높이는 꿀팁보기 */}
             <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" text="판매 확률 높이는 꿀팁보기" status="default" className="pl-0" />
+              <Buttons tag="a" sort="text-link" status="default" className="pl-0">
+                판매 확률 높이는 꿀팁보기
+              </Buttons>
             </Link>
           </p>
-          <Buttons tag="button" type="button" text="끌어올리기" className="mt-5" disabled={true} />
+          <Buttons tag="button" type="button" className="mt-5" disabled={true}>
+            끌어올리기
+          </Buttons>
         </div>
       )}
 
@@ -155,10 +159,14 @@ const ProductsResumePage: NextPage = () => {
             <br />
             {/* todo: 판매 확률 높이는 꿀팁보기 */}
             <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" text="판매 확률 높이는 꿀팁보기" status="default" className="pl-0" />
+              <Buttons tag="a" sort="text-link" status="default" className="pl-0">
+                판매 확률 높이는 꿀팁보기
+              </Buttons>
             </Link>
           </p>
-          <Buttons tag="button" type="button" text="끌어올리기" className="mt-5" disabled={true} />
+          <Buttons tag="button" type="button" className="mt-5" disabled={true}>
+            끌어올리기
+          </Buttons>
         </div>
       )}
 
@@ -171,7 +179,9 @@ const ProductsResumePage: NextPage = () => {
               다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
             </p>
           )}
-          <Buttons tag="button" type="submit" text="끌어올리기" className="mt-5" disabled={loading} onClick={submitProduct} />
+          <Buttons tag="button" type="submit" className="mt-5" disabled={loading} onClick={submitProduct}>
+            끌어올리기
+          </Buttons>
         </div>
       )}
 

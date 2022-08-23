@@ -24,8 +24,6 @@ interface PictureZoomProps extends HTMLAttributes<HTMLDivElement> {
 const PictureZoom = (props: PictureZoomProps) => {
   const { list, defaultIndex, className = "", ...restProps } = props;
 
-  const [mounted, setMounted] = useState(false);
-
   // zoom
   const zoomRef = useRef<ReactZoomPanPinchRef>(null);
 
@@ -59,7 +57,7 @@ const PictureZoom = (props: PictureZoomProps) => {
         onClick={() => {
           if (!flickingRef.current) return;
           flickingRef.current.viewport.element.scrollLeft = 0;
-          flickingRef.current.moveTo(index, 200);
+          flickingRef?.current?.moveTo(index, 200);
           setFlickingIndex(index);
           resetZoom();
         }}
@@ -78,16 +76,13 @@ const PictureZoom = (props: PictureZoomProps) => {
   }, [flickingIndex]);
 
   useEffect(() => {
-    const updateList = async () => {
-      await setTimer(delayTimer, 0);
-    };
     clearTimer(delayTimer);
+    setTimer(delayTimer, 0);
     updateSlider();
     resetZoom();
   }, [list]);
 
   useEffect(() => {
-    setMounted(true);
     updateSlider();
     resetZoom();
   }, []);

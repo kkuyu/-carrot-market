@@ -111,10 +111,11 @@ const CommentsDetailPage: NextPage = () => {
   useEffect(() => {
     if (!router?.query?.id) return;
     setCommentQuery(() => "");
-    if (!user?.id) return;
-    formData?.setValue("reCommentRefId", +router.query.id.toString());
-    formData?.setFocus("content");
-  }, [router?.query?.id, user?.id]);
+    if (userType !== "guest") {
+      formData?.setValue("reCommentRefId", +router.query.id.toString());
+      formData?.setFocus("content");
+    }
+  }, [router?.query?.id, userType]);
 
   // setting layout
   useEffect(() => {

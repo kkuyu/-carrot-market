@@ -26,7 +26,6 @@ interface PictureSliderProps extends Partial<FlickingProps & FlickingOptions> {
 const PictureSlider = (props: PictureSliderProps) => {
   const { list, defaultIndex, className = "", ...restProps } = props;
   const { openModal } = useModal();
-  const [mounted, setMounted] = useState(false);
 
   // slider
   const flickingRef = useRef<Flicking>(null);
@@ -70,7 +69,7 @@ const PictureSlider = (props: PictureSliderProps) => {
         onFocus={() => {
           if (!flickingRef.current) return;
           flickingRef.current.viewport.element.scrollLeft = 0;
-          flickingRef.current.moveTo(index, 0);
+          flickingRef?.current?.moveTo(index, 0);
         }}
       >
         <Images cloudId={item.src} cloudVariant="public" size="100%" ratioX={5} ratioY={3} rounded="none" alt={item.name} />
@@ -79,15 +78,12 @@ const PictureSlider = (props: PictureSliderProps) => {
   };
 
   useEffect(() => {
-    const updateList = async () => {
-      await setTimer(delayTimer, 0);
-    };
     clearTimer(delayTimer);
-    updateList();
+    setTimer(delayTimer, 0);
+    updateSlider();
   }, [list]);
 
   useEffect(() => {
-    setMounted(true);
     updateSlider();
   }, []);
 
@@ -122,7 +118,7 @@ const PictureSlider = (props: PictureSliderProps) => {
       {...restProps}
     >
       {list.map((item, index, array) => (
-        <li key={item.key} id={item.key} role="tabpanel" className="aaa relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
+        <li key={item.key} id={item.key} role="tabpanel" className="relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
           <SliderItem item={item} index={index} array={array} />
         </li>
       ))}

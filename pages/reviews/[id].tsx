@@ -79,11 +79,13 @@ const ReviewsDetailPage: NextPage = () => {
       </div>
       {Boolean(data.review.product.reviews.length) ? (
         <Link href={`/reviews/${data.review.product.reviews[0].id}`} passHref>
-          <Buttons tag="a" text={`${data?.review?.role === role ? "받은" : "보낸"} 거래 후기 보기`} className="mt-5" />
+          <Buttons tag="a" className="mt-5">{`${data?.review?.role === role ? "받은" : "보낸"} 거래 후기 보기`}</Buttons>
         </Link>
       ) : data?.review?.role !== role ? (
         <Link href={`/products/${data.review.product.id}/review`} passHref>
-          <Buttons tag="a" text="거래 후기 보내기" className="mt-5" />
+          <Buttons tag="a" className="mt-5">
+            거래 후기 보내기
+          </Buttons>
         </Link>
       ) : null}
     </article>

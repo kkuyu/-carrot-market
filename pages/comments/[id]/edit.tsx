@@ -55,7 +55,7 @@ const CommentsEditPage: NextPage = () => {
   useEffect(() => {
     if (!commentData?.comment) return;
     formData.setValue("content", commentData?.comment?.content);
-  }, [commentData, user?.id]);
+  }, [commentData]);
 
   useEffect(() => {
     changeLayout({

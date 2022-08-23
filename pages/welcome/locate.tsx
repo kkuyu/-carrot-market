@@ -57,7 +57,9 @@ const WelcomeLocatePage: NextPage = () => {
           }}
           placeholder="동명(읍,면)으로 검색 (ex. 서초동)"
         >
-          <Buttons tag="button" type="reset" text="현재위치로 찾기" onClick={resetForm} />
+          <Buttons tag="button" type="reset" onClick={resetForm}>
+            현재위치로 찾기
+          </Buttons>
         </SearchKeyword>
         <div className="mt-5">
           <strong>{Boolean(recentlyAddressKeyword?.length) ? `'${recentlyAddressKeyword}' 검색 결과` : `근처 동네`}</strong>
@@ -78,9 +80,9 @@ const WelcomeLocatePage: NextPage = () => {
             <ul className="divide-y">
               {keywordData.emdList.map((item) => (
                 <li key={item.id}>
-                  <button type="button" onClick={() => selectItem(item)} className="block w-full py-2 text-left">
+                  <Buttons tag="button" type="button" sort="text-link" status="unset" onClick={() => selectItem(item)} className="block w-full py-2">
                     {item.addrNm}
-                  </button>
+                  </Buttons>
                 </li>
               ))}
             </ul>
@@ -92,7 +94,9 @@ const WelcomeLocatePage: NextPage = () => {
                 <br />
                 동네 이름을 다시 확인해주세요!
               </p>
-              <Buttons tag="button" type="button" sort="text-link" text="동네 이름 다시 검색하기" onClick={resetForm} className="mt-2" />
+              <Buttons tag="button" type="button" sort="text-link" onClick={resetForm} className="mt-2">
+                동네 이름 다시 검색하기
+              </Buttons>
             </div>
           )}
         </div>
@@ -122,9 +126,9 @@ const WelcomeLocatePage: NextPage = () => {
             <ul className="divide-y">
               {boundaryData.emdList.map((item) => (
                 <li key={item.id}>
-                  <button type="button" onClick={() => selectItem(item)} className="block w-full py-2 text-left">
+                  <Buttons tag="button" type="button" sort="text-link" status="unset" onClick={() => selectItem(item)} className="block w-full py-2">
                     {item.addrNm}
-                  </button>
+                  </Buttons>
                 </li>
               ))}
             </ul>

@@ -38,8 +38,8 @@ const Images = (props: ImagesProps) => {
       {cloudId ? (
         <Image src={`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${cloudId}/${cloudVariant}`} alt={alt} layout="fill" objectFit="cover" onError={onError} />
       ) : mounted ? (
-        <span role="image" aria-label={alt} className="absolute top-1/2 left-1/2 w-1/2 h-1/2 text-slate-500 -translate-x-1/2 -translate-y-1/2">
-          <Icons role="presentation" name="PuzzlePiece" />
+        <span role="image" aria-label={alt} className="absolute top-0 left-0 right-0 bottom-0 flex items-center justify-center text-slate-500">
+          <Icons role="presentation" name="PuzzlePiece" className="w-[40%] h-[40%]" />
         </span>
       ) : null}
     </div>

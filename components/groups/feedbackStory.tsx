@@ -1,6 +1,7 @@
 import { useRouter } from "next/router";
-import type { HTMLAttributes, FocusEvent } from "react";
-import { useState, memo } from "react";
+import Link from "next/link";
+import type { HTMLAttributes, ReactElement, MouseEvent, FocusEvent } from "react";
+import { useState, useRef, memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
@@ -17,6 +18,7 @@ import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 import Icons from "@components/icons";
+import Buttons from "@components/buttons";
 
 export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
 
@@ -44,7 +46,9 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
     },
   });
 
+  const emotionBox = useRef<HTMLDivElement | null>(null);
   const [isVisibleBox, setIsVisibleBox] = useState(false);
+
   const category = getStoryCategory(item?.category || "");
   const likeRecord = data?.story?.records?.find((record) => record.userId === user?.id && record.kind === Kind.StoryLike);
   const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
@@ -72,11 +76,12 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   };
 
   // emotion
-  const clickEmotionButton = () => setIsVisibleBox((prev) => !prev);
+  const clickEmotionButton = (e: MouseEvent) => {
+    setIsVisibleBox((prev) => !prev);
+  };
   const blurEmotionButton = (e: FocusEvent<HTMLButtonElement, Element>) => {
-    const boxEl = e.relatedTarget?.closest(".emotionBox");
-    if (boxEl?.isSameNode(e.relatedTarget)) return;
-    if (boxEl?.contains(e.relatedTarget)) return;
+    if (emotionBox?.current?.isSameNode(e.relatedTarget)) return;
+    if (emotionBox?.current?.contains(e.relatedTarget)) return;
     setIsVisibleBox(false);
   };
   const clickEmotionIcon = (key: EmotionKeys) => {
@@ -86,21 +91,34 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
     setIsVisibleBox(false);
   };
   const blurEmotionBox = (e: FocusEvent<HTMLDivElement, Element>) => {
-    const boxEl = e.target.closest(".emotionBox");
-    const prevEl = boxEl?.previousElementSibling as HTMLElement;
-    if (boxEl?.isSameNode(e.relatedTarget)) return;
-    if (boxEl?.contains(e.relatedTarget)) return;
+    const prevEl = emotionBox?.current?.previousElementSibling as HTMLElement;
+    if (emotionBox?.current?.isSameNode(e.relatedTarget)) return;
+    if (emotionBox?.current?.contains(e.relatedTarget)) return;
     prevEl?.focus();
     setIsVisibleBox(false);
   };
 
   // comment
   const clickComment = () => {
-    if (router.pathname === "/stories/[id]") {
-      (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
-    } else {
-      router.push(`/stories/${item?.id}`);
+    (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
+  };
+
+  const FeedbackButton = (buttonProps: { pathname?: string; children: ReactElement | ReactElement[] } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+    const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
+    if (!pathname) {
+      return (
+        <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`inline-flex items-center py-2 ${buttonClassName}`} {...buttonRestProps}>
+          {children}
+        </Buttons>
+      );
     }
+    return (
+      <Link href={pathname} passHref>
+        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`inline-flex items-center py-2 ${buttonClassName}`} {...buttonRestProps}>
+          {children}
+        </Buttons>
+      </Link>
+    );
   };
 
   if (!item) return null;
@@ -109,39 +127,28 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
     <div className={`relative flex px-5 border-t ${className}`} {...restProps}>
       {/* 궁금해요: button */}
       {!category?.isLikeWithEmotion && (
-        <button type="button" onClick={clickLike} className="inline-flex items-center py-2">
-          {likeRecord ? (
-            <>
-              <Icons name="QuestionMarkCircleSolid" className="w-5 h-5 text-orange-500" />
-              <span className="ml-1 text-sm text-orange-500">궁금해요 {likeRecords.length}</span>
-            </>
-          ) : (
-            <>
-              <Icons name="QuestionMarkCircle" className="w-5 h-5 text-gray-500" />
-              <span className="ml-1 text-sm text-gray-500">궁금해요</span>
-            </>
-          )}
-        </button>
+        <FeedbackButton onClick={clickLike}>
+          <Icons name="QuestionMarkCircleSolid" className={`w-5 h-5 ${likeRecord ? "text-orange-500" : "text-gray-500"}`} />
+          <span className={`ml-1 ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
+        </FeedbackButton>
       )}
+
       {/* 공감하기: button */}
       {category?.isLikeWithEmotion && (
-        <button type="button" onClick={clickEmotionButton} onBlur={blurEmotionButton} className="inline-flex items-center py-2">
-          {!likeRecord ? (
-            <>
-              <Icons name="FaceSmile" className="w-5 h-5 text-gray-500" />
-              <span className="ml-1 text-sm text-gray-500">공감하기</span>
-            </>
-          ) : (
-            <>
-              <span className="w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>
-              <span className="ml-1 text-sm text-orange-500">공감했어요</span>
-            </>
-          )}
-        </button>
+        <FeedbackButton onClick={clickEmotionButton} onBlur={blurEmotionButton}>
+          {!likeRecord ? <Icons name="FaceSmile" className="w-5 h-5 text-gray-500" /> : <span className="w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>}
+          {!likeRecord ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
+        </FeedbackButton>
       )}
+
       {/* 공감하기: box */}
       {category?.isLikeWithEmotion && (
-        <div onBlur={blurEmotionBox} className={`absolute bottom-12 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`} tabIndex={0}>
+        <div
+          ref={emotionBox}
+          onBlur={blurEmotionBox}
+          className={`absolute bottom-11 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`}
+          tabIndex={0}
+        >
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
             {Object.entries(EmotionIcon)
               .sort(([, a], [, b]) => a.index - b.index)
@@ -153,6 +160,7 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
           </div>
         </div>
       )}
+
       {/* 공감하기: result */}
       {category?.isLikeWithEmotion && Boolean(likeRecords.length) && (
         <div className="absolute top-1/2 right-0 inline-flex items-center pr-5 -translate-y-1/2">
@@ -169,11 +177,19 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
           <span className="ml-1 text-sm text-gray-500">{likeRecords.length}</span>
         </div>
       )}
+
       {/* 댓글/답변 */}
-      <button type="button" className="inline-flex items-center py-2 last:ml-4" onClick={clickComment}>
-        <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
-        <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
-      </button>
+      {router.pathname === "/stories/[id]" ? (
+        <FeedbackButton onClick={clickComment} className="last:ml-4">
+          <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
+          <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
+        </FeedbackButton>
+      ) : (
+        <FeedbackButton pathname={`/stories/${item?.id}`} className="last:ml-4">
+          <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
+          <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
+        </FeedbackButton>
+      )}
     </div>
   );
 };

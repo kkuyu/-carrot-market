@@ -38,7 +38,9 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
             type="text"
             placeholder={`${commentType}을 입력해주세요`}
             appendButtons={
-              <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" disabled={isLoading} text={<Icons name="ArrowUpCircle" strokeWidth={1.5} className="w-6 h-6" />} />
+              <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" disabled={isLoading}>
+                <Icons name="ArrowUpCircle" strokeWidth={1.5} className="w-6 h-6" />
+              </Buttons>
             }
           />
         </div>
@@ -66,7 +68,9 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
         <span className="empty:hidden invalid">{formState.errors.content?.message}</span>
       </div>
       {/* 완료 */}
-      <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={isLoading} />
+      <Buttons tag="button" type="submit" sort="round-box" disabled={isLoading}>
+        완료
+      </Buttons>
     </form>
   );
 };

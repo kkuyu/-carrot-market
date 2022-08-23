@@ -10,6 +10,7 @@ import useMutation from "@libs/client/useMutation";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
+import Buttons from "@components/buttons";
 
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
 
@@ -56,29 +57,38 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
     router.push(existedReview ? `/reviews/${existedReview?.id}` : purchaseRecord ? `/products/${item.id}/review` : `/products/${item.id}/purchase`);
   };
 
+  const FeedbackButton = (buttonProps: { disabled?: boolean; children: string } & HTMLAttributes<HTMLButtonElement>) => {
+    const { onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
+    return (
+      <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`basis-full py-2 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
+        {children}
+      </Buttons>
+    );
+  };
+
   if (!item) return null;
 
   return (
     <div className={`empty:pt-9 flex border-t divide-x ${className}`} {...restProps}>
       {data && saleRecord && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
+        <FeedbackButton onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
           끌어올리기
-        </button>
+        </FeedbackButton>
       )}
       {data && saleRecord && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={toggleSale} disabled={saleLoading}>
+        <FeedbackButton onClick={toggleSale} disabled={saleLoading}>
           판매완료
-        </button>
+        </FeedbackButton>
       )}
       {data && !saleRecord && !existedReview && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
+        <FeedbackButton onClick={clickReview} disabled={saleLoading}>
           거래 후기 보내기
-        </button>
+        </FeedbackButton>
       )}
       {data && !saleRecord && existedReview && (
-        <button type="button" className="basis-full py-2 text-sm font-semibold" onClick={clickReview} disabled={saleLoading}>
+        <FeedbackButton onClick={clickReview} disabled={saleLoading}>
           보낸 후기 보기
-        </button>
+        </FeedbackButton>
       )}
     </div>
   );

@@ -1,6 +1,7 @@
 import type { ReactElement } from "react";
 // @components
 import { ModalComponentProps } from "@components/commons";
+import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
 export interface LayerModalProps {
@@ -29,9 +30,9 @@ const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
         </div>
       )}
       <div className="relative grow overflow-auto">{children ? children : <>LayerModal</>}</div>
-      <button type="button" className={`absolute top-0 right-0 p-3 ${closeBtnColor ? `text-${closeBtnColor}` : ""}`} onClick={closeLayerModal}>
+      <Buttons tag="button" type="button" sort="icon-block" size="lg" status="unset" className={`absolute top-0 right-0 ${closeBtnColor ? `text-${closeBtnColor}` : ""}`} onClick={closeLayerModal}>
         <Icons name="XMark" className="block mx-auto w-6 h-6" />
-      </button>
+      </Buttons>
     </div>
   );
 };

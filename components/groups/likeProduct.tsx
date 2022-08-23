@@ -13,6 +13,7 @@ import { PostProductsLikeResponse } from "@api/products/[id]/like";
 // @components
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
+import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
 export type LikeProductItem = GetProfilesProductsResponse["products"][0];
@@ -66,9 +67,9 @@ const LikeProduct = (props: LikeProductProps) => {
   if (!item) return null;
 
   return (
-    <button className={`${className}`} onClick={clickLike} disabled={likeLoading} {...restProps}>
+    <Buttons type="button" tag="button" sort="icon-block" size="base" status="default" className={`${className}`} onClick={clickLike} disabled={likeLoading} {...restProps}>
       {likeRecord ? <Icons name="HeartSolid" className="w-6 h-6 text-gray-600" /> : <Icons name="Heart" className="w-6 h-6" />}
-    </button>
+    </Buttons>
   );
 };
 

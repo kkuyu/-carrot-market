@@ -105,7 +105,9 @@ const AccountLoginPage: NextPage = () => {
           <p>
             <span className="text-gray-500">첫 방문이신가요?</span>
             <Link href="/welcome/locate" passHref>
-              <Buttons tag="a" sort="text-link" status="primary" text="당근마켓 시작하기" />
+              <Buttons tag="a" sort="text-link" status="primary">
+                당근마켓 시작하기
+              </Buttons>
             </Link>
           </p>
         )}
@@ -114,7 +116,9 @@ const AccountLoginPage: NextPage = () => {
           <p>
             <span className="text-gray-500">전화번호가 변경되었나요?</span>
             <Link href="/verification/email" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" />
+              <Buttons tag="a" sort="text-link" status="default">
+                이메일로 계정 찾기
+              </Buttons>
             </Link>
           </p>
         )}

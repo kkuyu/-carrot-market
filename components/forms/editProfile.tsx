@@ -49,7 +49,9 @@ const EditProfile = (props: EditProfileProps) => {
         <p className="text-notice">
           프로필 사진 및 관심사 설정은
           <Link href="/account/phone" passHref>
-            <Buttons tag="a" sort="text-link" status="default" text="휴대폰 인증" className="align-top" />
+            <Buttons tag="a" sort="text-link" status="default" className="align-top">
+              휴대폰 인증
+            </Buttons>
           </Link>
           후 이용 가능합니다.
         </p>
@@ -75,7 +77,9 @@ const EditProfile = (props: EditProfileProps) => {
           name="name"
           type="text"
           appendButtons={
-            <Buttons tag="button" type="button" sort="icon-block" size="sm" status="default" text={<Icons name="Sparkles" strokeWidth={1.5} className="w-6 h-6" />} onClick={makeRandomName} />
+            <Buttons tag="button" type="button" sort="icon-block" size="sm" status="default" onClick={makeRandomName}>
+              <Icons name="Sparkles" strokeWidth={1.5} className="w-6 h-6" />
+            </Buttons>
           }
         />
         <span className="empty:hidden invalid">{formState.errors.name?.message}</span>
@@ -99,7 +103,9 @@ const EditProfile = (props: EditProfileProps) => {
         </div>
       )}
       {/* 완료 */}
-      <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={isLoading} />
+      <Buttons tag="button" type="submit" sort="round-box" disabled={isLoading}>
+        완료
+      </Buttons>
     </form>
   );
 };

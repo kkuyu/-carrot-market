@@ -40,7 +40,9 @@ const VerifyEmail = (props: VerifyEmailProps) => {
         />
         <span className="empty:hidden invalid">{formState.errors.email?.message}</span>
       </div>
-      <Buttons tag="button" type="submit" status="default" text={!isSuccess ? "인증메일 받기" : isLoading ? "인증메일 받기" : "인증메일 다시 받기"} disabled={!formState.isValid || isLoading} />
+      <Buttons tag="button" type="submit" status="default" disabled={!formState.isValid || isLoading}>
+        {!isSuccess ? "인증메일 받기" : isLoading ? "인증메일 받기" : "인증메일 다시 받기"}
+      </Buttons>
     </form>
   );
 };

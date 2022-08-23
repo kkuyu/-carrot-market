@@ -50,7 +50,7 @@ const ProfilesDetailPage: NextPage = () => {
       {/* 관심사 */}
       {(profileData?.profile?.concerns || user?.id === profileData?.profile?.id) && (
         <div className="mt-3">
-          <strong className="block">{user?.id === profileData?.profile?.id ? "나의 관심사" : "관심사"}</strong>
+          <strong className="block">관심사</strong>
           {profileData?.profile?.concerns && (
             <div>
               {ProfilesConcern.filter((concern) => profileData?.profile?.concerns?.includes(concern.value)).map((concern) => (
@@ -67,7 +67,9 @@ const ProfilesDetailPage: NextPage = () => {
       {/* 프로필 수정 */}
       {user?.id === profileData?.profile?.id && (
         <Link href="/user/edit" passHref>
-          <Buttons tag="a" text="프로필 수정" size="sm" status="default" className="mt-3" />
+          <Buttons tag="a" size="sm" status="default" className="mt-3">
+            프로필 수정
+          </Buttons>
         </Link>
       )}
 

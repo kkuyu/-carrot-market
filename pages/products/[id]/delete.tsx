@@ -76,7 +76,9 @@ const ProductsDeletePage: NextPage = () => {
             <div className="mt-1 space-x-2">
               {Boolean(foundChat.length) && (
                 <Link href={`/products/${router.query.id}/chats`} passHref>
-                  <Buttons tag="a" sort="round-box" size="sm" status="default" text="채팅방으로 이동" className="!inline-block !w-auto" />
+                  <Buttons tag="a" sort="round-box" size="sm" status="default" className="!inline-block !w-auto">
+                    채팅방으로 이동
+                  </Buttons>
                 </Link>
               )}
             </div>
@@ -87,14 +89,9 @@ const ProductsDeletePage: NextPage = () => {
               {Boolean(foundReview.length) &&
                 foundReview.map((review) => (
                   <Link key={review.id} href={`/reviews/${review.id}`} passHref>
-                    <Buttons
-                      tag="a"
-                      sort="round-box"
-                      size="sm"
-                      status="default"
-                      text={review.role === "sellUser" ? "보낸 후기로 이동" : review.role === "purchaseUser" ? "받은 후기로 이동" : ""}
-                      className="!inline-block !w-auto"
-                    />
+                    <Buttons tag="a" sort="round-box" size="sm" status="default" className="!inline-block !w-auto">
+                      {review.role === "sellUser" ? "보낸 후기로 이동" : review.role === "purchaseUser" ? "받은 후기로 이동" : ""}
+                    </Buttons>
                   </Link>
                 ))}
             </div>
@@ -102,7 +99,9 @@ const ProductsDeletePage: NextPage = () => {
         </ul>
       </div>
 
-      <Buttons tag="button" type="button" text="삭제하기" className="mt-5" disabled={false} onClick={clickDelete} />
+      <Buttons tag="button" type="button" className="mt-5" disabled={false} onClick={clickDelete}>
+        삭제하기
+      </Buttons>
     </div>
   );
 };

@@ -1,5 +1,6 @@
 import { useRouter } from "next/router";
-import type { HTMLAttributes } from "react";
+import Link from "next/link";
+import type { HTMLAttributes, ReactElement } from "react";
 import { memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
@@ -15,6 +16,7 @@ import { PostCommentsLikeResponse } from "@api/comments/[id]/like";
 // @components
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
+import Buttons from "@components/buttons";
 
 export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
 
@@ -67,11 +69,26 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
 
   // comment
   const clickComment = () => {
-    if (router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString()) {
-      (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
-    } else {
-      router.push(`/comments/${item?.id}`);
+    (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
+  };
+
+  // button
+  const FeedbackButton = (buttonProps: { pathname?: string; children: string | ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+    const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
+    if (!pathname) {
+      return (
+        <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`${buttonClassName}`} {...buttonRestProps}>
+          {children}
+        </Buttons>
+      );
     }
+    return (
+      <Link href={pathname} passHref>
+        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`${buttonClassName}`} {...buttonRestProps}>
+          {children}
+        </Buttons>
+      </Link>
+    );
   };
 
   if (!item) return null;
@@ -82,14 +99,20 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
   return (
     <div className={`pl-11 space-x-2 ${className}`} {...restProps}>
       {/* 좋아요: button */}
-      <button type="button" onClick={clickLike}>
-        <span className={`text-sm ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>좋아요 {likeRecords.length || null}</span>
-      </button>
+      <FeedbackButton onClick={clickLike} className={`${likeRecord ? "text-orange-500" : "text-gray-500"}`}>
+        <>좋아요 {likeRecords.length || null}</>
+      </FeedbackButton>
       {/* 답글: button */}
-      {item.depth < StoryCommentMaximumDepth && (
-        <button type="button" onClick={clickComment}>
-          <span className="text-sm text-gray-500">답글쓰기</span>
-        </button>
+      {item.depth >= StoryCommentMaximumDepth ? (
+        <></>
+      ) : router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString() ? (
+        <FeedbackButton onClick={clickComment} className="text-gray-500">
+          답글쓰기
+        </FeedbackButton>
+      ) : (
+        <FeedbackButton pathname={`/comments/${item?.id}`} className="text-gray-500">
+          답글쓰기
+        </FeedbackButton>
       )}
     </div>
   );

@@ -119,7 +119,11 @@ const EditReview = (props: EditReviewProps) => {
           <span className="empty:hidden invalid">{formState.errors.text?.message}</span>
         </div>
       )}
-      {satisfaction && <Buttons tag="button" type="submit" text="후기 남기기" disabled={isLoading} />}
+      {satisfaction && (
+        <Buttons tag="button" type="submit" disabled={isLoading}>
+          후기 남기기
+        </Buttons>
+      )}
     </form>
   );
 };

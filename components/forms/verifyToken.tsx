@@ -35,7 +35,9 @@ const VerifyToken = (props: VerifyTokenProps) => {
         <span className="notice">어떤 경우에도 타인에게 공유하지 마세요!</span>
         <span className="empty:hidden invalid">{formState.errors.token?.message}</span>
       </div>
-      <Buttons tag="button" type="submit" status="primary" text={submitButtonText} disabled={isLoading} />
+      <Buttons tag="button" type="submit" status="primary" disabled={isLoading}>
+        {submitButtonText}
+      </Buttons>
     </form>
   );
 };

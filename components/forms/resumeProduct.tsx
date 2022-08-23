@@ -49,18 +49,18 @@ const ResumeProduct = (props: ResumeProductProps) => {
         />
         <span className="empty:hidden invalid">{formState.errors.price?.message}</span>
         {!Boolean(discounts.length) && (
-          <div className="!mt-3">
+          <div className="pt-2">
             <span className="text-sm text-gray-500">0원을 입력하면 나눔을 할 수 있어요</span>
           </div>
         )}
         {Boolean(discounts.length) && (
-          <div className="!mt-3">
+          <div className="pt-2 flex items-center space-x-2">
             {discounts.map((discount) => (
-              <button type="button" key={discount} className="mr-1.5 min-w-[3.5rem] px-2.5 py-1 text-sm border border-gray-300 rounded-xl" onClick={() => discountPrice(discount)}>
+              <Buttons key={discount} tag="button" type="button" sort="round-box" size="sm" status="default" onClick={() => discountPrice(discount)} className="!w-auto font-normal rounded-full">
                 {discount}
-              </button>
+              </Buttons>
             ))}
-            <span className="text-sm text-gray-500">할인</span>
+            <span className="text-sm">할인</span>
           </div>
         )}
       </div>
@@ -69,7 +69,9 @@ const ResumeProduct = (props: ResumeProductProps) => {
           다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
         </p>
       )}
-      <Buttons tag="button" type="submit" text="끌어올리기" disabled={isLoading} />
+      <Buttons tag="button" type="submit" disabled={isLoading}>
+        끌어올리기
+      </Buttons>
     </form>
   );
 };

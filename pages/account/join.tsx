@@ -140,7 +140,6 @@ const AccountJoinPage: NextPage = () => {
               type="button"
               sort="text-link"
               status="default"
-              text="회원가입 없이 둘러보기"
               onClick={() => {
                 if (dummyLoading) return;
                 joinDummy({
@@ -150,7 +149,9 @@ const AccountJoinPage: NextPage = () => {
                   mainDistance: 0.02,
                 });
               }}
-            />
+            >
+              회원가입 없이 둘러보기
+            </Buttons>
           </p>
         )}
         {/* 이메일로 계정 찾기 */}
@@ -158,7 +159,9 @@ const AccountJoinPage: NextPage = () => {
           <p>
             <span className="text-gray-500">전화번호가 변경되었나요?</span>
             <Link href="/verification/email" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="이메일로 계정 찾기" />
+              <Buttons tag="a" sort="text-link" status="default">
+                이메일로 계정 찾기
+              </Buttons>
             </Link>
           </p>
         )}

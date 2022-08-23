@@ -1,11 +1,12 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactElement } from "react";
 // @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 // @components
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
+import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
 interface FloatingButtonsProps extends HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> {}
@@ -16,20 +17,20 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
   const { type: userType } = useUser();
   const { openModal } = useModal();
 
-  const IconButton = (buttonProps: { pathname: string | null } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  const IconButton = (buttonProps: { pathname: string | null; children: ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
-        <button type="button" onClick={onClick} className={`${buttonClassName}`} {...buttonRestProps}>
+        <Buttons tag="button" type="button" sort="icon-block" size="lg" status="primary" onClick={onClick} className={`${buttonClassName}`} {...buttonRestProps}>
           {children}
-        </button>
+        </Buttons>
       );
     }
     return (
       <Link href={pathname} passHref>
-        <a className={`${buttonClassName}`} {...buttonRestProps}>
+        <Buttons tag="a" sort="icon-block" size="lg" status="primary" className={`${buttonClassName}`} {...buttonRestProps}>
           {children}
-        </a>
+        </Buttons>
       </Link>
     );
   };
@@ -40,12 +41,10 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
         <IconButton
           pathname={userType === "member" ? (router.pathname === "/" ? "/products/upload" : router.pathname === "/stories" ? "/stories/upload" : null) : null}
           onClick={() => openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {})}
-          className={`pointer-events-auto ${className}`}
+          className={`pointer-events-auto ${className} rounded-full`}
           {...restProps}
         >
-          <span className="flex items-center justify-center w-12 h-12 bg-orange-400 rounded-full">
-            <Icons name="Plus" className="w-6 h-6 text-white" />
-          </span>
+          <Icons name="Plus" className="w-6 h-6 text-white" />
         </IconButton>
       </div>
     </div>

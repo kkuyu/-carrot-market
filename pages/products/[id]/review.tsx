@@ -96,7 +96,9 @@ const ProductsReviewPage: NextPage = () => {
         {role === "sellUser" && !productData?.product?.reviews.length && (
           <div className="mt-2">
             <Link href={`/products/${productData?.product?.id}/purchase`} passHref>
-              <Buttons tag="a" status="default" size="sm" text="구매자 변경하기" className="!inline-block !w-auto" />
+              <Buttons tag="a" status="default" size="sm" className="!inline-block !w-auto">
+                구매자 변경하기
+              </Buttons>
             </Link>
           </div>
         )}

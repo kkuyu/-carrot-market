@@ -95,7 +95,9 @@ const VerificationEmailPage: NextPage = () => {
           <p>
             <span className="text-gray-500">이메일을 등록한 적이 없으세요?</span>
             <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" status="default" text="문의하기" />
+              <Buttons tag="a" sort="text-link" status="default">
+                문의하기
+              </Buttons>
             </Link>
           </p>
         )}

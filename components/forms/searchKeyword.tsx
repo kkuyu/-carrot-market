@@ -30,7 +30,11 @@ const SearchKeyword = (props: SearchKeywordProps) => {
           name="keyword"
           type="text"
           placeholder={placeholder}
-          appendButtons={<Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" text={<Icons name="MagnifyingGlass" className="w-5 h-5" />} />}
+          appendButtons={
+            <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default">
+              <Icons name="MagnifyingGlass" className="w-5 h-5" />
+            </Buttons>
+          }
         />
       </div>
       {children}

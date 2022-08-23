@@ -12,12 +12,14 @@ import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
+import Buttons, { ButtonsProps } from "@components/buttons";
 import Icons from "@components/icons";
 
 export type HandleProductItem = GetProfilesProductsResponse["products"][0];
 
 export interface HandleProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleProductItem;
+  size?: ButtonsProps<"button">["size"];
 }
 
 const HandleProduct = (props: HandleProductProps) => {
@@ -88,9 +90,9 @@ const HandleProduct = (props: HandleProductProps) => {
   if (!item) return null;
 
   return (
-    <button type="button" className={`absolute top-0 right-0 ${className}`} onClick={openHandleModal} disabled={saleLoading} {...restProps}>
+    <Buttons tag="button" type="button" sort="icon-block" size="sm" status="unset" onClick={openHandleModal} disabled={saleLoading} className={`absolute top-0 right-0 ${className}`} {...restProps}>
       <Icons name="EllipsisVertical" className="w-5 h-5 text-gray-400" />
-    </button>
+    </Buttons>
   );
 };
 

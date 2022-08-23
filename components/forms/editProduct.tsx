@@ -128,7 +128,9 @@ const EditProduct = (props: EditProductProps) => {
         <span className="empty:hidden invalid">{formState.errors.description?.message}</span>
       </div>
       {/* 완료 */}
-      <Buttons tag="button" type="submit" sort="round-box" text="완료" disabled={isLoading} />
+      <Buttons tag="button" type="submit" sort="round-box" disabled={isLoading}>
+        완료
+      </Buttons>
     </form>
   );
 };

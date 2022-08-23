@@ -11,6 +11,7 @@ import { ModalComponentProps } from "@components/commons";
 import CustomModal, { CustomModalProps } from "@components/commons/modals/case/customModal";
 import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
+import Buttons from "@components/buttons";
 
 export interface HometownDropdownModalProps {}
 
@@ -113,14 +114,12 @@ const HometownDropdownModal = (props: HometownDropdownModalProps & CustomModalPr
 
   return (
     <CustomModal {...modalProps}>
-      <div className="absolute top-12 left-3 py-2 bg-white rounded-md pointer-events-auto" tabIndex={0}>
-        {addressButtons.map(({ key, text, isActive, selectItem }) => {
-          return (
-            <button key={key} type="button" className={`block w-full px-5 py-2 text-left ${isActive ? "font-semibold text-black" : ""}`} onClick={selectItem}>
-              {text}
-            </button>
-          );
-        })}
+      <div className="absolute top-12 left-3 flex flex-col py-2 bg-white rounded-md pointer-events-auto" tabIndex={0}>
+        {addressButtons.map(({ key, text, isActive, selectItem }) => (
+          <Buttons key={key} tag="button" type="button" sort="text-link" status="unset" onClick={selectItem} className={`pl-5 pr-5 py-2 ${isActive ? "font-semibold" : ""}`}>
+            {text}
+          </Buttons>
+        ))}
       </div>
     </CustomModal>
   );

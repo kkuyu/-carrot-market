@@ -220,16 +220,9 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                 <div key={key} className={`relative grow shrink basis-0 w-0 ${key === "SUB" && !user?.SUB_emdPosNm ? "hidden" : ""} ${key === "ANOTHER" && user?.SUB_emdPosNm ? "hidden" : ""}`}>
                   {key === "ANOTHER" && (
                     <>
-                      <Buttons
-                        tag="button"
-                        type="button"
-                        sort="round-box"
-                        status="default"
-                        text={<Icons name="Plus" className="m-auto w-6 h-6" />}
-                        onClick={selectItem}
-                        className={`${key}-select-button`}
-                        aria-label={text}
-                      />
+                      <Buttons tag="button" type="button" sort="round-box" status="default" onClick={selectItem} className={`${key}-select-button`} aria-label={text}>
+                        <Icons name="Plus" className="m-auto w-6 h-6" />
+                      </Buttons>
                     </>
                   )}
                   {key !== "ANOTHER" && (
@@ -239,22 +232,24 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                         type="button"
                         sort="round-box"
                         status={user?.emdType === key ? "primary" : "default"}
-                        text={text}
                         onClick={selectItem}
                         className={`${key}-select-button pr-12 !text-left overflow-hidden whitespace-nowrap overflow-ellipsis`}
                         aria-label={`${text} ${user?.emdType === key ? "선택 됨" : "선택"}`}
-                      />
+                      >
+                        {text}
+                      </Buttons>
                       <Buttons
                         tag="button"
                         type="button"
                         sort="icon-block"
                         status="default"
                         size="sm"
-                        text={<Icons name="XCircle" className="w-6 h-6" />}
                         onClick={removeItem}
                         className={`${key}-select-button absolute top-1/2 right-1.5 flex -translate-y-1/2 ${user?.emdType === key ? "text-white" : ""}`}
                         aria-label={`${text} 삭제`}
-                      />
+                      >
+                        <Icons name="XCircle" className="w-6 h-6" />
+                      </Buttons>
                     </>
                   )}
                 </div>

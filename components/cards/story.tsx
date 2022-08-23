@@ -29,6 +29,7 @@ const Story = (props: StoryProps) => {
   const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
   const category = getStoryCategory(item?.category);
   const likeRecords = item?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
+  const previewComments = item?.comments?.filter((comment) => comment.content) || [];
 
   useEffect(() => {
     setMounted(true);
@@ -83,19 +84,16 @@ const Story = (props: StoryProps) => {
           </div>
         </div>
       )}
-      {Boolean(item?.comments?.length) && (
+      {Boolean(previewComments?.length) && (
         <div className="mt-2">
           <strong className="sr-only">댓글</strong>
           <ul className="space-y-2">
-            {item?.comments?.map((comment) => {
-              if (!comment.content) return null;
-              return (
-                <li key={comment.id} className="relative block py-1.5 pl-6 pr-2 border border-gray-300 rounded-lg">
-                  <span className="absolute top-2.5 left-2.5 w-2 h-2 border-l border-b border-gray-300" />
-                  <span>{highlightWord ? <HighlightText originalText={comment?.content || ""} highlightWord={highlightWord} /> : comment?.content}</span>
-                </li>
-              );
-            })}
+            {previewComments?.map((comment) => (
+              <li key={comment.id} className="relative block py-1.5 pl-6 pr-2 border border-gray-300 rounded-lg">
+                <span className="absolute top-2.5 left-2.5 w-2 h-2 border-l border-b border-gray-300" />
+                <span>{highlightWord ? <HighlightText originalText={comment?.content || ""} highlightWord={highlightWord} /> : comment?.content}</span>
+              </li>
+            ))}
           </ul>
         </div>
       )}

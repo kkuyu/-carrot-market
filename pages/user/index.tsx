@@ -17,6 +17,7 @@ import type { NextPageWithLayout } from "@app";
 import { getLayout } from "@components/layouts/case/siteLayout";
 import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
 import Profiles from "@components/profiles";
+import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
 const UserIndexPage: NextPage = () => {
@@ -27,21 +28,21 @@ const UserIndexPage: NextPage = () => {
   const MenuItem = (props: { pathname?: string | null; onClick?: () => void | null } & HTMLAttributes<HTMLButtonElement | HTMLLinkElement>) => {
     const { pathname, onClick, children } = props;
     const classNames = {
-      wrapper: "block py-0.5 w-full px-5 text-left",
+      wrapper: "block py-0.5 w-full px-5",
       inner: "flex items-center space-x-2",
     };
     if (!pathname) {
       return (
-        <button type="button" onClick={onClick} className={classNames.wrapper}>
+        <Buttons tag="button" type="button" sort="text-link" status="unset" onClick={onClick} className={`${classNames.wrapper}`}>
           <div className={classNames.inner}>{children}</div>
-        </button>
+        </Buttons>
       );
     }
     return (
       <Link href={pathname} passHref>
-        <a className={classNames.wrapper}>
+        <Buttons tag="a" sort="text-link" status="unset" className={`${classNames.wrapper}`}>
           <div className={classNames.inner}>{children}</div>
-        </a>
+        </Buttons>
       </Link>
     );
   };

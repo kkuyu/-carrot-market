@@ -228,12 +228,20 @@ const ProductsDetailPage: NextPage = () => {
               <div className="flex-none px-5">
                 {userType === "guest" ? (
                   <Link href="/welcome" passHref>
-                    <Buttons tag="a" text="당근마켓 시작하기" size="sm" />
+                    <Buttons tag="a" size="sm">
+                      당근마켓 시작하기
+                    </Buttons>
                   </Link>
                 ) : user?.id !== data?.product?.userId ? (
-                  <Buttons tag="button" text="채팅하기" size="sm" onClick={clickChat} />
+                  <Buttons tag="button" type="button" size="sm" onClick={clickChat}>
+                    채팅하기
+                  </Buttons>
                 ) : (
-                  <Buttons tag="button" text="대화 중인 채팅방" size="sm" onClick={() => router.push(`/products/${data?.product?.id}/chats`)} />
+                  <Link href={`/products/${data?.product?.id}/chats`} passHref>
+                    <Buttons tag="a" size="sm">
+                      대화 중인 채팅방
+                    </Buttons>
+                  </Link>
                 )}
               </div>
             )}

@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useEffect } from "react";
-import type { HTMLAttributes } from "react";
+import type { HTMLAttributes, ReactElement } from "react";
 import { useForm } from "react-hook-form";
 // @libs
 import useUser from "@libs/client/useUser";
@@ -53,14 +53,20 @@ const Header = (props: HeaderProps) => {
     },
   });
 
-  const HeaderButton = (buttonProps: { pathname?: string } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  const HeaderButton = (buttonProps: { pathname?: string; children: ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...restButtonProps } = buttonProps;
     if (!pathname) {
-      return <Buttons tag="button" type="button" sort="icon-block" status="unset" size="lg" text={children} onClick={onClick} className={`${buttonClassName}`} {...restButtonProps} />;
+      return (
+        <Buttons tag="button" type="button" sort="icon-block" status="unset" size="lg" onClick={onClick} className={`${buttonClassName}`} {...restButtonProps}>
+          {children}
+        </Buttons>
+      );
     }
     return (
       <Link href={pathname} passHref>
-        <Buttons tag="a" sort="icon-block" status="unset" size="lg" text={children} onClick={onClick} className={`${buttonClassName}`} {...restButtonProps} />
+        <Buttons tag="a" sort="icon-block" status="unset" size="lg" onClick={onClick} className={`${buttonClassName}`} {...restButtonProps}>
+          {children}
+        </Buttons>
       </Link>
     );
   };
@@ -97,7 +103,7 @@ const Header = (props: HeaderProps) => {
         );
       case HeaderUtils["Kebab"]:
         return (
-          <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "handleProduct", { actions: kebabActions || [] })}>
+          <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "kebabAction", { actions: kebabActions || [] })}>
             <Icons name="EllipsisVertical" className="w-6 h-6" />
           </HeaderButton>
         );
@@ -124,7 +130,11 @@ const Header = (props: HeaderProps) => {
         // todo: share
         return <span>share</span>;
       case HeaderUtils["Submit"]:
-        return <Buttons tag="button" type="submit" size="base" sort="text-link" status="primary" form={submitId} className="h-12 pl-5 pr-5 font-semibold" text="완료" />;
+        return (
+          <Buttons tag="button" type="submit" size="base" sort="text-link" status="primary" form={submitId} className="h-12 pl-5 pr-5 font-semibold">
+            완료
+          </Buttons>
+        );
       case HeaderUtils["Title"]:
         const Tag = titleTag;
         if (!title) return null;

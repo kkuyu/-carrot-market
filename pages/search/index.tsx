@@ -92,16 +92,9 @@ const SearchIndexPage: NextPage = () => {
         <ul className="mt-3 -mx-1 overflow-x-auto whitespace-nowrap">
           {[...(searchData && Boolean(searchData?.records?.length) ? [...searchData.records] : [{ id: 0, keyword: "당근마켓" }])].map((record) => (
             <li key={record.id} className="inline-block px-1">
-              <Buttons
-                tag="button"
-                type="button"
-                sort="text-link"
-                status="unset"
-                size="base"
-                text={record.keyword}
-                onClick={() => clickSave(record)}
-                className="pt-0.5 pb-0.5 !px-2.5 border border-gray-300 rounded-2xl"
-              />
+              <Buttons tag="button" type="button" sort="text-link" status="unset" size="base" onClick={() => clickSave(record)} className="pt-0.5 pb-0.5 !px-2.5 border border-gray-300 rounded-2xl">
+                {record.keyword}
+              </Buttons>
             </li>
           ))}
         </ul>
@@ -119,26 +112,30 @@ const SearchIndexPage: NextPage = () => {
                     type="button"
                     sort="text-link"
                     status="unset"
-                    text={record.keyword}
                     onClick={() => clickSave(record)}
                     className="w-full py-1.5 pr-8 border-b border-gray-300 whitespace-nowrap overflow-hidden overflow-ellipsis"
-                  />
+                  >
+                    {record.keyword}
+                  </Buttons>
                   <Buttons
                     tag="button"
                     type="button"
                     sort="icon-block"
                     status="default"
                     size="sm"
-                    text={<Icons name="XMark" className="w-4 h-4" />}
                     onClick={() => clickDelete([record])}
                     className="absolute top-1/2 right-3 flex -translate-y-1/2"
                     aria-label={`${record.keyword} 삭제`}
-                  />
+                  >
+                    <Icons name="XMark" className="w-4 h-4" />
+                  </Buttons>
                 </li>
               );
             })}
           </ul>
-          <Buttons tag="button" type="button" sort="text-link" status="unset" size="sm" text="모두 지우기" className="absolute top-0 right-0" onClick={() => clickDelete([...searchData.history])} />
+          <Buttons tag="button" type="button" sort="text-link" status="unset" size="sm" className="absolute top-0 right-0" onClick={() => clickDelete([...searchData.history])}>
+            모두 지우기
+          </Buttons>
         </div>
       )}
     </div>

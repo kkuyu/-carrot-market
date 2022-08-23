@@ -85,7 +85,7 @@ const ProfilesProductsPage: NextPage = () => {
         <div className="-mx-5">
           <ProductList list={products} className="border-b">
             {profileData?.profile.id === user?.id ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
-            {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" className="p-3" /> : <></>}
+            {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" size="base" /> : <></>}
           </ProductList>
           {isReachingEnd ? (
             <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>

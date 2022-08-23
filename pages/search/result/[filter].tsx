@@ -146,7 +146,9 @@ const SearchPage: NextPage = () => {
           {Boolean(products.length) && <ProductList list={products} cardProps={{ highlightWord: searchFilter.highlightWord }} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
           {Boolean(products.length) && currentTab.value === "all" && products.length < data?.[data.length - 1]?.productTotalCount! && (
             <Link href={{ pathname: router.pathname, query: { filter: "product", keyword: router.query.keyword } }} replace passHref>
-              <Buttons tag="a" status="default" size="sm" text="중고거래 더보기" />
+              <Buttons tag="a" status="default" size="sm">
+                중고거래 더보기
+              </Buttons>
             </Link>
           )}
           {/* 동네생활 */}
@@ -155,7 +157,9 @@ const SearchPage: NextPage = () => {
           {Boolean(stories.length) && <StoryList list={stories} cardProps={{ highlightWord: searchFilter.highlightWord, summaryType: "report" }} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
           {Boolean(stories.length) && currentTab.value === "all" && stories.length < data?.[data.length - 1]?.storyTotalCount! && (
             <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: router.query.keyword } }} replace passHref>
-              <Buttons tag="a" status="default" size="sm" text="동네생활 더보기" className="pb-3" />
+              <Buttons tag="a" status="default" size="sm" className="pb-3">
+                동네생활 더보기
+              </Buttons>
             </Link>
           )}
           {currentTab.value === "all" ? null : isReachingEnd ? (

@@ -6,6 +6,7 @@ import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTyp
 import Comment, { CommentItem, CommentProps } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
 import { FeedbackCommentProps } from "@components/groups/feedbackComment";
+import Buttons from "@components/buttons";
 
 interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
   list?: CommentItem[];
@@ -68,10 +69,12 @@ const CommentTreeList = (props: CommentTreeListProps) => {
       {/* 답글: read more */}
       {Boolean(countReComments) && depth !== StoryCommentMinimumDepth && (
         <div className="relative pl-3 mt-1">
-          <button type="button" onClick={readMoreReComments} disabled={isLoading} className="text-sm text-gray-500">
-            {isLoading ? "답글을 불러오고있어요" : list?.length === countReComments ? "답글 숨기기" : list.length > 2 ? "이전 답글 더보기" : `답글 ${countReComments - list.length}개 보기`}
-          </button>
-          <span className="absolute top-1.5 left-0 w-2 h-2 border-l border-b border-gray-400" />
+          <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={readMoreReComments} disabled={isLoading}>
+            <span className="text-gray-500">
+              {isLoading ? "답글을 불러오고있어요" : list?.length === countReComments ? "답글 숨기기" : list.length > 2 ? "이전 답글 더보기" : `답글 ${countReComments - list.length}개 보기`}
+            </span>
+            <span className="absolute top-1.5 left-0 w-2 h-2 border-l border-b border-gray-400" />
+          </Buttons>
         </div>
       )}
     </div>

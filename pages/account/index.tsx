@@ -90,7 +90,9 @@ const AccountIndexPage: NextPage = () => {
               <span className="empty:hidden mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500">{user?.phone}</span>
             </div>
             <Link href="/account/phone" passHref>
-              <Buttons tag="a" sort="text-link" status="primary" text={user?.phone ? "변경" : "등록 및 회원가입"} className="flex-none pl-2 pr-0" />
+              <Buttons tag="a" sort="text-link" status="primary" className="flex-none pl-2 pr-0">
+                {user?.phone ? "변경" : "등록 및 회원가입"}
+              </Buttons>
             </Link>
           </li>
           {userType === "member" && (
@@ -100,7 +102,9 @@ const AccountIndexPage: NextPage = () => {
                 <span className="empty:hidden mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500">{user?.email}</span>
               </div>
               <Link href="/account/email" passHref>
-                <Buttons tag="a" sort="text-link" status="primary" text={user?.email ? "변경" : "등록"} className="flex-none pl-2 pr-0" />
+                <Buttons tag="a" sort="text-link" status="primary" className="flex-none pl-2 pr-0">
+                  {user?.email ? "변경" : "등록"}
+                </Buttons>
               </Link>
             </li>
           )}
@@ -111,12 +115,16 @@ const AccountIndexPage: NextPage = () => {
         <h2 className="">기타</h2>
         <ul className="mt-2 space-y-2">
           <li>
-            <Buttons tag="button" sort="text-link" status="unset" text="로그아웃" onClick={openLogoutModal} />
+            <Buttons tag="button" sort="text-link" status="unset" onClick={openLogoutModal}>
+              로그아웃
+            </Buttons>
           </li>
           {userType === "member" && (
             <li>
               <Link href="/account/delete" passHref>
-                <Buttons tag="a" sort="text-link" status="unset" text="탈퇴하기" />
+                <Buttons tag="a" sort="text-link" status="unset">
+                  탈퇴하기
+                </Buttons>
               </Link>
             </li>
           )}

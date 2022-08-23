@@ -115,7 +115,7 @@ const StoriesEditPage: NextPage = () => {
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
     setDefaultPhotos();
-  }, [storyData, user?.id]);
+  }, [storyData]);
 
   useEffect(() => {
     changeLayout({

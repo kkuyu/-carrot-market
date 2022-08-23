@@ -65,7 +65,9 @@ const ProfilesMannersPage: NextPage = () => {
           <br />
           당근마켓 거래매너를 확인해보세요
         </p>
-        <Buttons tag="button" text="당근마켓 거래매너 보기" className="mt-5" />
+        <Buttons tag="button" className="mt-5">
+          당근마켓 거래매너 보기
+        </Buttons>
       </div>
     </div>
   );

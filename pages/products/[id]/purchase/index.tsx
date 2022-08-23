@@ -119,7 +119,9 @@ const ProductsPurchasePage: NextPage = () => {
       {chats && (!Boolean(chats.length) || isReachingEnd) && (
         <div className="text-center">
           <Link href={`/products/${router.query.id}/purchase/all`} passHref>
-            <Buttons tag="a" sort="text-link" size="sm" status="default" text="최근 채팅 목록에서 구매자 찾기" />
+            <Buttons tag="a" sort="text-link" size="sm" status="default">
+              최근 채팅 목록에서 구매자 찾기
+            </Buttons>
           </Link>
         </div>
       )}

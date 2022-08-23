@@ -156,26 +156,24 @@ const ChatsDetailPage: NextPage = () => {
           <div className="empty:hidden mt-2">
             {/* 판매완료, 구매완료 */}
             {saleRecord && (
-              <Buttons
-                tag="button"
-                type="button"
-                text={role === "sellUser" ? "판매완료" : "구매완료"}
-                size="sm"
-                status="default"
-                className="!inline-block !w-auto !text-left"
-                onClick={openSoldProductModal}
-              />
+              <Buttons tag="button" type="button" size="sm" status="default" className="!inline-block !w-auto !text-left" onClick={openSoldProductModal}>
+                {role === "sellUser" ? "판매완료" : "구매완료"}
+              </Buttons>
             )}
             {/* 거래 후기 보내기 */}
             {!saleRecord && purchaseRecord && !existedReview && data?.chat.users.find((chatUser) => chatUser.id === purchaseRecord?.userId) && (
               <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
-                <Buttons tag="a" text="거래 후기 보내기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
+                <Buttons tag="a" size="sm" status="default" className="!inline-block !w-auto !text-left">
+                  거래 후기 보내기
+                </Buttons>
               </Link>
             )}
             {/* 보낸 후기 보기 */}
             {!saleRecord && purchaseRecord && existedReview && data?.chat.users.find((chatUser) => chatUser.id === existedReview?.[`${role === "sellUser" ? "purchaseUser" : "sellUser"}Id`]) && (
               <Link href={`/reviews/${existedReview.id}`} passHref>
-                <Buttons tag="a" text="보낸 후기 보기" size="sm" status="default" className="!inline-block !w-auto !text-left" />
+                <Buttons tag="a" size="sm" status="default" className="!inline-block !w-auto !text-left">
+                  보낸 후기 보기
+                </Buttons>
               </Link>
             )}
           </div>
@@ -192,7 +190,9 @@ const ChatsDetailPage: NextPage = () => {
           <br />
           이웃에게 따뜻한 마음을 전해보세요!
           <Link href={`/products/${data?.chat?.product?.id}/review`} passHref>
-            <Buttons tag="a" sort="text-link" status="default" text="거래 후기 보내기" />
+            <Buttons tag="a" sort="text-link" status="default">
+              거래 후기 보내기
+            </Buttons>
           </Link>
         </div>
       )}

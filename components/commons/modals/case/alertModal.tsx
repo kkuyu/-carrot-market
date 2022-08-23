@@ -3,8 +3,8 @@ import { useEffect, useRef, useState } from "react";
 // @libs
 import { TimerRef, setTimer, clearTimer } from "@libs/utils";
 // @components
-import Buttons from "@components/buttons";
 import { ModalComponentProps } from "@components/commons";
+import Buttons from "@components/buttons";
 
 export const AlertStyleEnum = {
   ["default"]: "default",
@@ -58,14 +58,15 @@ const AlertModal = (props: AlertModalProps & ModalComponentProps) => {
             tag="button"
             type="button"
             sort="text-link"
-            text={action.text}
             status={action.style === "destructive" ? "danger" : action.style === "primary" ? "primary" : "unset"}
             onClick={async () => {
               if (action?.handler) await action?.handler();
               onClose();
             }}
             className="flex-1 pl-3 pr-3 py-2.5 text-center font-normal"
-          />
+          >
+            {action.text}
+          </Buttons>
         ))}
       </div>
     );
