@@ -1,4 +1,5 @@
 export * from "@components/icons/data/arrowUpCircle";
+export * from "@components/icons/data/bars3";
 export * from "@components/icons/data/chatBubbleLeftRight";
 export * from "@components/icons/data/chatBubbleOvalLeftEllipsis";
 export * from "@components/icons/data/checkCircle";

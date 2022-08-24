@@ -7,6 +7,7 @@ import { ActionModalProps } from "@components/commons/modals/case/actionModal";
 export const HeaderUtils = {
   Address: "address",
   Back: "back",
+  Hamburger: "hamburger",
   Home: "home",
   Kebab: "kebab",
   Keyword: "keyword",
@@ -24,6 +25,10 @@ export interface HeaderOptions {
   isTransparent?: boolean;
   submitId?: string;
   kebabActions?: ActionModalProps["actions"];
+  hamburgerAction?: {
+    pathname?: string;
+    onClick?: () => void;
+  };
 }
 
 interface HeaderWrapperProps {
@@ -47,8 +52,6 @@ const HeaderWrapper = (props: HeaderWrapperProps) => {
         title: "",
         titleTag: "h1",
         isTransparent: false,
-        // submitId: "",
-        // kebabActions: [],
         ...defaultHeaderState,
       },
       navBar: {},

@@ -1,5 +1,6 @@
 export const IconName = {
   ["ArrowUpCircle"]: "ArrowUpCircle",
+  ["Bars3"]: "Bars3",
   ["ChatBubbleLeftRight"]: "ChatBubbleLeftRight",
   ["ChatBubbleOvalLeftEllipsis"]: "ChatBubbleOvalLeftEllipsis",
   ["CheckCircle"]: "CheckCircle",

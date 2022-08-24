@@ -49,7 +49,11 @@ const ProductsIndexPage: NextPage = () => {
   useEffect(() => {
     changeLayout({
       meta: {},
-      header: {},
+      header: {
+        hamburgerAction: {
+          pathname: "/products/categories",
+        },
+      },
       navBar: {},
     });
   }, []);
@@ -178,7 +182,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     header: {
       title: "",
       titleTag: "strong",
-      utils: ["address", "title", "search"],
+      utils: ["address", "title", "search", "hamburger"],
     },
     navBar: {
       utils: ["home", "chat", "profile", "story", "streams"],

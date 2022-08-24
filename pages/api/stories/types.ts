@@ -17,7 +17,7 @@ export const StoryCategoryEnum = {
   ["동네맛집"]: "restaurant",
   ["취미생활"]: "dilettante-life",
   ["일상"]: "daily",
-  ["분실/실종센터"]: "missing/disappear",
+  ["분실/실종센터"]: "missing-and-disappear",
   ["해주세요"]: "entrust",
   ["동네사진전"]: "photo-exhibit",
 } as const;
@@ -31,7 +31,7 @@ export const StoryCategory: { text: keyof typeof StoryCategoryEnum; value: Story
   { text: "동네맛집", value: "restaurant", isLikeWithEmotion: true, commentType: "댓글" },
   { text: "취미생활", value: "dilettante-life", isLikeWithEmotion: true, commentType: "댓글" },
   { text: "일상", value: "daily", isLikeWithEmotion: false, commentType: "답변" },
-  { text: "분실/실종센터", value: "missing/disappear", isLikeWithEmotion: true, commentType: "댓글" },
+  { text: "분실/실종센터", value: "missing-and-disappear", isLikeWithEmotion: true, commentType: "댓글" },
   { text: "해주세요", value: "entrust", isLikeWithEmotion: true, commentType: "댓글" },
   { text: "동네사진전", value: "photo-exhibit", isLikeWithEmotion: true, commentType: "댓글" },
 ];

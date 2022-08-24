@@ -21,7 +21,7 @@ import Icons from "@components/icons";
 export interface HeaderProps extends HeaderOptions {}
 
 const Header = (props: HeaderProps) => {
-  const { title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, submitId } = props;
+  const { title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, hamburgerAction, submitId } = props;
   const router = useRouter();
   const { user, currentAddr, type: userType } = useUser();
   const { openModal } = useModal();
@@ -64,7 +64,7 @@ const Header = (props: HeaderProps) => {
     }
     return (
       <Link href={pathname} passHref>
-        <Buttons tag="a" sort="icon-block" status="unset" size="lg" onClick={onClick} className={`${buttonClassName}`} {...restButtonProps}>
+        <Buttons tag="a" sort="icon-block" status="unset" size="lg" className={`${buttonClassName}`} {...restButtonProps}>
           {children}
         </Buttons>
       </Link>
@@ -99,6 +99,12 @@ const Header = (props: HeaderProps) => {
         return (
           <HeaderButton pathname="/">
             <Icons name="Home" className="w-6 h-6" />
+          </HeaderButton>
+        );
+      case HeaderUtils["Hamburger"]:
+        return (
+          <HeaderButton pathname={hamburgerAction?.pathname} onClick={hamburgerAction?.onClick}>
+            <Icons name="Bars3" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Kebab"]:
@@ -179,6 +185,7 @@ const Header = (props: HeaderProps) => {
           {getUtils(HeaderUtils["Home"])}
           {getUtils(HeaderUtils["Share"])}
           {getUtils(HeaderUtils["Search"])}
+          {getUtils(HeaderUtils["Hamburger"])}
           {getUtils(HeaderUtils["Kebab"])}
           {getUtils(HeaderUtils["Submit"])}
         </div>
