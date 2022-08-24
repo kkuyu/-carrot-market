@@ -94,7 +94,7 @@ const HometownLocateModal = (props: HometownLocateModalProps & LayerModalProps &
     searchKeywordForm.setFocus("keyword");
   };
 
-  const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
+  const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][number] | GetSearchKeywordResponse["emdList"][number]) => {
     if (user?.MAIN_emdPosNm === itemData.emdNm) {
       openToast<MessageToastProps>(MessageToast, "AlreadyRegisteredAddress", {
         placement: "bottom",

@@ -58,7 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: product.id,
       },
       data: {
-        photos: photos.join(","),
+        photos: photos.join(";"),
         name,
         category,
         price,

@@ -6,7 +6,7 @@ import { getDiffTimeStr, truncateStr } from "@libs/utils";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 
-export type CommentSummaryItem = GetProfilesStoriesResponse["comments"][0];
+export type CommentSummaryItem = GetProfilesStoriesResponse["comments"][number];
 
 export interface CommentSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: CommentSummaryItem;

@@ -166,7 +166,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       // create story
       const newStory = await client.story.create({
         data: {
-          photos: photos.join(","),
+          photos: photos.join(";"),
           content,
           category,
           emdAddrNm,

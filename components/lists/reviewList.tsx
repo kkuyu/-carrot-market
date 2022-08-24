@@ -11,7 +11,7 @@ import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews/[filter]"
 // @components
 import Profiles from "@components/profiles";
 
-type ReviewListItem = GetProfilesDetailResponse["reviews"][0] | GetProfilesReviewsResponse["reviews"][0];
+type ReviewListItem = GetProfilesDetailResponse["reviews"][number] | GetProfilesReviewsResponse["reviews"][number];
 
 interface ReviewListProps extends HTMLAttributes<HTMLUListElement> {
   list: ReviewListItem[];

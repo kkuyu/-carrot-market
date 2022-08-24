@@ -4,7 +4,7 @@ import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 // @components
 import Images from "@components/images";
 
-export type RelateItem = GetProductsDetailOthersResponse["otherProducts"][0];
+export type RelateItem = GetProductsDetailOthersResponse["otherProducts"][number];
 
 interface RelateProps extends HTMLAttributes<HTMLDivElement> {
   item: RelateItem;
@@ -13,7 +13,7 @@ interface RelateProps extends HTMLAttributes<HTMLDivElement> {
 const Relate = (props: RelateProps) => {
   const { item, className = "", ...restProps } = props;
 
-  const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
+  const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
 
   if (!item) return null;
 

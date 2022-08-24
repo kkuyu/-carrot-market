@@ -18,7 +18,7 @@ import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 import Buttons from "@components/buttons";
 
-export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
+export type FeedbackCommentItem = GetStoriesCommentsResponse["comments"][number] | GetCommentsDetailResponse["comment"];
 
 export interface FeedbackCommentProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackCommentItem;

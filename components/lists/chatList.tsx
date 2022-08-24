@@ -11,7 +11,7 @@ interface ChatListProps extends HTMLAttributes<HTMLUListElement> {
   sort: ChatProps["sort"];
   isSingleUser?: boolean;
   cardProps?: Partial<ChatProps>;
-  selectItem?: (item: ChatItem, user: ChatItem["users"][0]) => void;
+  selectItem?: (item: ChatItem, user: ChatItem["users"][number]) => void;
 }
 
 const ChatList = (props: ChatListProps) => {

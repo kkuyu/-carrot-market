@@ -58,7 +58,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: story.id,
       },
       data: {
-        photos: photos.join(","),
+        photos: photos.join(";"),
         category,
         content,
       },

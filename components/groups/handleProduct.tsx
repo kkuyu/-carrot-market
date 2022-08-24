@@ -15,7 +15,7 @@ import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/comm
 import Buttons, { ButtonsProps } from "@components/buttons";
 import Icons from "@components/icons";
 
-export type HandleProductItem = GetProfilesProductsResponse["products"][0];
+export type HandleProductItem = GetProfilesProductsResponse["products"][number];
 
 export interface HandleProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleProductItem;

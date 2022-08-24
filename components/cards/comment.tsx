@@ -10,7 +10,7 @@ import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @components
 import Profiles, { ProfilesProps } from "@components/profiles";
 
-export type CommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
+export type CommentItem = GetStoriesCommentsResponse["comments"][number] | GetCommentsDetailResponse["comment"];
 
 export interface CommentProps extends HTMLAttributes<HTMLDivElement> {
   item: CommentItem;

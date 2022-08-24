@@ -7,7 +7,7 @@ import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
 // @components
 import Icons from "@components/icons";
 
-type MannerListItem = GetProfilesMannersResponse["manners"][0] | GetProfilesDetailResponse["manners"][0];
+type MannerListItem = GetProfilesMannersResponse["manners"][number] | GetProfilesDetailResponse["manners"][number];
 
 interface MannerListProps extends HTMLAttributes<HTMLUListElement> {
   list: MannerListItem[];

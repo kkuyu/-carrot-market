@@ -30,7 +30,7 @@ const StoryList = (props: StoryListProps) => {
         });
         const thumbnails: PictureListItem[] = !item?.photos
           ? []
-          : item.photos.split(",").map((src, index, array) => ({
+          : item.photos.split(";").map((src, index, array) => ({
               src,
               index,
               key: `thumbnails-list-${index + 1}`,

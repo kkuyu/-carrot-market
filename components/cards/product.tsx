@@ -12,7 +12,7 @@ import Images from "@components/images";
 import HighlightText from "@components/highlightText";
 import Icons from "@components/icons";
 
-export type ProductItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0] | GetSearchResultResponse["products"][0];
+export type ProductItem = GetProductsResponse["products"][number] | GetProfilesProductsResponse["products"][number] | GetSearchResultResponse["products"][number];
 
 export interface ProductProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductItem;
@@ -26,7 +26,7 @@ const Product = (props: ProductProps) => {
 
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.resumeAt).getTime(), today.getTime());
-  const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
+  const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
 
   const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
   const likeRecords = item?.records?.filter((record) => record.kind === Kind.ProductLike) || [];

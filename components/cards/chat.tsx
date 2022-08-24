@@ -7,7 +7,7 @@ import { GetChatsResponse } from "@api/chats";
 // @components
 import Images from "@components/images";
 
-export type ChatItem = GetChatsResponse["chats"][0];
+export type ChatItem = GetChatsResponse["chats"][number];
 
 export interface ChatProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatItem;
@@ -46,7 +46,7 @@ const Chat = (props: ChatProps) => {
       </div>
       {isVisibleProduct && Boolean(item.product?.photos.length) && (
         <div className="flex-none">
-          <Images size="2.5rem" cloudId={item.product?.photos.length ? item.product?.photos.split(",")[0] : null} cloudVariant="avatar" rounded="md" alt="" />
+          <Images size="2.5rem" cloudId={item.product?.photos.length ? item.product?.photos.split(";")[0] : null} cloudVariant="avatar" rounded="md" alt="" />
         </div>
       )}
     </div>

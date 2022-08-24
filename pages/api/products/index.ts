@@ -156,7 +156,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       // create product
       const newProduct = await client.product.create({
         data: {
-          photos: photos.join(","),
+          photos: photos.join(";"),
           name,
           category,
           price,

@@ -83,9 +83,9 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
     }
   };
 
-  const Listbox = (props: { lists: OptionGroupItem<T>[]; selectItem: (item: OptionGroupItem<T>["options"][0]) => void } & HTMLAttributes<HTMLDivElement>) => {
+  const Listbox = (props: { lists: OptionGroupItem<T>[]; selectItem: (item: OptionGroupItem<T>["options"][number]) => void } & HTMLAttributes<HTMLDivElement>) => {
     const { lists, selectItem, className: listboxClassName = "", ...restProps } = props;
-    const Option = (props: { item: OptionGroupItem<T>["options"][0] } & HTMLAttributes<HTMLButtonElement>) => {
+    const Option = (props: { item: OptionGroupItem<T>["options"][number] } & HTMLAttributes<HTMLButtonElement>) => {
       const { item, className: optionClassName = "" } = props;
       return (
         <Buttons

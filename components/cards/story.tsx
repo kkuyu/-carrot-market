@@ -12,7 +12,7 @@ import { GetSearchResultResponse } from "@api/search/result/[filter]";
 import HighlightText from "@components/highlightText";
 import Icons from "@components/icons";
 
-export type StoryItem = GetStoriesResponse["stories"][0] | GetProfilesStoriesResponse["stories"][0] | GetSearchResultResponse["stories"][0];
+export type StoryItem = GetStoriesResponse["stories"][number] | GetProfilesStoriesResponse["stories"][number] | GetSearchResultResponse["stories"][number];
 
 export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   item: StoryItem;

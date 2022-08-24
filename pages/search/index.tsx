@@ -61,7 +61,7 @@ const SearchIndexPage: NextPage = () => {
     },
   });
 
-  const clickSave = (record: GetSearchResponse["history"][0] | GetSearchResponse["record"][0]) => {
+  const clickSave = (record: GetSearchResponse["history"][number] | GetSearchResponse["record"][number]) => {
     if (saveLoading) return;
     saveSearch({ keyword: record.keyword });
   };

@@ -121,8 +121,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       let userPayload: Partial<User> = {
         ...(name && { name }),
-        ...(photos && { avatar: photos.join(",") }),
-        ...(concerns && { concerns: concerns.join(",") }),
+        ...(photos && { avatar: photos.join(";") }),
+        ...(concerns && { concerns: concerns.join(";") }),
       };
 
       // email

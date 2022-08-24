@@ -20,7 +20,7 @@ import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } f
 import Icons from "@components/icons";
 import Buttons from "@components/buttons";
 
-export type FeedbackStoryItem = GetStoriesResponse["stories"][0] | GetStoriesDetailResponse["story"];
+export type FeedbackStoryItem = GetStoriesResponse["stories"][number] | GetStoriesDetailResponse["story"];
 
 export interface FeedbackStoryProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackStoryItem;

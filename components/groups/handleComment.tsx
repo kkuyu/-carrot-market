@@ -18,7 +18,7 @@ import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/comm
 import Buttons, { ButtonsProps } from "@components/buttons";
 import Icons from "@components/icons";
 
-export type HandleCommentItem = GetStoriesCommentsResponse["comments"][0] | GetCommentsDetailResponse["comment"];
+export type HandleCommentItem = GetStoriesCommentsResponse["comments"][number] | GetCommentsDetailResponse["comment"];
 
 export interface HandleCommentProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleCommentItem;

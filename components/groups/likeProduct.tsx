@@ -16,7 +16,7 @@ import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } f
 import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
-export type LikeProductItem = GetProfilesProductsResponse["products"][0];
+export type LikeProductItem = GetProfilesProductsResponse["products"][number];
 
 export interface LikeProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: LikeProductItem;

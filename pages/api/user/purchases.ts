@@ -89,7 +89,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       },
     });
 
-    const products = records.map((record) => record.product).filter((product): product is GetUserPurchasesResponse["products"][0] => !!product);
+    const products = records.map((record) => record.product).filter((product): product is GetUserPurchasesResponse["products"][number] => !!product);
 
     // result
     const result: GetUserPurchasesResponse = {

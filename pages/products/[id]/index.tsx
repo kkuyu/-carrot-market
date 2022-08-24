@@ -177,7 +177,7 @@ const ProductsDetailPage: NextPage = () => {
         <div className="-mx-5">
           <PictureSlider
             list={
-              data?.product?.photos?.split(",")?.map((src, index, array) => ({
+              data?.product?.photos?.split(";")?.map((src, index, array) => ({
                 src,
                 index,
                 key: `thumbnails-slider-${index + 1}`,

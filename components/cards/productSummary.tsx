@@ -6,7 +6,7 @@ import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter
 // @components
 import Images from "@components/images";
 
-export type ProductSummaryItem = GetProductsResponse["products"][0] | GetProfilesProductsResponse["products"][0];
+export type ProductSummaryItem = GetProductsResponse["products"][number] | GetProfilesProductsResponse["products"][number];
 
 export interface ProductSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductSummaryItem;
@@ -15,7 +15,7 @@ export interface ProductSummaryProps extends HTMLAttributes<HTMLDivElement> {
 const ProductSummary = (props: ProductSummaryProps) => {
   const { item, className = "", ...restProps } = props;
 
-  const thumbnailId = item?.photos ? item.photos.split(",")[0] : "";
+  const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
   const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
 
   if (!item) return null;

@@ -28,7 +28,7 @@ const UserEditPage: NextPage = () => {
   const formData = useForm<EditProfileTypes>({
     defaultValues: {
       name: user?.name,
-      concerns: !user?.concerns ? [] : (user.concerns.split(",") as EditProfileTypes["concerns"]),
+      concerns: !user?.concerns ? [] : (user.concerns.split(";") as EditProfileTypes["concerns"]),
     },
   });
 
@@ -69,7 +69,7 @@ const UserEditPage: NextPage = () => {
     }
 
     const transfer = new DataTransfer();
-    const photos = user?.avatar?.length ? user?.avatar?.split(",") : [];
+    const photos = user?.avatar?.length ? user?.avatar?.split(";") : [];
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       if (file !== null) transfer.items.add(file);
@@ -128,7 +128,7 @@ const UserEditPage: NextPage = () => {
     if (!user) return;
     setPhotoLoading(true);
     formData.setValue("name", user?.name);
-    formData.setValue("concerns", !user?.concerns ? [] : (user.concerns.split(",") as EditProfileTypes["concerns"]));
+    formData.setValue("concerns", !user?.concerns ? [] : (user.concerns.split(";") as EditProfileTypes["concerns"]));
     setDefaultPhotos();
   }, [user]);
 

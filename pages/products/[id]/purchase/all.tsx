@@ -52,7 +52,7 @@ const ProductsPurchasePage: NextPage = () => {
     },
   });
 
-  const purchaseItem = (item: GetChatsResponse["chats"][0], chatUser: GetChatsResponse["chats"][0]["users"][0]) => {
+  const purchaseItem = (item: GetChatsResponse["chats"][number], chatUser: GetChatsResponse["chats"][number]["users"][number]) => {
     if (updatePurchaseLoading) return;
     updatePurchase({ purchase: true, purchaseUserId: chatUser.id });
   };

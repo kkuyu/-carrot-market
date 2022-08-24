@@ -34,7 +34,7 @@ const WelcomeLocatePage: NextPage = () => {
     searchKeywordForm.setFocus("keyword");
   };
 
-  const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][0] | GetSearchKeywordResponse["emdList"][0]) => {
+  const selectItem = (itemData: GetSearchBoundaryResponse["emdList"][number] | GetSearchKeywordResponse["emdList"][number]) => {
     router.push({ pathname: "/account/join", query: { addrNm: itemData?.addrNm } });
   };
 

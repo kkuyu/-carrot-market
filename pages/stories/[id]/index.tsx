@@ -219,7 +219,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
           <div className="pb-5 px-5">
             <PictureList
               list={
-                storyData?.story?.photos?.split(",")?.map((src, index, array) => ({
+                storyData?.story?.photos?.split(";")?.map((src, index, array) => ({
                   src,
                   index,
                   key: `thumbnails-slider-${index + 1}`,

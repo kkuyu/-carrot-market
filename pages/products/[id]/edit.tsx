@@ -61,7 +61,7 @@ const ProductsEditPage: NextPage = () => {
     }
 
     const transfer = new DataTransfer();
-    const photos = productData?.product?.photos.length ? productData?.product.photos.split(",") : [];
+    const photos = productData?.product?.photos.length ? productData?.product.photos.split(";") : [];
     for (let index = 0; index < photos.length; index++) {
       const file = await convertPhotoToFile(photos[index]);
       if (file !== null) transfer.items.add(file);

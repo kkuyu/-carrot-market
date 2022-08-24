@@ -12,7 +12,7 @@ import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import Buttons from "@components/buttons";
 
-export type FeedbackProductItem = GetProfilesProductsResponse["products"][0];
+export type FeedbackProductItem = GetProfilesProductsResponse["products"][number];
 
 export interface FeedbackProductProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackProductItem;

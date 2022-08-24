@@ -2,7 +2,7 @@ import type { HTMLAttributes } from "react";
 // @api
 import { GetChatsDetailResponse } from "@api/chats/[id]";
 
-export type ChatMessageItem = GetChatsDetailResponse["chat"]["chatMessages"][0];
+export type ChatMessageItem = GetChatsDetailResponse["chat"]["chatMessages"][number];
 
 export interface ChatMessageProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatMessageItem;

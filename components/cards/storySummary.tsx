@@ -5,7 +5,7 @@ import { getStoryCategory } from "@libs/utils";
 import { GetStoriesResponse } from "@api/stories";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 
-export type StorySummaryItem = GetStoriesResponse["stories"][0] | GetCommentsDetailResponse["comment"]["story"];
+export type StorySummaryItem = GetStoriesResponse["stories"][number] | GetCommentsDetailResponse["comment"]["story"];
 
 export interface StorySummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: StorySummaryItem;
