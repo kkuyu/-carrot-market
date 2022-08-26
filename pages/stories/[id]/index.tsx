@@ -7,14 +7,14 @@ import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getStoryCategory, getDiffTimeStr, getCommentTree, truncateStr } from "@libs/utils";
+import { getCategory, getDiffTimeStr, getCommentTree, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
-import { StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
+import { StoryCategories, StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { PostStoriesDeleteResponse } from "@api/stories/[id]/delete";
@@ -44,7 +44,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
   const [mounted, setMounted] = useState(false);
   const today = new Date();
   const diffTime = storyData?.story && getDiffTimeStr(new Date(storyData?.story?.createdAt).getTime(), today.getTime());
-  const category = storyData?.story && getStoryCategory(storyData?.story?.category);
+  const category = storyData?.story && getCategory<StoryCategories>(storyData?.story?.category);
 
   // fetch data: story comments
   const [commentQuery, setCommentQuery] = useState("");

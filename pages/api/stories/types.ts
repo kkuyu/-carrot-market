@@ -1,4 +1,4 @@
-import { Emotion } from "@prisma/client";
+import { StoryCategory, Emotion } from "@prisma/client";
 
 export const StoryCommentReadTypeEnum = {
   ["more"]: "more",
@@ -10,30 +10,23 @@ export type StoryCommentReadTypeEnum = typeof StoryCommentReadTypeEnum[keyof typ
 export const StoryCommentMinimumDepth = 0;
 export const StoryCommentMaximumDepth = 2;
 
-export const StoryCategoryEnum = {
-  ["동네질문"]: "question",
-  ["동네사건사고"]: "incident",
-  ["동네소식"]: "report",
-  ["동네맛집"]: "restaurant",
-  ["취미생활"]: "dilettante-life",
-  ["일상"]: "daily",
-  ["분실/실종센터"]: "missing-and-disappear",
-  ["해주세요"]: "entrust",
-  ["동네사진전"]: "photo-exhibit",
-} as const;
+export type StoryCategories = {
+  value: StoryCategory;
+  text: string;
+  isLikeWithEmotion: boolean;
+  commentType: "댓글" | "답변";
+}[];
 
-export type StoryCategoryEnum = typeof StoryCategoryEnum[keyof typeof StoryCategoryEnum];
-
-export const StoryCategory: { text: keyof typeof StoryCategoryEnum; value: StoryCategoryEnum; isLikeWithEmotion: boolean; commentType: "댓글" | "답변" }[] = [
-  { text: "동네질문", value: "question", isLikeWithEmotion: false, commentType: "답변" },
-  { text: "동네사건사고", value: "incident", isLikeWithEmotion: true, commentType: "댓글" },
-  { text: "동네소식", value: "report", isLikeWithEmotion: true, commentType: "댓글" },
-  { text: "동네맛집", value: "restaurant", isLikeWithEmotion: true, commentType: "댓글" },
-  { text: "취미생활", value: "dilettante-life", isLikeWithEmotion: true, commentType: "댓글" },
-  { text: "일상", value: "daily", isLikeWithEmotion: false, commentType: "답변" },
-  { text: "분실/실종센터", value: "missing-and-disappear", isLikeWithEmotion: true, commentType: "댓글" },
-  { text: "해주세요", value: "entrust", isLikeWithEmotion: true, commentType: "댓글" },
-  { text: "동네사진전", value: "photo-exhibit", isLikeWithEmotion: true, commentType: "댓글" },
+export const StoryCategories = [
+  { value: StoryCategory["QUESTION"], text: "동네질문", isLikeWithEmotion: false, commentType: "답변" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["INCIDENT"], text: "동네사건사고", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["REPORT"], text: "동네소식", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["RESTAURANT"], text: "동네맛집", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["DILETTANTE_LIFE"], text: "취미생활", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["DAILY"], text: "일상", isLikeWithEmotion: false, commentType: "답변" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["MISSING_AND_DISAPPEAR"], text: "분실/실종센터", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["ENTRUST"], text: "해주세요", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
+  { value: StoryCategory["PHOTO_EXHIBIT"], text: "동네사진전", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
 ];
 
 export type EmotionKeys = Emotion;

@@ -2,9 +2,9 @@ import type { HTMLAttributes } from "react";
 import { useEffect, useState } from "react";
 import { Kind } from "@prisma/client";
 // @libs
-import { getStoryCategory, getDiffTimeStr } from "@libs/utils";
+import { getCategory, getDiffTimeStr } from "@libs/utils";
 // @api
-import { EmotionIcon } from "@api/stories/types";
+import { StoryCategories, EmotionIcon } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 import { GetSearchResultResponse } from "@api/search/result/[filter]";
@@ -27,7 +27,7 @@ const Story = (props: StoryProps) => {
 
   const today = new Date();
   const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
-  const category = getStoryCategory(item?.category);
+  const category = getCategory<StoryCategories>(item?.category);
   const likeRecords = item?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
   const previewComments = item?.comments?.filter((comment) => comment.content) || [];
 

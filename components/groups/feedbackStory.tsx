@@ -5,13 +5,13 @@ import { useState, useRef, memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getStoryCategory } from "@libs/utils";
+import { getCategory } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
+import { StoryCategories, EmotionIcon, EmotionKeys } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
-import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
 // @components
@@ -49,7 +49,7 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   const emotionBox = useRef<HTMLDivElement | null>(null);
   const [isVisibleBox, setIsVisibleBox] = useState(false);
 
-  const category = getStoryCategory(item?.category || "");
+  const category = item && getCategory<StoryCategories>(item?.category);
   const likeRecord = data?.story?.records?.find((record) => record.userId === user?.id && record.kind === Kind.StoryLike);
   const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
   const commentCount = data?.story?.comments?.length || item?.comments?.length;

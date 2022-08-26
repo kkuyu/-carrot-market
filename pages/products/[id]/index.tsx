@@ -13,6 +13,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import client from "@libs/server/client";
 // @api
+import { ProductCategories } from "@api/products/types";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
@@ -43,7 +44,7 @@ const ProductsDetailPage: NextPage = () => {
   const [mounted, setMounted] = useState(false);
   const today = new Date();
   const diffTime = data && getDiffTimeStr(new Date(data?.product?.createdAt).getTime(), today.getTime());
-  const category = data && getCategory(data?.product?.category);
+  const category = data && getCategory<ProductCategories>(data?.product?.category);
 
   const saleRecord = data && data?.product?.records?.find((record) => record.kind === Kind.ProductSale);
   const likeRecords = (data && data?.product?.records?.filter((record) => record.kind === Kind.ProductLike)) || [];

@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Record } from "@prisma/client";
 // @libs
-import { getStoryCategory } from "@libs/utils";
+import { getCategory } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { EmotionIcon, EmotionKeys } from "@api/stories/types";
+import { StoryCategories, EmotionIcon, EmotionKeys } from "@api/stories/types";
 
 export interface PostStoriesLikeResponse extends ResponseDataType {
   likeRecord: Record | null;
@@ -59,12 +59,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "NotFoundStory";
       throw error;
     }
-    if (!emotion && getStoryCategory(story.category)?.isLikeWithEmotion) {
+    if (!emotion && getCategory<StoryCategories>(story.category)?.isLikeWithEmotion) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (emotion && !getStoryCategory(story.category)?.isLikeWithEmotion) {
+    if (emotion && !getCategory<StoryCategories>(story.category)?.isLikeWithEmotion) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;

@@ -1,8 +1,8 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Story, Record, User, StoryComment } from "@prisma/client";
+import { Kind, Story, Record, User, StoryCategory, StoryComment } from "@prisma/client";
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 // @libs
-import { getStoryCategory } from "@libs/utils";
+import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
@@ -152,7 +152,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (!getStoryCategory(category)) {
+      if (!isInstance(category, StoryCategory)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;

@@ -135,10 +135,22 @@ model ChatMessage {
   updatedAt DateTime @updatedAt()
 }
 
+enum StoryCategory {
+  QUESTION
+  INCIDENT
+  REPORT
+  RESTAURANT
+  DILETTANTE_LIFE
+  DAILY
+  MISSING_AND_DISAPPEAR
+  ENTRUST
+  PHOTO_EXHIBIT
+}
+
 model Story {
   id        Int            @id @default(autoincrement())
   photos    String         @default("") @db.Text
-  category  String
+  category  StoryCategory
   content   String         @db.MediumText
   emdAddrNm String
   emdPosNm  String

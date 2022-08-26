@@ -1,7 +1,8 @@
 import type { HTMLAttributes } from "react";
 // @libs
-import { getStoryCategory } from "@libs/utils";
+import { getCategory } from "@libs/utils";
 // @api
+import { StoryCategories } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 
@@ -14,7 +15,7 @@ export interface StorySummaryProps extends HTMLAttributes<HTMLDivElement> {
 const StorySummary = (props: StorySummaryProps) => {
   const { item, className = "", ...restProps } = props;
 
-  const category = getStoryCategory(item?.category || "");
+  const category = item && getCategory<StoryCategories>(item?.category);
 
   if (!item) return null;
 

@@ -1,6 +1,8 @@
 import { ProductCategory } from "@prisma/client";
 
-export const ProductCategories: { value: ProductCategory; text: string; emoji: string }[] = [
+export type ProductCategories = { value: ProductCategory; text: string; emoji: string }[];
+
+export const ProductCategories: ProductCategories = [
   { value: ProductCategory["DIGITAL_DEVICE"], text: "디지털기기", emoji: "💻" },
   { value: ProductCategory["HOME_APPLIANCES"], text: "생활가전", emoji: "📻" },
   { value: ProductCategory["FURNITURE_AND_INTERIOR"], text: "가구/인테리어", emoji: "🛋️" },

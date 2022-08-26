@@ -1,7 +1,8 @@
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
+import { StoryCategory } from "@prisma/client";
 // @api
-import { StoryCategoryEnum, StoryCategory } from "@api/stories/types";
+import { StoryCategories } from "@api/stories/types";
 // @components
 import Labels from "@components/labels";
 import TextAreas from "@components/textareas";
@@ -11,7 +12,7 @@ import Selects from "@components/selects";
 
 export interface EditStoryTypes {
   photos: FileList;
-  category: StoryCategoryEnum;
+  category: StoryCategory;
   content: string;
 }
 
@@ -62,7 +63,7 @@ const EditStory = (props: EditStoryProps) => {
           initialValue={formData.getValues("category")}
           updateValue={(value) => setValue("category", value)}
           placeholder="카테고리를 선택해주세요"
-          optionGroups={[{ label: "카테고리 선택", options: [...StoryCategory] }]}
+          optionGroups={[{ label: "카테고리 선택", options: StoryCategories }]}
           required
           name="category"
         />
