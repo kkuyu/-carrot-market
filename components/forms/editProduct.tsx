@@ -1,7 +1,8 @@
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
+import { ProductCategory } from "@prisma/client";
 // @api
-import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
+import { ProductCategories } from "@api/products/types";
 // @components
 import Labels from "@components/labels";
 import Inputs from "@components/inputs";
@@ -12,7 +13,7 @@ import Selects from "@components/selects";
 
 export interface EditProductTypes {
   photos: FileList;
-  category: ProductCategoryEnum;
+  category: ProductCategory;
   name: string;
   price: number;
   description: string;
@@ -81,7 +82,7 @@ const EditProduct = (props: EditProductProps) => {
           initialValue={formData.getValues("category")}
           updateValue={(value) => setValue("category", value)}
           placeholder="카테고리를 선택해주세요"
-          optionGroups={[{ label: "카테고리 선택", options: [...ProductCategory] }]}
+          optionGroups={[{ label: "카테고리 선택", options: [...ProductCategories] }]}
           required
           name="category"
         />

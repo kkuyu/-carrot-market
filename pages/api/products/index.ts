@@ -1,7 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, Record } from "@prisma/client";
+import { Chat, Kind, Product, ProductCategory, Record } from "@prisma/client";
 // @libs
-import { getProductCategory } from "@libs/utils";
+import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
@@ -142,7 +142,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (!getProductCategory(category)) {
+      if (!isInstance(category, ProductCategory)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;

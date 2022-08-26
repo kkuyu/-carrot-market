@@ -1,11 +1,10 @@
 import type { GetStaticProps, NextPage } from "next";
 import Link from "next/link";
 import { useEffect } from "react";
-import type { ReactElement, HTMLAttributes } from "react";
 // @libs
 import useLayouts from "@libs/client/useLayouts";
 // @api
-import { ProductCategoryEnum, ProductCategory } from "@api/products/types";
+import { ProductCategories } from "@api/products/types";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -26,7 +25,7 @@ const ProductsCategoryPage: NextPage = () => {
   return (
     <div className="container pt-3 pb-3">
       <ul className="flex flex-wrap">
-        {ProductCategory.map((category) => (
+        {ProductCategories.map((category) => (
           <li key={category.value} className="w-1/2 min-w-[10rem]">
             <Link href={`/categories/${category.value}`} passHref>
               <Buttons tag="a" sort="text-link" size="base" status="unset" className="w-full">

@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getProductCategory, getDiffTimeStr, truncateStr } from "@libs/utils";
+import { getCategory, getDiffTimeStr, truncateStr } from "@libs/utils";
 import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
@@ -43,7 +43,7 @@ const ProductsDetailPage: NextPage = () => {
   const [mounted, setMounted] = useState(false);
   const today = new Date();
   const diffTime = data && getDiffTimeStr(new Date(data?.product?.createdAt).getTime(), today.getTime());
-  const category = data && getProductCategory(data?.product?.category);
+  const category = data && getCategory(data?.product?.category);
 
   const saleRecord = data && data?.product?.records?.find((record) => record.kind === Kind.ProductSale);
   const likeRecords = (data && data?.product?.records?.filter((record) => record.kind === Kind.ProductLike)) || [];

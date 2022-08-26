@@ -1,11 +1,12 @@
 import { IncomingMessage } from "http";
 import type { MutableRefObject } from "react";
+import { ProductCategory } from "@prisma/client";
 // @libs
 import name from "@libs/name.json";
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
+import { ProductCategories } from "@api/products/types";
 import { StoryCategory } from "@api/stories/types";
-import { ProductCategory } from "@api/products/types";
 import { ReviewManners } from "@api/reviews/types";
 import { StoryCommentItem } from "@api/comments/[id]";
 
@@ -46,8 +47,9 @@ export const getRandomName = () => {
   return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]}`;
 };
 
-export const getProductCategory = (categoryKey: string) => {
-  return ProductCategory.find((v) => v.value === categoryKey) || null;
+export const getCategory = (category: string) => {
+  if (isInstance(category, ProductCategory)) return ProductCategories.find((v) => v.value === category)!;
+  return null;
 };
 
 export const getStoryCategory = (categoryKey: string) => {

@@ -70,11 +70,33 @@ model SearchRecord {
   updatedAt DateTime @updatedAt()
 }
 
+enum ProductCategory {
+  DIGITAL_DEVICE
+  HOME_APPLIANCES
+  FURNITURE_AND_INTERIOR
+  LIFE_AND_KITCHEN
+  INFANT
+  CHILDREN_BOOK
+  FEMALE_FASHION
+  FEMALE_SUNDRIES
+  MALE_FASHION_AND_MALE_SUNDRIES
+  BEAUTY_AND_COSMETOLOGY
+  SPORTS_AND_LEISURE
+  HOBBY_AND_GAME_AND_ALBUM
+  BOOK
+  TICKET_AND_COUPON
+  PROCESSED_FOOD
+  COMPANION_ANIMAL_SUPPLIES
+  PLANT
+  ETC
+  SEEK
+}
+
 model Product {
   id          Int             @id @default(autoincrement())
   photos      String          @default("") @db.Text
   name        String
-  category    String
+  category    ProductCategory
   price       Int
   description String          @db.MediumText
   emdAddrNm   String
