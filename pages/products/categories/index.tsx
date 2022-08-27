@@ -11,7 +11,7 @@ import type { NextPageWithLayout } from "@app";
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 
-const ProductsCategoryPage: NextPage = () => {
+const ProductsCategoryIndexPage: NextPage = () => {
   const { changeLayout } = useLayouts();
 
   useEffect(() => {
@@ -27,7 +27,7 @@ const ProductsCategoryPage: NextPage = () => {
       <ul className="flex flex-wrap">
         {ProductCategories.map((category) => (
           <li key={category.value} className="w-1/2 min-w-[10rem]">
-            <Link href={`/categories/${category.value}`} passHref>
+            <Link href={`/products/categories/${category.value.toLocaleLowerCase().replace(/_/g, "-")}`} passHref>
               <Buttons tag="a" sort="text-link" size="base" status="unset" className="w-full">
                 <span className="inline-flex items-center justify-center w-8 h-8">{category.emoji}</span>
                 <span>{category.text}</span>
@@ -41,7 +41,7 @@ const ProductsCategoryPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout = () => {
-  return <ProductsCategoryPage />;
+  return <ProductsCategoryIndexPage />;
 };
 
 Page.getLayout = getLayout;
