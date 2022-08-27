@@ -20,6 +20,7 @@ import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
+import PictureList from "@components/groups/pictureList";
 import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
 
@@ -63,6 +64,7 @@ const StoriesIndexPage: NextPage = () => {
       {stories && Boolean(stories.length) && (
         <div className="-mx-5">
           <StoryList list={stories} cardProps={{ summaryType: "record" }} className="border-b divide-y-4">
+            <PictureList key="PictureList" className="px-5 pb-3" />
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
           {isReachingEnd ? (

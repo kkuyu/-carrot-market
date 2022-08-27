@@ -24,6 +24,7 @@ import type { NextPageWithLayout } from "@app";
 import { getLayout } from "@components/layouts/case/siteLayout";
 import StoryList from "@components/lists/storyList";
 import CommentSummaryList from "@components/lists/commentSummaryList";
+import PictureList from "@components/groups/pictureList";
 
 const ProfilesStoriesPage: NextPage = () => {
   const router = useRouter();
@@ -85,7 +86,11 @@ const ProfilesStoriesPage: NextPage = () => {
         <div className="-mx-5">
           {/* 동네생활 */}
           {Boolean(stories.length) && <h2 className="sr-only">게시글</h2>}
-          {Boolean(stories.length) && <StoryList list={stories} cardProps={{ summaryType: "report" }} className="border-b divide-y-4" />}
+          {Boolean(stories.length) && (
+            <StoryList list={stories} cardProps={{ summaryType: "report" }} className="border-b divide-y-4">
+              <PictureList key="PictureList" className="px-5 pb-3" />
+            </StoryList>
+          )}
           {/* 동네생활 댓글 */}
           {Boolean(comments.length) && <h2 className="sr-only">댓글</h2>}
           {Boolean(comments.length) && <CommentSummaryList list={comments} className="border-b divide-y-4" />}

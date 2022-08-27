@@ -14,12 +14,12 @@ export type PictureListItem = {
   name: string;
 };
 
-interface PictureListProps extends HTMLAttributes<HTMLDivElement> {
-  list: PictureListItem[];
+export interface PictureListProps extends HTMLAttributes<HTMLDivElement> {
+  list?: PictureListItem[];
 }
 
 const PictureList = (props: PictureListProps) => {
-  const { list, className = "", ...restProps } = props;
+  const { list = [], className = "", ...restProps } = props;
   const { openModal } = useModal();
 
   const grids = list.slice(0, 3).map((item, index, array) => {
@@ -49,8 +49,8 @@ const PictureList = (props: PictureListProps) => {
   if (!list.length) return null;
 
   return (
-    <div className={`relative overflow-hidden rounded-md ${className}`} {...restProps}>
-      <div className="grid grid-cols-2 gap-1">
+    <div className={`${className}`} {...restProps}>
+      <div className="relative grid grid-cols-2 gap-1 overflow-hidden rounded-md">
         {list.slice(0, 3).map((item, index) => {
           return (
             <button key={item.key} type="button" className={`relative block w-full ${grids[index].gridItemClass}`} onClick={() => openThumbnailModal(list, index)}>
@@ -58,15 +58,14 @@ const PictureList = (props: PictureListProps) => {
             </button>
           );
         })}
+        {Boolean(list.length > 3) && (
+          <div className="absolute top-1/2 right-0 w-1/2 h-1/2 pt-0.5 pl-0.5 pointer-events-none">
+            <span className="flex items-center justify-center w-full h-full bg-black/20">
+              <span className="text-lg font-semibold text-white">+{list.length - 3}</span>
+            </span>
+          </div>
+        )}
       </div>
-
-      {Boolean(list.length > 3) && (
-        <div className="absolute top-1/2 right-0 w-1/2 h-1/2 pt-0.5 pl-0.5 pointer-events-none">
-          <span className="flex items-center justify-center w-full h-full bg-black/20">
-            <span className="text-lg font-semibold text-white">+{list.length - 3}</span>
-          </span>
-        </div>
-      )}
     </div>
   );
 };

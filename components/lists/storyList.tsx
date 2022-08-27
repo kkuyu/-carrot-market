@@ -5,7 +5,7 @@ import { Children, cloneElement, isValidElement } from "react";
 import { truncateStr } from "@libs/utils";
 // @components
 import Story, { StoryItem, StoryProps } from "@components/cards/story";
-import PictureList, { PictureListItem } from "@components/groups/pictureList";
+import { PictureListProps } from "@components/groups/pictureList";
 import { FeedbackStoryProps } from "@components/groups/feedbackStory";
 
 interface StoryListProps extends HTMLAttributes<HTMLUListElement> {
@@ -24,19 +24,19 @@ const StoryList = (props: StoryListProps) => {
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
+            if (child.key === "PictureList")
+              return cloneElement(child as ReactElement<PictureListProps>, {
+                list: (item?.photos || "").split(";").map((src, index, array) => {
+                  const key = `thumbnails-list-${index + 1}`;
+                  const label = `${index + 1}/${array.length}`;
+                  const name = `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(item.content, 15)})`;
+                  return { src, index, key, label, name };
+                }),
+              });
             if (child.key === "FeedbackStory") return cloneElement(child as ReactElement<FeedbackStoryProps>, { item });
           }
           return child;
         });
-        const thumbnails: PictureListItem[] = !item?.photos
-          ? []
-          : item.photos.split(";").map((src, index, array) => ({
-              src,
-              index,
-              key: `thumbnails-list-${index + 1}`,
-              label: `${index + 1}/${array.length}`,
-              name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(item.content, 15)})`,
-            }));
         return (
           <li key={item?.id} className="relative">
             <Link href={`/stories/${item?.id}`}>
@@ -44,11 +44,6 @@ const StoryList = (props: StoryListProps) => {
                 <Story item={item} {...cardProps} />
               </a>
             </Link>
-            {Boolean(thumbnails.length) && (
-              <div className="empty:hidden px-5 pb-3">
-                <PictureList list={thumbnails} />
-              </div>
-            )}
             {childrenWithProps}
           </li>
         );

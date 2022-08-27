@@ -27,6 +27,7 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductList from "@components/lists/productList";
 import StoryList from "@components/lists/storyList";
+import PictureList from "@components/groups/pictureList";
 import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 
 const SearchPage: NextPage = () => {
@@ -154,7 +155,11 @@ const SearchPage: NextPage = () => {
           {/* 동네생활 */}
           {Boolean(stories.length) && currentTab.value === "all" && Boolean(products.length) && <span className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
           {Boolean(stories.length) && <h2 className={`pt-3 ${currentTab.value === "all" ? "" : "sr-only"} ${Boolean(products.length) ? "" : ""}`}>동네생활</h2>}
-          {Boolean(stories.length) && <StoryList list={stories} cardProps={{ highlightWord: searchFilter.highlightWord, summaryType: "report" }} className="[&>li>a]:pl-0 [&>li>a]:pr-0" />}
+          {Boolean(stories.length) && (
+            <StoryList list={stories} cardProps={{ highlightWord: searchFilter.highlightWord, summaryType: "report" }} className="[&>li>a]:pl-0 [&>li>a]:pr-0">
+              <PictureList key="PictureList" className="pb-3" />
+            </StoryList>
+          )}
           {Boolean(stories.length) && currentTab.value === "all" && stories.length < data?.[data.length - 1]?.storyTotalCount! && (
             <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: router.query.keyword } }} replace passHref>
               <Buttons tag="a" status="default" size="sm" className="pb-3">
