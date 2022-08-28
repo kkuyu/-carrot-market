@@ -49,11 +49,10 @@ const PictureZoom = (props: PictureZoomProps) => {
   };
 
   const SliderItem = (itemProps: { item: PictureZoomItem; index: number; array: PictureZoomItem[] } & HTMLAttributes<HTMLButtonElement>) => {
-    const { item, index, array, className: itemClassName = "" } = itemProps;
+    const { item, index, array, className: itemClassName = "", ...itemRestProps } = itemProps;
     return (
       <button
         type="button"
-        className={`relative block border-2 rounded-md ${item.index === flickingIndex ? "border-orange-500" : "border-transparent"} ${itemClassName}`}
         onClick={() => {
           if (!flickingRef.current) return;
           flickingRef.current.viewport.element.scrollLeft = 0;
@@ -65,8 +64,10 @@ const PictureZoom = (props: PictureZoomProps) => {
           if (!flickingRef.current) return;
           flickingRef.current.viewport.element.scrollLeft = 0;
         }}
+        className={`relative block border-2 rounded-md ${item.index === flickingIndex ? "border-orange-500" : "border-transparent"} ${itemClassName}`}
+        {...itemRestProps}
       >
-        <Images cloudId={item.src} cloudVariant="public" size="6rem" rounded="md" alt={item.name} />
+        <Images cloudId={item.src} cloudVariant="public" size="6rem" alt={item.name} className="rounded-md" />
       </button>
     );
   };
@@ -103,7 +104,7 @@ const PictureZoom = (props: PictureZoomProps) => {
           {({ zoomIn, zoomOut, resetTransform, ...rest }) => {
             return (
               <TransformComponent wrapperStyle={{ width: "100%", height: "100%", opacity: 0, transition: "opacity 0.2s" }} contentStyle={{ width: "100%" }}>
-                <Images cloudId={list[flickingIndex].src} cloudVariant="public" size="100%" rounded="none" alt={list[flickingIndex].name} />
+                <Images cloudId={list[flickingIndex].src} cloudVariant="public" size="100%" alt={list[flickingIndex].name} className="rounded-none" />
               </TransformComponent>
             );
           }}
@@ -113,7 +114,7 @@ const PictureZoom = (props: PictureZoomProps) => {
         <Flicking ref={flickingRef} cameraTag="ul" align="center" defaultIndex={defaultIndex} autoInit={false} moveType="freeScroll" onAfterResize={() => resetZoom()} style={{ width: "100%" }}>
           {list.map((item, index, array) => (
             <li key={item.key} id={item.key} role="tab" className="relative block panel px-1" aria-label={item.label} aria-controls={item.key} aria-selected={item.index === flickingIndex}>
-              <SliderItem item={item} index={index} array={array} />
+              <SliderItem item={item} index={index} array={array} aria-label={`${item.label} 이미지로 이동`} />
             </li>
           ))}
         </Flicking>

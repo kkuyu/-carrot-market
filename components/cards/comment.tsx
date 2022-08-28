@@ -38,7 +38,7 @@ const Comment = (props: CommentProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <Link href={`/profiles/${item?.user?.id}`}>
         <a className="block">
-          <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item?.emdPosNm} diffTime={mounted ? diffTime : ""} size="tiny" />
+          <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} size="tiny" />
         </a>
       </Link>
       <div className="mt-1 pl-11">

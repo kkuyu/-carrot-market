@@ -26,21 +26,21 @@ const UserIndexPage: NextPage = () => {
   const { openModal } = useModal();
 
   const MenuItem = (props: { pathname?: string | null; onClick?: () => void | null } & HTMLAttributes<HTMLButtonElement | HTMLLinkElement>) => {
-    const { pathname, onClick, children } = props;
+    const { pathname, onClick, className: itemClassName = "", children, ...itemRestProps } = props;
     const classNames = {
       wrapper: "block py-0.5 w-full px-5",
       inner: "flex items-center space-x-2",
     };
     if (!pathname) {
       return (
-        <Buttons tag="button" type="button" sort="text-link" status="unset" onClick={onClick} className={`${classNames.wrapper}`}>
+        <Buttons tag="button" type="button" sort="text-link" status="unset" onClick={onClick} className={`${classNames.wrapper} ${itemClassName}`} {...itemRestProps}>
           <div className={classNames.inner}>{children}</div>
         </Buttons>
       );
     }
     return (
       <Link href={pathname} passHref>
-        <Buttons tag="a" sort="text-link" status="unset" className={`${classNames.wrapper}`}>
+        <Buttons tag="a" sort="text-link" status="unset" className={`${classNames.wrapper} ${itemClassName}`} {...itemRestProps}>
           <div className={classNames.inner}>{children}</div>
         </Buttons>
       </Link>
@@ -154,6 +154,7 @@ const UserIndexPage: NextPage = () => {
 
   return (
     <section className="container pb-5">
+      {/* 프로필 */}
       <div className="-mx-5">
         {userType === "member" ? (
           <Link href={`/profiles/${user?.id}`}>
@@ -168,6 +169,7 @@ const UserIndexPage: NextPage = () => {
         )}
       </div>
 
+      {/* 메뉴 */}
       <div className="space-y-2">
         {userMenu.map((item) => {
           if (!item.links.find((v) => v.isVisible)) return null;

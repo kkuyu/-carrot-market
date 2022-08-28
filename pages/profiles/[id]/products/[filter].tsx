@@ -87,20 +87,12 @@ const ProfilesProductsPage: NextPage = () => {
             {profileData?.profile.id === user?.id ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
             {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" size="base" /> : <></>}
           </ProductList>
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">{currentTab?.name}을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">{currentTab?.name}을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 판매상품: Empty */}
-      {products && !Boolean(products.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
-        </div>
-      )}
+      {products && !Boolean(products.length) && <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>}
 
       {/* 판매상품: InfiniteRef */}
       <div id="infiniteRef" ref={infiniteRef} />

@@ -7,13 +7,13 @@ import Icons from "@components/icons";
 export interface LayerModalProps {
   headerType: "default" | "transparent";
   title?: string;
-  closeBtnColor?: "black" | "white";
+  closeBtnColor?: "text-black" | "text-white";
   closeModal?: () => void;
   children?: ReactElement;
 }
 
 const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
-  const { name, headerType, title = "", closeBtnColor = "black", children, closeModal, onOpen, onClose } = props;
+  const { name, headerType, title = "", closeBtnColor = "text-black", children, closeModal, onOpen, onClose } = props;
 
   const closeLayerModal = () => {
     if (closeModal) closeModal();
@@ -29,8 +29,8 @@ const LayerModal = (props: LayerModalProps & ModalComponentProps) => {
           </strong>
         </div>
       )}
-      <div className="relative grow overflow-auto">{children ? children : <>LayerModal</>}</div>
-      <Buttons tag="button" type="button" sort="icon-block" size="lg" status="unset" className={`absolute top-0 right-0 ${closeBtnColor ? `text-${closeBtnColor}` : ""}`} onClick={closeLayerModal}>
+      <div className="relative grow-full overflow-auto">{children ? children : <>LayerModal</>}</div>
+      <Buttons tag="button" type="button" sort="icon-block" size="lg" status="unset" className={`absolute top-0 right-0 ${closeBtnColor}`} onClick={closeLayerModal} aria-label="닫기">
         <Icons name="XMark" className="block mx-auto w-6 h-6" />
       </Buttons>
     </div>

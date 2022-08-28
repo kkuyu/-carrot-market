@@ -23,7 +23,7 @@ const ToastContainer = (props: ToastContainerProps) => {
     <section id="layout-toast" className="fixed-container top-0 bottom-0 z-[300] pointer-events-none">
       <div className="fixed-inner h-full flex flex-col px-5 py-6">
         {childrenWithProps}
-        <div className="grow" style={{ order: 50 }} />
+        <div className="grow-full" style={{ order: 50 }} />
       </div>
     </section>
   );

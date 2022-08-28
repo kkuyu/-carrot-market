@@ -42,13 +42,13 @@ const PictureSlider = (props: PictureSliderProps) => {
     setFlickingIndex(defaultIndex);
     flickingRef.current.init();
     flickingRef.current.viewport.element.setAttribute("aria-roledescription", "carousel");
-    flickingRef.current.camera.element.setAttribute("aria-live", 'polite"');
+    flickingRef.current.camera.element.setAttribute("aria-live", "polite");
   };
 
   const openPictureModal = (list: PictureSliderItem[], index: number) => {
     openModal<LayerModalProps>(LayerModal, "PictureZoom", {
       headerType: "transparent",
-      closeBtnColor: "white",
+      closeBtnColor: "text-white",
       children: (
         <div className="absolute top-0 left-0 right-0 bottom-0">
           <PictureZoom list={list} defaultIndex={index} />
@@ -58,11 +58,10 @@ const PictureSlider = (props: PictureSliderProps) => {
   };
 
   const SliderItem = (itemProps: { item: PictureSliderItem; index: number; array: PictureSliderItem[] } & HTMLAttributes<HTMLButtonElement>) => {
-    const { item, index, array, className: itemClassName = "" } = itemProps;
+    const { item, index, array, className: itemClassName = "", ...itemRestProps } = itemProps;
     return (
       <button
         type="button"
-        className={`relative block w-full bg-slate-300 ${itemClassName}`}
         onClick={() => {
           openPictureModal(list, index);
         }}
@@ -71,8 +70,10 @@ const PictureSlider = (props: PictureSliderProps) => {
           flickingRef.current.viewport.element.scrollLeft = 0;
           flickingRef?.current?.moveTo(index, 0);
         }}
+        className={`relative block w-full bg-slate-300 ${itemClassName}`}
+        {...itemRestProps}
       >
-        <Images cloudId={item.src} cloudVariant="public" size="100%" ratioX={5} ratioY={3} rounded="none" alt={item.name} />
+        <Images cloudId={item.src} cloudVariant="public" size="100%" ratioX={5} ratioY={3} alt={item.name} className="rounded-none" />
       </button>
     );
   };
@@ -92,7 +93,7 @@ const PictureSlider = (props: PictureSliderProps) => {
   if (list.length === 1) {
     return (
       <div className="relative block w-full">
-        <SliderItem item={list[0]} index={0} array={list} />
+        <SliderItem item={list[0]} index={0} array={list} aria-label={`이미지 확대 팝업 열기`} />
       </div>
     );
   }
@@ -119,7 +120,7 @@ const PictureSlider = (props: PictureSliderProps) => {
     >
       {list.map((item, index, array) => (
         <li key={item.key} id={item.key} role="tabpanel" className="relative block w-full panel" aria-roledescription="slide" aria-label={item.label}>
-          <SliderItem item={item} index={index} array={array} />
+          <SliderItem item={item} index={index} array={array} aria-label={`${item.label} 이미지 확대 팝업 열기`} />
         </li>
       ))}
       <ViewportSlot>
@@ -129,9 +130,9 @@ const PictureSlider = (props: PictureSliderProps) => {
               key={item.key}
               type="button"
               role="tab"
-              className="w-4 h-4 p-1"
               onClick={() => flickingRef.current?.moveTo(item.index)}
-              aria-label={item.label}
+              className="w-4 h-4 p-1"
+              aria-label={`${item.label} 이미지로 이동`}
               aria-controls={item.key}
               aria-selected={item.index === flickingIndex}
             >

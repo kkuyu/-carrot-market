@@ -47,14 +47,20 @@ export const getRandomName = () => {
   return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]}`;
 };
 
-export const getCategory = <T extends ProductCategories | StoryCategories>(category: string): T[number] | null => {
-  if (isInstance(category, ProductCategory)) return ProductCategories.find((v) => v.value === category)!;
-  if (isInstance(category, StoryCategory)) return StoryCategories.find((v) => v.value === category)!;
-  return null;
+export const getCategory = <T extends ProductCategories | StoryCategories>(categoryStr: string): (T[number] & { kebabValue: string }) | null => {
+  let category = null;
+  const kebabValue = categoryStr.toLowerCase().replace(/_/g, "-");
+  const screamingSnakeValue = categoryStr.toUpperCase().replace(/-/g, "_");
+
+  if (isInstance(screamingSnakeValue, ProductCategory)) category = ProductCategories.find((v) => v.value === screamingSnakeValue)!;
+  if (isInstance(screamingSnakeValue, StoryCategory)) category = StoryCategories.find((v) => v.value === screamingSnakeValue)!;
+
+  if (!category) return null;
+  return { ...category, kebabValue };
 };
 
-export const getReviewManners = (mannerKey: string) => {
-  return ReviewManners.find((v) => v.value === mannerKey) || null;
+export const getReviewManners = (mannerStr: string) => {
+  return ReviewManners.find((v) => v.value === mannerStr) || null;
 };
 
 type timeLabel = "분" | "시간" | "일" | "개월" | "년";

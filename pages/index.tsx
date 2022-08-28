@@ -68,22 +68,18 @@ const ProductsIndexPage: NextPage = () => {
       {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} className="border-b" />
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">판매 상품을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">판매 상품을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 판매상품: Empty */}
       {products && !Boolean(products.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">
+        <div className="list-empty">
+          <>
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
             <br />
-            등록된 판매 상품이 없어요.
-          </p>
+            등록된 판매 상품이 없어요
+          </>
         </div>
       )}
 
@@ -91,7 +87,7 @@ const ProductsIndexPage: NextPage = () => {
       <div id="infiniteRef" ref={infiniteRef} />
 
       {/* 글쓰기 */}
-      <FloatingButtons />
+      <FloatingButtons aria-label="중고거래 글쓰기" />
     </div>
   );
 };

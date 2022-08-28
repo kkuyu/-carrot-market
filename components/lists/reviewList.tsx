@@ -47,7 +47,7 @@ const ReviewList = (props: ReviewListProps) => {
             <li key={item?.id}>
               <Link href={`/profiles/${profile?.id}`}>
                 <a className="block">
-                  <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
+                  <Profiles user={profile!} signature={signature} diffTime={mounted && diffTime ? diffTime : ""} size="sm" />
                   <p className="pt-1 pl-14 pb-3">{item.text}</p>
                 </a>
               </Link>
@@ -60,7 +60,7 @@ const ReviewList = (props: ReviewListProps) => {
           <li key={item?.id}>
             <Link href={`/profiles/${profile?.id}`}>
               <a className="block">
-                <Profiles user={profile!} signature={signature} diffTime={mounted ? diffTime : ""} size="sm" />
+                <Profiles user={profile!} signature={signature} diffTime={mounted && diffTime ? diffTime : ""} size="sm" />
               </a>
             </Link>
             <Link href={`/reviews/${item?.id}`}>

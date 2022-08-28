@@ -28,7 +28,7 @@ const MannerList = (props: MannerListProps) => {
         return (
           <li key={item.id}>
             <div className="flex items-start">
-              <span className="grow pr-2">{manner.text}</span>
+              <span className="grow-full pr-2">{manner.text}</span>
               <Icons name="ChatBubbleLeftRight" className="flex-none w-5 h-5" />
               <span className="px-2 font-semibold">{count}</span>
             </div>

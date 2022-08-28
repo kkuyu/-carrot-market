@@ -2,6 +2,7 @@ import type { NextPage } from "next";
 import Link from "next/link";
 import { useRouter } from "next/router";
 import { useEffect } from "react";
+import type { HTMLAttributes } from "react";
 import { SWRConfig } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
@@ -20,7 +21,7 @@ import type { NextPageWithLayout } from "@app";
 import { getLayout } from "@components/layouts/case/siteLayout";
 import AlertModal, { AlertStyleEnum, AlertModalProps } from "@components/commons/modals/case/alertModal";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
-import Buttons from "@components/buttons";
+import Buttons, { ButtonsProps } from "@components/buttons";
 
 const AccountIndexPage: NextPage = () => {
   const router = useRouter();
@@ -85,9 +86,9 @@ const AccountIndexPage: NextPage = () => {
         <h2 className="">계정 정보</h2>
         <ul className="mt-2 space-y-2">
           <li className="flex">
-            <div className="grow shrink basis-auto min-w-0 ">
+            <div className="grow-full">
               <strong className="block font-normal">휴대폰 번호</strong>
-              <span className="empty:hidden mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500">{user?.phone}</span>
+              <span className="empty:hidden block mt-1 text-sm text-gray-500 text-ellipsis">{user?.phone}</span>
             </div>
             <Link href="/account/phone" passHref>
               <Buttons tag="a" sort="text-link" status="primary" className="flex-none pl-2 pr-0">
@@ -97,9 +98,9 @@ const AccountIndexPage: NextPage = () => {
           </li>
           {userType === "member" && (
             <li className="flex">
-              <div className="grow shrink basis-auto min-w-0 ">
+              <div className="grow-full">
                 <strong className="block font-normal">이메일</strong>
-                <span className="empty:hidden mt-1 block overflow-hidden whitespace-nowrap overflow-ellipsis text-sm text-gray-500">{user?.email}</span>
+                <span className="empty:hidden block mt-1 text-sm text-gray-500 text-ellipsis">{user?.email}</span>
               </div>
               <Link href="/account/email" passHref>
                 <Buttons tag="a" sort="text-link" status="primary" className="flex-none pl-2 pr-0">

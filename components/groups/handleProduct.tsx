@@ -53,20 +53,6 @@ const HandleProduct = (props: HandleProductProps) => {
     updateSale({ sale: !Boolean(saleRecord) });
   };
 
-  const openHandleModal = () => {
-    const modalActions = [
-      { key: "sale", style: ActionStyleEnum["primary"], text: "판매중", handler: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
-      { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/products/${item?.id}/edit`) },
-      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${item?.id}/delete`) },
-      { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
-    ];
-    openModal<ActionModalProps>(ActionModal, "handleProduct", {
-      actions: saleRecord
-        ? modalActions.filter((action) => ["update", "delete", "cancel"].includes(action.key))
-        : modalActions.filter((action) => ["sale", "update", "delete", "cancel"].includes(action.key)),
-    });
-  };
-
   const openSaleModal = () => {
     openModal<AlertModalProps>(AlertModal, "ConfirmSaleToSold", {
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
@@ -90,7 +76,30 @@ const HandleProduct = (props: HandleProductProps) => {
   if (!item) return null;
 
   return (
-    <Buttons tag="button" type="button" sort="icon-block" size="sm" status="unset" onClick={openHandleModal} disabled={saleLoading} className={`absolute top-0 right-0 ${className}`} {...restProps}>
+    <Buttons
+      tag="button"
+      type="button"
+      sort="icon-block"
+      size="sm"
+      status="unset"
+      onClick={() => {
+        const modalActions = [
+          { key: "sale", style: ActionStyleEnum["primary"], text: "판매중", handler: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
+          { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/products/${item?.id}/edit`) },
+          { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${item?.id}/delete`) },
+          { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
+        ];
+        openModal<ActionModalProps>(ActionModal, "HandleProduct", {
+          actions: saleRecord
+            ? modalActions.filter((action) => ["update", "delete", "cancel"].includes(action.key))
+            : modalActions.filter((action) => ["sale", "update", "delete", "cancel"].includes(action.key)),
+        });
+      }}
+      disabled={saleLoading}
+      className={`absolute top-0 right-0 ${className}`}
+      {...restProps}
+      aria-label="옵션 더보기"
+    >
       <Icons name="EllipsisVertical" className="w-5 h-5 text-gray-400" />
     </Buttons>
   );

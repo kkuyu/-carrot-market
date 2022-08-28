@@ -19,9 +19,10 @@ const ChatList = (props: ChatListProps) => {
   const { user } = useUser();
 
   const ListItem = (itemProps: { item: ChatItem; users: ChatItem["users"] } & HTMLAttributes<HTMLLIElement>) => {
-    const { item, users, className: itemClassName = "", children } = itemProps;
+    const { item, users, className: itemClassName = "", children, ...itemRestProps } = itemProps;
+    if (type === "button" && !selectItem) console.error("ListItem", item);
     return (
-      <li className={`${itemClassName}`}>
+      <li className={`${itemClassName}`} {...itemRestProps}>
         {type === "link" && (
           <Link href={`/chats/${item.id}`}>
             <a className="block px-5 py-3">{children}</a>
@@ -32,7 +33,6 @@ const ChatList = (props: ChatListProps) => {
             {children}
           </button>
         )}
-        {type === "button" && !selectItem && <div className="block-arrow py-3">{children}</div>}
       </li>
     );
   };

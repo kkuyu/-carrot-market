@@ -1,6 +1,8 @@
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { ProductCategory } from "@prisma/client";
+// @libs
+import { getCategory } from "@libs/utils";
 // @api
 import { ProductCategories } from "@api/products/types";
 // @components
@@ -32,6 +34,7 @@ const EditProduct = (props: EditProductProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, setValue } = formData;
 
+  const productCategories = Object.values(ProductCategory).map((category) => getCategory<ProductCategories>(category)!);
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,
@@ -82,7 +85,7 @@ const EditProduct = (props: EditProductProps) => {
           initialValue={formData.getValues("category")}
           updateValue={(value) => setValue("category", value)}
           placeholder="카테고리를 선택해주세요"
-          optionGroups={[{ label: "카테고리 선택", options: [...ProductCategories] }]}
+          optionGroups={[{ label: "카테고리 선택", options: productCategories }]}
           required
           name="category"
         />

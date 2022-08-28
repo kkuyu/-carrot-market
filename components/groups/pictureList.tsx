@@ -37,7 +37,7 @@ const PictureList = (props: PictureListProps) => {
   const openThumbnailModal = (list: PictureListItem[], index: number) => {
     openModal<LayerModalProps>(LayerModal, "PictureZoom", {
       headerType: "transparent",
-      closeBtnColor: "black",
+      closeBtnColor: "text-black",
       children: (
         <div className="absolute top-0 left-0 right-0 bottom-0">
           <PictureZoom list={list} defaultIndex={index} />
@@ -51,13 +51,17 @@ const PictureList = (props: PictureListProps) => {
   return (
     <div className={`${className}`} {...restProps}>
       <div className="relative grid grid-cols-2 gap-1 overflow-hidden rounded-md">
-        {list.slice(0, 3).map((item, index) => {
-          return (
-            <button key={item.key} type="button" className={`relative block w-full ${grids[index].gridItemClass}`} onClick={() => openThumbnailModal(list, index)}>
-              <Images alt={item.name} cloudId={item.src} size="100%" ratioX={grids[index].ratio[0]} ratioY={grids[index].ratio[1]} cloudVariant="public" rounded="none" />
-            </button>
-          );
-        })}
+        {list.slice(0, 3).map((item, index) => (
+          <button
+            key={item.key}
+            type="button"
+            className={`relative block w-full ${grids[index].gridItemClass}`}
+            onClick={() => openThumbnailModal(list, index)}
+            aria-label={`${item.label} 이미지 확대 팝업 열기`}
+          >
+            <Images alt={item.name} cloudId={item.src} size="100%" ratioX={grids[index].ratio[0]} ratioY={grids[index].ratio[1]} cloudVariant="public" className="rounded-none" />
+          </button>
+        ))}
         {Boolean(list.length > 3) && (
           <div className="absolute top-1/2 right-0 w-1/2 h-1/2 pt-0.5 pl-0.5 pointer-events-none">
             <span className="flex items-center justify-center w-full h-full bg-black/20">

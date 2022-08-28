@@ -27,7 +27,6 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductList from "@components/lists/productList";
 import StoryList from "@components/lists/storyList";
-import PictureList from "@components/groups/pictureList";
 import FilterProduct, { FilterProductTypes } from "@components/forms/filterProduct";
 
 const SearchPage: NextPage = () => {
@@ -156,9 +155,11 @@ const SearchPage: NextPage = () => {
           {Boolean(stories.length) && currentTab.value === "all" && Boolean(products.length) && <span className="block mt-3 -mx-5 h-[8px] bg-gray-200" />}
           {Boolean(stories.length) && <h2 className={`pt-3 ${currentTab.value === "all" ? "" : "sr-only"} ${Boolean(products.length) ? "" : ""}`}>동네생활</h2>}
           {Boolean(stories.length) && (
-            <StoryList list={stories} cardProps={{ highlightWord: searchFilter.highlightWord, summaryType: "report" }} className="[&>li>a]:pl-0 [&>li>a]:pr-0">
-              <PictureList key="PictureList" className="pb-3" />
-            </StoryList>
+            <StoryList
+              list={stories}
+              cardProps={{ highlightWord: searchFilter.highlightWord, summaryType: "report", isVisiblePreviewPhoto: true, isVisiblePreviewComment: true }}
+              className="[&>li>a]:pl-0 [&>li>a]:pr-0"
+            ></StoryList>
           )}
           {Boolean(stories.length) && currentTab.value === "all" && stories.length < data?.[data.length - 1]?.storyTotalCount! && (
             <Link href={{ pathname: router.pathname, query: { filter: "story", keyword: router.query.keyword } }} replace passHref>
@@ -168,17 +169,17 @@ const SearchPage: NextPage = () => {
             </Link>
           )}
           {currentTab.value === "all" ? null : isReachingEnd ? (
-            <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
+            <span className="list-loading">{currentTab?.name}을 모두 확인하였어요</span>
           ) : isLoading ? (
-            <span className="block py-6 text-center border-t text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
+            <span className="list-loading">{currentTab?.name}을 불러오고있어요</span>
           ) : null}
         </div>
       )}
 
       {/* 검색결과: Empty */}
       {data && !(Boolean(products.length) || Boolean(stories.length)) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
+        <div className="list-empty">
+          <>{currentTab?.name}이 존재하지 않아요</>
         </div>
       )}
 

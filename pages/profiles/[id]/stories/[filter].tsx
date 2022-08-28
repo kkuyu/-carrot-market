@@ -94,17 +94,13 @@ const ProfilesStoriesPage: NextPage = () => {
           {/* 동네생활 댓글 */}
           {Boolean(comments.length) && <h2 className="sr-only">댓글</h2>}
           {Boolean(comments.length) && <CommentSummaryList list={comments} className="border-b divide-y-4" />}
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">{currentTab?.name}을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">{currentTab?.name}을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 동네생활: Empty */}
       {data && !(Boolean(stories.length) || Boolean(comments.length)) && (
-        <div className="py-10 text-center">
+        <div className="list-empty">
           <p className="text-gray-500">{`${currentTab?.name}이 존재하지 않아요`}</p>
         </div>
       )}

@@ -91,25 +91,25 @@ const Header = (props: HeaderProps) => {
         );
       case HeaderUtils["Back"]:
         return (
-          <HeaderButton onClick={() => router.back()}>
+          <HeaderButton onClick={() => router.back()} aria-label="뒤로가기">
             <Icons name="ChevronLeft" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Home"]:
         return (
-          <HeaderButton pathname="/">
+          <HeaderButton pathname="/" aria-label="홈">
             <Icons name="Home" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Hamburger"]:
         return (
-          <HeaderButton pathname={hamburgerAction?.pathname} onClick={hamburgerAction?.onClick}>
+          <HeaderButton pathname={hamburgerAction?.pathname} onClick={hamburgerAction?.onClick} aria-label="메뉴">
             <Icons name="Bars3" className="w-6 h-6" />
           </HeaderButton>
         );
       case HeaderUtils["Kebab"]:
         return (
-          <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "kebabAction", { actions: kebabActions || [] })}>
+          <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "HeaderKebab", { actions: kebabActions || [] })} aria-label="옵션 더보기">
             <Icons name="EllipsisVertical" className="w-6 h-6" />
           </HeaderButton>
         );
@@ -128,7 +128,7 @@ const Header = (props: HeaderProps) => {
         );
       case HeaderUtils["Search"]:
         return (
-          <HeaderButton pathname="/search">
+          <HeaderButton pathname="/search" aria-label="검색">
             <Icons name="MagnifyingGlass" className="w-6 h-6" />
           </HeaderButton>
         );

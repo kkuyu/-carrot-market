@@ -15,7 +15,7 @@ const WelcomeAlertModal = (props: WelcomeAlertModalProps & AlertModalProps & Mod
 
   const modalOptions: WelcomeAlertModalProps & AlertModalProps = {
     ...props,
-    message: "당근마켓 첫 방문이신가요???",
+    message: "당근마켓 첫 방문이신가요?",
     actions: [
       {
         key: "cancel",

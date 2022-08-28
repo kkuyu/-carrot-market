@@ -48,10 +48,10 @@ const ActionModal = (props: ActionModalProps & ModalComponentProps) => {
   };
 
   const ActionGroups = (groupProps: { groupActions: ActionModalProps["actions"] } & HTMLAttributes<HTMLDivElement>) => {
-    const { groupActions, className: groupClassName = "" } = groupProps;
+    const { groupActions, className: groupClassName = "", ...groupRestProps } = groupProps;
     if (!groupActions.length) return null;
     return (
-      <div className={`flex flex-col divide-y divide-gray-300 ${groupClassName}`}>
+      <div className={`flex flex-col divide-y divide-gray-300 ${groupClassName}`} {...groupRestProps}>
         {groupActions.map((action) => (
           <Buttons
             key={action.key}

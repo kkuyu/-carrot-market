@@ -59,18 +59,14 @@ const UserLikesPage: NextPage = () => {
           <ProductList list={products} cardProps={{ className: "pr-8" }} className="border-b">
             <LikeProduct key="LikeProduct" className="absolute top-3 right-3 p-2" />
           </ProductList>
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">관심목록을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">관심목록을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">관심목록을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">관심목록을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 관심목록: Empty */}
       {products && !Boolean(products.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">{`관심목록이 존재하지 않아요`}</p>
+        <div className="list-empty">
+          <>관심목록이 존재하지 않아요</>
         </div>
       )}
 

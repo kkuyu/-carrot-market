@@ -53,7 +53,7 @@ const MessageToast = (props: MessageToastProps & ToastComponentProps) => {
     >
       {type === "default" && (
         <div className="flex px-4 py-2 text-white bg-black bg-opacity-70 rounded-md">
-          <span className="grow text-sm font-semibold">{message}</span>
+          <span className="grow-full text-sm font-semibold">{message}</span>
         </div>
       )}
     </div>

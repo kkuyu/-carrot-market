@@ -23,7 +23,7 @@ const WelcomeIndexPage: NextPage = () => {
 
   return (
     <section className="container flex flex-col items-center h-min-full-screen pt-5 pb-5">
-      <div className="grow inline-flex flex-col justify-center text-center">
+      <div className="grow-full inline-flex flex-col justify-center text-center">
         <Icons name="PuzzlePiece" className="mx-auto w-16 h-16" />
         <h1 className="mt-4 text-xl">당근 근처의 당근마켓</h1>
         <h2 className="mt-2 font-normal">

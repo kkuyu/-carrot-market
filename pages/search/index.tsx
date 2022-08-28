@@ -113,7 +113,8 @@ const SearchIndexPage: NextPage = () => {
                     sort="text-link"
                     status="unset"
                     onClick={() => clickSave(record)}
-                    className="w-full py-1.5 pr-8 border-b border-gray-300 whitespace-nowrap overflow-hidden overflow-ellipsis"
+                    className="w-full py-1.5 pr-8 border-b border-gray-300 text-ellipsis"
+                    aria-label={`${record.keyword} 검색`}
                   >
                     {record.keyword}
                   </Buttons>

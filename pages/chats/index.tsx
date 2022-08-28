@@ -54,16 +54,16 @@ const ChatsIndexPage: NextPage = () => {
   if (userType !== "member") {
     return (
       <div className="container">
-        <div className="py-10 text-center">
-          <p className="text-notice inline-block">
+        <div className="list-empty">
+          <>
             이웃과의 채팅은
             <Link href="/account/phone" passHref>
               <Buttons tag="a" sort="text-link" status="default" className="align-top">
                 휴대폰 인증
               </Buttons>
             </Link>
-            후 이용 가능합니다.
-          </p>
+            후 이용 가능합니다
+          </>
         </div>
       </div>
     );
@@ -75,18 +75,14 @@ const ChatsIndexPage: NextPage = () => {
       {chats && Boolean(chats.length) && (
         <div className="-mx-5">
           <ChatList type="link" list={chats} sort="message" isSingleUser={false} className="border-b" />
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">채팅을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">채팅을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">채팅을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 채팅: Empty */}
       {chats && !Boolean(chats.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">채팅한 이웃이 없어요.</p>
+        <div className="list-empty">
+          <>채팅한 이웃이 없어요</>
         </div>
       )}
 

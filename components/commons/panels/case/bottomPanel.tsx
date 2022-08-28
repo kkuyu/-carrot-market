@@ -86,7 +86,7 @@ const BottomPanel = (props: BottomPanelProps & PanelComponentProps) => {
         transition-all duration-${transitionDuration.current} ${isVisible ? "translate-y-0" : "translate-y-full"}`}
       >
         {hasHandleBar && <span className="absolute top-2.5 left-0 right-0 after:mx-auto after:block after:w-9 after:h-1 after:bg-gray-400 after:rounded-sm" />}
-        <div ref={hasHandleBar ? touchSeparateContainer : null} className="relative container grow overflow-auto">
+        <div ref={hasHandleBar ? touchSeparateContainer : null} className="relative container grow-full overflow-auto">
           {children ? cloneElement(children, { isVisible, closeBottomPanel }) : null}
         </div>
       </div>

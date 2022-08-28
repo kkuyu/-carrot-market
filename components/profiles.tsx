@@ -29,7 +29,7 @@ const Profiles = (props: ProfilesProps) => {
       imageGap: "mr-3",
       imageSize: "2.75rem",
       userName: "text-sm",
-      userInfo: "text-xs",
+      userInfo: "text-sm",
     },
     base: {
       imageGap: "mr-3",
@@ -42,13 +42,16 @@ const Profiles = (props: ProfilesProps) => {
   return (
     <div className={`flex items-center w-full ${className}`} {...restProps}>
       <div className={`flex-none ${classNames[size].imageGap}`}>
-        <Images size={classNames[size].imageSize} cloudId={user?.avatar} alt="" />
+        <Images size={classNames[size].imageSize} cloudId={user?.avatar} alt="" className="rounded-full" />
       </div>
-      <div className="grow shrink basis-auto min-w-0">
-        <strong className={`block font-semibold text-sm overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].userName}`}>{user?.name}</strong>
-        <span className={`block text-gray-500 overflow-hidden whitespace-nowrap overflow-ellipsis ${classNames[size].userInfo}`}>
-          {[signature, emdPosNm, diffTime, uuid].filter((v) => !!v).join(" · ")}
-        </span>
+      <div className="grow-full">
+        <strong className={`block font-semibold text-sm text-ellipsis ${classNames[size].userName}`}>{user?.name}</strong>
+        <div className={`text-description text-ellipsis ${classNames[size].userInfo}`}>
+          {signature && <span>{signature}</span>}
+          {emdPosNm && <span>{emdPosNm}</span>}
+          {diffTime && <span>{diffTime}</span>}
+          {uuid && <span>{uuid}</span>}
+        </div>
         {/* <div>todo: 매너온도</div> */}
       </div>
     </div>

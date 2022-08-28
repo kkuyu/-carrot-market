@@ -61,7 +61,7 @@ const AccountPhonePage: NextPage = () => {
     onSuccess: async () => {
       if (updateLoading) return;
       if (originalUser.current.userType === "member") {
-        openConfirmUpdateModal();
+        openPhoneUpdateModal();
         return;
       }
       await mutateUser();
@@ -103,8 +103,8 @@ const AccountPhonePage: NextPage = () => {
     },
   });
 
-  const openConfirmUpdateModal = () => {
-    openModal<AlertModalProps>(AlertModal, "ConfirmUpdate", {
+  const openPhoneUpdateModal = () => {
+    openModal<AlertModalProps>(AlertModal, "ConfirmPhoneUpdate", {
       message: `${verifyPhoneForm.getValues("phone")} 로 변경할까요?`,
       actions: [
         {

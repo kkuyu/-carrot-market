@@ -1,6 +1,7 @@
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { StoryCategory } from "@prisma/client";
+import { getCategory } from "@libs/utils";
 // @api
 import { StoryCategories } from "@api/stories/types";
 // @components
@@ -29,6 +30,7 @@ const EditStory = (props: EditStoryProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, setValue } = formData;
 
+  const storyCategories = Object.values(StoryCategory).map((category) => getCategory<StoryCategories>(category)!);
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,
@@ -63,7 +65,7 @@ const EditStory = (props: EditStoryProps) => {
           initialValue={formData.getValues("category")}
           updateValue={(value) => setValue("category", value)}
           placeholder="카테고리를 선택해주세요"
-          optionGroups={[{ label: "카테고리 선택", options: StoryCategories }]}
+          optionGroups={[{ label: "카테고리 선택", options: storyCategories }]}
           required
           name="category"
         />

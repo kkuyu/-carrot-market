@@ -214,10 +214,10 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
         <div ref={addressWrapper} className="text-center">
           <h2 className="text-lg">동네 선택</h2>
           <p className="mt-1 text-gray-500">최소 1개 이상 최대 2개까지 설정할 수 있어요.</p>
-          <div className="mt-5 flex space-x-2">
+          <div className="mt-5 grid grid-cols-2 gap-2">
             {addressStructure.map(({ key, text, selectItem, removeItem }) => {
               return (
-                <div key={key} className={`relative grow shrink basis-0 w-0 ${key === "SUB" && !user?.SUB_emdPosNm ? "hidden" : ""} ${key === "ANOTHER" && user?.SUB_emdPosNm ? "hidden" : ""}`}>
+                <div key={key} className={`relative ${key === "SUB" && !user?.SUB_emdPosNm ? "hidden" : ""} ${key === "ANOTHER" && user?.SUB_emdPosNm ? "hidden" : ""}`}>
                   {key === "ANOTHER" && (
                     <>
                       <Buttons tag="button" type="button" sort="round-box" status="default" onClick={selectItem} className={`${key}-select-button`} aria-label={text}>
@@ -233,7 +233,7 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                         sort="round-box"
                         status={user?.emdType === key ? "primary" : "default"}
                         onClick={selectItem}
-                        className={`${key}-select-button pr-12 !text-left overflow-hidden whitespace-nowrap overflow-ellipsis`}
+                        className={`${key}-select-button pr-12 !text-left text-ellipsis`}
                         aria-label={`${text} ${user?.emdType === key ? "선택 됨" : "선택"}`}
                       >
                         {text}
@@ -245,7 +245,7 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                         status="default"
                         size="sm"
                         onClick={removeItem}
-                        className={`${key}-select-button absolute top-1/2 right-1.5 flex -translate-y-1/2 ${user?.emdType === key ? "text-white" : ""}`}
+                        className={`${key}-select-button absolute top-1/2 right-1.5 -translate-y-1/2 ${user?.emdType === key ? "text-white" : ""}`}
                         aria-label={`${text} 삭제`}
                       >
                         <Icons name="XCircle" className="w-6 h-6" />

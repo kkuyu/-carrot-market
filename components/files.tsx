@@ -106,14 +106,19 @@ const Files = (props: FilesProps) => {
         </label>
       </div>
       <div className="flex pl-20 pt-2 overflow-x-scroll before:block before:h-20">
-        {preview?.map((item, index) => (
+        {preview?.map((item, index, array) => (
           <div key={item.src} className="relative ml-3 w-20 shrink-0">
             <div className="relative border border-gray-300 rounded-md overflow-hidden">
               <span className="block pb-[100%]"></span>
               <Image src={item.src} alt="" layout="fill" objectFit="cover" className="bg-slate-300 rounded-md" onError={onErrorImage} />
               {index === 0 && <span className="absolute bottom-0 left-0 w-full text-sm text-center text-white bg-black">대표 사진</span>}
             </div>
-            <button type="button" className="absolute -top-2 -right-2 w-6 h-6 bg-gray-600 rounded-full hover:bg-black focus:bg-black" onClick={() => removeFiles(item)}>
+            <button
+              type="button"
+              onClick={() => removeFiles(item)}
+              className="absolute -top-2 -right-2 w-6 h-6 bg-gray-600 rounded-full hover:bg-black focus:bg-black"
+              aria-label={`${index}/${array.length} 이미지 삭제`}
+            >
               <Icons name="XMark" className="m-auto w-4 h-4 text-white" />
             </button>
           </div>

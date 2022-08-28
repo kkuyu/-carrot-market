@@ -31,7 +31,7 @@ const SearchKeyword = (props: SearchKeywordProps) => {
           type="text"
           placeholder={placeholder}
           appendButtons={
-            <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default">
+            <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" aria-label="검색">
               <Icons name="MagnifyingGlass" className="w-5 h-5" />
             </Buttons>
           }

@@ -23,10 +23,10 @@ const ProductSummary = (props: ProductSummaryProps) => {
   return (
     <div className={`flex items-start ${className}`} {...restProps}>
       <div className="flex-none">
-        <Images size="2.75rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
+        <Images size="2.75rem" cloudId={thumbnailId} cloudVariant="public" alt="" className="rounded-md" />
       </div>
-      <div className="grow shrink basis-auto min-w-0 pl-3">
-        <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">
+      <div className="grow-full pl-3">
+        <strong className="block text-sm font-normal text-ellipsis">
           {!saleRecord && <span className="text-gray-500">판매완료 </span>}
           {item.name}
         </strong>

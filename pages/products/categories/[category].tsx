@@ -20,7 +20,6 @@ import { GetUserResponse } from "@api/user";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
-import FloatingButtons from "@components/floatingButtons";
 import ProductList from "@components/lists/productList";
 
 const ProductsCategoryDetailPage: NextPage = () => {
@@ -28,13 +27,11 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const { currentAddr, type: userType, mutate: mutateUser } = useUser();
   const { changeLayout } = useLayouts();
 
-  const category: string = router.query?.category?.toString() || "";
-  const productCategory = getCategory<ProductCategories>(category.toUpperCase().replace(/-/g, "_"));
-
+  const category = getCategory<ProductCategories>(router.query?.category?.toString() || "");
   const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
     const options = {
       url: "/api/products",
-      query: productCategory && currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}&category=${productCategory.value}` : "",
+      query: category && currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}&category=${category.value}` : "",
     };
     return getKey<GetProductsResponse>(...arg, options);
   });
@@ -52,8 +49,8 @@ const ProductsCategoryDetailPage: NextPage = () => {
 
   useEffect(() => {
     if (userType === "guest") mutateUser();
-    if (!data?.[0].success && productCategory && currentAddr?.emdAddrNm) mutate();
-  }, [data, productCategory, currentAddr, userType]);
+    if (!data?.[0].success && category && currentAddr?.emdAddrNm) mutate();
+  }, [data, category, currentAddr, userType]);
 
   useEffect(() => {
     changeLayout({
@@ -77,30 +74,23 @@ const ProductsCategoryDetailPage: NextPage = () => {
       {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} className="border-b" />
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">판매 상품을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">판매 상품을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">판매 상품을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 판매상품: Empty */}
       {products && !Boolean(products.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">
+        <div className="list-empty">
+          <>
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
             <br />
-            {productCategory?.text} 카테고리의 판매 상품이 없어요.
-          </p>
+            {category?.text} 카테고리의 판매 상품이 없어요
+          </>
         </div>
       )}
 
       {/* 판매상품: InfiniteRef */}
       <div id="infiniteRef" ref={infiniteRef} />
-
-      {/* 글쓰기 */}
-      <FloatingButtons />
     </div>
   );
 };
@@ -143,15 +133,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // category
-  const category: string = params?.category?.toString() || "";
-  const productCategory = getCategory<ProductCategories>(category.toUpperCase().replace(/-/g, "_"));
+  const category = getCategory<ProductCategories>(params?.category?.toString() || "");
 
   // invalidCategory
   let invalidCategory = false;
-  if (!category) invalidCategory = true;
-  if (!productCategory || !isInstance(productCategory?.value, ProductCategory)) invalidCategory = true;
-  // redirect `/products/categories`
+  if (!category || !isInstance(category?.value, ProductCategory)) invalidCategory = true;
   if (invalidCategory) {
+    // redirect `/products/categories`
     return {
       redirect: {
         permanent: false,
@@ -174,7 +162,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
             resumeAt: "desc",
           },
           where: {
-            category: productCategory?.value,
+            category: category?.value,
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
             AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
@@ -205,10 +193,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${productCategory?.text} | 카테고리 | 중고거래`,
+      title: `${category?.text} | 카테고리 | 중고거래`,
     },
     header: {
-      title: `${productCategory?.text}`,
+      title: `${category?.text}`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -226,7 +214,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getProducts: {
         options: {
           url: "/api/products",
-          query: `posX=${posX}&posY=${posY}&distance=${distance}&category=${productCategory?.value}`,
+          query: `posX=${posX}&posY=${posY}&distance=${distance}&category=${category?.value}`,
         },
         response: {
           success: true,

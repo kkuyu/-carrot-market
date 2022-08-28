@@ -59,18 +59,14 @@ const UserPurchasesPage: NextPage = () => {
           <ProductList list={products} className="border-b">
             <FeedbackProduct key="FeedbackProduct" />
           </ProductList>
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">구매내역을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">구매내역을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">구매내역을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">구매내역을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 구매내역: Empty */}
       {products && !Boolean(products.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">구매내역이 존재하지 않아요</p>
+        <div className="list-empty">
+          <>구매내역이 존재하지 않아요</>
         </div>
       )}
 

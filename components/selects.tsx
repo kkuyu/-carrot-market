@@ -84,7 +84,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
   };
 
   const Listbox = (props: { lists: OptionGroupItem<T>[]; selectItem: (item: OptionGroupItem<T>["options"][number]) => void } & HTMLAttributes<HTMLDivElement>) => {
-    const { lists, selectItem, className: listboxClassName = "", ...restProps } = props;
+    const { lists, selectItem, className: listboxClassName = "", ...listboxRestProps } = props;
     const Option = (props: { item: OptionGroupItem<T>["options"][number] } & HTMLAttributes<HTMLButtonElement>) => {
       const { item, className: optionClassName = "" } = props;
       return (
@@ -103,7 +103,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
       );
     };
     return (
-      <div ref={listbox} role="listbox" className={`${listboxClassName}`} {...restProps}>
+      <div ref={listbox} role="listbox" className={`${listboxClassName}`} {...listboxRestProps}>
         {lists.map((list, index) => {
           if (lists.length === 1) return list.options.map((item) => <Option key={item.value} item={item} className="py-0.5" />);
           return (

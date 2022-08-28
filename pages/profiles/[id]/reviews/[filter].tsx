@@ -79,18 +79,14 @@ const ProfilesReviewsPage: NextPage = () => {
       {reviews && Boolean(reviews.length) && (
         <div className="mt-3">
           <ReviewList list={reviews} className="border-b" />
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}를 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">{currentTab?.name}를 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">{currentTab?.name}를 모두 확인하였어요</span> : isLoading ? <span className="list-loading">{currentTab?.name}를 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 거래후기: Empty */}
       {reviews && !Boolean(reviews.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">{`${currentTab?.name}가 존재하지 않아요`}</p>
+        <div className="list-empty">
+          <>{currentTab?.name}가 존재하지 않아요</>
         </div>
       )}
 

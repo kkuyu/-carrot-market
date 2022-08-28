@@ -34,7 +34,7 @@ const EditChatMessage = (props: EditChatMessageProps) => {
         name="text"
         type="text"
         appendButtons={
-          <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default">
+          <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" aria-label="전송">
             <Icons name="ArrowUpCircle" strokeWidth={1.5} className="w-6 h-6" />
           </Buttons>
         }

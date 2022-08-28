@@ -49,22 +49,6 @@ const HandleComment = (props: HandleCommentProps) => {
     },
   });
 
-  const openHandlePanel = () => {
-    const modalActions = [
-      { key: "place", style: ActionStyleEnum["default"], text: "장소추가", handler: () => console.log("장소추가") },
-      { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/comments/${item?.id}/edit`) },
-      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => openDeleteModal() },
-      { key: "report", style: ActionStyleEnum["destructive"], text: "댓글 신고", handler: () => console.log("댓글 신고") },
-      { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
-    ];
-    openModal<ActionModalProps>(ActionModal, "handleComment", {
-      actions:
-        user?.id === item?.userId
-          ? modalActions.filter((action) => ["place", "update", "delete", "cancel"].includes(action.key))
-          : modalActions.filter((action) => ["place", "report"].includes(action.key)),
-    });
-  };
-
   // modal: delete
   const openDeleteModal = () => {
     openModal<AlertModalProps>(AlertModal, "ConfirmDeleteComment", {
@@ -114,7 +98,31 @@ const HandleComment = (props: HandleCommentProps) => {
   if (item.depth > StoryCommentMaximumDepth) return null;
 
   return (
-    <Buttons tag="button" type="button" sort="icon-block" size="sm" status="unset" onClick={openHandlePanel} className={`absolute top-0 right-0 ${className}`} {...restProps}>
+    <Buttons
+      tag="button"
+      type="button"
+      sort="icon-block"
+      size="sm"
+      status="unset"
+      onClick={() => {
+        const modalActions = [
+          { key: "place", style: ActionStyleEnum["default"], text: "장소추가", handler: () => console.log("장소추가") },
+          { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/comments/${item?.id}/edit`) },
+          { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => openDeleteModal() },
+          { key: "report", style: ActionStyleEnum["destructive"], text: "댓글 신고", handler: () => console.log("댓글 신고") },
+          { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
+        ];
+        openModal<ActionModalProps>(ActionModal, "HandleComment", {
+          actions:
+            user?.id === item?.userId
+              ? modalActions.filter((action) => ["place", "update", "delete", "cancel"].includes(action.key))
+              : modalActions.filter((action) => ["place", "report"].includes(action.key)),
+        });
+      }}
+      className={`absolute top-0 right-0 ${className}`}
+      {...restProps}
+      aria-label="옵션 더보기"
+    >
       <Icons name="EllipsisVertical" className="w-5 h-5 text-gray-400" />
     </Buttons>
   );

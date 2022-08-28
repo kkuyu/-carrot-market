@@ -247,12 +247,12 @@ const StoriesDetailPage: NextPage<{}> = () => {
 
       {/* 댓글/답변 목록: empty */}
       {commentTreeList && !Boolean(commentTreeList?.length) && (
-        <div className="pt-10 pb-5 text-center">
-          <p className="text-gray-500">
-            아직 {category?.commentType}이 없어요.
+        <div className="list-empty">
+          <>
+            아직 {category?.commentType}이 없어요
             <br />
-            가장 먼저 {category?.commentType}을 남겨보세요.
-          </p>
+            가장 먼저 {category?.commentType}을 남겨보세요
+          </>
         </div>
       )}
 

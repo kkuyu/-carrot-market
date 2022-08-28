@@ -21,8 +21,12 @@ const StorySummary = (props: StorySummaryProps) => {
 
   return (
     <div className={`relative ${className}`} {...restProps}>
-      <strong className="block text-sm font-normal overflow-hidden whitespace-nowrap overflow-ellipsis">{item?.content}</strong>
-      <span className="block text-sm text-gray-500 overflow-hidden whitespace-nowrap overflow-ellipsis">{[category?.text, item?.user?.name, item?.emdPosNm].filter((v) => !!v).join(" · ")}</span>
+      <strong className="block text-sm font-normal text-ellipsis">{item?.content}</strong>
+      <div className="text-description text-sm text-ellipsis">
+        {category?.text && <span>{category?.text}</span>}
+        {item?.user?.name && <span>{item?.user?.name}</span>}
+        {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
+      </div>
     </div>
   );
 };

@@ -32,7 +32,7 @@ const CommentSummary = (props: CommentSummaryProps) => {
   return (
     <div className={`relative ${className}`} {...restProps}>
       <p>{item.content}</p>
-      <span className="block text-gray-500 text-sm">{`"${truncateStr(item?.story?.content, 10)}"에서 ${mounted ? diffTime : ""}`}</span>
+      <span className="text-sm text-gray-500">{`"${truncateStr(item?.story?.content, 10)}"에서 ${mounted && diffTime ? diffTime : ""}`}</span>
     </div>
   );
 };

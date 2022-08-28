@@ -42,12 +42,16 @@ const Product = (props: ProductProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <div className="flex items-start">
         <div className="flex-none">
-          <Images size="6rem" cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
+          <Images size="6rem" cloudId={thumbnailId} cloudVariant="public" alt="" className="rounded-md" />
         </div>
-        <div className="grow pl-4">
+        <div className="grow-full pl-4">
           <strong className="block font-normal">{highlightWord ? <HighlightText originalText={item?.name || ""} highlightWord={highlightWord} /> : item?.name}</strong>
-          <span className="block text-sm text-gray-500">{[item?.emdPosNm, mounted ? diffTime : null, !item?.resumeCount ? null : `끌올 ${item.resumeCount}회`].filter((v) => !!v).join(" · ")}</span>
-          <div className="block mt-2 pr-16">
+          <div className="text-description text-sm">
+            {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
+            {mounted && diffTime && <span>{diffTime}</span>}
+            {!!item?.resumeCount && <span>끌올 {item.resumeCount}회</span>}
+          </div>
+          <div className="mt-2 pr-16">
             {!saleRecord && <em className="inline-block mr-2 px-1.5 py-1 text-xs font-semibold not-italic text-white bg-black rounded-md">판매완료</em>}
             <span className="font-semibold align-middle">₩{item?.price}</span>
           </div>

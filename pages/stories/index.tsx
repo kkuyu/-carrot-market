@@ -67,22 +67,18 @@ const StoriesIndexPage: NextPage = () => {
             <PictureList key="PictureList" className="px-5 pb-3" />
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
-          {isReachingEnd ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">게시글을 모두 확인하였어요</span>
-          ) : isLoading ? (
-            <span className="block px-5 py-6 text-center text-sm text-gray-500">게시글을 불러오고있어요</span>
-          ) : null}
+          {isReachingEnd ? <span className="list-loading">게시글을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">게시글을 불러오고있어요</span> : null}
         </div>
       )}
 
       {/* 동네생활: Empty */}
       {stories && !Boolean(stories.length) && (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">
+        <div className="list-empty">
+          <>
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
             <br />
-            등록된 게시글이 없어요.
-          </p>
+            등록된 게시글이 없어요
+          </>
         </div>
       )}
 
@@ -90,7 +86,7 @@ const StoriesIndexPage: NextPage = () => {
       <div id="infiniteRef" ref={infiniteRef} />
 
       {/* 글쓰기 */}
-      <FloatingButtons />
+      <FloatingButtons aria-label="동네생활 글쓰기" />
     </div>
   );
 };

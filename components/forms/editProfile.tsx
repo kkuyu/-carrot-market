@@ -77,7 +77,7 @@ const EditProfile = (props: EditProfileProps) => {
           name="name"
           type="text"
           appendButtons={
-            <Buttons tag="button" type="button" sort="icon-block" size="sm" status="default" onClick={makeRandomName}>
+            <Buttons tag="button" type="button" sort="icon-block" size="sm" status="default" onClick={makeRandomName} aria-label="랜덤 닉네임 만들기">
               <Icons name="Sparkles" strokeWidth={1.5} className="w-6 h-6" />
             </Buttons>
           }

@@ -67,7 +67,18 @@ const LikeProduct = (props: LikeProductProps) => {
   if (!item) return null;
 
   return (
-    <Buttons type="button" tag="button" sort="icon-block" size="base" status="default" className={`${className}`} onClick={clickLike} disabled={likeLoading} {...restProps}>
+    <Buttons
+      type="button"
+      tag="button"
+      sort="icon-block"
+      size="base"
+      status="default"
+      className={`${className}`}
+      onClick={clickLike}
+      disabled={likeLoading}
+      {...restProps}
+      aria-label={`관심상품 ${likeRecord ? "취소" : "추가"}`}
+    >
       {likeRecord ? <Icons name="HeartSolid" className="w-6 h-6 text-gray-600" /> : <Icons name="Heart" className="w-6 h-6" />}
     </Buttons>
   );

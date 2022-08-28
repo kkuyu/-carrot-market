@@ -48,10 +48,10 @@ const AlertModal = (props: AlertModalProps & ModalComponentProps) => {
   };
 
   const ActionGroups = (groupProps: { groupActions: AlertModalProps["actions"] } & HTMLAttributes<HTMLDivElement>) => {
-    const { groupActions, className: groupClassName = "" } = groupProps;
+    const { groupActions, className: groupClassName = "", ...groupRestProps } = groupProps;
     if (!groupActions.length) return null;
     return (
-      <div className={`flex divide-gray-300 ${groupActions.length <= 2 ? "divide-x" : "flex-col divide-y"} ${groupClassName}`}>
+      <div className={`flex divide-gray-300 ${groupActions.length <= 2 ? "divide-x" : "flex-col divide-y"} ${groupClassName}`} {...groupRestProps}>
         {groupActions.map((action) => (
           <Buttons
             key={action.key}

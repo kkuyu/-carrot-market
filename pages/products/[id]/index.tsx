@@ -206,19 +206,28 @@ const ProductsDetailPage: NextPage = () => {
             {!saleRecord && <em className="text-gray-500 not-italic">판매완료 </em>}
             {data?.product?.name}
           </h1>
-          <span className="mt-1 block text-sm text-gray-500">
-            {[category?.text, mounted && diffTime ? diffTime : null, !data?.product?.resumeCount ? null : `끌올 ${data?.product?.resumeCount}회`].filter((v) => !!v).join(" · ")}
-          </span>
+          <div className="mt-1 text-description text-sm">
+            {category?.text ? (
+              <Link href={`/products/categories/${category.kebabValue}`} passHref>
+                <Buttons tag="a" sort="text-link" size="sm" status="unset" className="underline">
+                  {category?.text}
+                </Buttons>
+              </Link>
+            ) : null}
+            {mounted && diffTime && <span>{diffTime}</span>}
+            {!!data?.product?.resumeCount && <span>끌올 {data?.product?.resumeCount}회</span>}
+          </div>
           <p className="mt-5 whitespace-pre-wrap">{data?.product?.description}</p>
-          <div className="empty:hidden mt-5 text-sm text-gray-500">
-            {[likeRecords.length ? `관심 ${likeRecords.length}` : null, foundChats?.length ? `채팅 ${foundChats.length}` : null].filter((v) => !!v).join(" · ")}
+          <div className="empty:hidden mt-5 text-description text-gray-500">
+            {!!likeRecords.length && <span>관심 {likeRecords.length}</span>}
+            {!!foundChats?.length && <span>채팅 {foundChats.length}</span>}
           </div>
         </div>
 
         {/* 가격, 채팅 */}
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-14 border-t bg-white">
-            <div className="relative grow ml-14 pl-3 border-l">
+            <div className="relative grow-full ml-14 pl-3 border-l">
               {/* todo: 가격 제안 가능 여부 */}
               <strong>₩{data?.product?.price}</strong>
             </div>

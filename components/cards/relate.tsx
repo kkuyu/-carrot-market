@@ -20,7 +20,7 @@ const Relate = (props: RelateProps) => {
   return (
     <div className={`relative ${className}`} {...restProps}>
       <div className="">
-        <Images size="100%" ratioX={16} ratioY={9} cloudId={thumbnailId} cloudVariant="public" rounded="md" alt="" />
+        <Images size="100%" ratioX={16} ratioY={9} cloudId={thumbnailId} cloudVariant="public" alt="" className="rounded-md" />
       </div>
       <div className="mt-2">
         <strong className="block font-normal">{item?.name}</strong>
