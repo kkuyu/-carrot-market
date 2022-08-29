@@ -268,7 +268,9 @@ const ProductsDetailPage: NextPage = () => {
             {othersData?.type === "userProducts"
               ? `${data?.product.user.name}님의 판매 상품`
               : othersData?.type === "similarProducts"
-              ? `이 글과 함께 봤어요`
+              ? `이 글과 함께 본 판매 상품`
+              : othersData?.type === "categoryProducts"
+              ? `${category?.text} 카테고리 판매상품`
               : othersData?.type === "latestProducts"
               ? `최근 등록된 판매 상품`
               : ""}
