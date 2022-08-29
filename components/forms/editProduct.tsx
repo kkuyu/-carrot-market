@@ -34,7 +34,13 @@ const EditProduct = (props: EditProductProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, setValue } = formData;
 
-  const productCategories = Object.values(ProductCategory).map((category) => getCategory<ProductCategories>(category)!);
+  const productCategories = Object.values(ProductCategory).map(
+    (category) =>
+      getCategory<ProductCategories>(category, {
+        excludeCategory: [ProductCategory["POPULAR_PRODUCT"]],
+      })!
+  );
+
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,

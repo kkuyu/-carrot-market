@@ -15,7 +15,13 @@ import Buttons from "@components/buttons";
 
 const ProductsCategoryIndexPage: NextPage = () => {
   const { changeLayout } = useLayouts();
-  const productCategories = Object.values(ProductCategory).map((category) => getCategory<ProductCategories>(category)!);
+
+  const productCategories = Object.values(ProductCategory).map(
+    (category) =>
+      getCategory<ProductCategories>(category, {
+        excludeCategory: [],
+      })!
+  );
 
   useEffect(() => {
     changeLayout({

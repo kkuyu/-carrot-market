@@ -71,6 +71,7 @@ model SearchRecord {
 }
 
 enum ProductCategory {
+  POPULAR_PRODUCT
   DIGITAL_DEVICE
   HOME_APPLIANCES
   FURNITURE_AND_INTERIOR
@@ -136,6 +137,7 @@ model ChatMessage {
 }
 
 enum StoryCategory {
+  POPULAR_STORY
   QUESTION
   INCIDENT
   REPORT

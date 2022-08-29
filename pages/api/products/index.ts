@@ -19,15 +19,10 @@ export interface PostProductsResponse extends ResponseDataType {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { prevCursor: _prevCursor, posX: _posX, posY: _posY, distance: _distance, category: _category } = req.query;
+      const { prevCursor: _prevCursor, posX: _posX, posY: _posY, distance: _distance } = req.query;
 
       // invalid
       if (!_prevCursor) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
-      if (_category && !isInstance(_category.toString(), ProductCategory)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -54,7 +49,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // params
-      const category = (_category ? _category?.toString() : null) as ProductCategory | null;
       const posX = +_posX.toString();
       const posY = +_posY.toString();
       const distance = +_distance.toString();
@@ -71,7 +65,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       // search
       const where = {
         ...boundaryArea,
-        ...(category ? { category } : {}),
         records: { some: { kind: Kind.ProductSale } },
       };
 

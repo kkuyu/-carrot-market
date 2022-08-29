@@ -13,11 +13,12 @@ export const StoryCommentMaximumDepth = 2;
 export type StoryCategories = {
   value: StoryCategory;
   text: string;
-  isLikeWithEmotion: boolean;
-  commentType: "댓글" | "답변";
+  isLikeWithEmotion?: boolean;
+  commentType?: "댓글" | "답변";
 }[];
 
 export const StoryCategories = [
+  { value: StoryCategory["POPULAR_STORY"], text: "인기소식" },
   { value: StoryCategory["QUESTION"], text: "동네질문", isLikeWithEmotion: false, commentType: "답변" as StoryCategories[number]["commentType"] },
   { value: StoryCategory["INCIDENT"], text: "동네사건사고", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },
   { value: StoryCategory["REPORT"], text: "동네소식", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },

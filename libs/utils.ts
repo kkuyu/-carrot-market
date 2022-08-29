@@ -47,7 +47,10 @@ export const getRandomName = () => {
   return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]}`;
 };
 
-export const getCategory = <T extends ProductCategories | StoryCategories>(categoryStr: string): (T[number] & { kebabValue: string }) | null => {
+export const getCategory = <T extends ProductCategories | StoryCategories>(
+  categoryStr: string,
+  options?: { excludeCategory: (ProductCategories | StoryCategories | string)[] }
+): (T[number] & { kebabValue: string }) | null => {
   let category = null;
   const kebabValue = categoryStr.toLowerCase().replace(/_/g, "-");
   const screamingSnakeValue = categoryStr.toUpperCase().replace(/-/g, "_");
@@ -56,6 +59,7 @@ export const getCategory = <T extends ProductCategories | StoryCategories>(categ
   if (isInstance(screamingSnakeValue, StoryCategory)) category = StoryCategories.find((v) => v.value === screamingSnakeValue)!;
 
   if (!category) return null;
+  if (options?.excludeCategory?.includes(category.value)) return null;
   return { ...category, kebabValue };
 };
 

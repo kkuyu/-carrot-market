@@ -30,8 +30,8 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const category = getCategory<ProductCategories>(router.query?.category?.toString() || "");
   const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
     const options = {
-      url: "/api/products",
-      query: category && currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}&category=${category.value}` : "",
+      url: `/api/products/categories/${category?.kebabValue || router.query?.category?.toString()}`,
+      query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "",
     };
     return getKey<GetProductsResponse>(...arg, options);
   });
@@ -68,28 +68,30 @@ const ProductsCategoryDetailPage: NextPage = () => {
 
   return (
     <div className="container">
-      <h1 className="sr-only">판매상품</h1>
-
-      {/* 판매상품: List */}
+      {/* 카테고리: List */}
       {products && Boolean(products.length) && (
         <div className="-mx-5">
           <ProductList list={products} className="border-b" />
-          {isReachingEnd ? <span className="list-loading">판매 상품을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">판매 상품을 불러오고있어요</span> : null}
+          {isReachingEnd ? (
+            <span className="list-loading">{category?.text} 상품을 모두 확인하였어요</span>
+          ) : isLoading ? (
+            <span className="list-loading">{category?.text} 상품을 불러오고있어요</span>
+          ) : null}
         </div>
       )}
 
-      {/* 판매상품: Empty */}
+      {/* 카테고리: Empty */}
       {products && !Boolean(products.length) && (
         <div className="list-empty">
           <>
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
             <br />
-            {category?.text} 카테고리의 판매 상품이 없어요
+            {category?.text} 상품이 없어요
           </>
         </div>
       )}
 
-      {/* 판매상품: InfiniteRef */}
+      {/* 카테고리: InfiniteRef */}
       <div id="infiniteRef" ref={infiniteRef} />
     </div>
   );
@@ -158,14 +160,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       : await client.product.findMany({
           take: 10,
           skip: 0,
-          orderBy: {
-            resumeAt: "desc",
-          },
+          orderBy: category?.value === "POPULAR_PRODUCT" ? [{ records: { _count: "desc" } }, { resumeAt: "desc" }] : { resumeAt: "desc" },
           where: {
-            category: category?.value,
+            ...(category?.value === "POPULAR_PRODUCT" ? {} : { category: category?.value }),
             emdPosX: { gte: posX - distance, lte: posX + distance },
             emdPosY: { gte: posY - distance, lte: posY + distance },
-            AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
           },
           include: {
             records: {
@@ -193,10 +192,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${category?.text} | 카테고리 | 중고거래`,
+      title: `${ssrUser?.currentAddr?.emdPosNm} 근처 ${category?.text} | 카테고리 | 중고거래`,
     },
     header: {
-      title: `${category?.text}`,
+      title: `${ssrUser?.currentAddr?.emdPosNm} 근처 ${category?.text}`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -213,8 +212,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getProducts: {
         options: {
-          url: "/api/products",
-          query: `posX=${posX}&posY=${posY}&distance=${distance}&category=${category?.value}`,
+          url: `/api/products/categories/${category?.kebabValue}`,
+          query: `posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
           success: true,
