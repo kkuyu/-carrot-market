@@ -6,7 +6,7 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsDetailOthersResponse extends ResponseDataType {
-  type: "userProducts" | "similarProducts" | "latestProducts" | "categoryProducts" | null;
+  type: "userProducts" | "similarProducts" | "latestProducts" | null;
   otherProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
 }
 
@@ -102,36 +102,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         success: true,
         type: "similarProducts",
         otherProducts: similarProducts,
-      };
-      return res.status(200).json(result);
-    }
-
-    // fetch category products
-    const categoryProducts = await client.product.findMany({
-      take: 4,
-      orderBy: {
-        resumeAt: "desc",
-      },
-      select: {
-        id: true,
-        name: true,
-        photos: true,
-        price: true,
-      },
-      where: {
-        AND: {
-          id: { not: product.id },
-          category: product.category,
-          records: { some: { kind: Kind.ProductSale } },
-        },
-      },
-    });
-    if (categoryProducts.length) {
-      // result
-      const result: GetProductsDetailOthersResponse = {
-        success: true,
-        type: "categoryProducts",
-        otherProducts: categoryProducts,
       };
       return res.status(200).json(result);
     }
