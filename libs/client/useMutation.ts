@@ -45,6 +45,8 @@ const useMutation = <T extends ResponseDataType>(url: string, options?: { onSucc
     }
     if (state.data?.success) {
       options?.onSuccess && options.onSuccess(state.data);
+    } else if (state?.data) {
+      options?.onError && options.onError(state?.data);
     }
     if (state.error) {
       console.error(state.error);

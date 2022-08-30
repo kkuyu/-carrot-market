@@ -17,6 +17,7 @@ import { ProductCategories } from "@api/products/types";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
+import { PostProductsViewsResponse } from "@api/products/[id]/views";
 import { PostChatsResponse } from "@api/chats";
 // @app
 import { NextPageWithLayout } from "@app";
@@ -30,6 +31,7 @@ import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
 import LikeProduct from "@components/groups/likeProduct";
 import PictureSlider from "@components/groups/pictureSlider";
+import ArticleReport from "@components/groups/articleReport";
 
 const ProductsDetailPage: NextPage = () => {
   const router = useRouter();
@@ -218,10 +220,14 @@ const ProductsDetailPage: NextPage = () => {
             {!!data?.product?.resumeCount && <span>끌올 {data?.product?.resumeCount}회</span>}
           </div>
           <p className="mt-5 whitespace-pre-wrap">{data?.product?.description}</p>
-          <div className="empty:hidden mt-5 text-description text-gray-500">
-            {!!likeRecords.length && <span>관심 {likeRecords.length}</span>}
-            {!!foundChats?.length && <span>채팅 {foundChats.length}</span>}
-          </div>
+          <ArticleReport<PostProductsViewsResponse>
+            fetchUrl={mounted && data?.product ? `/api/products/${data?.product?.id}/views` : null}
+            initialState={{ id: data?.product?.id, views: data?.product?.views }}
+            className="empty:hidden mt-5"
+          >
+            {likeRecords.length ? <span>관심 {likeRecords.length}</span> : <></>}
+            {foundChats?.length ? <span>채팅 {foundChats.length}</span> : <></>}
+          </ArticleReport>
         </div>
 
         {/* 가격, 채팅 */}

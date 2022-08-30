@@ -16,12 +16,14 @@ import Buttons from "@components/buttons";
 const ProductsCategoryIndexPage: NextPage = () => {
   const { changeLayout } = useLayouts();
 
-  const productCategories = Object.values(ProductCategory).map(
-    (category) =>
-      getCategory<ProductCategories>(category, {
-        excludeCategory: [],
-      })!
-  );
+  const productCategories = Object.values(ProductCategory)
+    .map(
+      (category) =>
+        getCategory<ProductCategories>(category, {
+          excludeCategory: [],
+        })!
+    )
+    .filter((category) => category);
 
   useEffect(() => {
     changeLayout({

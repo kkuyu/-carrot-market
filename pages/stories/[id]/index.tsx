@@ -18,6 +18,7 @@ import { StoryCategories, StoryCommentMaximumDepth, StoryCommentMinimumDepth, St
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { PostStoriesDeleteResponse } from "@api/stories/[id]/delete";
+import { PostStoriesViewsResponse } from "@api/stories/[id]/views";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -29,6 +30,7 @@ import PictureList from "@components/groups/pictureList";
 import FeedbackStory from "@components/groups/feedbackStory";
 import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
+import ArticleReport from "@components/groups/articleReport";
 import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editStoryComment";
 import CommentTreeList from "@components/lists/commentTreeList";
 import Profiles from "@components/profiles";
@@ -230,6 +232,11 @@ const StoriesDetailPage: NextPage<{}> = () => {
             />
           </div>
         )}
+        <ArticleReport<PostStoriesViewsResponse>
+          fetchUrl={mounted && storyData?.story ? `/api/stories/${storyData?.story?.id}/views` : null}
+          initialState={{ id: storyData?.story?.id, views: storyData?.story?.views }}
+          className="empty:hidden pb-3 px-5"
+        />
         {/* 피드백 */}
         <FeedbackStory item={storyData?.story} />
       </section>

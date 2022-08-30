@@ -1,4 +1,4 @@
-import { IncomingMessage } from "http";
+import { GetServerSidePropsContext } from "next";
 import { User } from "@prisma/client";
 // @libs
 import { IronDummyUserType } from "@libs/server/withSession";
@@ -17,11 +17,7 @@ export interface SsrUserResponse {
   };
 }
 
-const getSsrUser = async (
-  req: IncomingMessage & {
-    cookies: Partial<{ [key: string]: string }>;
-  }
-): Promise<SsrUserResponse> => {
+const getSsrUser = async (req: GetServerSidePropsContext['req']): Promise<SsrUserResponse> => {
   const foundUser = req?.session?.user?.id
     ? await client.user.findUnique({
         where: { id: req.session.user.id },

@@ -30,12 +30,14 @@ const EditStory = (props: EditStoryProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, watch, setValue } = formData;
 
-  const storyCategories = Object.values(StoryCategory).map(
-    (category) =>
-      getCategory<StoryCategories>(category, {
-        excludeCategory: [StoryCategory["POPULAR_STORY"]],
-      })!
-  );
+  const storyCategories = Object.values(StoryCategory)
+    .map(
+      (category) =>
+        getCategory<StoryCategories>(category, {
+          excludeCategory: [StoryCategory["POPULAR_STORY"]],
+        })!
+    )
+    .filter((category) => category);
 
   const fileOptions = {
     maxLength: 10,
