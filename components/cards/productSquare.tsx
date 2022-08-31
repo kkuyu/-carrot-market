@@ -1,16 +1,16 @@
 import type { HTMLAttributes } from "react";
 // @api
-import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
+import { GetProductsDetailRecommendsResponse } from "@api/products/[id]/recommends";
 // @components
 import Images from "@components/images";
 
-export type RelateItem = GetProductsDetailOthersResponse["otherProducts"][number];
+export type ProductSquareItem = GetProductsDetailRecommendsResponse["products"][number];
 
-interface RelateProps extends HTMLAttributes<HTMLDivElement> {
-  item: RelateItem;
+export interface ProductSquareProps extends HTMLAttributes<HTMLDivElement> {
+  item: ProductSquareItem;
 }
 
-const Relate = (props: RelateProps) => {
+const ProductSquare = (props: ProductSquareProps) => {
   const { item, className = "", ...restProps } = props;
 
   const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
@@ -30,4 +30,4 @@ const Relate = (props: RelateProps) => {
   );
 };
 
-export default Relate;
+export default ProductSquare;

@@ -34,9 +34,7 @@ const ProductsIndexPage: NextPage = () => {
   const products = data ? data.flatMap((item) => item.products) : null;
 
   useEffect(() => {
-    if (isVisible && !isReachingEnd) {
-      setSize((size) => size + 1);
-    }
+    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
@@ -47,28 +45,24 @@ const ProductsIndexPage: NextPage = () => {
   if (userType === "guest") return null;
 
   return (
-    <div className="">
+    <div className="container">
       <h1 className="sr-only">판매상품</h1>
 
       {/* 판매상품: List */}
       {products && Boolean(products.length) && (
         <>
-          <ProductList list={products} className="border-b" />
-          <div className="container">
-            <span className="empty:hidden list-loading">{isReachingEnd ? "판매 상품을 모두 확인하였어요" : isLoading ? "판매 상품을 불러오고있어요" : null}</span>
-          </div>
+          <ProductList list={products} className="-mx-5 border-b" />
+          <span className="empty:hidden list-loading">{isReachingEnd ? "판매 상품을 모두 확인하였어요" : isLoading ? "판매 상품을 불러오고있어요" : null}</span>
         </>
       )}
 
       {/* 판매상품: Empty */}
       {products && !Boolean(products.length) && (
-        <div className="container">
-          <p className="list-empty">
-            앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
-            <br />
-            등록된 판매 상품이 없어요
-          </p>
-        </div>
+        <p className="list-empty">
+          앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
+          <br />
+          등록된 판매 상품이 없어요
+        </p>
       )}
 
       {/* 판매상품: InfiniteRef */}

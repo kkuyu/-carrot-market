@@ -2,20 +2,21 @@ import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getCategory, getDiffTimeStr, truncateStr } from "@libs/utils";
+import { getCategory, truncateStr } from "@libs/utils";
 import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
+import useTimeDiff from "@libs/client/useTimeDiff";
 import client from "@libs/server/client";
 // @api
 import { ProductCategories } from "@api/products/types";
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProductsDetailOthersResponse } from "@api/products/[id]/others";
+import { GetProductsDetailRecommendsResponse } from "@api/products/[id]/recommends";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsViewsResponse } from "@api/products/[id]/views";
 import { PostChatsResponse } from "@api/chats";
@@ -26,12 +27,12 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import { ActionStyleEnum } from "@components/commons/modals/case/actionModal";
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
-import Relate from "@components/cards/relate";
 import Buttons from "@components/buttons";
 import Profiles from "@components/profiles";
 import LikeProduct from "@components/groups/likeProduct";
 import PictureSlider from "@components/groups/pictureSlider";
 import ArticleReport from "@components/groups/articleReport";
+import ProductSquareList from "@components/lists/productSquareList";
 
 const ProductsDetailPage: NextPage = () => {
   const router = useRouter();
@@ -39,32 +40,17 @@ const ProductsDetailPage: NextPage = () => {
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
-  // fetch data: product detail
-  const { data, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
-  const { data: othersData } = useSWR<GetProductsDetailOthersResponse>(router.query.id ? `/api/products/${router.query.id}/others` : null);
+  // fetch data
+  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data: recommendsData } = useSWR<GetProductsDetailRecommendsResponse>(router.query.id ? `/api/products/${router.query.id}/recommends` : null);
 
-  const [mounted, setMounted] = useState(false);
-  const today = new Date();
-  const diffTime = data && getDiffTimeStr(new Date(data?.product?.createdAt).getTime(), today.getTime());
-  const category = data && getCategory<ProductCategories>(data?.product?.category);
-
-  const saleRecord = data && data?.product?.records?.find((record) => record.kind === Kind.ProductSale);
-  const likeRecords = (data && data?.product?.records?.filter((record) => record.kind === Kind.ProductLike)) || [];
-  const foundChats = data && data?.product?.chats?.filter((chat) => chat._count.chatMessages > 0);
-
+  // mutation data
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
     onSuccess: (data) => {
-      if (!data.recordSale) {
+      if (!data.isSale) {
         router.push(`/products/${router.query.id}/purchase`);
       } else {
-        boundMutate();
-      }
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
+        productMutate();
       }
     },
   });
@@ -72,47 +58,35 @@ const ProductsDetailPage: NextPage = () => {
     onSuccess: (data) => {
       router.push(`/chats/${data.chat.id}`);
     },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
   });
 
-  // sale
+  // visible data: default
+  const { isMounted, timeState } = useTimeDiff(productData ? productData?.product?.createdAt.toString() : null);
+  const category = productData && getCategory<ProductCategories>(productData?.product?.category);
+
+  // update: record sale
   const toggleSale = () => {
-    if (!data?.product) return;
+    if (!productData?.product) return;
     if (saleLoading) return;
-    const isSale = !Boolean(saleRecord);
-    boundMutate((prev) => {
+    productMutate((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      const idx = records.findIndex((record) => record.id === saleRecord?.id);
-      if (!isSale) records.splice(idx, 1);
-      if (isSale) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records } };
+      if (productData?.productCondition?.isSale) records.filter((record) => record.kind !== Kind.ProductSale);
+      if (!productData?.productCondition?.isSale) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...prev.productCondition, isSale: !productData?.productCondition?.isSale } };
     }, false);
-    updateSale({ sale: isSale });
+    updateSale({ sale: !productData?.productCondition?.isSale });
   };
 
-  // chat
+  // update: create chat
   const clickChat = () => {
-    if (userType === "member") {
-      moveChat();
-      return;
-    }
-    openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-  };
-  const moveChat = () => {
     if (createChatLoading) return;
     createChat({
-      userIds: [user?.id, data?.product?.user?.id],
-      productId: data?.product?.id,
+      userIds: [user?.id, productData?.product?.user?.id],
+      productId: productData?.product?.id,
     });
   };
 
-  // modal: sale
+  // modal: ConfirmSoldToSale
   const openSaleModal = () => {
     openModal<AlertModalProps>(AlertModal, "ConfirmSoldToSale", {
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요.\n그래도 변경하시겠어요?",
@@ -136,164 +110,156 @@ const ProductsDetailPage: NextPage = () => {
   // setting layout
   useEffect(() => {
     if (!userType) return;
-    if (!data?.product) return;
+    if (!productData?.product) return;
     const kebabActions = [
       { key: "welcome", style: ActionStyleEnum["primary"], text: "당근마켓 시작하기", handler: () => router.push(`/welcome`) },
-      { key: "report", style: ActionStyleEnum["destructive"], text: "신고", handler: () => console.log("신고") },
-      { key: "block", style: ActionStyleEnum["default"], text: "이 사용자의 글 보지 않기", handler: () => console.log("이 사용자의 글 보지 않기") },
+      { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (productData?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
       { key: "sold", style: ActionStyleEnum["default"], text: "판매완료", handler: () => toggleSale() },
-      { key: "edit", style: ActionStyleEnum["default"], text: "게시글 수정", handler: () => router.push(`/products/${data?.product?.id}/edit`) },
-      { key: "resume", style: ActionStyleEnum["default"], text: "끌어올리기", handler: () => router.push(`/products/${data?.product?.id}/resume`) },
-      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${data?.product?.id}/delete`) },
-      { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (data?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
-      { key: "review", style: ActionStyleEnum["default"], text: "거래 후기 보내기", handler: () => router.push(`/products/${data?.product?.id}/review`) },
+      { key: "resume", style: ActionStyleEnum["default"], text: "끌어올리기", handler: () => router.push(`/products/${productData?.product?.id}/resume`) },
+      { key: "edit", style: ActionStyleEnum["default"], text: "게시글 수정", handler: () => router.push(`/products/${productData?.product?.id}/edit`) },
+      { key: "review", style: ActionStyleEnum["default"], text: "거래 후기 보내기", handler: () => router.push(`/products/${productData?.product?.id}/review`) },
+      { key: "block", style: ActionStyleEnum["default"], text: "이 사용자의 글 보지 않기", handler: () => console.log("이 사용자의 글 보지 않기") },
+      { key: "report", style: ActionStyleEnum["destructive"], text: "신고", handler: () => console.log("신고") },
+      { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${productData?.product?.id}/delete`) },
       { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
     ];
     changeLayout({
-      meta: {},
       header: {
         kebabActions:
           userType === "guest"
             ? kebabActions.filter((action) => ["welcome", "cancel"].includes(action.key))
-            : user?.id !== data?.product?.userId
+            : user?.id !== productData?.product?.userId
             ? kebabActions.filter((action) => ["report", "block", "cancel"].includes(action.key))
-            : saleRecord
+            : productData?.productCondition?.isSale
             ? kebabActions.filter((action) => ["sold", "edit", "resume", "delete", "cancel"].includes(action.key))
             : kebabActions.filter((action) => ["sale", "edit", "review", "delete", "cancel"].includes(action.key)),
       },
-      navBar: {},
     });
-  }, [data?.product, userType]);
+  }, [productData?.product, userType]);
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  if (!data?.product) {
+  if (!productData?.product) {
     return <NextError statusCode={404} />;
   }
 
   return (
-    <article className="container pb-16">
-      {/* 썸네일 */}
-      {Boolean(data?.product?.photos?.length) && (
-        <div className="-mx-5">
-          <PictureSlider
-            list={
-              data?.product?.photos?.split(";")?.map((src, index, array) => ({
-                src,
-                index,
-                key: `thumbnails-slider-${index + 1}`,
-                label: `${index + 1}/${array.length}`,
-                name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(data?.product?.name, 15)})`,
-              })) || []
-            }
-            defaultIndex={0}
-          />
-        </div>
+    <article>
+      {/* 중고거래: 썸네일 */}
+      {Boolean(productData?.product?.photos?.length) && (
+        <PictureSlider
+          list={
+            productData?.product?.photos?.split(";")?.map((src, index, array) => ({
+              src,
+              index,
+              key: `thumbnails-slider-${index + 1}`,
+              label: `${index + 1}/${array.length}`,
+              name: `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(productData?.product?.name, 15)})`,
+            })) || []
+          }
+          defaultIndex={0}
+        />
       )}
 
-      {/* 중고거래 정보 */}
-      <section className="block">
-        {/* 판매자 */}
-        <Link href={`/profiles/${data?.product?.user?.id}`}>
-          <a className="block py-3">
-            <Profiles user={data?.product?.user} emdPosNm={data?.product?.emdPosNm} />
-          </a>
-        </Link>
+      {/* 중고거래: 상세정보 */}
+      <div className="container pb-16">
+        <section className="">
+          {/* 판매자 */}
+          <Link href={`/profiles/${productData?.product?.user?.id}`}>
+            <a className="block py-3">
+              <Profiles user={productData?.product?.user} emdPosNm={productData?.product?.emdPosNm} />
+            </a>
+          </Link>
 
-        {/* 설명 */}
-        <div className="pt-5 border-t">
-          <h1 className="text-2xl font-bold">
-            {!saleRecord && <em className="text-gray-500 not-italic">판매완료 </em>}
-            {data?.product?.name}
-          </h1>
-          <div className="mt-1 text-description text-sm">
-            {category?.text ? (
-              <Link href={`/products/categories/${category.kebabValue}`} passHref>
-                <Buttons tag="a" sort="text-link" size="sm" status="unset" className="underline">
-                  {category?.text}
-                </Buttons>
-              </Link>
-            ) : null}
-            {mounted && diffTime && <span>{diffTime}</span>}
-            {!!data?.product?.resumeCount && <span>끌올 {data?.product?.resumeCount}회</span>}
-          </div>
-          <p className="mt-5 whitespace-pre-wrap">{data?.product?.description}</p>
-          <ArticleReport<PostProductsViewsResponse>
-            fetchUrl={mounted && data?.product ? `/api/products/${data?.product?.id}/views` : null}
-            initialState={{ id: data?.product?.id, views: data?.product?.views }}
-            className="empty:hidden mt-5"
-          >
-            {likeRecords.length ? <span>관심 {likeRecords.length}</span> : <></>}
-            {foundChats?.length ? <span>채팅 {foundChats.length}</span> : <></>}
-          </ArticleReport>
-        </div>
-
-        {/* 가격, 채팅 */}
-        <div className="fixed-container bottom-0 z-[50]">
-          <div className="fixed-inner flex items-center h-14 border-t bg-white">
-            <div className="relative grow-full ml-14 pl-3 border-l">
-              {/* todo: 가격 제안 가능 여부 */}
-              <strong>₩{data?.product?.price}</strong>
-            </div>
-            <div className="absolute top-1/2 left-3 -translate-y-1/2">
-              <LikeProduct item={data?.product} className="p-2 rounded-md hover:bg-gray-100 text-gray-400 hover:text-gray-500" />
-            </div>
-            {userType && (
-              <div className="flex-none px-5">
-                {userType === "guest" ? (
-                  <Link href="/welcome" passHref>
-                    <Buttons tag="a" size="sm">
-                      당근마켓 시작하기
-                    </Buttons>
-                  </Link>
-                ) : user?.id !== data?.product?.userId ? (
-                  <Buttons tag="button" type="button" size="sm" onClick={clickChat}>
-                    채팅하기
+          {/* 설명 */}
+          <div className="pt-5 border-t">
+            <h1 className="text-2xl font-bold">
+              {!productData.productCondition?.isSale && <em className="text-gray-500 not-italic">판매완료 </em>}
+              {productData?.product?.name}
+            </h1>
+            <div className="mt-1 text-description text-sm">
+              {category?.text ? (
+                <Link href={`/products/categories/${category.kebabValue}`} passHref>
+                  <Buttons tag="a" sort="text-link" size="sm" status="unset" className="underline">
+                    {category?.text}
                   </Buttons>
-                ) : (
-                  <Link href={`/products/${data?.product?.id}/chats`} passHref>
-                    <Buttons tag="a" size="sm">
-                      대화 중인 채팅방
-                    </Buttons>
-                  </Link>
+                </Link>
+              ) : null}
+              {isMounted && timeState.diffStr && <span>{timeState.diffStr}</span>}
+              {!!productData?.product?.resumeCount && <span>끌올 {productData?.product?.resumeCount}회</span>}
+            </div>
+            <div className="mt-5 whitespace-pre-wrap">
+              <>{productData?.product?.description}</>
+            </div>
+            <ArticleReport<PostProductsViewsResponse>
+              fetchUrl={isMounted && productData?.product ? `/api/products/${productData?.product?.id}/views` : null}
+              initialState={{ id: productData?.product?.id, views: productData?.product?.views }}
+              className="empty:hidden mt-5"
+            >
+              {Boolean(productData.productCondition?.likes) ? <span>관심 {productData.productCondition?.likes}</span> : <></>}
+              {Boolean(productData.productCondition?.chats) ? <span>채팅 {productData.productCondition?.chats}</span> : <></>}
+            </ArticleReport>
+          </div>
+
+          {/* 가격, 채팅 */}
+          <div className="fixed-container bottom-0 z-[50]">
+            <div className="fixed-inner flex items-center h-14 border-t bg-white">
+              <div className="relative grow-full ml-14 pl-3 border-l">
+                {/* todo: 가격 제안 가능 여부 */}
+                <strong>₩{productData?.product?.price}</strong>
+              </div>
+              <LikeProduct item={productData?.product} className="absolute top-1/2 left-3 -translate-y-1/2 hover:bg-gray-100 text-gray-400 hover:text-gray-500" />
+              <div className="flex-none px-5">
+                {userType && (
+                  <>
+                    {userType === "guest" ? (
+                      // guest
+                      <Link href="/welcome" passHref>
+                        <Buttons tag="a" size="sm">
+                          당근마켓 시작하기
+                        </Buttons>
+                      </Link>
+                    ) : userType === "non-member" ? (
+                      // non-member
+                      <Buttons tag="button" type="button" size="sm" onClick={() => openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {})}>
+                        채팅하기
+                      </Buttons>
+                    ) : userType === "member" && user?.id !== productData?.product?.userId ? (
+                      // member && not my product
+                      <Buttons tag="button" type="button" size="sm" onClick={clickChat}>
+                        채팅하기
+                      </Buttons>
+                    ) : (
+                      // member && my product
+                      <Link href={`/products/${productData?.product?.id}/chats`} passHref>
+                        <Buttons tag="a" size="sm">
+                          대화 중인 채팅방
+                        </Buttons>
+                      </Link>
+                    )}
+                  </>
                 )}
               </div>
-            )}
+            </div>
           </div>
-        </div>
-      </section>
-
-      {/* <div>todo: 신고하기</div> */}
-
-      {/* 관련 상품목록 */}
-      {Boolean(othersData?.otherProducts.length) && (
-        <section className="mt-5 pt-5 border-t">
-          <h2 className="text-xl">
-            {othersData?.type === "userProducts"
-              ? `${data?.product.user.name}님의 판매 상품`
-              : othersData?.type === "similarProducts"
-              ? `이 글과 함께 본 판매 상품`
-              : othersData?.type === "latestProducts"
-              ? `최근 등록된 판매 상품`
-              : ""}
-          </h2>
-          <ul className="-m-2 mt-4 flex flex-wrap">
-            {othersData?.otherProducts.map((item) => {
-              return (
-                <li key={item?.id} className="w-1/2 p-2">
-                  <Link href={`/products/${item.id}`}>
-                    <a className="block">
-                      <Relate item={item} />
-                    </a>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
         </section>
-      )}
+
+        {/* <div>todo: 신고하기</div> */}
+
+        {/* 중고거래: 상품목록 */}
+        {Boolean(recommendsData?.products.length) && (
+          <section className="mt-5 pt-5 border-t">
+            <h2 className="text-xl">
+              {recommendsData?.type === "userProducts"
+                ? `${productData?.product.user.name}님의 판매 상품`
+                : recommendsData?.type === "similarProducts"
+                ? `이 글과 함께 본 판매 상품`
+                : recommendsData?.type === "latestProducts"
+                ? `최근 등록된 판매 상품`
+                : ""}
+            </h2>
+            <ProductSquareList list={recommendsData?.products!} className="mt-4" />
+          </section>
+        )}
+      </div>
     </article>
   );
 };
@@ -351,13 +317,19 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         },
       },
       records: {
-        where: {
-          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
-        },
         select: {
           id: true,
           kind: true,
           userId: true,
+        },
+      },
+      chats: {
+        include: {
+          _count: {
+            select: {
+              chatMessages: true,
+            },
+          },
         },
       },
     },
@@ -372,6 +344,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
       notFound: true,
     };
   }
+
+  // condition
+  const productCondition = {
+    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike).length,
+    chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0).length,
+    isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
+  };
 
   // defaultLayout
   const defaultLayout = {
@@ -396,6 +375,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
     },

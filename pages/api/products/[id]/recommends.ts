@@ -5,9 +5,9 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProductsDetailOthersResponse extends ResponseDataType {
+export interface GetProductsDetailRecommendsResponse extends ResponseDataType {
   type: "userProducts" | "similarProducts" | "latestProducts" | null;
-  otherProducts: Pick<Product, "id" | "name" | "photos" | "price">[];
+  products: Pick<Product, "id" | "name" | "photos" | "price">[];
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -64,10 +64,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
     if (userProducts.length) {
       // result
-      const result: GetProductsDetailOthersResponse = {
+      const result: GetProductsDetailRecommendsResponse = {
         success: true,
         type: "userProducts",
-        otherProducts: userProducts,
+        products: userProducts,
       };
       return res.status(200).json(result);
     }
@@ -98,10 +98,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
     if (similarProducts.length) {
       // result
-      const result: GetProductsDetailOthersResponse = {
+      const result: GetProductsDetailRecommendsResponse = {
         success: true,
         type: "similarProducts",
-        otherProducts: similarProducts,
+        products: similarProducts,
       };
       return res.status(200).json(result);
     }
@@ -127,19 +127,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
     if (latestProducts.length) {
       // result
-      const result: GetProductsDetailOthersResponse = {
+      const result: GetProductsDetailRecommendsResponse = {
         success: true,
         type: "latestProducts",
-        otherProducts: latestProducts,
+        products: latestProducts,
       };
       return res.status(200).json(result);
     }
 
     // result
-    const result: GetProductsDetailOthersResponse = {
+    const result: GetProductsDetailRecommendsResponse = {
       success: true,
       type: null,
-      otherProducts: [],
+      products: [],
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

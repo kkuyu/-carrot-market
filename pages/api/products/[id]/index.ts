@@ -12,6 +12,18 @@ export interface GetProductsDetailResponse extends ResponseDataType {
     chats: (Chat & { _count: { chatMessages: number } })[];
     reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
   };
+  role?: {
+    myRole: "sellUser" | "purchaseUser";
+    partnerRole: "sellUser" | "purchaseUser";
+  };
+  productCondition?: {
+    likes?: number;
+    chats?: number;
+    isSale?: boolean;
+    isPurchase?: boolean;
+    sentReviewId?: number | null;
+    receiveReviewId?: number | null;
+  };
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -48,9 +60,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           },
         },
         records: {
-          where: {
-            OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }, { kind: Kind.ProductPurchase }],
-          },
           select: {
             id: true,
             kind: true,
@@ -82,10 +91,24 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
+    // condition
+    const myRole = user?.id && user?.id === product?.userId ? "sellUser" : "purchaseUser";
+    const partnerRole = user?.id && myRole !== "sellUser" ? "sellUser" : "purchaseUser";
+    const productCondition = {
+      likes: product?.records?.filter((record) => record.kind === Kind.ProductLike).length,
+      chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0).length,
+      isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
+      isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),
+      sentReviewId: (myRole && product?.reviews?.find((review) => review.role === myRole && review[`${myRole}Id`] === user?.id)?.id) || null,
+      receiveReviewId: (myRole && product?.reviews?.find((review) => review.role === partnerRole && review[`${myRole}Id`] === user?.id)?.id) || null,
+    };
+
     // result
     const result: GetProductsDetailResponse = {
       success: true,
       product,
+      role: { myRole, partnerRole },
+      productCondition,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

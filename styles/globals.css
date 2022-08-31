@@ -106,7 +106,7 @@ strong {
   content: "·";
 }
 .list-loading {
-  @apply block px-5 py-6 text-center text-sm text-gray-500;
+  @apply block py-6 text-center text-sm text-gray-500;
 }
 .list-empty {
   @apply py-10 text-center text-gray-500;

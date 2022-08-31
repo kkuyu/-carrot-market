@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Record } from "@prisma/client";
+import { Kind } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostProductsSaleResponse extends ResponseDataType {
-  recordSale: Record | null;
+  isSale: boolean;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -110,7 +110,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // result
     const result: PostProductsSaleResponse = {
       success: true,
-      recordSale,
+      isSale: Boolean(recordSale),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

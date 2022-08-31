@@ -19,7 +19,7 @@ const ProductList = (props: ProductListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y bg-red ${className}`} {...restProps}>
+    <ul className={`divide-y ${className}`} {...restProps}>
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
