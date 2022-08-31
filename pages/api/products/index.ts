@@ -9,7 +9,10 @@ import { withSessionRoute } from "@libs/server/withSession";
 export interface GetProductsResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
-  products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[] })[];
+  products: (Product & {
+    records: Pick<Record, "id" | "kind" | "userId">[];
+    chats: (Chat & { _count: { chatMessages: number } })[];
+  })[];
 }
 
 export interface PostProductsResponse extends ResponseDataType {
@@ -82,9 +85,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
         include: {
           records: {
-            where: {
-              OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
-            },
             select: {
               id: true,
               kind: true,

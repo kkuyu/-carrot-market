@@ -41,12 +41,10 @@ const useMutation = <T extends ResponseDataType>(url: string, options?: { onSucc
     if (!Boolean(options)) return;
     if (!state || state.loading) return;
     if (state.data?.error?.timestamp) {
-      options?.onError && options.onError(state.data);
+      options?.onError ? options.onError(state.data) : console.error(state.data);
     }
     if (state.data?.success) {
       options?.onSuccess && options.onSuccess(state.data);
-    } else if (state?.data) {
-      options?.onError && options.onError(state?.data);
     }
     if (state.error) {
       console.error(state.error);

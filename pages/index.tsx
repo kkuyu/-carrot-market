@@ -6,7 +6,6 @@ import { Kind } from "@prisma/client";
 // @lib
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -23,7 +22,6 @@ import ProductList from "@components/lists/productList";
 
 const ProductsIndexPage: NextPage = () => {
   const { currentAddr, type: userType, mutate: mutateUser } = useUser();
-  const { changeLayout } = useLayouts();
 
   const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
     const options = { url: "/api/products", query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "" };
@@ -46,40 +44,30 @@ const ProductsIndexPage: NextPage = () => {
     if (!data?.[0].success && currentAddr?.emdAddrNm) mutate();
   }, [data, currentAddr, userType]);
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {
-        hamburgerAction: {
-          pathname: "/products/categories",
-        },
-      },
-      navBar: {},
-    });
-  }, []);
-
   if (userType === "guest") return null;
 
   return (
-    <div className="container">
+    <div className="">
       <h1 className="sr-only">판매상품</h1>
 
       {/* 판매상품: List */}
       {products && Boolean(products.length) && (
-        <div className="-mx-5">
+        <>
           <ProductList list={products} className="border-b" />
-          {isReachingEnd ? <span className="list-loading">판매 상품을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">판매 상품을 불러오고있어요</span> : null}
-        </div>
+          <div className="container">
+            <span className="empty:hidden list-loading">{isReachingEnd ? "판매 상품을 모두 확인하였어요" : isLoading ? "판매 상품을 불러오고있어요" : null}</span>
+          </div>
+        </>
       )}
 
       {/* 판매상품: Empty */}
       {products && !Boolean(products.length) && (
-        <div className="list-empty">
-          <>
+        <div className="container">
+          <p className="list-empty">
             앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
             <br />
             등록된 판매 상품이 없어요
-          </>
+          </p>
         </div>
       )}
 
@@ -179,6 +167,9 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       title: "",
       titleTag: "strong",
       utils: ["address", "title", "search", "hamburger"],
+      hamburgerAction: {
+        pathname: "/products/categories",
+      },
     },
     navBar: {
       utils: ["home", "chat", "profile", "story", "streams"],
