@@ -62,7 +62,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
         return (
           <>
             <strong className="block text-lg font-semibold">{placeholder}</strong>
-            <Listbox
+            <CustomListbox
               lists={optionGroups}
               selectItem={async (item) => {
                 updateValue(item.value);
@@ -83,9 +83,16 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
     }
   };
 
-  const Listbox = (props: { lists: OptionGroupItem<T>[]; selectItem: (item: OptionGroupItem<T>["options"][number]) => void } & HTMLAttributes<HTMLDivElement>) => {
+  useEffect(() => {
+    if (type === "dropdown") toggleDropdown();
+    if (type === "bottomPanel") toggleBottomPanel();
+  }, [isOpen]);
+
+  if (!optionGroups) return null;
+
+  const CustomListbox = (props: { lists: OptionGroupItem<T>[]; selectItem: (item: OptionGroupItem<T>["options"][number]) => void } & HTMLAttributes<HTMLDivElement>) => {
     const { lists, selectItem, className: listboxClassName = "", ...listboxRestProps } = props;
-    const Option = (props: { item: OptionGroupItem<T>["options"][number] } & HTMLAttributes<HTMLButtonElement>) => {
+    const CustomOption = (props: { item: OptionGroupItem<T>["options"][number] } & HTMLAttributes<HTMLButtonElement>) => {
       const { item, className: optionClassName = "" } = props;
       return (
         <Buttons
@@ -105,14 +112,14 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
     return (
       <div ref={listbox} role="listbox" className={`${listboxClassName}`} {...listboxRestProps}>
         {lists.map((list, index) => {
-          if (lists.length === 1) return list.options.map((item) => <Option key={item.value} item={item} className="py-0.5" />);
+          if (lists.length === 1) return list.options.map((item) => <CustomOption key={item.value} item={item} className="py-0.5" />);
           return (
             <div key={list.label} role="group" aria-labelledby={`${name}-${index}`}>
               <span role="presentation" id={`${name}-${index}`} className={`block text-gray-500`}>
                 {list.label}
               </span>
               {list.options.map((item) => (
-                <Option key={item.value} item={item} className="py-0.5" />
+                <CustomOption key={item.value} item={item} className="py-0.5" />
               ))}
             </div>
           );
@@ -120,11 +127,6 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
       </div>
     );
   };
-
-  useEffect(() => {
-    if (type === "dropdown") toggleDropdown();
-    if (type === "bottomPanel") toggleBottomPanel();
-  }, [isOpen]);
 
   return (
     <div className="relative">
@@ -150,7 +152,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
       {/* custom dropdown */}
       {type === "dropdown" && isOpen && (
         <div className="mt-3">
-          <Listbox
+          <CustomListbox
             lists={optionGroups}
             selectItem={(item) => {
               updateValue(item.value);

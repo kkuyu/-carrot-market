@@ -5,6 +5,7 @@ import { ProductCategory, StoryCategory, Kind } from "@prisma/client";
 import name from "@libs/name.json";
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
+import { ImageDeliveryResponse, GetFileResponse } from "@api/files";
 import { ProductCategories } from "@api/products/types";
 import { ProductCondition, GetProductsDetailResponse } from "@api/products/[id]";
 import { StoryCategories } from "@api/stories/types";
@@ -121,7 +122,6 @@ export type FileOptions = {
 export const validateFiles = (originalFiles: FileList, options: FileOptions = {}) => {
   let newFiles: File[] = [];
   let errors: Set<keyof typeof options> = new Set();
-
   // check duplicateDelete
   for (let index = 0; index < originalFiles.length; index++) {
     if (!options?.duplicateDelete) {
@@ -139,7 +139,6 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
     }
     errors.add("duplicateDelete");
   }
-
   // check acceptTypes
   if (options?.acceptTypes) {
     newFiles = newFiles.filter((file: File) => {
@@ -148,7 +147,6 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
       return false;
     });
   }
-
   // check maxLength
   if (options?.maxLength) {
     if (originalFiles.length > options.maxLength) {
@@ -159,10 +157,8 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
       newFiles = newFiles.slice(0, options.maxLength);
     }
   }
-
   const transfer = new DataTransfer();
   newFiles.forEach((file) => transfer.items.add(file));
-
   return {
     errors: Array.from(errors).map((error: keyof FileOptions) => {
       let message = "";
@@ -175,15 +171,56 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
   };
 };
 
-export const convertPhotoToFile = async (photoId: string, variant: string = "public") => {
+export const convertFiles = async (originalPaths: string[], options?: { variant: string }) => {
+  const transfer = new DataTransfer();
+  for (let index = 0; index < originalPaths.length; index++) {
+    let file = null;
+    const isCloudflareImages = /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(originalPaths[index]);
+    if (isCloudflareImages) file = await convertFileByPhoto(originalPaths[index], options);
+    if (file !== null) transfer.items.add(file);
+  }
+  return { validFiles: transfer.files };
+};
+
+export const convertFileByPhoto = async (imageId: string, options?: { variant: string }) => {
   try {
-    if (!photoId) throw new Error();
-    const response = await fetch(`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${photoId}/${variant}`);
+    if (!imageId) throw new Error();
+    const response = await fetch(`https://imagedelivery.net/QG2MZZsP6KQnt-Ryd54wog/${imageId}/${options?.variant || "public"}`);
     const data = await response.blob();
     const metadata = { type: data.type };
-    return new File([data], photoId!, metadata);
-  } catch {
-    console.error("convertPhotoToFile", photoId, variant);
+    return new File([data], imageId!, metadata);
+  } catch (error) {
+    console.error("convertPhotoToFile", error, imageId, options);
+    return null;
+  }
+};
+
+export const submitFiles = async (uploadFiles: FileList, options?: { originalPaths?: string[] }) => {
+  const uploadPaths = [];
+  for (let index = 0; index < uploadFiles.length; index++) {
+    if (options?.originalPaths?.includes(uploadFiles[index].name)) {
+      uploadPaths.push(uploadFiles[index].name);
+      continue;
+    }
+    let path = null;
+    const isCloudflareImages = /^image\/\w*$/.test(uploadFiles[index].type);
+    if (isCloudflareImages) path = await submitFilesByPhoto(uploadFiles[index]);
+    if (path !== null) uploadPaths.push(path);
+  }
+  return { uploadPaths };
+};
+
+export const submitFilesByPhoto = async (file: FileList[number]) => {
+  try {
+    const form = new FormData();
+    form.append("file", file, file.name);
+    const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
+    if (!fileResponse.success) new Error("ErrorFileResponse");
+    const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
+    if (!imageResponse.success) new Error("ErrorImageResponse");
+    return imageResponse.result.id;
+  } catch (error) {
+    console.error("submitFilesByPhoto", error, file);
     return null;
   }
 };

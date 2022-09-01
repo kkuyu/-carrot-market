@@ -8,7 +8,10 @@ interface UseMutationState<T> {
   error?: Error | undefined;
 }
 
-const useMutation = <T extends ResponseDataType>(url: string, options?: { onSuccess?: (data: T) => void; onError?: (data: T) => void }): [(data: any) => void, UseMutationState<T>] => {
+const useMutation = <T extends ResponseDataType>(
+  url: string,
+  options?: { onSuccess?: (data: T) => void; onError?: (data: T) => void; onCompleted?: (data: T) => void }
+): [(data: any) => void, UseMutationState<T>] => {
   // state
   const [state, setState] = useState<UseMutationState<T>>({
     loading: false,
@@ -36,19 +39,19 @@ const useMutation = <T extends ResponseDataType>(url: string, options?: { onSucc
       .finally(() => fetchState("loading", false));
   };
 
-  // options callback
   useEffect(() => {
-    if (!Boolean(options)) return;
-    if (!state || state.loading) return;
-    if (state.data?.error?.timestamp) {
-      options?.onError ? options.onError(state.data) : console.error(state.data);
-    }
-    if (state.data?.success) {
-      options?.onSuccess && options.onSuccess(state.data);
-    }
-    if (state.error) {
-      console.error(state.error);
-    }
+    (async () => {
+      if (!Boolean(options)) return;
+      if (!state || state.loading) return;
+      if (state.error) {
+        console.error(state.error);
+      }
+      if (state.data) {
+        if (state.data?.error) options?.onError ? await options.onError(state.data) : console.error(state.data);
+        if (state.data?.success) options?.onSuccess && (await options.onSuccess(state.data));
+        options?.onCompleted && options.onCompleted(state.data);
+      }
+    })();
   }, [state]);
 
   return [mutation, { ...state }];

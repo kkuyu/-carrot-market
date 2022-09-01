@@ -22,7 +22,7 @@ const Buttons = <Tag extends As>(props: ButtonsProps<Tag>, ref?: ForwardedRef<El
 
   const classNames = {
     "round-box": {
-      basic: "block w-full px-4 font-semibold text-center rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2",
+      basic: "block px-4 font-semibold text-center rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 [&:not(.w-auto)]:w-full",
       sm: "px-3 py-1 text-sm",
       base: "py-[0.33rem] text-base",
       lg: "text-lg",

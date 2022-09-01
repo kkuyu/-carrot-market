@@ -2,7 +2,7 @@ import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { ProductCategory } from "@prisma/client";
 // @libs
-import { getCategory } from "@libs/utils";
+import { getCategory, FileOptions } from "@libs/utils";
 // @api
 import { ProductCategories } from "@api/products/types";
 // @components
@@ -14,7 +14,8 @@ import Buttons from "@components/buttons";
 import Selects from "@components/selects";
 
 export interface EditProductTypes {
-  photos: FileList;
+  originalPhotoPaths: string;
+  currentPhotoFiles: FileList;
   category: ProductCategory;
   name: string;
   price: number;
@@ -27,12 +28,13 @@ interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
   onValid: (validForm: EditProductTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
+  fileOptions: FileOptions;
   emdPosNm: string;
 }
 
 const EditProduct = (props: EditProductProps) => {
-  const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
-  const { register, handleSubmit, formState, watch, setValue } = formData;
+  const { formId, formData, onValid, isSuccess, isLoading, fileOptions, emdPosNm, className = "", ...restProps } = props;
+  const { register, handleSubmit, formState, setValue, getValues } = formData;
 
   const productCategories = Object.values(ProductCategory)
     .map(
@@ -43,26 +45,20 @@ const EditProduct = (props: EditProductProps) => {
     )
     .filter((category) => category);
 
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
-
   return (
     <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files
-          register={register("photos")}
-          name="photos"
+          register={register("currentPhotoFiles")}
+          name="currentPhotoFiles"
           fileOptions={fileOptions}
-          currentFiles={watch("photos")}
-          changeFiles={(value) => setValue("photos", value)}
+          initialValue={getValues("originalPhotoPaths")}
+          updateValue={(value) => setValue("currentPhotoFiles", value)}
           accept="image/*"
           multiple={true}
         />
-        <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
+        <span className="empty:hidden invalid">{formState.errors.currentPhotoFiles?.message}</span>
       </div>
       {/* 글 제목 */}
       <div className="space-y-1">

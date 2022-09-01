@@ -4,9 +4,8 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { convertPhotoToFile } from "@libs/utils";
+import { getProductCondition, validateFiles, submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
@@ -15,7 +14,6 @@ import getSsrUser from "@libs/server/getUser";
 import { GetUserResponse } from "@api/user";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
-import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -25,12 +23,31 @@ import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 const ProductsEditPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
-  const { changeLayout } = useLayouts();
 
-  const { data: productData, mutate } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+  // fetch data
+  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
+  // mutation data
+  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+    onSuccess: async (data) => {
+      await productMutate();
+      router.replace(`/products/${data.product.id}`);
+    },
+    onCompleted: () => {
+      setSubmitLoading(false);
+    },
+  });
+
+  // form data
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const fileOptions = {
+    maxLength: 10,
+    duplicateDelete: true,
+    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+  };
   const formData = useForm<EditProductTypes>({
     defaultValues: {
+      originalPhotoPaths: productData?.product?.photos,
       category: productData?.product?.category as EditProductTypes["category"],
       name: productData?.product?.name,
       description: productData?.product?.description,
@@ -38,106 +55,31 @@ const ProductsEditPage: NextPage = () => {
     },
   });
 
-  const [photoLoading, setPhotoLoading] = useState(true);
-  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
-    onSuccess: async (data) => {
-      await mutate((prev) => prev && { ...prev, product: { ...prev?.product, ...data?.product } });
-      router.replace(`/products/${data.product.id}`);
-    },
-    onError: (data) => {
-      setPhotoLoading(false);
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-
-  const setDefaultPhotos = async () => {
-    if (!productData?.product?.photos) {
-      setPhotoLoading(false);
-      return;
-    }
-
-    const transfer = new DataTransfer();
-    const photos = productData?.product?.photos.length ? productData?.product.photos.split(";") : [];
-    for (let index = 0; index < photos.length; index++) {
-      const file = await convertPhotoToFile(photos[index]);
-      if (file !== null) transfer.items.add(file);
-    }
-
-    formData.setValue("photos", transfer.files);
-    setPhotoLoading(false);
-  };
-
-  const submitProduct = async ({ photos: _photos, ...data }: EditProductTypes) => {
-    if (!user || loading || photoLoading) return;
-
-    if (!_photos?.length) {
+  // update: product
+  const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
+    if (!user || loading || submitLoading) return;
+    if (!currentPhotoFiles?.length) {
       editProduct({ ...data, photos: [] });
       return;
     }
-
-    let photos = [];
-    setPhotoLoading(true);
-    for (let index = 0; index < _photos.length; index++) {
-      try {
-        // same photo
-        if (productData?.product?.photos && productData?.product.photos.includes(_photos[index].name)) {
-          photos.push(_photos[index].name);
-          continue;
-        }
-        // new photo
-        const form = new FormData();
-        form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
-        // get cloudflare file data
-        const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
-        if (!fileResponse.success) {
-          const error = new Error("GetFileError");
-          error.name = "GetFileError";
-          console.error(error);
-          return;
-        }
-        // upload image delivery
-        const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
-        if (!imageResponse.success) {
-          const error = new Error("UploadFileError");
-          error.name = "UploadFileError";
-          console.error(error);
-          return;
-        }
-        photos.push(imageResponse.result.id);
-      } catch {
-        console.error(`Failed Upload: ${_photos[index].name}`);
-      }
-    }
-    editProduct({ photos, ...data });
+    setSubmitLoading(true);
+    const { validFiles } = validateFiles(currentPhotoFiles, fileOptions);
+    const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
+    editProduct({ ...data, photos: validPaths });
   };
 
   useEffect(() => {
     if (!productData?.product) return;
-    setPhotoLoading(true);
+    formData.setValue("originalPhotoPaths", productData?.product?.photos);
     formData.setValue("category", productData?.product?.category as EditProductTypes["category"]);
     formData.setValue("name", productData?.product?.name);
     formData.setValue("description", productData?.product?.description);
     formData.setValue("price", productData?.product?.price);
-    setDefaultPhotos();
   }, [productData]);
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {
-        submitId: "edit-product",
-      },
-      navBar: {},
-    });
-  }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="edit-product" formData={formData} onValid={submitProduct} isLoading={loading || photoLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
+      <EditProduct formId="edit-product" formData={formData} onValid={submitProduct} isLoading={loading || submitLoading} fileOptions={fileOptions} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
   );
 };
@@ -207,7 +149,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   if (!product) invalidProduct = true;
   if (product?.userId !== ssrUser?.profile?.id) invalidProduct = true;
   // redirect `/products/${productId}`
-  if (!product) {
+  if (invalidProduct) {
     return {
       redirect: {
         permanent: false,
@@ -216,15 +158,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // condition
+  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
+
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "글 수정 | 중고거래",
+      title: `글 수정 | ${truncateStr(product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "중고거래 글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
+      submitId: "edit-product",
     },
     navBar: {
       utils: [],
@@ -241,6 +187,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
     },
