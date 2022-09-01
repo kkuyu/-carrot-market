@@ -1,13 +1,15 @@
 import { useRouter } from "next/router";
-import type { HTMLAttributes } from "react";
 import { memo } from "react";
-import { Kind } from "@prisma/client";
+import type { HTMLAttributes } from "react";
+import useSWR from "swr";
 // @libs
+import { getProductCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
@@ -28,33 +30,33 @@ const HandleProduct = (props: HandleProductProps) => {
   const { user } = useUser();
   const { openModal } = useModal();
 
+  // fetch data
+  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
+    ...(item ? { fallbackData: { success: true, product: item, productCondition: getProductCondition(item, user?.id) } } : {}),
+  });
+
+  // mutation data
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data.recordSale) {
+        await productMutate();
         router.push(`/products/${item?.id}/purchase`);
       } else {
         router.push(`/products/${item?.id}`);
       }
     },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
   });
 
-  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
-
+  // update: record sale
   const toggleSale = () => {
+    if (!item) return;
     if (saleLoading) return;
-    updateSale({ sale: !Boolean(saleRecord) });
+    updateSale({ sale: !productData?.productCondition?.isSale });
   };
 
+  // modal: ConfirmSoldToSale
   const openSaleModal = () => {
-    openModal<AlertModalProps>(AlertModal, "ConfirmSaleToSold", {
+    openModal<AlertModalProps>(AlertModal, "ConfirmSoldToSale", {
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요. 그래도 변경하시겠어요?",
       actions: [
         {
@@ -84,14 +86,15 @@ const HandleProduct = (props: HandleProductProps) => {
       status="unset"
       onClick={() => {
         const modalActions = [
-          { key: "sale", style: ActionStyleEnum["primary"], text: "판매중", handler: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
+          { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
+          { key: "sold", style: ActionStyleEnum["default"], text: "판매완료", handler: () => toggleSale() },
           { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/products/${item?.id}/edit`) },
           { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${item?.id}/delete`) },
           { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
         ];
         openModal<ActionModalProps>(ActionModal, "HandleProduct", {
-          actions: saleRecord
-            ? modalActions.filter((action) => ["update", "delete", "cancel"].includes(action.key))
+          actions: productData?.productCondition?.isSale
+            ? modalActions.filter((action) => ["sold", "update", "delete", "cancel"].includes(action.key))
             : modalActions.filter((action) => ["sale", "update", "delete", "cancel"].includes(action.key)),
         });
       }}

@@ -1,29 +1,33 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, Record, ProductReview, User } from "@prisma/client";
+import { Chat, Product, Record, ProductReview, User } from "@prisma/client";
 // @libs
+import { getProductCondition } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface GetProductsDetailResponse extends ResponseDataType {
-  product: Product & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    records: Pick<Record, "id" | "kind" | "userId">[];
-    chats: (Chat & { _count: { chatMessages: number } })[];
-    reviews: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
-  };
+export interface ProductCondition {
   role?: {
     myRole: "sellUser" | "purchaseUser";
     partnerRole: "sellUser" | "purchaseUser";
   };
-  productCondition?: {
-    likes?: number;
-    chats?: number;
-    isSale?: boolean;
-    isPurchase?: boolean;
-    sentReviewId?: number | null;
-    receiveReviewId?: number | null;
+  likes?: number;
+  chats?: number;
+  isLike: boolean;
+  isSale?: boolean;
+  isPurchase?: boolean;
+  sentReviewId?: number | null;
+  receiveReviewId?: number | null;
+}
+
+export interface GetProductsDetailResponse extends ResponseDataType {
+  product: Product & {
+    user?: Pick<User, "id" | "name" | "avatar">;
+    records?: Pick<Record, "id" | "kind" | "userId">[];
+    chats?: (Chat & { _count: { chatMessages: number } })[];
+    reviews?: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
   };
+  productCondition?: ProductCondition | null;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -91,24 +95,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
-    // condition
-    const myRole = user?.id && user?.id === product?.userId ? "sellUser" : "purchaseUser";
-    const partnerRole = user?.id && myRole !== "sellUser" ? "sellUser" : "purchaseUser";
-    const productCondition = {
-      likes: product?.records?.filter((record) => record.kind === Kind.ProductLike).length,
-      chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0).length,
-      isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
-      isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),
-      sentReviewId: (myRole && product?.reviews?.find((review) => review.role === myRole && review[`${myRole}Id`] === user?.id)?.id) || null,
-      receiveReviewId: (myRole && product?.reviews?.find((review) => review.role === partnerRole && review[`${myRole}Id`] === user?.id)?.id) || null,
-    };
-
     // result
     const result: GetProductsDetailResponse = {
       success: true,
       product,
-      role: { myRole, partnerRole },
-      productCondition,
+      productCondition: getProductCondition(product, user?.id),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -1,15 +1,17 @@
 import { useRouter } from "next/router";
+import Link from "next/link";
 import type { HTMLAttributes } from "react";
 import { memo } from "react";
 import useSWR from "swr";
-import { Kind } from "@prisma/client";
 // @libs
+import { getProductCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
+// @components
 import Buttons from "@components/buttons";
 
 export type FeedbackProductItem = GetProfilesProductsResponse["products"][number];
@@ -23,72 +25,73 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   const router = useRouter();
   const { user } = useUser();
 
-  const { data, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null);
+  // fetch data
+  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
+    ...(item ? { fallbackData: { success: true, product: item, productCondition: getProductCondition(item, user?.id) } } : {}),
+  });
+
+  // mutation data
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (!data.recordSale) {
+        await productMutate();
         router.push(`/products/${item?.id}/purchase`);
       } else {
         router.push(`/products/${item?.id}`);
       }
     },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
   });
 
-  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = data?.product?.records?.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = data?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
-  const existedReview = data?.product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === user?.id);
-
+  // update: record sale
   const toggleSale = () => {
     if (!item) return;
     if (saleLoading) return;
-    updateSale({ sale: !Boolean(saleRecord) });
-  };
-
-  const clickReview = () => {
-    if (!item) return;
-    router.push(existedReview ? `/reviews/${existedReview?.id}` : purchaseRecord ? `/products/${item.id}/review` : `/products/${item.id}/purchase`);
-  };
-
-  const FeedbackButton = (buttonProps: { disabled?: boolean; children: string } & HTMLAttributes<HTMLButtonElement>) => {
-    const { onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
-    return (
-      <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`basis-full py-2 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
-        {children}
-      </Buttons>
-    );
+    updateSale({ sale: !productData?.productCondition?.isSale });
   };
 
   if (!item) return null;
 
+  // custom component
+  const FeedbackButton = (buttonProps: { pathname?: string; disabled?: boolean; children: string } & HTMLAttributes<HTMLButtonElement>) => {
+    const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
+    if (!pathname) {
+      return (
+        <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`basis-full py-2 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
+          {children}
+        </Buttons>
+      );
+    }
+    return (
+      <Link href={pathname} passHref>
+        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`basis-full py-2 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
+          {children}
+        </Buttons>
+      </Link>
+    );
+  };
+
   return (
     <div className={`empty:pt-9 flex border-t divide-x ${className}`} {...restProps}>
-      {data && saleRecord && (
-        <FeedbackButton onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
-          끌어올리기
-        </FeedbackButton>
+      {productData && productData?.productCondition?.isSale && (
+        <>
+          <FeedbackButton onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
+            끌어올리기
+          </FeedbackButton>
+          <FeedbackButton onClick={toggleSale} disabled={saleLoading}>
+            판매완료
+          </FeedbackButton>
+        </>
       )}
-      {data && saleRecord && (
-        <FeedbackButton onClick={toggleSale} disabled={saleLoading}>
-          판매완료
-        </FeedbackButton>
-      )}
-      {data && !saleRecord && !existedReview && (
-        <FeedbackButton onClick={clickReview} disabled={saleLoading}>
-          거래 후기 보내기
-        </FeedbackButton>
-      )}
-      {data && !saleRecord && existedReview && (
-        <FeedbackButton onClick={clickReview} disabled={saleLoading}>
-          보낸 후기 보기
-        </FeedbackButton>
+      {productData && !productData?.productCondition?.isSale && (
+        <>
+          {productData?.productCondition?.sentReviewId ? (
+            <FeedbackButton pathname={`/reviews/${productData?.productCondition?.sentReviewId}`}>보낸 후기 보기</FeedbackButton>
+          ) : productData?.productCondition?.isPurchase ? (
+            <FeedbackButton pathname={`/products/${item.id}/review`}>거래 후기 보내기</FeedbackButton>
+          ) : (
+            <FeedbackButton pathname={`/products/${item.id}/purchase`}>거래 후기 보내기</FeedbackButton>
+          )}
+        </>
       )}
     </div>
   );

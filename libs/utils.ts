@@ -1,11 +1,12 @@
 import { IncomingMessage } from "http";
 import type { MutableRefObject } from "react";
-import { ProductCategory, StoryCategory } from "@prisma/client";
+import { ProductCategory, StoryCategory, Kind } from "@prisma/client";
 // @libs
 import name from "@libs/name.json";
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
 import { ProductCategories } from "@api/products/types";
+import { ProductCondition, GetProductsDetailResponse } from "@api/products/[id]";
 import { StoryCategories } from "@api/stories/types";
 import { ReviewManners } from "@api/reviews/types";
 import { StoryCommentItem } from "@api/comments/[id]";
@@ -61,6 +62,22 @@ export const getCategory = <T extends ProductCategories | StoryCategories>(
   if (!category) return null;
   if (options?.excludeCategory?.includes(category.value)) return null;
   return { ...category, kebabValue };
+};
+
+export const getProductCondition = (product: Partial<GetProductsDetailResponse["product"]> | null, userId?: number): ProductCondition | null => {
+  if (!product) return null;
+  const myRole = userId && userId === product?.userId ? "sellUser" : "purchaseUser";
+  const partnerRole = userId && myRole !== "sellUser" ? "sellUser" : "purchaseUser";
+  return {
+    role: { myRole, partnerRole },
+    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike).length,
+    chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0).length,
+    isLike: Boolean(product?.records?.find((record) => record.kind === Kind.ProductLike && record.userId === userId)),
+    isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
+    isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),
+    sentReviewId: product?.reviews?.find((review) => review.role === myRole && review[`${myRole}Id`] === userId)?.id || null,
+    receiveReviewId: product?.reviews?.find((review) => review.role === partnerRole && review[`${myRole}Id`] === userId)?.id || null,
+  };
 };
 
 export const getReviewManners = (mannerStr: string) => {

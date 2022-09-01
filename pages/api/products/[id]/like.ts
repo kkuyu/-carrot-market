@@ -12,10 +12,16 @@ export interface PostProductsLikeResponse extends ResponseDataType {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
+    const { like } = req.body;
     const { user } = req.session;
 
     // invalid
     if (!_id) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (typeof like !== "boolean") {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -35,13 +41,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id,
       },
       include: {
-        records: {
-          where: {
-            kind: Kind.ProductLike,
-            userId: user?.id,
-            productId: id,
-          },
-        },
+        records: true,
       },
     });
     if (!product) {
@@ -51,16 +51,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     let likeRecord = null;
-    const existed = product.records.length ? product.records[0] : null;
+    const existed = product.records.find((record) => record.kind === Kind.ProductLike && record.userId === user?.id) || null;
 
-    if (existed) {
+    if (existed && like === false) {
       // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
-    } else {
+    } else if (!existed && like === true) {
       // create record
       likeRecord = await client.record.create({
         data: {

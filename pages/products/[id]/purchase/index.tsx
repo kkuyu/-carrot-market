@@ -4,10 +4,8 @@ import Link from "next/link";
 import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
-import { Kind } from "@prisma/client";
 // @lib
-import { getKey } from "@libs/utils";
-import useLayouts from "@libs/client/useLayouts";
+import { getKey, getProductCondition, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
@@ -28,8 +26,8 @@ import Buttons from "@components/buttons";
 
 const ProductsPurchasePage: NextPage = () => {
   const router = useRouter();
-  const { changeLayout } = useLayouts();
 
+  // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
     const options = { url: "/api/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
@@ -41,86 +39,82 @@ const ProductsPurchasePage: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
 
+  // mutation data
   const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
-    onSuccess: (data) => {
+    onSuccess: () => {
       router.replace(`/products/${router.query.id}/review`);
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          break;
-      }
     },
   });
 
-  const purchaseItem = (item: GetChatsResponse["chats"][0], chatUser: GetChatsResponse["chats"][0]["users"][0]) => {
+  // update: record purchase
+  const purchaseItem = (item: GetChatsResponse["chats"][number], chatUser: GetChatsResponse["chats"][number]["users"][number]) => {
     if (updatePurchaseLoading) return;
     updatePurchase({ purchase: true, purchaseUserId: chatUser.id });
   };
 
   useEffect(() => {
-    if (isVisible && !isReachingEnd) {
-      setSize((size) => size + 1);
-    }
+    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     if (!data?.[0].success && router.query.id) mutate();
   }, [data, router.query.id]);
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
   return (
-    <div className="container">
+    <div className="">
       {/* 제품정보 */}
-      <Link href={`/products/${productData?.product.id}`}>
-        <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <ProductSummary item={productData?.product!} />
-        </a>
-      </Link>
+      {productData?.product && (
+        <Link href={`/products/${productData?.product.id}`}>
+          <a className="block px-5 py-3 bg-gray-200">
+            <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
+          </a>
+        </Link>
+      )}
 
-      <div className="mt-5">
+      {/* 구매자 선택 */}
+      <div className="container [&:not(:first-child)]:mt-5">
         <strong className="text-lg">
           판매가 완료되었어요
           <br />
           구매자를 선택해주세요
         </strong>
+
+        {/* 대화중인 채팅 목록: List */}
+        {chats && Boolean(chats.length) && (
+          <>
+            <ChatList
+              type="button"
+              list={chats}
+              sort="timestamp"
+              isVisibleSingleUser={true}
+              cardProps={{ isVisibleProduct: false }}
+              selectItem={purchaseItem}
+              className="-mx-5 border-b [&:not(:first-child)]:mt-5 [&:not(:first-child)]:border-t"
+            />
+            <span className="empty:hidden list-loading">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : null}</span>
+          </>
+        )}
+
+        {/* 대화중인 채팅 목록: Empty */}
+        {chats && !Boolean(chats.length) && (
+          <p className="list-empty">
+            <>대화 중인 이웃이 없어요</>
+          </p>
+        )}
+
+        {/* 대화중인 채팅 목록: InfiniteRef */}
+        <div id="infiniteRef" ref={infiniteRef} />
+
+        {chats && (!Boolean(chats.length) || isReachingEnd) && (
+          <div className="text-center">
+            <Link href={`/products/${router.query.id}/purchase/all`} passHref>
+              <Buttons tag="a" sort="text-link" size="sm" status="default">
+                최근 채팅 목록에서 구매자 찾기
+              </Buttons>
+            </Link>
+          </div>
+        )}
       </div>
-
-      {/* 대화중인 채팅방: List */}
-      {chats && Boolean(chats.length) && (
-        <div className="-mx-5 mt-5 border-t">
-          <ChatList type="button" list={chats} sort="timestamp" isSingleUser={true} selectItem={purchaseItem} className="border-b" />
-          {isReachingEnd ? <span className="list-loading">채팅을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">채팅을 불러오고있어요</span> : null}
-        </div>
-      )}
-
-      {/* 대화중인 채팅방: Empty */}
-      {chats && !Boolean(chats.length) && (
-        <div className="list-empty">
-          <>대화 중인 이웃이 없어요</>
-        </div>
-      )}
-
-      {/* 대화중인 채팅방: InfiniteRef */}
-      <div id="infiniteRef" ref={infiniteRef} />
-
-      {chats && (!Boolean(chats.length) || isReachingEnd) && (
-        <div className="text-center">
-          <Link href={`/products/${router.query.id}/purchase/all`} passHref>
-            <Buttons tag="a" sort="text-link" size="sm" status="default">
-              최근 채팅 목록에서 구매자 찾기
-            </Buttons>
-          </Link>
-        </div>
-      )}
     </div>
   );
 };
@@ -187,9 +181,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
     include: {
       records: {
-        where: {
-          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
-        },
         select: {
           id: true,
           kind: true,
@@ -222,16 +213,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // condition
-  const role = ssrUser?.profile?.id === product?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = product?.records?.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase);
-  const existedReview = product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
+  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
-  // invalidCondition
-  let invalidCondition = false;
-  if (saleRecord) invalidCondition = true;
   // redirect `/products/${productId}`
-  if (invalidCondition) {
+  if (productCondition?.isSale) {
     return {
       redirect: {
         permanent: false,
@@ -240,18 +225,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/reviews/${existedReview.id}`
-  if (purchaseRecord && existedReview) {
+  // redirect `/reviews/${sentReviewId}`
+  if (productCondition?.isPurchase && productCondition?.sentReviewId) {
     return {
       redirect: {
         permanent: false,
-        destination: `/reviews/${existedReview.id}`,
+        destination: `/reviews/${productCondition.sentReviewId}`,
       },
     };
   }
 
   // redirect `/products/${productId}`
-  if (purchaseRecord && product?.reviews?.length) {
+  if (productCondition?.isPurchase && !productCondition?.sentReviewId) {
     return {
       redirect: {
         permanent: false,
@@ -296,7 +281,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "구매자 선택 | 중고거래",
+      title: `구매자 선택 | ${truncateStr(product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "구매자 선택",
@@ -318,6 +303,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
       getChats: {

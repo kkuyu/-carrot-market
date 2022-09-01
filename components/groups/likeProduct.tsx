@@ -3,6 +3,7 @@ import { memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
+import { getProductCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
@@ -27,41 +28,29 @@ const LikeProduct = (props: LikeProductProps) => {
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
-  const { data, mutate: boundMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null);
+  // fetch data
+  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
+    ...(item ? { fallbackData: { success: true, product: item, productCondition: getProductCondition(item, user?.id) } } : {}),
+  });
+
+  // mutation data
   const [updateLike, { loading: likeLoading }] = useMutation<PostProductsLikeResponse>(`/api/products/${item?.id}/like`, {
-    onSuccess: (data) => {
-      boundMutate();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+    onSuccess: async () => {
+      await productMutate();
     },
   });
 
-  const role = user?.id === item?.userId ? "sellUser" : "purchaseUser";
-  const likeRecord = data?.product?.records?.find((record) => record.userId === user?.id && record.kind === Kind.ProductLike);
-
-  // like
-  const clickLike = () => {
-    if (userType === "member") toggleLike();
-    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
-  };
+  // update: record like
   const toggleLike = () => {
-    if (!data?.product) return;
+    if (!productData?.product) return;
     if (likeLoading) return;
-    const isLike = !Boolean(likeRecord);
-    boundMutate((prev) => {
+    productMutate((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      const idx = records.findIndex((record) => record.id === likeRecord?.id);
-      if (!isLike) records.splice(idx, 1);
-      if (isLike) records.push({ id: 0, kind: Kind.ProductLike, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records } };
+      if (productData?.productCondition?.isLike) records.filter((record) => record.kind !== Kind.ProductLike && record.userId !== user?.id);
+      if (!productData?.productCondition?.isLike) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...prev.productCondition!, isLike: !productData?.productCondition?.isLike } };
     }, false);
-    updateLike({});
+    updateLike({ like: !productData?.productCondition?.isLike });
   };
 
   if (!item) return null;
@@ -74,12 +63,16 @@ const LikeProduct = (props: LikeProductProps) => {
       size="base"
       status="default"
       className={`${className}`}
-      onClick={clickLike}
+      onClick={() => {
+        if (userType === "member") toggleLike();
+        if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+        if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
+      }}
       disabled={likeLoading}
       {...restProps}
-      aria-label={`관심상품 ${likeRecord ? "취소" : "추가"}`}
+      aria-label={`관심상품 ${productData?.productCondition?.isLike ? "취소" : "추가"}`}
     >
-      {likeRecord ? <Icons name="HeartSolid" className="w-6 h-6 text-gray-600" /> : <Icons name="Heart" className="w-6 h-6" />}
+      {productData?.productCondition?.isLike ? <Icons name="HeartSolid" className="w-6 h-6 text-gray-600" /> : <Icons name="Heart" className="w-6 h-6" />}
     </Buttons>
   );
 };

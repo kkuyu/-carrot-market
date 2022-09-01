@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind } from "@prisma/client";
+import { Kind, Record } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostProductsSaleResponse extends ResponseDataType {
-  isSale: boolean;
+  recordSale: Record | null;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -42,14 +42,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id,
       },
       include: {
-        records: {
-          where: {
-            kind: Kind.ProductSale,
-          },
-          select: {
-            id: true,
-          },
-        },
+        records: true,
       },
     });
     if (!product) {
@@ -64,7 +57,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     let recordSale = null;
-    const existed = product.records.length ? product.records[0] : null;
+    const existed = product.records.find((record) => record.kind === Kind.ProductSale) || null;
 
     if (existed && sale === false) {
       // delete record
@@ -110,7 +103,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // result
     const result: PostProductsSaleResponse = {
       success: true,
-      isSale: Boolean(recordSale),
+      recordSale,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getCategory, truncateStr } from "@libs/utils";
+import { getCategory, getProductCondition, truncateStr } from "@libs/utils";
 import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
@@ -46,8 +46,9 @@ const ProductsDetailPage: NextPage = () => {
 
   // mutation data
   const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
-    onSuccess: (data) => {
-      if (!data.isSale) {
+    onSuccess: async (data) => {
+      if (!data.recordSale) {
+        await productMutate();
         router.push(`/products/${router.query.id}/purchase`);
       } else {
         productMutate();
@@ -72,7 +73,7 @@ const ProductsDetailPage: NextPage = () => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
       if (productData?.productCondition?.isSale) records.filter((record) => record.kind !== Kind.ProductSale);
       if (!productData?.productCondition?.isSale) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...prev.productCondition, isSale: !productData?.productCondition?.isSale } };
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...prev.productCondition!, isSale: !productData?.productCondition?.isSale } };
     }, false);
     updateSale({ sale: !productData?.productCondition?.isSale });
   };
@@ -163,16 +164,18 @@ const ProductsDetailPage: NextPage = () => {
       <div className="container pb-16">
         <section className="">
           {/* 판매자 */}
-          <Link href={`/profiles/${productData?.product?.user?.id}`}>
-            <a className="block py-3">
-              <Profiles user={productData?.product?.user} emdPosNm={productData?.product?.emdPosNm} />
-            </a>
-          </Link>
+          {productData?.product?.user && (
+            <Link href={`/profiles/${productData?.product?.user?.id}`}>
+              <a className="block py-3">
+                <Profiles user={productData?.product?.user} emdPosNm={productData?.product?.emdPosNm} />
+              </a>
+            </Link>
+          )}
 
           {/* 설명 */}
           <div className="pt-5 border-t">
             <h1 className="text-2xl font-bold">
-              {!productData.productCondition?.isSale && <em className="text-gray-500 not-italic">판매완료 </em>}
+              {productData.productCondition && !productData.productCondition?.isSale && <em className="text-gray-500 not-italic">판매완료 </em>}
               {productData?.product?.name}
             </h1>
             <div className="mt-1 text-description text-sm">
@@ -194,8 +197,8 @@ const ProductsDetailPage: NextPage = () => {
               initialState={{ id: productData?.product?.id, views: productData?.product?.views }}
               className="empty:hidden mt-5"
             >
-              {Boolean(productData.productCondition?.likes) ? <span>관심 {productData.productCondition?.likes}</span> : <></>}
-              {Boolean(productData.productCondition?.chats) ? <span>채팅 {productData.productCondition?.chats}</span> : <></>}
+              {productData.productCondition && Boolean(productData.productCondition?.likes) ? <span>관심 {productData.productCondition?.likes}</span> : <></>}
+              {productData.productCondition && Boolean(productData.productCondition?.chats) ? <span>채팅 {productData.productCondition?.chats}</span> : <></>}
             </ArticleReport>
           </div>
 
@@ -249,7 +252,7 @@ const ProductsDetailPage: NextPage = () => {
           <section className="mt-5 pt-5 border-t">
             <h2 className="text-xl">
               {recommendsData?.type === "userProducts"
-                ? `${productData?.product.user.name}님의 판매 상품`
+                ? `${productData?.product?.user?.name}님의 판매 상품`
                 : recommendsData?.type === "similarProducts"
                 ? `이 글과 함께 본 판매 상품`
                 : recommendsData?.type === "latestProducts"
@@ -346,11 +349,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   // condition
-  const productCondition = {
-    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike).length,
-    chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0).length,
-    isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
-  };
+  const productCondition = getProductCondition(product);
 
   // defaultLayout
   const defaultLayout = {

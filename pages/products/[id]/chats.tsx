@@ -4,11 +4,8 @@ import Link from "next/link";
 import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
-import { Kind } from "@prisma/client";
 // @lib
-import { getKey } from "@libs/utils";
-import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
+import { getKey, getProductCondition, truncateStr } from "@libs/utils";
 import useOnScreen from "@libs/client/useOnScreen";
 import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
@@ -26,8 +23,6 @@ import ChatList from "@components/lists/chatList";
 
 const ProductsChatsPage: NextPage = () => {
   const router = useRouter();
-  const { user } = useUser();
-  const { changeLayout } = useLayouts();
 
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
@@ -41,36 +36,28 @@ const ProductsChatsPage: NextPage = () => {
   const chats = data ? data.flatMap((item) => item.chats) : null;
 
   useEffect(() => {
-    if (isVisible && !isReachingEnd) {
-      setSize((size) => size + 1);
-    }
+    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     if (!data?.[0].success && router.query.id) mutate();
   }, [data, router.query.id]);
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
   return (
     <div className="container">
       {/* 제품정보 */}
-      <Link href={`/products/${productData?.product.id}`}>
-        <a className="block -mx-5 px-5 py-3 bg-gray-200">
-          <ProductSummary item={productData?.product!} />
-        </a>
-      </Link>
+      {productData?.product && (
+        <Link href={`/products/${productData?.product.id}`}>
+          <a className="block -mx-5 px-5 py-3 bg-gray-200">
+            <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
+          </a>
+        </Link>
+      )}
 
       {/* 채팅: List */}
       {chats && Boolean(chats.length) && (
         <div className="-mx-5">
-          <ChatList type="link" list={chats} sort="message" isSingleUser={false} className="border-b" />
+          <ChatList type="link" list={chats} sort="message" isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true }} className="border-b" />
           {isReachingEnd ? <span className="list-loading">채팅을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">채팅을 불러오고있어요</span> : null}
         </div>
       )}
@@ -150,9 +137,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
     include: {
       records: {
-        where: {
-          OR: [{ kind: Kind.ProductSale }],
-        },
         select: {
           id: true,
           kind: true,
@@ -175,6 +159,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
     };
   }
+
+  // condition
+  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
   // getChats
   const chats = ssrUser.profile
@@ -212,7 +199,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "대화 중인 채팅방 | 중고거래",
+      title: `대화 중인 채팅방 | ${truncateStr(product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "대화 중인 채팅방",
@@ -234,6 +221,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
       getChats: {

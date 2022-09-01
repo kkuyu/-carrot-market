@@ -74,7 +74,7 @@ const ChatsIndexPage: NextPage = () => {
       {/* 채팅: List */}
       {chats && Boolean(chats.length) && (
         <div className="-mx-5">
-          <ChatList type="link" list={chats} sort="message" isSingleUser={false} className="border-b" />
+          <ChatList type="link" list={chats} sort="message" isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true }} className="border-b" />
           {isReachingEnd ? <span className="list-loading">채팅을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">채팅을 불러오고있어요</span> : null}
         </div>
       )}

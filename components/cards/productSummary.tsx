@@ -1,22 +1,28 @@
 import type { HTMLAttributes } from "react";
-import { Kind } from "@prisma/client";
+// @libs
+import { getProductCondition } from "@libs/utils";
+import useUser from "@libs/client/useUser";
 // @api
 import { GetProductsResponse } from "@api/products";
+import { GetProductsDetailResponse, ProductCondition } from "@api/products/[id]";
 import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 // @components
 import Images from "@components/images";
 
-export type ProductSummaryItem = GetProductsResponse["products"][number] | GetProfilesProductsResponse["products"][number];
+export type ProductSummaryItem = GetProductsResponse["products"][number] | GetProfilesProductsResponse["products"][number] | GetProductsDetailResponse["product"];
 
 export interface ProductSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductSummaryItem;
+  condition?: ProductCondition;
 }
 
 const ProductSummary = (props: ProductSummaryProps) => {
-  const { item, className = "", ...restProps } = props;
+  const { item, condition, className = "", ...restProps } = props;
+  const { user } = useUser();
 
+  // visible data: default
   const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
-  const saleRecord = item?.records?.find((record) => record.kind === Kind.ProductSale);
+  const productCondition = condition ?? getProductCondition(item, user?.id);
 
   if (!item) return null;
 
@@ -27,7 +33,7 @@ const ProductSummary = (props: ProductSummaryProps) => {
       </div>
       <div className="grow-full pl-3">
         <strong className="block text-sm font-normal text-ellipsis">
-          {!saleRecord && <span className="text-gray-500">판매완료 </span>}
+          {productCondition && !productCondition.isSale && <span className="text-gray-500">판매완료 </span>}
           {item.name}
         </strong>
         <span className="text-sm font-semibold">₩{item.price}</span>
