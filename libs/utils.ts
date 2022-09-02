@@ -50,7 +50,7 @@ export const getRandomName = () => {
 };
 
 export const getCategory = <T extends ProductCategories | StoryCategories>(
-  categoryStr: string,
+  categoryStr: string = "",
   options?: { excludeCategory: (ProductCategories | StoryCategories | string)[] }
 ): (T[number] & { kebabValue: string }) | null => {
   let category = null;
@@ -85,18 +85,19 @@ export const getReviewManners = (mannerStr: string) => {
   return ReviewManners.find((v) => v.value === mannerStr) || null;
 };
 
-type timeLabel = "분" | "시간" | "일" | "개월" | "년";
+export type TimeLabel = "분" | "시간" | "일" | "개월" | "년";
+export type TimeConfig = { defaultValue?: string; suffixStr?: string; diffLabel?: TimeLabel };
 
-export const getDiffTimeStr = (originTime: number, currentTime: number, config?: { defaultValue?: string; suffixStr?: string; diffLabel?: timeLabel }) => {
+export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeConfig) => {
   let resultStr = config?.defaultValue || `방금${config?.suffixStr || " 전"}`;
 
-  const diffTime = currentTime - originTime;
+  const diffTime = dateTo - dateFrom;
   const times = [
-    { ms: 1000 * 60, label: "분" as timeLabel },
-    { ms: 1000 * 60 * 60, label: "시간" as timeLabel },
-    { ms: 1000 * 60 * 60 * 24, label: "일" as timeLabel },
-    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" as timeLabel },
-    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" as timeLabel },
+    { ms: 1000 * 60, label: "분" as TimeLabel },
+    { ms: 1000 * 60 * 60, label: "시간" as TimeLabel },
+    { ms: 1000 * 60 * 60 * 24, label: "일" as TimeLabel },
+    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" as TimeLabel },
+    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" as TimeLabel },
   ].reverse();
 
   for (let index = 0; index < times.length; index++) {

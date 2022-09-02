@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 // @libs
-import { getDiffTimeStr as getTimeDiff } from "@libs/utils";
+import { getDiffTimeStr as getTimeDiff, TimeConfig } from "@libs/utils";
 
-const useTimeDiff = (timeTarget: string | null) => {
+const useTimeDiff = (timeTarget: string | null, options?: { type?: "pastToPresent" | "presentToPast"; config?: TimeConfig }) => {
   const [isMounted, setIsMounted] = useState(false);
-  const [timeState, setTimeState] = useState<{ today: Date | null; diffStr: string }>({ today: null, diffStr: "" });
+  const [timeState, setTimeState] = useState<{ dateFrom: Date | null; dateTo: Date | null; diffStr: string }>({ dateFrom: null, dateTo: null, diffStr: "" });
 
   useEffect(() => {
     setIsMounted(true);
@@ -13,8 +13,9 @@ const useTimeDiff = (timeTarget: string | null) => {
   useEffect(() => {
     if (!timeTarget) return;
     setTimeState(() => {
-      const today = new Date();
-      return { today, diffStr: getTimeDiff(new Date(timeTarget).getTime(), today?.getTime()) };
+      const dateFrom = options?.type !== "presentToPast" ? new Date(timeTarget) : new Date();
+      const dateTo = options?.type !== "presentToPast" ? new Date() : new Date(timeTarget);
+      return { dateFrom, dateTo, diffStr: getTimeDiff(dateFrom.getTime(), dateTo.getTime(), options?.config) };
     });
   }, [timeTarget]);
 

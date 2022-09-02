@@ -2,20 +2,22 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import { useState, useEffect } from "react";
+import type { HTMLAttributes } from "react";
 import { useForm } from "react-hook-form";
-import useSWR, { SWRConfig } from "swr";
-import { Kind } from "@prisma/client";
+import useSWR, { mutate, SWRConfig } from "swr";
+import { unstable_serialize } from "swr/infinite";
 // @libs
-import { getDiffTimeStr } from "@libs/utils";
+import { getKey, getProductCondition, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
+import useTimeDiff from "@libs/client/useTimeDiff";
 import { withSsrSession } from "@libs/server/withSession";
 import client from "@libs/server/client";
 import getSsrUser from "@libs/server/getUser";
 // @api
 import { GetUserResponse } from "@api/user";
 import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -25,179 +27,154 @@ import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
 import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
 
+type ResumeState = {
+  type: "HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null;
+  possibleDate: Date | null;
+  afterDate: Date | null;
+};
+
 const ProductsResumePage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
-  const { changeLayout } = useLayouts();
 
-  const [state, setState] = useState<"HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null>(null);
+  // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
-  const today = new Date();
-  const targetDate = (() => {
-    let target: Date | null = null;
-    let nextTarget: Date | null = null;
-    if (!productData?.product) {
-      return [target, nextTarget];
-    }
-    if (productData?.product?.resumeCount < 15) {
-      target = new Date(productData?.product?.resumeAt);
-      target.setDate(target.getDate() + (2 + productData?.product?.resumeCount));
-    }
-    if (target && productData?.product?.resumeCount + 1 < 15) {
-      nextTarget = target.toISOString().replace(/T.*$/, "") > today.toISOString().replace(/T.*$/, "") ? new Date(target) : new Date(today);
-      nextTarget.setDate(nextTarget.getDate() + (2 + productData?.product?.resumeCount));
-    }
-    return [target, nextTarget];
-  })();
-  const diffTime = (() => {
-    const target = !targetDate[0] ? "" : getDiffTimeStr(today.getTime(), targetDate[0].getTime(), { suffixStr: " 후" });
-    const nextTarget = !targetDate[1] ? "" : getDiffTimeStr(today.getTime(), targetDate[1].getTime() + 1000 * 60 * 60 * 24, { suffixStr: " 후" });
-    return [target, nextTarget];
-  })();
+  // mutation data
+  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+    onSuccess: async () => {
+      const options = { url: `/api/profiles/${user?.id}/products/all` };
+      await mutate(unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey<GetProfilesProductsResponse>(...arg, options)));
+      router.replace(`/profiles/${user?.id}/products/all`);
+    },
+  });
 
+  // resume form
+  const [resumeState, setResumeState] = useState<ResumeState>({ type: null, possibleDate: null, afterDate: null });
+  const { timeState: resumeTimeState } = useTimeDiff(resumeState?.possibleDate?.toString() || null, { type: "presentToPast", config: { suffixStr: " 후" } });
+  const { timeState: nextResumeTimeState } = useTimeDiff(resumeState?.afterDate?.toString() || null, { type: "presentToPast", config: { suffixStr: " 후" } });
   const formData = useForm<ResumeProductTypes>({
     defaultValues: {
-      price: productData?.product?.price,
+      originalPrice: productData?.product?.price,
+      currentPrice: productData?.product?.price,
     },
   });
 
-  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
-    onSuccess: (data) => {
-      router.replace(`/profiles/${data.product.userId}/products`);
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-
-  const submitProduct = () => {
+  // update: product
+  const submitProduct = ({ currentPrice, originalPrice, ...data }: ResumeProductTypes) => {
     if (!user || loading) return;
     editProduct({
+      ...data,
       resume: true,
-      price: formData.getValues("price"),
+      price: currentPrice,
     });
   };
 
   useEffect(() => {
     if (!productData?.product) return;
-    setState(() => {
-      if (targetDate[0] === null) return "MaxCount";
-      if (today > targetDate[0]) return productData?.product?.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct";
-      if (today < targetDate[0]) return "HoldOff";
-      return null;
+    formData.setValue("originalPrice", productData?.product?.price);
+    formData.setValue("currentPrice", productData?.product?.price);
+    setResumeState(() => {
+      const currentDate = new Date();
+      const currentState: ResumeState = { type: null, possibleDate: null, afterDate: null };
+      if (productData?.product?.resumeCount < 15) {
+        currentState.possibleDate = new Date(productData?.product?.resumeAt);
+        currentState.possibleDate.setDate(currentState.possibleDate.getDate() + (productData?.product?.resumeCount + 2));
+      }
+      if (productData?.product?.resumeCount + 1 <= 15 && currentState.possibleDate) {
+        currentState.afterDate = currentState.possibleDate?.toLocaleDateString() > currentDate.toLocaleDateString() ? new Date(currentState.possibleDate) : new Date(currentDate);
+        currentState.afterDate.setDate(currentState.afterDate.getDate() + (productData?.product?.resumeCount + 2));
+      }
+      if (currentState.possibleDate === null) currentState.type = "MaxCount";
+      if (currentState.possibleDate && currentState.possibleDate < currentDate) currentState.type = productData?.product?.price === 0 ? "ReadyFreeProduct" : "ReadyPayProduct";
+      if (currentState.possibleDate && currentState.possibleDate > currentDate) currentState.type = "HoldOff";
+      return currentState;
     });
-    formData.setValue("price", productData?.product?.price);
   }, [productData]);
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
   if (!productData?.product) return null;
-  if (state === null) return null;
+  if (resumeState.type === null) return null;
+
+  const CustomGuideContent = (guideProps: {} & HTMLAttributes<HTMLDivElement>) => {
+    const { className = "", ...guideRestProps } = guideProps;
+    return (
+      <div className={`${className}`} {...guideRestProps}>
+        <p>
+          혹시 판매가 잘 안되시나요?
+          <br />
+          판매 꿀팁을 확인하고 판매 확률을 높여보세요.
+        </p>
+        {/* todo: 판매 확률 높이는 꿀팁보기 */}
+        <Link href="" passHref>
+          <Buttons tag="a" sort="text-link" status="default" className="mt-2 pl-0">
+            판매 확률 높이는 꿀팁보기
+          </Buttons>
+        </Link>
+      </div>
+    );
+  };
 
   return (
-    <div className="container pb-5">
+    <div className="">
       {/* 제품정보 */}
       <Link href={`/products/${productData?.product?.id}`}>
-        <a className="block -mx-5 px-5 py-3 bg-gray-200">
+        <a className="block px-5 py-3 bg-gray-200">
           <ProductSummary item={productData?.product} />
         </a>
       </Link>
 
-      {/* 끌어올리기: HoldOff */}
-      {state === "HoldOff" && (
-        <div className="mt-5">
-          <strong className="text-lg">
-            <span className="text-orange-500">{diffTime[0]}에</span>
-            <br />
-            끌어올릴 수 있어요
-          </strong>
-          <p className="mt-5">
-            {user?.name}님, 혹시 판매가 잘 안되시나요?
-            <br />
-            판매 꿀팁을 확인하고 판매 확률을 높여보세요.
-            <br />
-            <br />
-            {/* todo: 판매 확률 높이는 꿀팁보기 */}
-            <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" status="default" className="pl-0">
-                판매 확률 높이는 꿀팁보기
-              </Buttons>
-            </Link>
-          </p>
-          <Buttons tag="button" type="button" className="mt-5" disabled={true}>
-            끌어올리기
-          </Buttons>
-        </div>
-      )}
-
-      {/* 끌어올리기: MaxCount */}
-      {state === "MaxCount" && (
-        <div className="mt-5">
-          <strong className="text-lg">
-            <span className="text-orange-500">게시글당 최대 15번</span> 끌어올릴 수 있어요
-            <br />
-            이 게시글은 이미 15번을 모두 사용해서
-            <br />
-            더이상 끌어올릴 수 없어요
-          </strong>
-          <p className="mt-5">
-            {user?.name}님, 혹시 판매가 잘 안되시나요?
-            <br />
-            판매 꿀팁을 확인하고 판매 확률을 높여보세요.
-            <br />
-            <br />
-            {/* todo: 판매 확률 높이는 꿀팁보기 */}
-            <Link href="" passHref>
-              <Buttons tag="a" sort="text-link" status="default" className="pl-0">
-                판매 확률 높이는 꿀팁보기
-              </Buttons>
-            </Link>
-          </p>
-          <Buttons tag="button" type="button" className="mt-5" disabled={true}>
-            끌어올리기
-          </Buttons>
-        </div>
-      )}
-
-      {/* 끌어올리기: ReadyFreeProduct */}
-      {state === "ReadyFreeProduct" && (
-        <div className="mt-5">
-          <strong className="text-lg">지금 끌어올리시겠어요?</strong>
-          {targetDate[1] && (
-            <p className="mt-5">
-              다음 끌어올리기는 <span className="text-orange-500">{diffTime[1]}</span>에 할 수 있어요
-            </p>
-          )}
-          <Buttons tag="button" type="submit" className="mt-5" disabled={loading} onClick={submitProduct}>
-            끌어올리기
-          </Buttons>
-        </div>
-      )}
-
-      {/* 끌어올리기: ReadyPayProduct */}
-      {state === "ReadyPayProduct" && (
-        <div className="mt-5">
-          <strong className="text-lg">
-            {user?.name}님, 끌어올리기 전에
-            <br />
-            가격을 낮춰보세요
-          </strong>
-          <div className="mt-5">
-            <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loading} originalPrice={productData?.product?.price} targetDate={targetDate} diffTime={diffTime} />
-          </div>
-        </div>
-      )}
+      <div className="container pt-5 pb-5">
+        {/* 끌어올리기: HoldOff */}
+        {resumeState.type === "HoldOff" && (
+          <>
+            <strong className="text-lg">
+              {user?.name}님, <span className="text-orange-500">{resumeTimeState?.diffStr}에</span>
+              <br />
+              끌어올릴 수 있어요
+            </strong>
+            <CustomGuideContent className="mt-4" />
+          </>
+        )}
+        {/* 끌어올리기: MaxCount */}
+        {resumeState.type === "MaxCount" && (
+          <>
+            <strong className="text-lg">
+              <span className="text-orange-500">게시글당 최대 15번</span> 끌어올릴 수 있어요
+              <br />
+              이 게시글은 이미 15번을 모두 사용해서
+              <br />
+              더이상 끌어올릴 수 없어요
+            </strong>
+            <CustomGuideContent className="mt-4" />
+          </>
+        )}
+        {/* 끌어올리기: ReadyFreeProduct */}
+        {resumeState.type === "ReadyFreeProduct" && (
+          <>
+            <strong className="text-lg">
+              {user?.name}님,
+              <br />
+              지금 끌어올리시겠어요?
+            </strong>
+            <div className="mt-4">
+              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loading} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
+            </div>
+          </>
+        )}
+        {/* 끌어올리기: ReadyPayProduct */}
+        {resumeState.type === "ReadyPayProduct" && (
+          <>
+            <strong className="text-lg">
+              {user?.name}님, 끌어올리기 전에
+              <br />
+              가격을 낮춰보세요
+            </strong>
+            <div className="mt-4">
+              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loading} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 };
@@ -262,9 +239,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
     include: {
       records: {
-        where: {
-          OR: [{ kind: Kind.ProductSale }],
-        },
         select: {
           id: true,
           kind: true,
@@ -289,12 +263,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // condition
-  const role = ssrUser?.profile?.id === product?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = product?.records?.find((record) => record.kind === Kind.ProductSale);
+  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
   // invalidCondition
   let invalidCondition = false;
-  if (!saleRecord) invalidCondition = true;
+  if (!productCondition?.isSale) invalidCondition = true;
   // redirect `/products/${productId}`
   if (invalidCondition) {
     return {
@@ -308,7 +281,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "끌어올리기 | 중고거래",
+      title: `끌어올리기 | ${truncateStr(product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "끌어올리기",
@@ -330,6 +303,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
     },

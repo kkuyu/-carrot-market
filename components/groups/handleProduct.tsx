@@ -49,7 +49,7 @@ const HandleProduct = (props: HandleProductProps) => {
 
   // update: record sale
   const toggleSale = () => {
-    if (!item) return;
+    if (!productData?.product) return;
     if (saleLoading) return;
     updateSale({ sale: !productData?.productCondition?.isSale });
   };
@@ -75,7 +75,7 @@ const HandleProduct = (props: HandleProductProps) => {
     });
   };
 
-  if (!item) return null;
+  if (!productData?.product) return null;
 
   return (
     <Buttons
@@ -86,10 +86,10 @@ const HandleProduct = (props: HandleProductProps) => {
       status="unset"
       onClick={() => {
         const modalActions = [
-          { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (item?.reviews?.length ? openSaleModal() : toggleSale()) },
+          { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (productData?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
           { key: "sold", style: ActionStyleEnum["default"], text: "판매완료", handler: () => toggleSale() },
-          { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/products/${item?.id}/edit`) },
-          { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${item?.id}/delete`) },
+          { key: "update", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/products/${productData?.product?.id}/edit`) },
+          { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => router.push(`/products/${productData?.product?.id}/delete`) },
           { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
         ];
         openModal<ActionModalProps>(ActionModal, "HandleProduct", {

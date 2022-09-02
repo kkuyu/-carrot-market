@@ -1,17 +1,19 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
-import useSWR, { SWRConfig } from "swr";
-import { Kind } from "@prisma/client";
+import useSWR, { mutate, SWRConfig } from "swr";
+import { unstable_serialize } from "swr/infinite";
 // @libs
-import useLayouts from "@libs/client/useLayouts";
+import { getKey, getProductCondition, truncateStr } from "@libs/utils";
+import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 import client from "@libs/server/client";
+import getSsrUser from "@libs/server/getUser";
 // @api
+import { GetUserResponse } from "@api/user";
 import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -22,61 +24,51 @@ import ProductSummary from "@components/cards/productSummary";
 
 const ProductsDeletePage: NextPage = () => {
   const router = useRouter();
-  const { changeLayout } = useLayouts();
+  const { user } = useUser();
 
+  // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
-  const foundChat = productData?.product?.chats?.filter((chat) => chat._count.chatMessages > 0) || [];
-  const foundReview = productData?.product?.reviews || [];
-
+  // mutation data
   const [deleteProduct, { loading: deleteLoading }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
-    onSuccess: (data) => {
-      router.replace(`/profiles/${productData?.product?.userId}/products`);
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+    onSuccess: async () => {
+      const options = { url: `/api/profiles/${user?.id}/products/all` };
+      await mutate(unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey<GetProfilesProductsResponse>(...arg, options)));
+      router.replace(`/profiles/${user?.id}/products/all`);
     },
   });
 
+  // delete: product
   const clickDelete = () => {
     if (deleteLoading) return;
     deleteProduct({});
   };
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
   if (!productData?.product) return null;
 
   return (
-    <div className="container pb-5">
+    <div className="">
       {/* 제품정보 */}
-      <div className="block -mx-5 px-5 py-3 bg-gray-200">
-        <Link href={`/products/${productData?.product?.id}`}>
-          <a className="">
-            <ProductSummary item={productData?.product} />
-          </a>
-        </Link>
-      </div>
+      {productData?.product && (
+        <div className="block px-5 py-3 bg-gray-200">
+          <Link href={`/products/${productData?.product?.id}`}>
+            <a className="">
+              <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
+            </a>
+          </Link>
+        </div>
+      )}
 
-      <div className="mt-5">
+      <div className="container pb-5 [&:not(:first-child)]:mt-5">
         <strong className="text-lg">게시글을 정말 삭제하시겠어요?</strong>
-        <ul className="mt-2 space-y-1">
+
+        <ul className="mt-3 space-y-2">
           <li className="text-notice">
             <span>대화중인 채팅방이 삭제돼요.</span>
             <div className="mt-1 space-x-2">
-              {Boolean(foundChat.length) && (
+              {productData.productCondition && Boolean(productData.productCondition.chats) && (
                 <Link href={`/products/${router.query.id}/chats`} passHref>
-                  <Buttons tag="a" sort="round-box" size="sm" status="default" className="!inline-block !w-auto">
+                  <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
                     채팅방으로 이동
                   </Buttons>
                 </Link>
@@ -86,33 +78,41 @@ const ProductsDeletePage: NextPage = () => {
           <li className="text-notice">
             <span>서로 주고받은 거래후기가 취소돼요</span>
             <div className="mt-1 space-x-2">
-              {Boolean(foundReview.length) &&
-                foundReview.map((review) => (
-                  <Link key={review.id} href={`/reviews/${review.id}`} passHref>
-                    <Buttons tag="a" sort="round-box" size="sm" status="default" className="!inline-block !w-auto">
-                      {review.role === "sellUser" ? "보낸 후기로 이동" : review.role === "purchaseUser" ? "받은 후기로 이동" : ""}
-                    </Buttons>
-                  </Link>
-                ))}
+              {productData.productCondition && Boolean(productData.productCondition.sentReviewId) && (
+                <Link href={`/reviews/${productData.productCondition.sentReviewId}`} passHref>
+                  <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
+                    보낸 후기로 이동
+                  </Buttons>
+                </Link>
+              )}
+              {productData.productCondition && Boolean(productData.productCondition.receiveReviewId) && (
+                <Link href={`/reviews/${productData.productCondition.receiveReviewId}`} passHref>
+                  <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
+                    받은 후기로 이동
+                  </Buttons>
+                </Link>
+              )}
             </div>
           </li>
         </ul>
-      </div>
 
-      <Buttons tag="button" type="button" className="mt-5" disabled={false} onClick={clickDelete}>
-        삭제하기
-      </Buttons>
+        <Buttons tag="button" type="button" onClick={clickDelete} disabled={deleteLoading} className="mt-5">
+          삭제하기
+        </Buttons>
+      </div>
     </div>
   );
 };
 
 const Page: NextPageWithLayout<{
+  getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
-}> = ({ getProduct }) => {
+}> = ({ getUser, getProduct }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
+          "/api/user": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
         },
       }}
@@ -164,9 +164,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
     include: {
       records: {
-        where: {
-          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
-        },
         select: {
           id: true,
           kind: true,
@@ -204,10 +201,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
+  // condition
+  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
+
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "글 삭제 | 중고거래",
+      title: `글 삭제 | ${truncateStr(product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "중고거래 글 삭제",
@@ -222,10 +222,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   return {
     props: {
       defaultLayout,
+      getUser: {
+        response: JSON.parse(JSON.stringify(ssrUser || {})),
+      },
       getProduct: {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
     },

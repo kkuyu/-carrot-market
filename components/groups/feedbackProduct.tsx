@@ -44,15 +44,14 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
 
   // update: record sale
   const toggleSale = () => {
-    if (!item) return;
+    if (!productData?.product) return;
     if (saleLoading) return;
     updateSale({ sale: !productData?.productCondition?.isSale });
   };
 
-  if (!item) return null;
+  if (!productData?.product) return null;
 
-  // custom component
-  const FeedbackButton = (buttonProps: { pathname?: string; disabled?: boolean; children: string } & HTMLAttributes<HTMLButtonElement>) => {
+  const CustomFeedbackButton = (buttonProps: { pathname?: string; disabled?: boolean; children: string } & HTMLAttributes<HTMLButtonElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
@@ -72,24 +71,24 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
 
   return (
     <div className={`empty:pt-9 flex border-t divide-x ${className}`} {...restProps}>
-      {productData && productData?.productCondition?.isSale && (
+      {productData?.product && productData?.productCondition?.isSale && (
         <>
-          <FeedbackButton onClick={() => router.push(`/products/${item?.id}/resume`)} disabled={saleLoading}>
+          <CustomFeedbackButton onClick={() => router.push(`/products/${productData?.product?.id}/resume`)} disabled={saleLoading}>
             끌어올리기
-          </FeedbackButton>
-          <FeedbackButton onClick={toggleSale} disabled={saleLoading}>
+          </CustomFeedbackButton>
+          <CustomFeedbackButton onClick={toggleSale} disabled={saleLoading}>
             판매완료
-          </FeedbackButton>
+          </CustomFeedbackButton>
         </>
       )}
-      {productData && !productData?.productCondition?.isSale && (
+      {productData?.product && !productData?.productCondition?.isSale && (
         <>
           {productData?.productCondition?.sentReviewId ? (
-            <FeedbackButton pathname={`/reviews/${productData?.productCondition?.sentReviewId}`}>보낸 후기 보기</FeedbackButton>
+            <CustomFeedbackButton pathname={`/reviews/${productData?.productCondition?.sentReviewId}`}>보낸 후기 보기</CustomFeedbackButton>
           ) : productData?.productCondition?.isPurchase ? (
-            <FeedbackButton pathname={`/products/${item.id}/review`}>거래 후기 보내기</FeedbackButton>
+            <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/review`}>거래 후기 보내기</CustomFeedbackButton>
           ) : (
-            <FeedbackButton pathname={`/products/${item.id}/purchase`}>거래 후기 보내기</FeedbackButton>
+            <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/purchase`}>거래 후기 보내기</CustomFeedbackButton>
           )}
         </>
       )}
