@@ -75,9 +75,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       },
       include: {
         records: {
-          where: {
-            OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
-          },
           select: {
             id: true,
             kind: true,

@@ -83,9 +83,9 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
       )}
       {productData?.product && !productData?.productCondition?.isSale && (
         <>
-          {productData?.productCondition?.sentReviewId ? (
-            <CustomFeedbackButton pathname={`/reviews/${productData?.productCondition?.sentReviewId}`}>보낸 후기 보기</CustomFeedbackButton>
-          ) : productData?.productCondition?.isPurchase ? (
+          {Boolean(productData?.productCondition?.review?.sentReviewId) ? (
+            <CustomFeedbackButton pathname={`/reviews/${productData?.productCondition?.review?.sentReviewId}`}>보낸 후기 보기</CustomFeedbackButton>
+          ) : Boolean(productData?.productCondition?.isPurchase) ? (
             <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/review`}>거래 후기 보내기</CustomFeedbackButton>
           ) : (
             <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/purchase`}>거래 후기 보내기</CustomFeedbackButton>

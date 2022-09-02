@@ -69,13 +69,14 @@ const ProductsDetailPage: NextPage = () => {
   const toggleSale = () => {
     if (!productData?.product) return;
     if (saleLoading) return;
+    const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product!, user?.id);
     productMutate((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      if (productData?.productCondition?.isSale) records.filter((record) => record.kind !== Kind.ProductSale);
-      if (!productData?.productCondition?.isSale) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...prev.productCondition!, isSale: !productData?.productCondition?.isSale } };
+      if (currentCondition?.isSale) records.filter((record) => record.kind !== Kind.ProductSale);
+      if (!currentCondition?.isSale) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...currentCondition!, isSale: !currentCondition?.isSale } };
     }, false);
-    updateSale({ sale: !productData?.productCondition?.isSale });
+    updateSale({ sale: !currentCondition?.isSale });
   };
 
   // update: create chat
@@ -175,7 +176,7 @@ const ProductsDetailPage: NextPage = () => {
           {/* 설명 */}
           <div className="pt-5 border-t">
             <h1 className="text-2xl font-bold">
-              {productData.productCondition && !productData.productCondition?.isSale && <em className="text-gray-500 not-italic">판매완료 </em>}
+              {productData?.productCondition && !productData?.productCondition?.isSale && <em className="text-gray-500 not-italic">판매완료 </em>}
               {productData?.product?.name}
             </h1>
             <div className="mt-1 text-description text-sm">
@@ -197,8 +198,8 @@ const ProductsDetailPage: NextPage = () => {
               initialState={{ id: productData?.product?.id, views: productData?.product?.views }}
               className="empty:hidden mt-5"
             >
-              {productData.productCondition && Boolean(productData.productCondition?.likes) ? <span>관심 {productData.productCondition?.likes}</span> : <></>}
-              {productData.productCondition && Boolean(productData.productCondition?.chats) ? <span>채팅 {productData.productCondition?.chats}</span> : <></>}
+              {productData?.productCondition && Boolean(productData?.productCondition?.likes) ? <span>관심 {productData?.productCondition?.likes}</span> : <></>}
+              {productData?.productCondition && Boolean(productData?.productCondition?.chats) ? <span>채팅 {productData?.productCondition?.chats}</span> : <></>}
             </ArticleReport>
           </div>
 
@@ -349,7 +350,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   }
 
   // condition
-  const productCondition = getProductCondition(product);
+  const productCondition = getProductCondition(product, null);
 
   // defaultLayout
   const defaultLayout = {

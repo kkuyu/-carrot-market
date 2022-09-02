@@ -44,13 +44,14 @@ const LikeProduct = (props: LikeProductProps) => {
   const toggleLike = () => {
     if (!productData?.product) return;
     if (likeLoading) return;
+    const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product!, user?.id);
     productMutate((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      if (productData?.productCondition?.isLike) records.filter((record) => record.kind !== Kind.ProductLike && record.userId !== user?.id);
-      if (!productData?.productCondition?.isLike) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...prev.productCondition!, isLike: !productData?.productCondition?.isLike } };
+      if (currentCondition?.isLike) records.filter((record) => record.kind !== Kind.ProductLike && record.userId !== user?.id);
+      if (!currentCondition?.isLike) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...currentCondition!, isLike: !currentCondition?.isLike } };
     }, false);
-    updateLike({ like: !productData?.productCondition?.isLike });
+    updateLike({ like: !currentCondition?.isLike });
   };
 
   if (!item) return null;

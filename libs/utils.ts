@@ -65,19 +65,28 @@ export const getCategory = <T extends ProductCategories | StoryCategories>(
   return { ...category, kebabValue };
 };
 
-export const getProductCondition = (product: Partial<GetProductsDetailResponse["product"]> | null, userId?: number): ProductCondition | null => {
-  if (!product) return null;
-  const myRole = userId && userId === product?.userId ? "sellUser" : "purchaseUser";
-  const partnerRole = userId && myRole !== "sellUser" ? "sellUser" : "purchaseUser";
+export const getProductCondition = (product: Partial<GetProductsDetailResponse["product"]> | null, userId: number | null = null): ProductCondition | null => {
+  if (!product || !product?.records) return null;
+  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase);
+  const myRole = userId === null ? "unknown" : userId === product?.userId ? "sellUser" : userId === purchaseRecord?.userId ? "purchaseUser" : "unrelatedUser";
+  const partnerRole = userId === null ? "unknown" : myRole === "unrelatedUser" || !purchaseRecord ? "unrelatedUser" : myRole === "sellUser" ? "purchaseUser" : "sellUser";
+  const partnerUserId = partnerRole === "unknown" ? null : partnerRole === "sellUser" ? product?.userId : partnerRole === "purchaseUser" ? purchaseRecord?.userId : null;
+
   return {
-    role: { myRole, partnerRole },
-    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike).length,
-    chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0).length,
+    role: { myRole, partnerRole, partnerUserId: partnerUserId || null },
+    ...(product?.reviews && (myRole === "sellUser" || myRole === "purchaseUser")
+      ? {
+          review: {
+            sentReviewId: product?.reviews?.find((review) => review.role === myRole && review[`${myRole}Id`] === userId)?.id || null,
+            receiveReviewId: product?.reviews?.find((review) => review.role === partnerRole && review[`${myRole}Id`] === userId)?.id || null,
+          },
+        }
+      : {}),
+    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike)?.length || 0,
+    chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0)?.length || 0,
     isLike: Boolean(product?.records?.find((record) => record.kind === Kind.ProductLike && record.userId === userId)),
     isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
     isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),
-    sentReviewId: product?.reviews?.find((review) => review.role === myRole && review[`${myRole}Id`] === userId)?.id || null,
-    receiveReviewId: product?.reviews?.find((review) => review.role === partnerRole && review[`${myRole}Id`] === userId)?.id || null,
   };
 };
 

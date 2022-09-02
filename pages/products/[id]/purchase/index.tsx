@@ -226,17 +226,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // redirect `/reviews/${sentReviewId}`
-  if (productCondition?.isPurchase && productCondition?.sentReviewId) {
+  if (productCondition?.isPurchase && productCondition?.review?.sentReviewId) {
     return {
       redirect: {
         permanent: false,
-        destination: `/reviews/${productCondition.sentReviewId}`,
+        destination: `/reviews/${productCondition?.review?.sentReviewId}`,
       },
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.isPurchase && !productCondition?.sentReviewId) {
+  // redirect `/products/${productId}/review`
+  if (productCondition?.review?.receiveReviewId) {
     return {
       redirect: {
         permanent: false,

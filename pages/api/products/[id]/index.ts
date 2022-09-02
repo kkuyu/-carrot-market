@@ -7,17 +7,17 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 export interface ProductCondition {
-  role?: {
-    myRole: "sellUser" | "purchaseUser";
-    partnerRole: "sellUser" | "purchaseUser";
+  role: {
+    myRole: "sellUser" | "purchaseUser" | "unrelatedUser" | "unknown";
+    partnerRole: "sellUser" | "purchaseUser" | "unrelatedUser" | "unknown";
+    partnerUserId: number | null;
   };
-  likes?: number;
+  likes: number;
   chats?: number;
+  review?: { sentReviewId: number | null; receiveReviewId: number | null };
   isLike: boolean;
-  isSale?: boolean;
-  isPurchase?: boolean;
-  sentReviewId?: number | null;
-  receiveReviewId?: number | null;
+  isSale: boolean;
+  isPurchase: boolean;
 }
 
 export interface GetProductsDetailResponse extends ResponseDataType {

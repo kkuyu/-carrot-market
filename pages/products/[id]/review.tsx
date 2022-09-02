@@ -6,8 +6,8 @@ import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
+import { getProductCondition, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 import getSsrUser from "@libs/server/getUser";
@@ -28,72 +28,57 @@ import EditReview, { EditReviewTypes } from "@components/forms/editReview";
 const ProductsReviewPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
-  const { changeLayout } = useLayouts();
 
+  // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+  const { data: partnerProfileData } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}` : null);
 
-  const role = user?.id === productData?.product.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = productData?.product?.records?.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = productData?.product?.records?.find((record) => record.kind === Kind.ProductPurchase);
-  const existedReview = productData?.product?.reviews.find((review) => review.role === role && review[`${role}Id`] === user?.id);
-
-  const { data: sellUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? user?.id : productData?.product?.userId}` : null);
-  const { data: purchaseUser } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${role === "sellUser" ? purchaseRecord?.userId : user?.id}` : null);
-
-  const formData = useForm<EditReviewTypes>({
-    defaultValues: {
-      role: role,
-    },
-  });
-
+  // mutation data
   const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
     onSuccess: (data) => {
       router.replace(`/reviews/${data.review?.id}`);
     },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+  });
+
+  // review form
+  const formData = useForm<EditReviewTypes>({
+    defaultValues: {
+      role: productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser",
+      productId: productData?.product?.id,
+      sellUserId: productData?.productCondition?.role?.myRole === "sellUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!,
+      purchaseUserId: productData?.productCondition?.role?.myRole === "purchaseUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!,
     },
   });
 
+  // update: productReviews
   const submitReview = (data: EditReviewTypes) => {
     if (!user || loading) return;
     uploadReview({
       ...data,
-      purchaseUserId: purchaseUser?.profile?.id,
-      sellUserId: sellUser?.profile?.id,
-      productId: productData?.product?.id,
     });
   };
 
   useEffect(() => {
-    if (!role) return;
-    formData.setValue("role", role);
-  }, [role]);
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
+    if (!productData?.product) return;
+    if (!productData?.productCondition) return;
+    formData.setValue("productId", productData?.product?.id);
+    formData.setValue("role", productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser");
+    formData.setValue("sellUserId", productData?.productCondition?.role?.myRole === "sellUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!);
+    formData.setValue("purchaseUserId", productData?.productCondition?.role?.myRole === "purchaseUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!);
+  }, [productData?.product, productData?.productCondition]);
 
   if (!productData?.product) return null;
 
   return (
-    <div className="container pb-5">
+    <div className="">
       {/* 제품정보 */}
-      <div className="block -mx-5 px-5 py-3 bg-gray-200">
+      <div className="block px-5 py-3 bg-gray-200">
         <Link href={`/products/${productData?.product?.id}`}>
           <a className="">
-            <ProductSummary item={productData?.product} />
+            <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
           </a>
         </Link>
-        {role === "sellUser" && !productData?.product?.reviews.length && (
+        {productData?.productCondition?.role?.myRole === "sellUser" && !productData?.product?.reviews?.length && (
           <div className="mt-2">
             <Link href={`/products/${productData?.product?.id}/purchase`} passHref>
               <Buttons tag="a" status="default" size="sm" className="!inline-block !w-auto">
@@ -104,27 +89,21 @@ const ProductsReviewPage: NextPage = () => {
         )}
       </div>
 
-      {/* 안내 */}
-      <div className="mt-5">
-        {role === "sellUser" ? (
+      <div className="container pb-5">
+        {/* 안내 */}
+        <div className="mt-5">
           <strong className="text-lg">
-            {`${sellUser?.profile?.name}님,`}
+            {`${user?.name}님,`}
             <br />
-            {`${purchaseUser?.profile?.name}님과 거래가 어떠셨나요?`}
+            {`${partnerProfileData?.profile?.name}님과 거래가 어떠셨나요?`}
           </strong>
-        ) : role === "purchaseUser" ? (
-          <strong className="text-lg">
-            {`${purchaseUser?.profile?.name}님,`}
-            <br />
-            {`${sellUser?.profile?.name}님과 거래가 어떠셨나요?`}
-          </strong>
-        ) : null}
-        <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
-      </div>
+          <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
+        </div>
 
-      {/* 리뷰 */}
-      <div className="mt-5">
-        <EditReview formData={formData} onValid={submitReview} />
+        {/* 리뷰 */}
+        <div className="mt-5">
+          <EditReview formData={formData} onValid={submitReview} />
+        </div>
       </div>
     </div>
   );
@@ -134,8 +113,8 @@ const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProduct: { response: GetProductsDetailResponse };
   getProfile: { response: GetProfilesDetailResponse };
-  getOtherProfile: { response: GetProfilesDetailResponse };
-}> = ({ getUser, getProduct, getProfile, getOtherProfile }) => {
+  getPartnerProfile: { response: GetProfilesDetailResponse };
+}> = ({ getUser, getProduct, getProfile, getPartnerProfile }) => {
   return (
     <SWRConfig
       value={{
@@ -143,7 +122,7 @@ const Page: NextPageWithLayout<{
           "/api/user": getUser.response,
           [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
-          [`/api/profiles/${getOtherProfile.response.profile.id}`]: getOtherProfile.response,
+          [`/api/profiles/${getPartnerProfile.response.profile.id}`]: getPartnerProfile.response,
         },
       }}
     >
@@ -194,9 +173,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     },
     include: {
       records: {
-        where: {
-          OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductPurchase }],
-        },
         select: {
           id: true,
           kind: true,
@@ -228,15 +204,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // condition
-  const role = ssrUser?.profile?.id === product?.userId ? "sellUser" : "purchaseUser";
-  const saleRecord = product?.records?.find((record) => record.kind === Kind.ProductSale);
-  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase);
-  const existedReview = product?.reviews?.find((review) => review.role === role && review[`${role}Id`] === ssrUser?.profile?.id);
+  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
   // invalidCondition
   let invalidCondition = false;
-  if (saleRecord) invalidCondition = true;
-  if (ssrUser?.profile?.id !== product?.userId && ssrUser?.profile?.id !== purchaseRecord?.userId) invalidCondition = true;
+  if (productCondition?.isSale) invalidCondition = true;
+  if (productCondition?.role?.myRole !== "sellUser" && productCondition?.role?.myRole !== "purchaseUser") invalidCondition = true;
   // redirect `/products/${productId}`
   if (invalidCondition) {
     return {
@@ -248,7 +221,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // redirect `/products/${productId}/purchase`
-  if (!purchaseRecord) {
+  if (!productCondition?.isPurchase) {
     return {
       redirect: {
         permanent: false,
@@ -257,27 +230,39 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/reviews/${existedReview.id}`
-  if (purchaseRecord && existedReview) {
+  // redirect `/reviews/${productCondition?.review?.sentReviewId}`
+  if (productCondition?.isPurchase && productCondition?.review?.sentReviewId) {
     return {
       redirect: {
         permanent: false,
-        destination: `/reviews/${existedReview.id}`,
+        destination: `/reviews/${productCondition?.review?.sentReviewId}`,
       },
     };
   }
 
-  // getOtherProfile
-  const otherProfile = await client.user.findUnique({
-    where: {
-      id: role === "sellUser" ? purchaseRecord.userId : product?.userId,
-    },
-  });
+  // getPartnerProfile
+  const partnerProfile = productCondition?.role?.partnerUserId
+    ? await client.user.findUnique({
+        where: {
+          id: productCondition?.role?.partnerUserId,
+        },
+      })
+    : null;
+
+  // redirect `/products/${productId}`
+  if (!partnerProfile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "거래 후기 보내기 | 중고거래",
+      title: `거래 후기 보내기 | ${truncateStr(product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "거래 후기 보내기",
@@ -299,6 +284,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
+          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
       getProfile: {
@@ -307,10 +293,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
         },
       },
-      getOtherProfile: {
+      getPartnerProfile: {
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(otherProfile || {})),
+          profile: JSON.parse(JSON.stringify(partnerProfile || {})),
         },
       },
     },

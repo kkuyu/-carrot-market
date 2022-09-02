@@ -66,10 +66,10 @@ const ProductsDeletePage: NextPage = () => {
           <li className="text-notice">
             <span>대화중인 채팅방이 삭제돼요.</span>
             <div className="mt-1 space-x-2">
-              {productData.productCondition && Boolean(productData.productCondition.chats) && (
+              {productData?.productCondition && Boolean(productData?.productCondition?.chats) && (
                 <Link href={`/products/${router.query.id}/chats`} passHref>
                   <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
-                    채팅방으로 이동
+                    채팅방 보기
                   </Buttons>
                 </Link>
               )}
@@ -78,17 +78,17 @@ const ProductsDeletePage: NextPage = () => {
           <li className="text-notice">
             <span>서로 주고받은 거래후기가 취소돼요</span>
             <div className="mt-1 space-x-2">
-              {productData.productCondition && Boolean(productData.productCondition.sentReviewId) && (
-                <Link href={`/reviews/${productData.productCondition.sentReviewId}`} passHref>
+              {productData?.productCondition && Boolean(productData?.productCondition?.review?.sentReviewId) && (
+                <Link href={`/reviews/${productData?.productCondition?.review?.sentReviewId}`} passHref>
                   <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
-                    보낸 후기로 이동
+                    보낸 후기 보기
                   </Buttons>
                 </Link>
               )}
-              {productData.productCondition && Boolean(productData.productCondition.receiveReviewId) && (
-                <Link href={`/reviews/${productData.productCondition.receiveReviewId}`} passHref>
+              {productData.productCondition && Boolean(productData?.productCondition?.review?.receiveReviewId) && (
+                <Link href={`/reviews/${productData?.productCondition?.review?.receiveReviewId}`} passHref>
                   <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
-                    받은 후기로 이동
+                    받은 후기 보기
                   </Buttons>
                 </Link>
               )}

@@ -9,7 +9,10 @@ import TextAreas from "@components/textareas";
 import CheckBoxes from "@components/checkBoxes";
 
 export interface EditReviewTypes {
+  productId: number;
   role: "sellUser" | "purchaseUser";
+  sellUserId: number;
+  purchaseUserId: number;
   satisfaction: ReviewSatisfactionEnum;
   manners: ReviewMannersEnum[];
   text: string;
