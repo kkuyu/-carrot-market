@@ -6,7 +6,7 @@ import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getCategory, getProductCondition, truncateStr } from "@libs/utils";
+import { getProductCondition, truncateStr } from "@libs/utils";
 import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
@@ -14,7 +14,6 @@ import useModal from "@libs/client/useModal";
 import useTimeDiff from "@libs/client/useTimeDiff";
 import client from "@libs/server/client";
 // @api
-import { ProductCategories } from "@api/products/types";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { GetProductsDetailRecommendsResponse } from "@api/products/[id]/recommends";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
@@ -41,47 +40,46 @@ const ProductsDetailPage: NextPage = () => {
   const { openModal } = useModal();
 
   // fetch data
-  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
   const { data: recommendsData } = useSWR<GetProductsDetailRecommendsResponse>(router.query.id ? `/api/products/${router.query.id}/recommends` : null);
 
   // mutation data
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
+  const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
     onSuccess: async (data) => {
       if (!data.recordSale) {
-        await productMutate();
+        await mutateProduct();
         router.push(`/products/${router.query.id}/purchase`);
       } else {
-        productMutate();
+        mutateProduct();
       }
     },
   });
-  const [createChat, { loading: createChatLoading }] = useMutation<PostChatsResponse>(`/api/chats`, {
+  const [createChat, { loading: loadingChat }] = useMutation<PostChatsResponse>(`/api/chats`, {
     onSuccess: (data) => {
       router.push(`/chats/${data.chat.id}`);
     },
   });
 
   // visible data: default
-  const { isMounted, timeState } = useTimeDiff(productData ? productData?.product?.createdAt.toString() : null);
-  const category = productData && getCategory<ProductCategories>(productData?.product?.category);
+  const { isMounted, timeState } = useTimeDiff(productData?.product?.createdAt.toString() || null);
 
   // update: record sale
   const toggleSale = () => {
     if (!productData?.product) return;
-    if (saleLoading) return;
+    if (loadingProductSale) return;
     const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product!, user?.id);
-    productMutate((prev) => {
+    mutateProduct((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      if (currentCondition?.isSale) records.filter((record) => record.kind !== Kind.ProductSale);
-      if (!currentCondition?.isSale) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...currentCondition!, isSale: !currentCondition?.isSale } };
+      if (currentCondition?.isSale) records = records.filter((record) => record.kind !== Kind.ProductSale);
+      if (!currentCondition?.isSale) records = [...records, { id: 0, kind: Kind.ProductSale, userId: user?.id! }];
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: getProductCondition({ ...productData?.product, records }, user?.id) };
     }, false);
-    updateSale({ sale: !currentCondition?.isSale });
+    updateProductSale({ sale: !currentCondition?.isSale });
   };
 
   // update: create chat
   const clickChat = () => {
-    if (createChatLoading) return;
+    if (loadingChat) return;
     createChat({
       userIds: [user?.id, productData?.product?.user?.id],
       productId: productData?.product?.id,
@@ -180,10 +178,10 @@ const ProductsDetailPage: NextPage = () => {
               {productData?.product?.name}
             </h1>
             <div className="mt-1 text-description text-sm">
-              {category?.text ? (
-                <Link href={`/products/categories/${category.kebabValue}`} passHref>
+              {productData?.productCondition?.category ? (
+                <Link href={`/products/categories/${productData?.productCondition?.category?.kebabCaseValue}`} passHref>
                   <Buttons tag="a" sort="text-link" size="sm" status="unset" className="underline">
-                    {category?.text}
+                    {productData?.productCondition?.category?.text}
                   </Buttons>
                 </Link>
               ) : null}

@@ -40,7 +40,7 @@ const ProductsPurchasePage: NextPage = () => {
   const chats = data ? data.flatMap((item) => item.chats) : null;
 
   // mutation data
-  const [updatePurchase, { loading: updatePurchaseLoading }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
+  const [updateProductPurchase, { loading: loadingProductPurchase }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
     onSuccess: () => {
       router.replace(`/products/${router.query.id}/review`);
     },
@@ -48,8 +48,8 @@ const ProductsPurchasePage: NextPage = () => {
 
   // update: record purchase
   const purchaseItem = (item: GetChatsResponse["chats"][number], chatUser: GetChatsResponse["chats"][number]["users"][number]) => {
-    if (updatePurchaseLoading) return;
-    updatePurchase({ purchase: true, purchaseUserId: chatUser.id });
+    if (loadingProductPurchase) return;
+    updateProductPurchase({ purchase: true, purchaseUserId: chatUser.id });
   };
 
   useEffect(() => {
@@ -105,6 +105,7 @@ const ProductsPurchasePage: NextPage = () => {
         {/* 최근 채팅 목록: InfiniteRef */}
         <div id="infiniteRef" ref={infiniteRef} />
 
+        {/* 구매자 찾기 */}
         {chats && (!Boolean(chats.length) || isReachingEnd) && (
           <div className="text-center">
             <Link href={`/products/${router.query.id}/purchase`} passHref>

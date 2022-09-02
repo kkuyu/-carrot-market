@@ -86,9 +86,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       orderBy: category.value === "POPULAR_PRODUCT" ? [{ records: { _count: "desc" } }, { resumeAt: "desc" }] : { resumeAt: "desc" },
       include: {
         records: {
-          where: {
-            OR: [{ kind: Kind.ProductSale }, { kind: Kind.ProductLike }],
-          },
           select: {
             id: true,
             kind: true,

@@ -23,17 +23,17 @@ const ProductsUploadPage: NextPage = () => {
   const { user, currentAddr } = useUser();
 
   // mutation data
-  const [uploadProduct, { loading }] = useMutation<PostProductsResponse>("/api/products", {
+  const [uploadProduct, { loading: loadingProduct }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
       router.replace(`/products/${data.product.id}`);
     },
     onCompleted: () => {
-      setSubmitLoading(false);
+      setIsLoading(false);
     },
   });
 
   // form data
-  const [submitLoading, setSubmitLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,
@@ -43,12 +43,12 @@ const ProductsUploadPage: NextPage = () => {
 
   // update: product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
-    if (!user || loading || submitLoading) return;
+    if (!user || loadingProduct || isLoading) return;
     if (!currentPhotoFiles?.length) {
       uploadProduct({ ...data, photos: [], ...currentAddr });
       return;
     }
-    setSubmitLoading(true);
+    setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, fileOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
     uploadProduct({ ...data, photos: validPaths, ...currentAddr });
@@ -56,7 +56,7 @@ const ProductsUploadPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="upload-product" formData={formData} onValid={submitProduct} isLoading={loading || submitLoading} fileOptions={fileOptions} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditProduct formId="upload-product" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} fileOptions={fileOptions} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };

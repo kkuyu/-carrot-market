@@ -36,14 +36,12 @@ const EditProduct = (props: EditProductProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, fileOptions, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue, getValues } = formData;
 
-  const productCategories = Object.values(ProductCategory)
-    .map(
-      (category) =>
-        getCategory<ProductCategories>(category, {
-          excludeCategory: [ProductCategory["POPULAR_PRODUCT"]],
-        })!
-    )
-    .filter((category) => category);
+  const productCategories = Object.values(ProductCategory).map(
+    (category) =>
+      getCategory<ProductCategories>(category, {
+        excludeCategory: [ProductCategory["POPULAR_PRODUCT"]],
+      })!
+  );
 
   return (
     <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
@@ -89,7 +87,7 @@ const EditProduct = (props: EditProductProps) => {
           initialValue={formData.getValues("category")}
           updateValue={(value) => setValue("category", value)}
           placeholder="카테고리를 선택해주세요"
-          optionGroups={[{ label: "카테고리 선택", options: [...productCategories] }]}
+          optionGroups={[{ label: "카테고리 선택", options: [...productCategories.filter((category) => !!category)] }]}
           required
           name="category"
         />

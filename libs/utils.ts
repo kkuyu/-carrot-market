@@ -52,28 +52,29 @@ export const getRandomName = () => {
 export const getCategory = <T extends ProductCategories | StoryCategories>(
   categoryStr: string = "",
   options?: { excludeCategory: (ProductCategories | StoryCategories | string)[] }
-): (T[number] & { kebabValue: string }) | null => {
+): (T[number] & { kebabCaseValue: string }) | null => {
   let category = null;
-  const kebabValue = categoryStr.toLowerCase().replace(/_/g, "-");
+  const kebabCaseValue = categoryStr.toLowerCase().replace(/_/g, "-");
   const screamingSnakeValue = categoryStr.toUpperCase().replace(/-/g, "_");
-
   if (isInstance(screamingSnakeValue, ProductCategory)) category = ProductCategories.find((v) => v.value === screamingSnakeValue)!;
   if (isInstance(screamingSnakeValue, StoryCategory)) category = StoryCategories.find((v) => v.value === screamingSnakeValue)!;
-
   if (!category) return null;
   if (options?.excludeCategory?.includes(category.value)) return null;
-  return { ...category, kebabValue };
+  return { ...category, kebabCaseValue };
 };
 
 export const getProductCondition = (product: Partial<GetProductsDetailResponse["product"]> | null, userId: number | null = null): ProductCondition | null => {
   if (!product || !product?.records) return null;
-  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase);
+  const category = getCategory<ProductCategories>(product?.category);
+  const purchaseRecord = product?.records?.find((record) => record.kind === Kind.ProductPurchase) || null;
   const myRole = userId === null ? "unknown" : userId === product?.userId ? "sellUser" : userId === purchaseRecord?.userId ? "purchaseUser" : "unrelatedUser";
   const partnerRole = userId === null ? "unknown" : myRole === "unrelatedUser" || !purchaseRecord ? "unrelatedUser" : myRole === "sellUser" ? "purchaseUser" : "sellUser";
   const partnerUserId = partnerRole === "unknown" ? null : partnerRole === "sellUser" ? product?.userId : partnerRole === "purchaseUser" ? purchaseRecord?.userId : null;
-
   return {
     role: { myRole, partnerRole, partnerUserId: partnerUserId || null },
+    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike)?.length || 0,
+    ...(category ? { category } : {}),
+    ...(product?.chats ? { chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0)?.length || 0 } : {}),
     ...(product?.reviews && (myRole === "sellUser" || myRole === "purchaseUser")
       ? {
           review: {
@@ -82,8 +83,6 @@ export const getProductCondition = (product: Partial<GetProductsDetailResponse["
           },
         }
       : {}),
-    likes: product?.records?.filter((record) => record.kind === Kind.ProductLike)?.length || 0,
-    chats: product?.chats?.filter((chat) => chat._count.chatMessages > 0)?.length || 0,
     isLike: Boolean(product?.records?.find((record) => record.kind === Kind.ProductLike && record.userId === userId)),
     isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
     isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),

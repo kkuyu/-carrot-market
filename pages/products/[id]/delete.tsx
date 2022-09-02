@@ -30,7 +30,7 @@ const ProductsDeletePage: NextPage = () => {
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
   // mutation data
-  const [deleteProduct, { loading: deleteLoading }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
+  const [deleteProduct, { loading: loadingProduct }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
     onSuccess: async () => {
       const options = { url: `/api/profiles/${user?.id}/products/all` };
       await mutate(unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey<GetProfilesProductsResponse>(...arg, options)));
@@ -40,7 +40,7 @@ const ProductsDeletePage: NextPage = () => {
 
   // delete: product
   const clickDelete = () => {
-    if (deleteLoading) return;
+    if (loadingProduct) return;
     deleteProduct({});
   };
 
@@ -96,7 +96,7 @@ const ProductsDeletePage: NextPage = () => {
           </li>
         </ul>
 
-        <Buttons tag="button" type="button" onClick={clickDelete} disabled={deleteLoading} className="mt-5">
+        <Buttons tag="button" type="button" onClick={clickDelete} disabled={loadingProduct} className="mt-5">
           삭제하기
         </Buttons>
       </div>

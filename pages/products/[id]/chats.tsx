@@ -44,33 +44,35 @@ const ProductsChatsPage: NextPage = () => {
   }, [data, router.query.id]);
 
   return (
-    <div className="container">
+    <div className="">
       {/* 제품정보 */}
       {productData?.product && (
         <Link href={`/products/${productData?.product.id}`}>
-          <a className="block -mx-5 px-5 py-3 bg-gray-200">
+          <a className="block px-5 py-3 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
           </a>
         </Link>
       )}
 
-      {/* 채팅: List */}
-      {chats && Boolean(chats.length) && (
-        <div className="-mx-5">
-          <ChatList type="link" list={chats} sort="message" isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true }} className="border-b" />
-          {isReachingEnd ? <span className="list-loading">채팅을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">채팅을 불러오고있어요</span> : null}
-        </div>
-      )}
+      <div className="container">
+        {/* 채팅: List */}
+        {chats && Boolean(chats.length) && (
+          <>
+            <ChatList type="link" list={chats} sort="message" isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true }} className="-mx-5 border-b" />
+            <span className="empty:hidden list-loading">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : null}</span>
+          </>
+        )}
 
-      {/* 채팅: Empty */}
-      {chats && !Boolean(chats.length) && (
-        <div className="list-empty">
-          <>채팅한 이웃이 없어요</>
-        </div>
-      )}
+        {/* 채팅: Empty */}
+        {chats && !Boolean(chats.length) && (
+          <p className="list-empty">
+            <>채팅한 이웃이 없어요</>
+          </p>
+        )}
 
-      {/* 채팅: InfiniteRef */}
-      <div id="infiniteRef" ref={infiniteRef} />
+        {/* 채팅: InfiniteRef */}
+        <div id="infiniteRef" ref={infiniteRef} />
+      </div>
     </div>
   );
 };

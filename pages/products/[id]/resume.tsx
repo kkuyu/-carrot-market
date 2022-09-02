@@ -41,7 +41,7 @@ const ProductsResumePage: NextPage = () => {
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
   // mutation data
-  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [editProduct, { loading: loadingProduct }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: async () => {
       const options = { url: `/api/profiles/${user?.id}/products/all` };
       await mutate(unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey<GetProfilesProductsResponse>(...arg, options)));
@@ -62,7 +62,7 @@ const ProductsResumePage: NextPage = () => {
 
   // update: product
   const submitProduct = ({ currentPrice, originalPrice, ...data }: ResumeProductTypes) => {
-    if (!user || loading) return;
+    if (!user || loadingProduct) return;
     editProduct({
       ...data,
       resume: true,
@@ -157,7 +157,7 @@ const ProductsResumePage: NextPage = () => {
               지금 끌어올리시겠어요?
             </strong>
             <div className="mt-4">
-              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loading} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
+              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loadingProduct} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
             </div>
           </>
         )}
@@ -170,7 +170,7 @@ const ProductsResumePage: NextPage = () => {
               가격을 낮춰보세요
             </strong>
             <div className="mt-4">
-              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loading} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
+              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loadingProduct} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
             </div>
           </>
         )}

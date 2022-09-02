@@ -31,15 +31,15 @@ const HandleProduct = (props: HandleProductProps) => {
   const { openModal } = useModal();
 
   // fetch data
-  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
     ...(item ? { fallbackData: { success: true, product: item, productCondition: getProductCondition(item, user?.id) } } : {}),
   });
 
   // mutation data
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
+  const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: async (data) => {
       if (!data.recordSale) {
-        await productMutate();
+        await mutateProduct();
         router.push(`/products/${item?.id}/purchase`);
       } else {
         router.push(`/products/${item?.id}`);
@@ -50,8 +50,8 @@ const HandleProduct = (props: HandleProductProps) => {
   // update: record sale
   const toggleSale = () => {
     if (!productData?.product) return;
-    if (saleLoading) return;
-    updateSale({ sale: !productData?.productCondition?.isSale });
+    if (loadingProductSale) return;
+    updateProductSale({ sale: !productData?.productCondition?.isSale });
   };
 
   // modal: ConfirmSoldToSale
@@ -98,7 +98,7 @@ const HandleProduct = (props: HandleProductProps) => {
             : modalActions.filter((action) => ["sale", "update", "delete", "cancel"].includes(action.key)),
         });
       }}
-      disabled={saleLoading}
+      disabled={loadingProductSale}
       className={`absolute top-0 right-0 ${className}`}
       {...restProps}
       aria-label="옵션 더보기"

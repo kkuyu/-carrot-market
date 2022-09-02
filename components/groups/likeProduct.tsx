@@ -29,29 +29,29 @@ const LikeProduct = (props: LikeProductProps) => {
   const { openModal } = useModal();
 
   // fetch data
-  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
     ...(item ? { fallbackData: { success: true, product: item, productCondition: getProductCondition(item, user?.id) } } : {}),
   });
 
   // mutation data
-  const [updateLike, { loading: likeLoading }] = useMutation<PostProductsLikeResponse>(`/api/products/${item?.id}/like`, {
+  const [updateProductLike, { loading: loadingProductLike }] = useMutation<PostProductsLikeResponse>(`/api/products/${item?.id}/like`, {
     onSuccess: async () => {
-      await productMutate();
+      await mutateProduct();
     },
   });
 
   // update: record like
   const toggleLike = () => {
     if (!productData?.product) return;
-    if (likeLoading) return;
+    if (loadingProductLike) return;
     const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product!, user?.id);
-    productMutate((prev) => {
+    mutateProduct((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      if (currentCondition?.isLike) records.filter((record) => record.kind !== Kind.ProductLike && record.userId !== user?.id);
-      if (!currentCondition?.isLike) records.push({ id: 0, kind: Kind.ProductSale, userId: user?.id! });
-      return prev && { ...prev, product: { ...prev.product, records }, productCondition: { ...currentCondition!, isLike: !currentCondition?.isLike } };
+      if (currentCondition?.isLike) records = records.filter((record) => record.kind !== Kind.ProductLike && record.userId !== user?.id);
+      if (!currentCondition?.isLike) records = [...records, { id: 0, kind: Kind.ProductSale, userId: user?.id! }];
+      return prev && { ...prev, product: { ...prev.product, records }, productCondition: getProductCondition({ ...productData?.product, records }, user?.id) };
     }, false);
-    updateLike({ like: !currentCondition?.isLike });
+    updateProductLike({ like: !currentCondition?.isLike });
   };
 
   if (!item) return null;
@@ -69,7 +69,7 @@ const LikeProduct = (props: LikeProductProps) => {
         if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
         if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
       }}
-      disabled={likeLoading}
+      disabled={loadingProductLike}
       {...restProps}
       aria-label={`관심상품 ${productData?.productCondition?.isLike ? "취소" : "추가"}`}
     >

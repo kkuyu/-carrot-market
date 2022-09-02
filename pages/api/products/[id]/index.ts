@@ -5,6 +5,8 @@ import { getProductCondition } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+// @api
+import { ProductCategories } from "@api/products/types";
 
 export interface ProductCondition {
   role: {
@@ -13,6 +15,7 @@ export interface ProductCondition {
     partnerUserId: number | null;
   };
   likes: number;
+  category?: ProductCategories[number] & { kebabCaseValue: string };
   chats?: number;
   review?: { sentReviewId: number | null; receiveReviewId: number | null };
   isLike: boolean;

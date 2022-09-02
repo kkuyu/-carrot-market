@@ -26,15 +26,15 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   const { user } = useUser();
 
   // fetch data
-  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(item?.id ? `/api/products/${item.id}` : null, {
     ...(item ? { fallbackData: { success: true, product: item, productCondition: getProductCondition(item, user?.id) } } : {}),
   });
 
   // mutation data
-  const [updateSale, { loading: saleLoading }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
+  const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: async (data) => {
       if (!data.recordSale) {
-        await productMutate();
+        await mutateProduct();
         router.push(`/products/${item?.id}/purchase`);
       } else {
         router.push(`/products/${item?.id}`);
@@ -45,8 +45,8 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   // update: record sale
   const toggleSale = () => {
     if (!productData?.product) return;
-    if (saleLoading) return;
-    updateSale({ sale: !productData?.productCondition?.isSale });
+    if (loadingProductSale) return;
+    updateProductSale({ sale: !productData?.productCondition?.isSale });
   };
 
   if (!productData?.product) return null;
@@ -73,10 +73,10 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
     <div className={`empty:pt-9 flex border-t divide-x ${className}`} {...restProps}>
       {productData?.product && productData?.productCondition?.isSale && (
         <>
-          <CustomFeedbackButton onClick={() => router.push(`/products/${productData?.product?.id}/resume`)} disabled={saleLoading}>
+          <CustomFeedbackButton onClick={() => router.push(`/products/${productData?.product?.id}/resume`)} disabled={loadingProductSale}>
             끌어올리기
           </CustomFeedbackButton>
-          <CustomFeedbackButton onClick={toggleSale} disabled={saleLoading}>
+          <CustomFeedbackButton onClick={toggleSale} disabled={loadingProductSale}>
             판매완료
           </CustomFeedbackButton>
         </>

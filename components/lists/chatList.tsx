@@ -20,8 +20,7 @@ const ChatList = (props: ChatListProps) => {
 
   if (!Boolean(list.length)) return null;
 
-  // custom component
-  const ListItem = (itemProps: { item: ChatItem; users: ChatItem["users"] } & HTMLAttributes<HTMLLIElement>) => {
+  const CustomListItem = (itemProps: { item: ChatItem; users: ChatItem["users"] } & HTMLAttributes<HTMLLIElement>) => {
     const { item, users, className: itemClassName = "", children, ...itemRestProps } = itemProps;
     if (type === "button" && !selectItem) console.error("ListItem", item);
     return (
@@ -49,16 +48,16 @@ const ChatList = (props: ChatListProps) => {
           const validUsers = item.users.filter((chatUser) => chatUser.id !== user?.id);
           if (!isVisibleSingleUser) {
             return (
-              <ListItem key={item.id} item={item} users={validUsers}>
+              <CustomListItem key={item.id} item={item} users={validUsers}>
                 <Chat item={item} sort={sort} users={validUsers} {...cardProps} />
-              </ListItem>
+              </CustomListItem>
             );
           }
           return validUsers.map((validUser) => {
             return (
-              <ListItem key={`${item.id}-${validUser.id}`} item={item} users={[validUser]}>
+              <CustomListItem key={`${item.id}-${validUser.id}`} item={item} users={[validUser]}>
                 <Chat item={item} sort={sort} users={validUsers} {...cardProps} />
-              </ListItem>
+              </CustomListItem>
             );
           });
         })}

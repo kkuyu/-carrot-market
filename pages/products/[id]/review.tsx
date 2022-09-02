@@ -34,7 +34,7 @@ const ProductsReviewPage: NextPage = () => {
   const { data: partnerProfileData } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}` : null);
 
   // mutation data
-  const [uploadReview, { loading }] = useMutation<PostReviewsResponse>("/api/reviews", {
+  const [uploadReview, { loading: loadingReview }] = useMutation<PostReviewsResponse>("/api/reviews", {
     onSuccess: (data) => {
       router.replace(`/reviews/${data.review?.id}`);
     },
@@ -52,7 +52,7 @@ const ProductsReviewPage: NextPage = () => {
 
   // update: productReviews
   const submitReview = (data: EditReviewTypes) => {
-    if (!user || loading) return;
+    if (!user || loadingReview) return;
     uploadReview({
       ...data,
     });
@@ -89,16 +89,14 @@ const ProductsReviewPage: NextPage = () => {
         )}
       </div>
 
-      <div className="container pb-5">
+      <div className="container pt-5 pb-5">
         {/* 안내 */}
-        <div className="mt-5">
-          <strong className="text-lg">
-            {`${user?.name}님,`}
-            <br />
-            {`${partnerProfileData?.profile?.name}님과 거래가 어떠셨나요?`}
-          </strong>
-          <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
-        </div>
+        <strong className="text-lg">
+          {user?.name}님,
+          <br />
+          {partnerProfileData?.profile?.name ? `${partnerProfileData?.profile?.name}님과 거래가 어떠셨나요?` : `거래가 어떠셨나요?`}
+        </strong>
+        <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
 
         {/* 리뷰 */}
         <div className="mt-5">

@@ -26,7 +26,7 @@ const Product = (props: ProductProps) => {
   const { user } = useUser();
 
   // visible data: default
-  const { isMounted, timeState } = useTimeDiff(item ? item?.resumeAt.toString() : null);
+  const { isMounted, timeState } = useTimeDiff(item?.resumeAt.toString() || null);
   const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
   const productCondition = condition ?? getProductCondition(item, user?.id);
 

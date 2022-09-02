@@ -25,21 +25,21 @@ const ProductsEditPage: NextPage = () => {
   const { user } = useUser();
 
   // fetch data
-  const { data: productData, mutate: productMutate } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
   // mutation data
-  const [editProduct, { loading }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [editProduct, { loading: loadingProduct }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: async (data) => {
-      await productMutate();
+      await mutateProduct();
       router.replace(`/products/${data.product.id}`);
     },
     onCompleted: () => {
-      setSubmitLoading(false);
+      setIsLoading(false);
     },
   });
 
   // form data
-  const [submitLoading, setSubmitLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const fileOptions = {
     maxLength: 10,
     duplicateDelete: true,
@@ -57,12 +57,12 @@ const ProductsEditPage: NextPage = () => {
 
   // update: product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
-    if (!user || loading || submitLoading) return;
+    if (!user || loadingProduct || isLoading) return;
     if (!currentPhotoFiles?.length) {
       editProduct({ ...data, photos: [] });
       return;
     }
-    setSubmitLoading(true);
+    setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, fileOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
     editProduct({ ...data, photos: validPaths });
@@ -79,7 +79,14 @@ const ProductsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="edit-product" formData={formData} onValid={submitProduct} isLoading={loading || submitLoading} fileOptions={fileOptions} emdPosNm={productData?.product?.emdPosNm || ""} />
+      <EditProduct
+        formId="edit-product"
+        formData={formData}
+        onValid={submitProduct}
+        isLoading={loadingProduct || isLoading}
+        fileOptions={fileOptions}
+        emdPosNm={productData?.product?.emdPosNm || ""}
+      />
     </div>
   );
 };
