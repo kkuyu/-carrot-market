@@ -4,7 +4,7 @@ import { EmdType, User } from "@prisma/client";
 import { getAbsoluteUrl, isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
-import { withSessionRoute, IronDummyUserType } from "@libs/server/withSession";
+import { withSessionRoute, IronUserType, IronDummyUserType } from "@libs/server/withSession";
 // @api
 import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
 
@@ -30,39 +30,51 @@ export interface PostUserRequestBody {
 
 export interface PostUserResponse extends ResponseDataType {}
 
+export const getUser = async (query: { user?: IronUserType; dummyUser?: IronDummyUserType }) => {
+  const { user, dummyUser: _dummyUser } = query;
+
+  const foundUser = user?.id
+    ? await client.user.findUnique({
+        where: {
+          id: user.id,
+        },
+      })
+    : null;
+  const dummyUser = !foundUser && _dummyUser ? _dummyUser : null;
+
+  return {
+    profile: foundUser,
+    dummyProfile: dummyUser,
+    currentAddr: {
+      emdAddrNm: foundUser?.[`${foundUser.emdType}_emdAddrNm`] ?? dummyUser?.MAIN_emdAddrNm ?? null,
+      emdPosNm: foundUser?.[`${foundUser.emdType}_emdPosNm`] ?? dummyUser?.MAIN_emdPosNm ?? null,
+      emdPosDx: foundUser?.[`${foundUser.emdType}_emdPosDx`] ?? dummyUser?.MAIN_emdPosDx ?? null,
+      emdPosX: foundUser?.[`${foundUser.emdType}_emdPosX`] ?? dummyUser?.MAIN_emdPosX ?? null,
+      emdPosY: foundUser?.[`${foundUser.emdType}_emdPosY`] ?? dummyUser?.MAIN_emdPosY ?? null,
+    },
+  };
+};
+
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { user, dummyUser: _dummyUser } = req.session;
+      const { user, dummyUser } = req.session;
 
-      if (req?.cookies?.["carrot-market-session"] && !user && !_dummyUser) {
+      if (req?.cookies?.["carrot-market-session"] && !user && !dummyUser) {
         const error = new Error("InvalidCookie");
         error.name = "InvalidCookie";
         throw error;
       }
 
       // fetch data
-      const foundUser = user?.id
-        ? await client.user.findUnique({
-            where: {
-              id: user.id,
-            },
-          })
-        : null;
-      const dummyUser = !foundUser && _dummyUser ? _dummyUser : null;
+      const { profile, dummyProfile, currentAddr } = await getUser({ user, dummyUser });
 
       // result
       const result: GetUserResponse = {
-        success: Boolean(foundUser || dummyUser),
-        profile: foundUser,
-        dummyProfile: dummyUser,
-        currentAddr: {
-          emdAddrNm: foundUser?.[`${foundUser.emdType}_emdAddrNm`] || dummyUser?.MAIN_emdAddrNm || null,
-          emdPosNm: foundUser?.[`${foundUser.emdType}_emdPosNm`] || dummyUser?.MAIN_emdPosNm || null,
-          emdPosDx: foundUser?.[`${foundUser.emdType}_emdPosDx`] || dummyUser?.MAIN_emdPosDx || null,
-          emdPosX: foundUser?.[`${foundUser.emdType}_emdPosX`] || dummyUser?.MAIN_emdPosX || null,
-          emdPosY: foundUser?.[`${foundUser.emdType}_emdPosY`] || dummyUser?.MAIN_emdPosY || null,
-        },
+        success: Boolean(profile || dummyProfile),
+        profile,
+        dummyProfile,
+        currentAddr,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {

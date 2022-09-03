@@ -19,6 +19,50 @@ export interface PostProductsResponse extends ResponseDataType {
   product: Product;
 }
 
+export const getProducts = async (query: { prevCursor: number; pageSize: number; posX: number; posY: number; distance: number }) => {
+  const { prevCursor, pageSize, posX, posY, distance } = query;
+
+  const where = {
+    emdPosX: { gte: posX - distance, lte: posX + distance },
+    emdPosY: { gte: posY - distance, lte: posY + distance },
+    records: { some: { kind: Kind.ProductSale } },
+  };
+
+  const totalCount = await client.product.count({
+    where,
+  });
+
+  const products = await client.product.findMany({
+    where,
+    take: pageSize,
+    skip: prevCursor ? 1 : 0,
+    ...(prevCursor && { cursor: { id: prevCursor } }),
+    orderBy: {
+      resumeAt: "desc",
+    },
+    include: {
+      records: {
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      chats: {
+        include: {
+          _count: {
+            select: {
+              chatMessages: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return { totalCount, products };
+};
+
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
@@ -55,53 +99,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const posX = +_posX.toString();
       const posY = +_posY.toString();
       const distance = +_distance.toString();
-      const boundaryArea = {
-        emdPosX: { gte: posX - distance, lte: posX + distance },
-        emdPosY: { gte: posY - distance, lte: posY + distance },
-      };
       if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
 
-      // search
-      const where = {
-        ...boundaryArea,
-        records: { some: { kind: Kind.ProductSale } },
-      };
-
       // fetch data
-      const totalCount = await client.product.count({
-        where,
-      });
-      const products = await client.product.findMany({
-        where,
-        take: pageSize,
-        skip: prevCursor ? 1 : 0,
-        ...(prevCursor && { cursor: { id: prevCursor } }),
-        orderBy: {
-          resumeAt: "desc",
-        },
-        include: {
-          records: {
-            select: {
-              id: true,
-              kind: true,
-              userId: true,
-            },
-          },
-          chats: {
-            include: {
-              _count: {
-                select: {
-                  chatMessages: true,
-                },
-              },
-            },
-          },
-        },
-      });
+      const { totalCount, products } = await getProducts({ prevCursor, pageSize, posX, posY, distance });
 
       // result
       const result: GetProductsResponse = {

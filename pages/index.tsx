@@ -2,17 +2,14 @@ import type { NextPage } from "next";
 import { useEffect } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
-import { Kind } from "@prisma/client";
 // @lib
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetProductsResponse } from "@api/products";
-import { GetUserResponse } from "@api/user";
+import { GetProductsResponse, getProducts } from "@api/products";
+import { GetUserResponse, getUser } from "@api/user";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -96,7 +93,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
   let invalidUser = false;
@@ -115,39 +112,20 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
-  const products =
-    !posX || !posY || !distance
-      ? []
-      : await client.product.findMany({
-          take: 10,
-          skip: 0,
-          orderBy: {
-            resumeAt: "desc",
-          },
-          where: {
-            emdPosX: { gte: posX - distance, lte: posX + distance },
-            emdPosY: { gte: posY - distance, lte: posY + distance },
-            AND: { records: { some: { kind: { in: Kind.ProductSale } } } },
-          },
-          include: {
-            records: {
-              select: {
-                id: true,
-                kind: true,
-                userId: true,
-              },
-            },
-            chats: {
-              include: {
-                _count: {
-                  select: {
-                    chatMessages: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+
+  const { products, totalCount } =
+    posX && posY && distance
+      ? await getProducts({
+          prevCursor: 0,
+          pageSize: 10,
+          posX,
+          posY,
+          distance,
+        })
+      : {
+          products: [],
+          totalCount: 0,
+        };
 
   // defaultLayout
   const defaultLayout = {
@@ -180,6 +158,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         response: {
           success: true,
+          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
           products: JSON.parse(JSON.stringify(products || [])),
         },
       },
