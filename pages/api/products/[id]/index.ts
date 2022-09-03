@@ -33,6 +33,51 @@ export interface GetProductsDetailResponse extends ResponseDataType {
   productCondition?: ProductCondition | null;
 }
 
+export const getProductsDetail = async (query: { id: number }) => {
+  const { id } = query;
+
+  const product = await client.product.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+      records: {
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      chats: {
+        include: {
+          _count: {
+            select: {
+              chatMessages: true,
+            },
+          },
+        },
+      },
+      reviews: {
+        select: {
+          id: true,
+          role: true,
+          sellUserId: true,
+          purchaseUserId: true,
+        },
+      },
+    },
+  });
+
+  return { product };
+};
+
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
@@ -54,44 +99,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const product = await client.product.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        records: {
-          select: {
-            id: true,
-            kind: true,
-            userId: true,
-          },
-        },
-        chats: {
-          include: {
-            _count: {
-              select: {
-                chatMessages: true,
-              },
-            },
-          },
-        },
-        reviews: {
-          select: {
-            id: true,
-            role: true,
-            sellUserId: true,
-            purchaseUserId: true,
-          },
-        },
-      },
-    });
+    const { product } = await getProductsDetail({ id });
     if (!product) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";

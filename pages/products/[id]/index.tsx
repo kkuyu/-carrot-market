@@ -12,9 +12,8 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 import useTimeDiff from "@libs/client/useTimeDiff";
-import client from "@libs/server/client";
 // @api
-import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
 import { GetProductsDetailRecommendsResponse } from "@api/products/[id]/recommends";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsViewsResponse } from "@api/products/[id]/views";
@@ -48,7 +47,7 @@ const ProductsDetailPage: NextPage = () => {
     onSuccess: async (data) => {
       if (!data.recordSale) {
         await mutateProduct();
-        router.push(`/products/${router.query.id}/purchase`);
+        router.push(`/products/${router.query.id}/purchase/available`);
       } else {
         mutateProduct();
       }
@@ -267,13 +266,13 @@ const ProductsDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getProduct: { response: GetProductsDetailResponse };
-}> = ({ getProduct }) => {
+  getProductsDetail: { response: GetProductsDetailResponse };
+}> = ({ getProductsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
         },
       }}
     >
@@ -295,53 +294,16 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // productId
   const productId: string = params?.id?.toString() || "";
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!productId || isNaN(+productId)) invalidUrl = true;
-  // 404
-  if (invalidUrl) {
-    return {
-      notFound: true,
-    };
-  }
-
-  // getProduct
-  const product = await client.product.findUnique({
-    where: {
-      id: +productId,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      records: {
-        select: {
-          id: true,
-          kind: true,
-          userId: true,
-        },
-      },
-      chats: {
-        include: {
-          _count: {
-            select: {
-              chatMessages: true,
-            },
-          },
-        },
-      },
-    },
-  });
-
-  // invalidProduct
-  let invalidProduct = false;
-  if (!product) invalidProduct = true;
-  // 404
-  if (invalidProduct) {
+  // getProductsDetail
+  const { product } =
+    productId && !isNaN(+productId)
+      ? await getProductsDetail({
+          id: +productId,
+        })
+      : {
+          product: null,
+        };
+  if (!product) {
     return {
       notFound: true,
     };
@@ -369,7 +331,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       defaultLayout,
-      getProduct: {
+      getProductsDetail: {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
