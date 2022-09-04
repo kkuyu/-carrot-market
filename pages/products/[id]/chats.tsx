@@ -7,13 +7,11 @@ import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
 import { getKey, getProductCondition, truncateStr } from "@libs/utils";
 import useOnScreen from "@libs/client/useOnScreen";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetChatsResponse } from "@api/chats";
-import { GetUserResponse } from "@api/user";
-import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetProductsChatsResponse, getProductsChats } from "@api/products/[id]/chats";
+import { GetUserResponse, getUser } from "@api/user";
+import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -25,9 +23,9 @@ const ProductsChatsPage: NextPage = () => {
   const router = useRouter();
 
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
-  const { data, setSize, mutate } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
-    const options = { url: "/api/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
-    return getKey<GetChatsResponse>(...arg, options);
+  const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
+    const options = { url: "/api/products/[id]/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
+    return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
@@ -58,7 +56,7 @@ const ProductsChatsPage: NextPage = () => {
         {/* 채팅: List */}
         {chats && Boolean(chats.length) && (
           <>
-            <ChatList type="link" list={chats} sort="message" isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true }} className="-mx-5 border-b" />
+            <ChatList list={chats} isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true, isVisibleLastChatMessage: true }} className="-mx-5 border-b" />
             <span className="empty:hidden list-loading">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : null}</span>
           </>
         )}
@@ -79,16 +77,18 @@ const ProductsChatsPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProductsDetailResponse };
-  getChats: { options: { url: string; query?: string }; response: GetChatsResponse };
-}> = ({ getUser, getProduct, getChats }) => {
+  getProductsDetail: { response: GetProductsDetailResponse };
+  getProductsChats: { options: { url: string; query?: string }; response: GetProductsChatsResponse };
+}> = ({ getUser, getProductsDetail, getProductsChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey<GetChatsResponse>(...arg, getChats.options))]: [getChats.response],
+          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => getKey<GetProductsChatsResponse>(...arg, getProductsChats.options))]: [
+            getProductsChats.response,
+          ],
         },
       }}
     >
@@ -101,7 +101,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // productId
   const productId: string = params?.id?.toString() || "";
@@ -119,41 +119,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!productId || isNaN(+productId)) invalidUrl = true;
-  // redirect `/products/${productId}`
-  if (invalidUrl) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // getProduct
-  const product = await client.product.findUnique({
-    where: {
-      id: +productId,
-    },
-    include: {
-      records: {
-        select: {
-          id: true,
-          kind: true,
-          userId: true,
-        },
-      },
-    },
-  });
-
-  // invalidProduct
-  let invalidProduct = false;
-  if (!product) invalidProduct = true;
-  if (ssrUser?.profile?.id !== product?.userId) invalidProduct = true;
-  // redirect `/products/${productId}`
-  if (invalidProduct) {
+  // getProductsDetail
+  const { product } =
+    productId && !isNaN(+productId)
+      ? await getProductsDetail({
+          id: +productId,
+        })
+      : {
+          product: null,
+        };
+  if (!product) {
     return {
       redirect: {
         permanent: false,
@@ -165,38 +140,29 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // condition
   const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
-  // getChats
-  const chats = ssrUser.profile
-    ? await client.chat.findMany({
-        take: 10,
-        skip: 0,
-        orderBy: {
-          updatedAt: "desc",
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          chatMessages: {
-            take: 1,
-            orderBy: {
-              updatedAt: "desc",
-            },
-          },
-        },
-        where: {
-          users: {
-            some: {
-              id: ssrUser.profile?.id,
-            },
-          },
-          productId: product?.id,
-        },
+  // redirect `/products/${productId}`
+  if (productCondition?.role?.myRole !== "sellUser") {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // getProductsChats
+  const { totalCount, chats } = req?.session?.user
+    ? await getProductsChats({
+        user: req?.session?.user,
+        prevCursor: 0,
+        pageSize: 10,
+        filter: "all",
+        productId: +productId,
       })
-    : [];
+    : {
+        totalCount: 0,
+        chats: [],
+      };
 
   // defaultLayout
   const defaultLayout = {
@@ -219,20 +185,21 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getProduct: {
+      getProductsDetail: {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
           productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
-      getChats: {
+      getProductsChats: {
         options: {
-          url: "/api/chats",
+          url: "/api/products/[id]/chats",
           query: `productId=${product?.id}`,
         },
         response: {
           success: true,
+          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
           chats: JSON.parse(JSON.stringify(chats || [])),
         },
       },

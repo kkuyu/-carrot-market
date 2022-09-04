@@ -1,7 +1,6 @@
 import type { HTMLAttributes } from "react";
-import { useEffect, useState } from "react";
 // @libs
-import { getDiffTimeStr } from "@libs/utils";
+import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { GetChatsResponse } from "@api/chats";
 // @components
@@ -12,22 +11,16 @@ export type ChatItem = GetChatsResponse["chats"][number];
 export interface ChatProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatItem;
   users: ChatItem["users"];
-  sort: "message" | "timestamp";
   isVisibleProduct?: boolean;
+  isVisibleLastChatMessage?: boolean;
 }
 
 const Chat = (props: ChatProps) => {
-  const { item, users, sort, isVisibleProduct = true, className = "", ...restProps } = props;
+  const { item, users, isVisibleProduct = true, isVisibleLastChatMessage = true, className = "", ...restProps } = props;
 
-  const [mounted, setMounted] = useState(false);
-
-  const today = new Date();
-  const createdDate = new Date(item.chatMessages[0].createdAt);
-  const diffTime = getDiffTimeStr(createdDate.getTime(), today.getTime(), { defaultValue: createdDate.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }), diffLabel: "일" });
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { isMounted, timeState } = useTimeDiff(item?.chatMessages?.[0]?.createdAt?.toString() || null, {
+    config: { diffLabel: "일", defaultValue: new Date(item?.chatMessages?.[0]?.createdAt)?.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" }) },
+  });
 
   if (!item) return null;
 
@@ -39,10 +32,9 @@ const Chat = (props: ChatProps) => {
       <div className="grow-full">
         <div className="flex items-center">
           <strong className="text-ellipsis">{users.map((user) => user.name).join(", ")}</strong>
-          {sort === "message" && mounted && diffTime && <span className="flex-none pl-1.5 text-sm text-gray-500">{diffTime}</span>}
+          <span className="flex-none pl-1.5 text-sm text-gray-500">{isMounted && timeState.diffStr ? timeState.diffStr : ""}</span>
         </div>
-        {sort === "message" && <span className="block text-ellipsis">{item.chatMessages[0].text}</span>}
-        {sort === "timestamp" && mounted && diffTime && <span className="block text-sm text-gray-500 text-ellipsis">{diffTime}</span>}
+        {isVisibleLastChatMessage && <span className="block text-ellipsis">{item.chatMessages[0].text}</span>}
       </div>
       {isVisibleProduct && Boolean(item.product?.photos.length) && (
         <div className="flex-none">

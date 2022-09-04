@@ -22,7 +22,7 @@ export interface PostChatsResponse extends ResponseDataType {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
-      const { prevCursor: _prevCursor, productId: _productId } = req.query;
+      const { prevCursor: _prevCursor } = req.query;
       const { user } = req.session;
 
       // invalid
@@ -33,7 +33,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // early return result
-      if (_productId && !user?.id) {
+      if (!user?.id) {
         // result
         const result: GetChatsResponse = {
           success: false,
@@ -53,14 +53,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         throw error;
       }
 
-      // params
-      const productId = _productId ? +_productId.toString() : 0;
-      if (isNaN(productId)) {
-        const error = new Error("InvalidRequestBody");
-        error.name = "InvalidRequestBody";
-        throw error;
-      }
-
       // search
       const where = {
         users: {
@@ -68,7 +60,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
             id: user?.id,
           },
         },
-        ...(productId ? { productId } : {}),
       };
 
       // fetch data
@@ -97,13 +88,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
               updatedAt: "desc",
             },
           },
-          ...(_productId
-            ? {}
-            : {
-                product: {
-                  select: { id: true, name: true, photos: true },
-                },
-              }),
+          product: {
+            select: { id: true, name: true, photos: true },
+          },
         },
       });
 
