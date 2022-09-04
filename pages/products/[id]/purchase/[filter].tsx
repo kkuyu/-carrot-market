@@ -5,16 +5,14 @@ import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
-import { getKey, getProductCondition, truncateStr } from "@libs/utils";
+import { getKey, getProductCondition, isInstance, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetChatsResponse } from "@api/chats";
-import { GetUserResponse } from "@api/user";
-import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetUserResponse, getUser } from "@api/user";
+import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
+import { GetProductsChatsResponse, getProductsChats, ChatsFilterEnum } from "@api/products/[id]/chats";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -27,11 +25,18 @@ import Buttons from "@components/buttons";
 const ProductsPurchasePage: NextPage = () => {
   const router = useRouter();
 
+  // filters
+  const chatFilters: { value: ChatsFilterEnum; name: string; partnerName: string }[] = [
+    { value: "all", name: "최근 채팅", partnerName: "최근 채팅한 이웃" },
+    { value: "available", name: "대화중인 채팅", partnerName: "대화중인 이웃" },
+  ];
+  const currentFilter = chatFilters.find((filter) => filter.value === router?.query?.filter?.toString())!;
+
   // fetch data
-  const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
-  const { data, setSize, mutate } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
-    const options = { url: "/api/chats" };
-    return getKey<GetChatsResponse>(...arg, options);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
+    const options = { url: "/api/products/[id]/chats", query: router.query.id ? `filter=${currentFilter.value}&productId=${router.query.id}` : "" };
+    return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
@@ -41,15 +46,17 @@ const ProductsPurchasePage: NextPage = () => {
 
   // mutation data
   const [updateProductPurchase, { loading: loadingProductPurchase }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
-    onSuccess: () => {
+    onSuccess: async () => {
+      await mutateProduct();
       router.replace(`/products/${router.query.id}/review`);
     },
   });
 
-  // update: record purchase
-  const purchaseItem = (item: GetChatsResponse["chats"][number], chatUser: GetChatsResponse["chats"][number]["users"][number]) => {
+  // update: product.record
+  const purchaseItem = (item: GetProductsChatsResponse["chats"][number], chatUser: GetProductsChatsResponse["chats"][number]["users"]) => {
     if (loadingProductPurchase) return;
-    updateProductPurchase({ purchase: true, purchaseUserId: chatUser.id });
+    if (!chatUser.length || chatUser.length > 1) console.error("purchaseItem", chatUser);
+    updateProductPurchase({ purchase: true, purchaseUserId: chatUser[0].id });
   };
 
   useEffect(() => {
@@ -63,54 +70,51 @@ const ProductsPurchasePage: NextPage = () => {
   return (
     <div className="">
       {/* 제품정보 */}
-      {/* {productData?.product && (
+      {currentFilter.value === "available" && productData?.product && (
         <Link href={`/products/${productData?.product.id}`}>
           <a className="block px-5 py-3 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
           </a>
         </Link>
-      )} */}
+      )}
 
       {/* 구매자 선택 */}
-      <div className="container [&:not(:first-child)]:mt-5">
-        {/* <strong className="text-lg">
-          판매가 완료되었어요
-          <br />
-          구매자를 선택해주세요
-        </strong> */}
-
-        {/* 최근 채팅 목록: List */}
+      <div className="container [&:not(:first-child)]:mt-5 pb-5">
+        {currentFilter.value === "available" && (
+          <strong className="text-lg">
+            판매가 완료되었어요
+            <br />
+            구매자를 선택해주세요
+          </strong>
+        )}
+        {/* 채팅 목록: List */}
         {chats && Boolean(chats.length) && (
           <>
             <ChatList
-              type="button"
               list={chats}
-              sort="timestamp"
               isVisibleSingleUser={true}
-              cardProps={{ isVisibleProduct: false }}
+              cardProps={{ isVisibleProduct: false, isVisibleLastChatMessage: false }}
               selectItem={purchaseItem}
               className="-mx-5 border-b [&:not(:first-child)]:mt-5 [&:not(:first-child)]:border-t"
             />
-            <span className="empty:hidden list-loading">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : null}</span>
+            <span className="empty:hidden list-loading">{isReachingEnd ? `${currentFilter.name}을 모두 확인하였어요` : isLoading ? `${currentFilter.name}을 불러오고있어요` : null}</span>
           </>
         )}
-
-        {/* 최근 채팅 목록: Empty */}
+        {/* 채팅 목록: Empty */}
         {chats && !Boolean(chats.length) && (
           <p className="list-empty">
-            <>채팅한 이웃이 없어요</>
+            <>{currentFilter.partnerName}이 없어요</>
           </p>
         )}
-
-        {/* 최근 채팅 목록: InfiniteRef */}
+        {/* 채팅 목록: InfiniteRef */}
         <div id="infiniteRef" ref={infiniteRef} />
 
         {/* 구매자 찾기 */}
         {chats && (!Boolean(chats.length) || isReachingEnd) && (
           <div className="text-center">
-            <Link href={`/products/${router.query.id}/purchase`} passHref>
+            <Link href={`/products/${router.query.id}/purchase/${chatFilters.find((filter) => filter.value !== currentFilter.value)?.value!}`} passHref>
               <Buttons tag="a" sort="text-link" size="sm" status="default">
-                대화중인 채팅 목록에서 구매자 찾기
+                {`${chatFilters.find((filter) => filter.value !== currentFilter.value)?.name!}에서 구매자 찾기`}
               </Buttons>
             </Link>
           </div>
@@ -122,16 +126,18 @@ const ProductsPurchasePage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProductsDetailResponse };
-  getChats: { options: { url: string; query?: string }; response: GetChatsResponse };
-}> = ({ getUser, getProduct, getChats }) => {
+  getProductsDetail: { response: GetProductsDetailResponse };
+  getProductsChats: { options: { url: string; query?: string }; response: GetProductsChatsResponse };
+}> = ({ getUser, getProductsDetail, getProductsChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey<GetChatsResponse>(...arg, getChats.options))]: [getChats.response],
+          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => getKey<GetProductsChatsResponse>(...arg, getProductsChats.options))]: [
+            getProductsChats.response,
+          ],
         },
       }}
     >
@@ -142,12 +148,26 @@ const Page: NextPageWithLayout<{
 
 Page.getLayout = getLayout;
 
-export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+export const getServerSideProps = withSsrSession(async ({ req, params, query }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // productId
-  const productId: string = params?.id?.toString() || "";
+  const filter = (query?.filter?.toString() as ChatsFilterEnum) || "";
+  const productId = params?.id?.toString() || "";
+
+  // invalidFilter
+  let invalidFilter = false;
+  if (!filter || !isInstance(filter, ChatsFilterEnum)) invalidFilter = true;
+  // redirect `/products/${productId}/purchase/available`,
+  if (invalidFilter) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}/purchase/available`,
+      },
+    };
+  }
 
   // invalidUser
   let invalidUser = false;
@@ -162,49 +182,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!productId || isNaN(+productId)) invalidUrl = true;
-  // redirect `/products/${productId}`
-  if (invalidUrl) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // getProduct
-  const product = await client.product.findUnique({
-    where: {
-      id: +productId,
-    },
-    include: {
-      records: {
-        select: {
-          id: true,
-          kind: true,
-          userId: true,
-        },
-      },
-      reviews: {
-        select: {
-          id: true,
-          role: true,
-          sellUserId: true,
-          purchaseUserId: true,
-        },
-      },
-    },
-  });
-
-  // invalidProduct
-  let invalidProduct = false;
-  if (!product) invalidProduct = true;
-  if (product?.userId !== ssrUser?.profile?.id) invalidProduct = true;
-  // redirect `/products/${productId}`
-  if (invalidProduct) {
+  // getProductsDetail
+  const { product } =
+    productId && !isNaN(+productId)
+      ? await getProductsDetail({
+          id: +productId,
+        })
+      : {
+          product: null,
+        };
+  if (!product) {
     return {
       redirect: {
         permanent: false,
@@ -215,6 +202,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   // condition
   const productCondition = getProductCondition(product, ssrUser?.profile?.id);
+
+  // redirect `/products/${productId}`
+  if (productCondition?.role?.myRole !== "sellUser") {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
 
   // redirect `/products/${productId}`
   if (productCondition?.isSale) {
@@ -246,38 +243,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // getChats
-  const chats = ssrUser.profile
-    ? await client.chat.findMany({
-        take: 10,
-        skip: 0,
-        orderBy: {
-          updatedAt: "desc",
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          chatMessages: {
-            take: 1,
-            orderBy: {
-              updatedAt: "desc",
-            },
-          },
-        },
-        where: {
-          users: {
-            some: {
-              id: ssrUser.profile?.id,
-            },
-          },
-          // productId: product?.id,
-        },
+  // getProductsChats
+  const { totalCount, chats } = req?.session?.user
+    ? await getProductsChats({
+        user: req?.session?.user,
+        prevCursor: 0,
+        pageSize: 10,
+        filter,
+        productId: +productId,
       })
-    : [];
+    : {
+        totalCount: 0,
+        chats: [],
+      };
 
   // defaultLayout
   const defaultLayout = {
@@ -300,20 +278,21 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getProduct: {
+      getProductsDetail: {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
           productCondition: JSON.parse(JSON.stringify(productCondition || {})),
         },
       },
-      getChats: {
+      getProductsChats: {
         options: {
-          url: "/api/chats",
-          query: ``,
+          url: "/api/products/[id]/chats",
+          query: `filter=${filter}&productId=${product?.id}`,
         },
         response: {
           success: true,
+          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
           chats: JSON.parse(JSON.stringify(chats || [])),
         },
       },
