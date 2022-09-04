@@ -8,9 +8,8 @@ import { validateFiles, submitFiles } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/user";
+import { GetUserResponse, getUser } from "@api/user";
 import { PostProductsResponse } from "@api/products";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -81,7 +80,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
   let invalidUser = false;

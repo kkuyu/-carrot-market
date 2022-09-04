@@ -8,11 +8,9 @@ import { getProductCondition, validateFiles, submitFiles, truncateStr } from "@l
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import client from "@libs/server/client";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/user";
-import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetUserResponse, getUser } from "@api/user";
+import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -93,14 +91,14 @@ const ProductsEditPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProductsDetailResponse };
-}> = ({ getUser, getProduct }) => {
+  getProductsDetail: { response: GetProductsDetailResponse };
+}> = ({ getUser, getProductsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
         },
       }}
     >
@@ -113,7 +111,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // productId
   const productId: string = params?.id?.toString() || "";
@@ -131,32 +129,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!productId || isNaN(+productId)) invalidUrl = true;
-  // redirect `/products/${productId}`
-  if (invalidUrl) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // getProduct
-  const product = await client.product.findUnique({
-    where: {
-      id: +productId,
-    },
-  });
-
-  // invalidProduct
-  let invalidProduct = false;
-  if (!product) invalidProduct = true;
-  if (product?.userId !== ssrUser?.profile?.id) invalidProduct = true;
-  // redirect `/products/${productId}`
-  if (invalidProduct) {
+  // getProductsDetail
+  const { product } =
+    productId && !isNaN(+productId)
+      ? await getProductsDetail({
+          id: +productId,
+        })
+      : {
+          product: null,
+        };
+  if (!product) {
     return {
       redirect: {
         permanent: false,
@@ -167,6 +149,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
 
   // condition
   const productCondition = getProductCondition(product, ssrUser?.profile?.id);
+
+  // redirect `/products/${productId}`
+  if (productCondition?.role?.myRole !== "sellUser") {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
 
   // defaultLayout
   const defaultLayout = {
@@ -190,7 +182,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getProduct: {
+      getProductsDetail: {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
