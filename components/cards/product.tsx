@@ -25,9 +25,8 @@ const Product = (props: ProductProps) => {
   const { item, condition, highlightWord, className = "", ...restProps } = props;
   const { user } = useUser();
 
-  // visible data: default
+  // variable: visible
   const { isMounted, timeState } = useTimeDiff(item?.resumeAt?.toString() || null);
-  const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
   const productCondition = condition ?? getProductCondition(item, user?.id);
 
   if (!item) return null;
@@ -36,7 +35,7 @@ const Product = (props: ProductProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <div className="flex items-start">
         <div className="flex-none">
-          <Images size="6rem" cloudId={thumbnailId} cloudVariant="public" alt="" className="rounded-md" />
+          <Images size="6rem" cloudId={item?.photos?.replace(/;.*/, "")} cloudVariant="public" alt="" className="rounded-md" />
         </div>
         <div className="grow-full pl-4">
           <strong className="block font-normal">{highlightWord ? <HighlightText originalText={item?.name || ""} highlightWord={highlightWord} /> : item?.name}</strong>

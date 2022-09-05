@@ -20,8 +20,7 @@ const ProductSummary = (props: ProductSummaryProps) => {
   const { item, condition, className = "", ...restProps } = props;
   const { user } = useUser();
 
-  // visible data: default
-  const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
+  // variable: visible
   const productCondition = condition ?? getProductCondition(item, user?.id);
 
   if (!item) return null;
@@ -29,7 +28,7 @@ const ProductSummary = (props: ProductSummaryProps) => {
   return (
     <div className={`flex items-start ${className}`} {...restProps}>
       <div className="flex-none">
-        <Images size="2.75rem" cloudId={thumbnailId} cloudVariant="public" alt="" className="rounded-md" />
+        <Images size="2.75rem" cloudId={item?.photos?.replace(/;.*/, "")} cloudVariant="public" alt="" className="rounded-md" />
       </div>
       <div className="grow-full pl-3">
         <strong className="block text-sm font-normal text-ellipsis">

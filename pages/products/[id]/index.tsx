@@ -59,10 +59,10 @@ const ProductsDetailPage: NextPage = () => {
     },
   });
 
-  // visible data: default
+  // variable: visible
   const { isMounted, timeState } = useTimeDiff(productData?.product?.createdAt.toString() || null);
 
-  // update: record sale
+  // update: Record.Kind.ProductSale
   const toggleSale = () => {
     if (!productData?.product) return;
     if (loadingProductSale) return;
@@ -76,7 +76,7 @@ const ProductsDetailPage: NextPage = () => {
     updateProductSale({ sale: !currentCondition?.isSale });
   };
 
-  // update: create chat
+  // create: Chat
   const clickChat = () => {
     if (loadingChat) return;
     createChat({

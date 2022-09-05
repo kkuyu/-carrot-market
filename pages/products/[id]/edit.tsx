@@ -22,6 +22,14 @@ const ProductsEditPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
 
+  // variable: invisible
+  const [isLoading, setIsLoading] = useState(false);
+  const fileOptions = {
+    maxLength: 10,
+    duplicateDelete: true,
+    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+  };
+
   // fetch data
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
@@ -36,13 +44,7 @@ const ProductsEditPage: NextPage = () => {
     },
   });
 
-  // form data
-  const [isLoading, setIsLoading] = useState(false);
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
+  // variable: visible
   const formData = useForm<EditProductTypes>({
     defaultValues: {
       originalPhotoPaths: productData?.product?.photos,
@@ -53,7 +55,7 @@ const ProductsEditPage: NextPage = () => {
     },
   });
 
-  // update: product
+  // update: Product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
     if (!user || loadingProduct || isLoading) return;
     if (!currentPhotoFiles?.length) {

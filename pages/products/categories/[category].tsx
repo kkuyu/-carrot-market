@@ -23,7 +23,10 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const router = useRouter();
   const { currentAddr, type: userType, mutate: mutateUser } = useUser();
 
+  // variable: invisible
   const category = getCategory<ProductCategories>(router.query?.category?.toString() || "");
+
+  // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetProductsCategoriesResponse>((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => {
     const options = {
       url: `/api/products/categories/${category?.kebabCaseValue || router.query?.category?.toString()}`,
@@ -32,6 +35,7 @@ const ProductsCategoryDetailPage: NextPage = () => {
     return getKey<GetProductsCategoriesResponse>(...arg, options);
   });
 
+  // variable: visible
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";

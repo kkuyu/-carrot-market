@@ -40,14 +40,14 @@ const HandleProduct = (props: HandleProductProps) => {
     onSuccess: async (data) => {
       if (!data.recordSale) {
         await mutateProduct();
-        router.push(`/products/${item?.id}/purchase`);
+        router.push(`/products/${item?.id}/purchase/available`);
       } else {
         router.push(`/products/${item?.id}`);
       }
     },
   });
 
-  // update: record sale
+  // update: Record.Kind.ProductSale
   const toggleSale = () => {
     if (!productData?.product) return;
     if (loadingProductSale) return;

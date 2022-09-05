@@ -12,7 +12,6 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useTimeDiff from "@libs/client/useTimeDiff";
 import { withSsrSession } from "@libs/server/withSession";
-import client from "@libs/server/client";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
@@ -36,6 +35,9 @@ const ProductsResumePage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
 
+  // variable: invisible
+  const [resumeState, setResumeState] = useState<ResumeState>({ type: null, possibleDate: null, afterDate: null });
+
   // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
 
@@ -48,10 +50,9 @@ const ProductsResumePage: NextPage = () => {
     },
   });
 
-  // resume form
-  const [resumeState, setResumeState] = useState<ResumeState>({ type: null, possibleDate: null, afterDate: null });
-  const { timeState: resumeTimeState } = useTimeDiff(resumeState?.possibleDate?.toString() || null, { type: "presentToPast", config: { suffixStr: " 후" } });
-  const { timeState: nextResumeTimeState } = useTimeDiff(resumeState?.afterDate?.toString() || null, { type: "presentToPast", config: { suffixStr: " 후" } });
+  // variable: visible
+  const { timeState: resumeTimeState } = useTimeDiff(resumeState?.possibleDate?.toString() || null, { config: { type: "presentToPast" } });
+  const { timeState: nextResumeTimeState } = useTimeDiff(resumeState?.afterDate?.toString() || null, { config: { type: "presentToPast" } });
   const formData = useForm<ResumeProductTypes>({
     defaultValues: {
       originalPrice: productData?.product?.price,
@@ -59,7 +60,7 @@ const ProductsResumePage: NextPage = () => {
     },
   });
 
-  // update: product
+  // update: Product
   const submitProduct = ({ currentPrice, originalPrice, ...data }: ResumeProductTypes) => {
     if (!user || loadingProduct) return;
     editProduct({

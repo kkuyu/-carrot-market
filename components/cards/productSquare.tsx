@@ -13,14 +13,12 @@ export interface ProductSquareProps extends HTMLAttributes<HTMLDivElement> {
 const ProductSquare = (props: ProductSquareProps) => {
   const { item, className = "", ...restProps } = props;
 
-  const thumbnailId = item?.photos ? item.photos.split(";")[0] : "";
-
   if (!item) return null;
 
   return (
     <div className={`relative ${className}`} {...restProps}>
       <div className="">
-        <Images size="100%" ratioX={16} ratioY={9} cloudId={thumbnailId} cloudVariant="public" alt="" className="rounded-md" />
+        <Images size="100%" ratioX={16} ratioY={9} cloudId={item?.photos?.replace(/;.*/, "")} cloudVariant="public" alt="" className="rounded-md" />
       </div>
       <div className="mt-2">
         <strong className="block font-normal">{item?.name}</strong>

@@ -25,12 +25,11 @@ import Buttons from "@components/buttons";
 const ProductsPurchasePage: NextPage = () => {
   const router = useRouter();
 
-  // filters
+  // variable data: invisible
   const chatFilters: { value: ChatsFilterEnum; name: string; partnerName: string }[] = [
     { value: "all", name: "최근 채팅", partnerName: "최근 채팅한 이웃" },
     { value: "available", name: "대화중인 채팅", partnerName: "대화중인 이웃" },
   ];
-  const currentFilter = chatFilters.find((filter) => filter.value === router?.query?.filter?.toString())!;
 
   // fetch data
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
@@ -38,11 +37,6 @@ const ProductsPurchasePage: NextPage = () => {
     const options = { url: "/api/products/[id]/chats", query: router.query.id ? `filter=${currentFilter.value}&productId=${router.query.id}` : "" };
     return getKey<GetProductsChatsResponse>(...arg, options);
   });
-
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const chats = data ? data.flatMap((item) => item.chats) : null;
 
   // mutation data
   const [updateProductPurchase, { loading: loadingProductPurchase }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
@@ -52,7 +46,14 @@ const ProductsPurchasePage: NextPage = () => {
     },
   });
 
-  // update: product.record
+  // variable data: visible
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
+  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
+  const isLoading = data && typeof data[data.length - 1] === "undefined";
+  const chats = data ? data.flatMap((item) => item.chats) : null;
+  const currentFilter = chatFilters.find((filter) => filter.value === router?.query?.filter?.toString())!;
+
+  // update: Record.Kind.ProductPurchase
   const purchaseItem = (item: GetProductsChatsResponse["chats"][number], chatUser: GetProductsChatsResponse["chats"][number]["users"]) => {
     if (loadingProductPurchase) return;
     if (!chatUser.length || chatUser.length > 1) console.error("purchaseItem", chatUser);

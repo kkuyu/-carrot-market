@@ -20,12 +20,16 @@ import ProductList from "@components/lists/productList";
 const ProductsIndexPage: NextPage = () => {
   const { currentAddr, type: userType, mutate: mutateUser } = useUser();
 
+  // variable: invisible
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
+
+  // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
     const options = { url: "/api/products", query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "" };
     return getKey<GetProductsResponse>(...arg, options);
   });
 
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
+  // variable: visible
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;

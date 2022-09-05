@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 // @libs
 import { getDiffTimeStr as getTimeDiff, TimeConfig } from "@libs/utils";
 
-const useTimeDiff = (timeTarget: string | null, options?: { type?: "pastToPresent" | "presentToPast"; config?: TimeConfig }) => {
+const useTimeDiff = (timeTarget: string | null, options?: { config?: TimeConfig }) => {
   const [isMounted, setIsMounted] = useState(false);
   const [timeState, setTimeState] = useState<{ dateFrom: Date | null; dateTo: Date | null; diffStr: string }>({ dateFrom: null, dateTo: null, diffStr: "" });
 
@@ -13,8 +13,8 @@ const useTimeDiff = (timeTarget: string | null, options?: { type?: "pastToPresen
   useEffect(() => {
     if (!timeTarget) return;
     setTimeState(() => {
-      const dateFrom = options?.type !== "presentToPast" ? new Date(timeTarget) : new Date();
-      const dateTo = options?.type !== "presentToPast" ? new Date() : new Date(timeTarget);
+      const dateFrom = options?.config?.type !== "presentToPast" ? new Date(timeTarget) : new Date();
+      const dateTo = options?.config?.type !== "presentToPast" ? new Date() : new Date(timeTarget);
       return { dateFrom, dateTo, diffStr: getTimeDiff(dateFrom.getTime(), dateTo.getTime(), options?.config) };
     });
   }, [timeTarget]);

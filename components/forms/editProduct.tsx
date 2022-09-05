@@ -36,6 +36,7 @@ const EditProduct = (props: EditProductProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, fileOptions, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue, getValues } = formData;
 
+  // variable: invisible
   const productCategories = Object.values(ProductCategory).map(
     (category) =>
       getCategory<ProductCategories>(category, {

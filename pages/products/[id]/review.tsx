@@ -38,7 +38,7 @@ const ProductsReviewPage: NextPage = () => {
     },
   });
 
-  // review form
+  // variable: visible
   const formData = useForm<EditReviewTypes>({
     defaultValues: {
       role: productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser",
@@ -48,7 +48,7 @@ const ProductsReviewPage: NextPage = () => {
     },
   });
 
-  // update: productReviews
+  // update: ProductReview
   const submitReview = (data: EditReviewTypes) => {
     if (!user || loadingReview) return;
     uploadReview({

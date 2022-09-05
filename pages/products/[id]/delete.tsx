@@ -36,7 +36,7 @@ const ProductsDeletePage: NextPage = () => {
     },
   });
 
-  // delete: product
+  // delete: Product
   const clickDelete = () => {
     if (loadingProduct) return;
     deleteProduct({});

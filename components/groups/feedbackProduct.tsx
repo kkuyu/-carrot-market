@@ -35,14 +35,14 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
     onSuccess: async (data) => {
       if (!data.recordSale) {
         await mutateProduct();
-        router.push(`/products/${item?.id}/purchase`);
+        router.push(`/products/${item?.id}/purchase/available`);
       } else {
         router.push(`/products/${item?.id}`);
       }
     },
   });
 
-  // update: record sale
+  // update: Record.Kind.ProductSale
   const toggleSale = () => {
     if (!productData?.product) return;
     if (loadingProductSale) return;
@@ -88,7 +88,7 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
           ) : Boolean(productData?.productCondition?.isPurchase) ? (
             <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/review`}>거래 후기 보내기</CustomFeedbackButton>
           ) : (
-            <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/purchase`}>거래 후기 보내기</CustomFeedbackButton>
+            <CustomFeedbackButton pathname={`/products/${productData?.product?.id}/purchase/available`}>거래 후기 보내기</CustomFeedbackButton>
           )}
         </>
       )}

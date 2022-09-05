@@ -83,9 +83,12 @@ export const getProductCondition = (product: Partial<GetProductsDetailResponse["
           },
         }
       : {}),
-    isLike: Boolean(product?.records?.find((record) => record.kind === Kind.ProductLike && record.userId === userId)),
     isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
     isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),
+    ...(userId ? { isLike: Boolean(product?.records?.find((record) => record.kind === Kind.ProductLike && record.userId === userId)) } : {}),
+  };
+};
+
   };
 };
 
@@ -94,10 +97,11 @@ export const getReviewManners = (mannerStr: string) => {
 };
 
 export type TimeLabel = "분" | "시간" | "일" | "개월" | "년";
-export type TimeConfig = { defaultValue?: string; suffixStr?: string; diffLabel?: TimeLabel };
+export type TimeConfig = { type?: "pastToPresent" | "presentToPast"; defaultValue?: string; minimumTimeLabel?: TimeLabel };
 
 export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeConfig) => {
-  let resultStr = config?.defaultValue || `방금${config?.suffixStr || " 전"}`;
+  const suffixStr = config?.type === "presentToPast" ? "후" : "전";
+  let resultStr = config?.defaultValue || `방금${suffixStr || " 전"}`;
 
   const diffTime = dateTo - dateFrom;
   const times = [
@@ -111,10 +115,10 @@ export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeCo
   for (let index = 0; index < times.length; index++) {
     const diff = Math.floor(diffTime / times[index].ms);
     if (diff > 0) {
-      resultStr = `${diff}${times[index].label}${config?.suffixStr || " 전"}`;
+      resultStr = `${diff}${times[index].label}${suffixStr || " 전"}`;
       break;
     }
-    if (times[index].label === config?.diffLabel) {
+    if (times[index].label === config?.minimumTimeLabel) {
       break;
     }
   }

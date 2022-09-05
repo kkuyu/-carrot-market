@@ -21,6 +21,14 @@ const ProductsUploadPage: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
 
+  // variable: invisible
+  const [isLoading, setIsLoading] = useState(false);
+  const fileOptions = {
+    maxLength: 10,
+    duplicateDelete: true,
+    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+  };
+
   // mutation data
   const [uploadProduct, { loading: loadingProduct }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: (data) => {
@@ -31,13 +39,7 @@ const ProductsUploadPage: NextPage = () => {
     },
   });
 
-  // form data
-  const [isLoading, setIsLoading] = useState(false);
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
+  // variable: visible
   const formData = useForm<EditProductTypes>();
 
   // update: product

@@ -22,13 +22,17 @@ import ChatList from "@components/lists/chatList";
 const ProductsChatsPage: NextPage = () => {
   const router = useRouter();
 
+  // variable data: invisible
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
+
+  // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
     const options = { url: "/api/products/[id]/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
     return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
+  // variable data: visible
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;

@@ -18,9 +18,9 @@ export interface ProductCondition {
   category?: ProductCategories[number] & { kebabCaseValue: string };
   chats?: number;
   review?: { sentReviewId: number | null; receiveReviewId: number | null };
-  isLike: boolean;
   isSale: boolean;
   isPurchase: boolean;
+  isLike?: boolean;
 }
 
 export interface GetProductsDetailResponse extends ResponseDataType {

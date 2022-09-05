@@ -17,7 +17,7 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
   const { type: userType } = useUser();
   const { openModal } = useModal();
 
-  const IconButton = (buttonProps: { pathname: string | null; children: ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  const CustomIconButton = (buttonProps: { pathname: string | null; children: ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
@@ -38,14 +38,14 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
   return (
     <div className="fixed-container bottom-0 pointer-events-none">
       <div className="fixed-inner flex justify-end -translate-x-2 -translate-y-16">
-        <IconButton
+        <CustomIconButton
           pathname={userType === "member" ? (router.pathname === "/" ? "/products/upload" : router.pathname === "/stories" ? "/stories/upload" : null) : null}
           onClick={() => openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {})}
           className={`pointer-events-auto ${className} rounded-full`}
           {...restProps}
         >
           <Icons name="Plus" className="w-6 h-6 text-white" />
-        </IconButton>
+        </CustomIconButton>
       </div>
     </div>
   );

@@ -12,6 +12,7 @@ import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 
 const ProductsCategoryIndexPage: NextPage = () => {
+  // variable: invisible
   const productCategories = Object.values(ProductCategory).map((category) =>
     getCategory<ProductCategories>(category, {
       excludeCategory: [],

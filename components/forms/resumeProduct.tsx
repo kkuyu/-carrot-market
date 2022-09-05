@@ -23,13 +23,8 @@ const ResumeProduct = (props: ResumeProductProps) => {
   const { formData, onValid, isSuccess, isLoading, resumeDiffStr, nextResumeDiffStr, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue } = formData;
 
+  // variable: visible
   const discounts = formData.getValues("originalPrice") > 10000 ? ["5%", "10%", "15%"] : formData.getValues("originalPrice") >= 4000 ? ["1000원", "2000원", "3000원"] : [];
-  const discountPrice = (discount: string) => {
-    let price = formData.getValues("originalPrice");
-    if (/%$/.test(discount)) price = formData.getValues("originalPrice") - formData.getValues("originalPrice") * (parseInt(discount) / 100);
-    if (/원$/.test(discount)) price = formData.getValues("originalPrice") - parseInt(discount);
-    setValue("currentPrice", Math.floor(price / 100) * 100);
-  };
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
@@ -54,7 +49,21 @@ const ResumeProduct = (props: ResumeProductProps) => {
           {Boolean(discounts.length) ? (
             <div className="pt-2 flex items-center space-x-2">
               {discounts.map((discount) => (
-                <Buttons key={discount} tag="button" type="button" sort="round-box" size="sm" status="default" onClick={() => discountPrice(discount)} className="!w-auto font-normal rounded-full">
+                <Buttons
+                  key={discount}
+                  tag="button"
+                  type="button"
+                  sort="round-box"
+                  size="sm"
+                  status="default"
+                  onClick={() => {
+                    let price = formData.getValues("originalPrice");
+                    if (/%$/.test(discount)) price = formData.getValues("originalPrice") - formData.getValues("originalPrice") * (parseInt(discount) / 100);
+                    if (/원$/.test(discount)) price = formData.getValues("originalPrice") - parseInt(discount);
+                    setValue("currentPrice", Math.floor(price / 100) * 100);
+                  }}
+                  className="!w-auto font-normal rounded-full"
+                >
                   {discount}
                 </Buttons>
               ))}
