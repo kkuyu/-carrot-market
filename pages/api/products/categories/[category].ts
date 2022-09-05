@@ -1,21 +1,60 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, ProductCategory, Record } from "@prisma/client";
+import { Chat, Product, ProductCategory, Record } from "@prisma/client";
 // @libs
 import { getCategory, isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
-import { ProductCategories } from "../types";
+// @api
+import { ProductCategories } from "@api/products/types";
 
-export interface GetProductsResponse extends ResponseDataType {
+export interface GetProductsCategoriesResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[] })[];
 }
 
-export interface PostProductsResponse extends ResponseDataType {
-  product: Product;
-}
+export const getProductsCategories = async (query: { prevCursor: number; pageSize: number; posX: number; posY: number; distance: number; category: ProductCategory }) => {
+  const { prevCursor, pageSize, posX, posY, distance, category } = query;
+
+  const where = {
+    emdPosX: { gte: posX - distance, lte: posX + distance },
+    emdPosY: { gte: posY - distance, lte: posY + distance },
+    ...(category !== "POPULAR_PRODUCT" ? { category } : {}),
+  };
+
+  const totalCount = await client.product.count({
+    where,
+  });
+
+  const products = await client.product.findMany({
+    where,
+    take: pageSize,
+    skip: prevCursor ? 1 : 0,
+    ...(prevCursor && { cursor: { id: prevCursor } }),
+    orderBy: category !== "POPULAR_PRODUCT" ? { resumeAt: "desc" } : [{ records: { _count: "desc" } }, { resumeAt: "desc" }],
+    include: {
+      records: {
+        select: {
+          id: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      chats: {
+        include: {
+          _count: {
+            select: {
+              chatMessages: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return { totalCount, products };
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -30,7 +69,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // early return result
     if (!_posX || !_posY || !_distance || !_category) {
-      const result: GetProductsResponse = {
+      const result: GetProductsCategoriesResponse = {
         success: false,
         totalCount: 0,
         lastCursor: 0,
@@ -49,63 +88,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // params
-    const category = getCategory<ProductCategories>(_category?.toString() || "");
     const posX = +_posX.toString();
     const posY = +_posY.toString();
     const distance = +_distance.toString();
-    const boundaryArea = {
-      emdPosX: { gte: posX - distance, lte: posX + distance },
-      emdPosY: { gte: posY - distance, lte: posY + distance },
-    };
-    if (!category || !isInstance(category.value, ProductCategory)) {
-      const error = new Error("InvalidRequestBody");
-      error.name = "InvalidRequestBody";
-      throw error;
-    }
+    const category = getCategory<ProductCategories>(_category?.toString() || "");
     if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
-
-    // search
-    const where = {
-      ...boundaryArea,
-      ...(category.value === "POPULAR_PRODUCT" ? {} : { category: category.value }),
-    };
+    if (!category || !isInstance(category.value, ProductCategory)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
     // fetch data
-    const totalCount = await client.product.count({
-      where,
-    });
-    const products = await client.product.findMany({
-      where,
-      take: pageSize,
-      skip: prevCursor ? 1 : 0,
-      ...(prevCursor && { cursor: { id: prevCursor } }),
-      orderBy: category.value === "POPULAR_PRODUCT" ? [{ records: { _count: "desc" } }, { resumeAt: "desc" }] : { resumeAt: "desc" },
-      include: {
-        records: {
-          select: {
-            id: true,
-            kind: true,
-            userId: true,
-          },
-        },
-        chats: {
-          include: {
-            _count: {
-              select: {
-                chatMessages: true,
-              },
-            },
-          },
-        },
-      },
-    });
+    const { totalCount, products } = await getProductsCategories({ prevCursor, pageSize, posX, posY, distance, category: category.value });
 
     // result
-    const result: GetProductsResponse = {
+    const result: GetProductsCategoriesResponse = {
       success: true,
       totalCount,
       lastCursor: products.length ? products[products.length - 1].id : -1,

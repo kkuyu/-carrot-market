@@ -8,13 +8,11 @@ import { ProductCategory } from "@prisma/client";
 import { getCategory, getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
 import { ProductCategories } from "@api/products/types";
-import { GetProductsResponse } from "@api/products";
-import { GetUserResponse } from "@api/user";
+import { GetProductsCategoriesResponse, getProductsCategories } from "@api/products/categories/[category]";
+import { GetUserResponse, getUser } from "@api/user";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -26,12 +24,12 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const { currentAddr, type: userType, mutate: mutateUser } = useUser();
 
   const category = getCategory<ProductCategories>(router.query?.category?.toString() || "");
-  const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
+  const { data, setSize, mutate } = useSWRInfinite<GetProductsCategoriesResponse>((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => {
     const options = {
       url: `/api/products/categories/${category?.kebabCaseValue || router.query?.category?.toString()}`,
       query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "",
     };
-    return getKey<GetProductsResponse>(...arg, options);
+    return getKey<GetProductsCategoriesResponse>(...arg, options);
   });
 
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
@@ -74,14 +72,16 @@ const ProductsCategoryDetailPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProducts: { options: { url: string; query?: string }; response: GetProductsResponse };
+  getProducts: { options: { url: string; query?: string }; response: GetProductsCategoriesResponse };
 }> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsResponse]) => getKey<GetProductsResponse>(...arg, getProducts.options))]: [getProducts.response],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => getKey<GetProductsCategoriesResponse>(...arg, getProducts.options))]: [
+            getProducts.response,
+          ],
         },
       }}
     >
@@ -94,7 +94,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // category
   const category = getCategory<ProductCategories>(params?.category?.toString() || "");
@@ -116,37 +116,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
-  const products =
-    !posX || !posY || !distance
-      ? []
-      : await client.product.findMany({
-          take: 10,
-          skip: 0,
-          orderBy: category?.value === "POPULAR_PRODUCT" ? [{ records: { _count: "desc" } }, { resumeAt: "desc" }] : { resumeAt: "desc" },
-          where: {
-            ...(category?.value === "POPULAR_PRODUCT" ? {} : { category: category?.value }),
-            emdPosX: { gte: posX - distance, lte: posX + distance },
-            emdPosY: { gte: posY - distance, lte: posY + distance },
-          },
-          include: {
-            records: {
-              select: {
-                id: true,
-                kind: true,
-                userId: true,
-              },
-            },
-            chats: {
-              include: {
-                _count: {
-                  select: {
-                    chatMessages: true,
-                  },
-                },
-              },
-            },
-          },
-        });
+  const { totalCount, products } =
+    posX && posY && distance && category
+      ? await getProductsCategories({
+          prevCursor: 0,
+          pageSize: 10,
+          posX,
+          posY,
+          distance,
+          category: category?.value,
+        })
+      : {
+          products: [],
+          totalCount: 0,
+        };
 
   // defaultLayout
   const defaultLayout = {
@@ -176,6 +159,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
         response: {
           success: true,
+          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
           products: JSON.parse(JSON.stringify(products || [])),
         },
       },
