@@ -20,20 +20,23 @@ const StoryList = (props: StoryListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y ${className}`} {...restProps}>
+    <ul className={`${className}`} {...restProps}>
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
             if (child.key === "PictureList")
               return cloneElement(child as ReactElement<PictureListProps>, {
-                list: (item?.photos || "").split(";").map((src, index, array) => {
-                  const key = `thumbnails-list-${index + 1}`;
-                  const label = `${index + 1}/${array.length}`;
-                  const name = `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(item.content, 15)})`;
-                  return { src, index, key, label, name };
-                }),
+                className: "px-5 pb-3",
+                list: item?.photos
+                  ? item?.photos.split(";").map((src, index, array) => {
+                      const key = `thumbnails-list-${index + 1}`;
+                      const label = `${index + 1}/${array.length}`;
+                      const name = `게시글 이미지 ${index + 1}/${array.length} (${truncateStr(item.content, 15)})`;
+                      return { src, index, key, label, name };
+                    })
+                  : [],
               });
-            if (child.key === "FeedbackStory") return cloneElement(child as ReactElement<FeedbackStoryProps>, { item });
+            if (child.key === "FeedbackStory") return <div className="px-5">{cloneElement(child as ReactElement<FeedbackStoryProps>, { item })}</div>;
           }
           return child;
         });

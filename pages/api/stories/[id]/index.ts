@@ -5,7 +5,18 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCategories } from "@api/stories/types";
+import { getStoryCondition } from "@libs/utils";
+
+export interface StoryCondition {
+  likes: number;
+  category?: StoryCategories[number] & { kebabCaseValue: string };
+  emotion?: string | null;
+  emojis?: string | null;
+  emoji?: string | null;
+  comments?: number;
+  isLike?: boolean;
+}
 
 export interface GetStoriesDetailResponse extends ResponseDataType {
   story: Story & {

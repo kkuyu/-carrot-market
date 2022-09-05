@@ -15,11 +15,16 @@ export interface PostStoriesLikeResponse extends ResponseDataType {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
-    const { emotion: _emotion } = req.body;
+    const { like, emotion: _emotion } = req.body;
     const { user } = req.session;
 
     // invalid
     if (!_id) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (typeof like !== "boolean") {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -45,13 +50,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id,
       },
       include: {
-        records: {
-          where: {
-            kind: Kind.StoryLike,
-            userId: user?.id,
-            storyId: id,
-          },
-        },
+        records: true,
       },
     });
     if (!story) {
@@ -71,18 +70,18 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     let likeRecord = null;
-    const existed = story.records.length ? story.records[0] : null;
+    const existed = story.records.find((record) => record.kind === Kind.StoryLike && record.userId === user?.id) || null;
 
     // early return result
     if (!_emotion) {
-      if (existed) {
+      if (existed && like === false) {
         // delete record
         await client.record.delete({
           where: {
             id: existed.id,
           },
         });
-      } else {
+      } else if (!existed && like === true) {
         // create record
         likeRecord = await client.record.create({
           data: {
@@ -108,7 +107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       return res.status(200).json(result);
     }
 
-    if (existed && existed?.emotion !== emotion) {
+    if (existed && like === false && existed?.emotion !== emotion) {
       // update record
       likeRecord = await client.record.update({
         where: {
@@ -118,14 +117,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           emotion,
         },
       });
-    } else if (existed && existed?.emotion === emotion) {
+    } else if (existed && like === false && existed?.emotion === emotion) {
       // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
-    } else {
+    } else if (!existed && like === true) {
       // create record
       likeRecord = await client.record.create({
         data: {

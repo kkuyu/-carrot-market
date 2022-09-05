@@ -1,16 +1,16 @@
 import { useRouter } from "next/router";
 import Link from "next/link";
-import type { HTMLAttributes, ReactElement, MouseEvent, FocusEvent } from "react";
+import type { HTMLAttributes, ReactElement, FocusEvent } from "react";
 import { useState, useRef, memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
-import { getCategory } from "@libs/utils";
+import { getStoryCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
-import { StoryCategories, EmotionIcon, EmotionKeys } from "@api/stories/types";
+import { EmotionIcon, EmotionKeys } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
@@ -20,7 +20,7 @@ import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } f
 import Icons from "@components/icons";
 import Buttons from "@components/buttons";
 
-export type FeedbackStoryItem = GetStoriesResponse["stories"][number] | GetStoriesDetailResponse["story"];
+export type FeedbackStoryItem = GetStoriesResponse["stories"][number];
 
 export interface FeedbackStoryProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackStoryItem;
@@ -32,78 +32,41 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
-  const { data, mutate: boundMutate } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null);
-  const [updateLike, { loading: likeLoading }] = useMutation<PostStoriesLikeResponse>(item?.id ? `/api/stories/${item.id}/like` : "", {
+  // variable: invisible
+  const [isVisibleBox, setIsVisibleBox] = useState(false);
+  const emotionBox = useRef<HTMLDivElement | null>(null);
+
+  // fetch data
+  const { data: storyData, mutate: mutateStory } = useSWR<GetStoriesDetailResponse>(item?.id ? `/api/stories/${item.id}` : null, {
+    ...(item ? { fallbackData: { success: true, story: item, productCondition: getStoryCondition(item, user?.id) } } : {}),
+  });
+
+  // mutation data
+  const [updateProductLike, { loading: loadingProductLike }] = useMutation<PostStoriesLikeResponse>(item?.id ? `/api/stories/${item.id}/like` : "", {
     onSuccess: () => {
-      boundMutate();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+      mutateStory();
     },
   });
 
-  const emotionBox = useRef<HTMLDivElement | null>(null);
-  const [isVisibleBox, setIsVisibleBox] = useState(false);
-
-  const category = item && getCategory<StoryCategories>(item?.category);
-  const likeRecord = data?.story?.records?.find((record) => record.userId === user?.id && record.kind === Kind.StoryLike);
-  const likeRecords = data?.story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
-  const commentCount = data?.story?.comments?.length || item?.comments?.length;
-
-  // like
-  const clickLike = () => {
-    if (userType === "member") toggleLike();
-    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
-  };
+  // update: story.record
   const toggleLike = (emotion: null | EmotionKeys = null) => {
-    if (!data) return;
-    if (likeLoading) return;
-    const isLike = !Boolean(likeRecord);
-    boundMutate((prev) => {
+    if (!storyData) return;
+    if (loadingProductLike) return;
+    const currentCondition = storyData?.storyCondition ?? getStoryCondition(storyData?.story!, user?.id);
+    mutateStory((prev) => {
       let records = prev?.story?.records ? [...prev.story.records] : [];
-      const idx = records.findIndex((record) => record.id === likeRecord?.id);
-      if (!emotion && !isLike) records.splice(idx, 1);
-      if (emotion && !isLike) records[idx].emotion !== emotion ? records.splice(idx, 1, { ...records[idx], emotion }) : records.splice(idx, 1);
-      if (isLike) records.push({ id: 0, kind: Kind.StoryLike, emotion, userId: user?.id! });
-      return prev && { ...prev, story: { ...prev.story, records: records } };
+      if (currentCondition?.isLike && emotion && emotion === currentCondition?.emotion) records = records.filter((record) => record.userId !== user?.id);
+      if (currentCondition?.isLike && emotion && emotion !== currentCondition?.emotion) records = records.map((record) => (record.userId !== user?.id ? { ...record } : { ...record, emotion }));
+      if (currentCondition?.isLike && !emotion) records = records.filter((record) => record.userId !== user?.id);
+      if (!currentCondition?.isLike) records.push({ id: 0, kind: Kind.StoryLike, emotion, userId: user?.id! });
+      return prev && { ...prev, story: { ...prev.story, records: records }, storyCondition: getStoryCondition({ ...storyData?.story, records }, user?.id) };
     }, false);
-    updateLike({ emotion });
+    updateProductLike({ like: !currentCondition?.isLike, emotion });
   };
 
-  // emotion
-  const clickEmotionButton = (e: MouseEvent) => {
-    setIsVisibleBox((prev) => !prev);
-  };
-  const blurEmotionButton = (e: FocusEvent<HTMLButtonElement, Element>) => {
-    if (emotionBox?.current?.isSameNode(e.relatedTarget)) return;
-    if (emotionBox?.current?.contains(e.relatedTarget)) return;
-    setIsVisibleBox(false);
-  };
-  const clickEmotionIcon = (key: EmotionKeys) => {
-    if (userType === "member") toggleLike(key);
-    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
-    setIsVisibleBox(false);
-  };
-  const blurEmotionBox = (e: FocusEvent<HTMLDivElement, Element>) => {
-    const prevEl = emotionBox?.current?.previousElementSibling as HTMLElement;
-    if (emotionBox?.current?.isSameNode(e.relatedTarget)) return;
-    if (emotionBox?.current?.contains(e.relatedTarget)) return;
-    prevEl?.focus();
-    setIsVisibleBox(false);
-  };
+  if (!item) return null;
 
-  // comment
-  const clickComment = () => {
-    (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
-  };
-
-  const FeedbackButton = (buttonProps: { pathname?: string; children: ReactElement | ReactElement[] } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  const CustomFeedbackButton = (buttonProps: { pathname?: string; children: ReactElement | ReactElement[] } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
@@ -121,74 +84,97 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
     );
   };
 
-  if (!item) return null;
-
   return (
-    <div className={`relative flex px-5 border-t ${className}`} {...restProps}>
+    <div className={`empty:pt-9 relative flex border-t ${className}`} {...restProps}>
       {/* 궁금해요: button */}
-      {!category?.isLikeWithEmotion && (
-        <FeedbackButton onClick={clickLike}>
-          <Icons name="QuestionMarkCircleSolid" className={`w-5 h-5 ${likeRecord ? "text-orange-500" : "text-gray-500"}`} />
-          <span className={`ml-1 ${likeRecord ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {likeRecords.length || null}</span>
-        </FeedbackButton>
+      {storyData?.storyCondition && !storyData?.storyCondition?.category?.isLikeWithEmotion && (
+        <CustomFeedbackButton
+          onClick={() => {
+            if (userType === "member") toggleLike();
+            if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+            if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
+          }}
+        >
+          <Icons name="QuestionMarkCircleSolid" className={`w-5 h-5 ${storyData?.storyCondition?.isLike ? "text-orange-500" : "text-gray-500"}`} />
+          <span className={`ml-1 ${storyData?.storyCondition?.isLike ? "text-orange-500" : "text-gray-500"}`}>궁금해요 {storyData?.storyCondition?.likes || null}</span>
+        </CustomFeedbackButton>
       )}
-
       {/* 공감하기: button */}
-      {category?.isLikeWithEmotion && (
-        <FeedbackButton onClick={clickEmotionButton} onBlur={blurEmotionButton}>
-          {!likeRecord ? <Icons name="FaceSmile" className="w-5 h-5 text-gray-500" /> : <span className="w-5 h-5">{EmotionIcon?.[likeRecord.emotion!].text}</span>}
-          {!likeRecord ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
-        </FeedbackButton>
+      {storyData?.storyCondition && storyData?.storyCondition?.category?.isLikeWithEmotion && (
+        <CustomFeedbackButton
+          onClick={() => setIsVisibleBox((prev) => !prev)}
+          onBlur={(e: FocusEvent<HTMLButtonElement, Element>) => {
+            if (emotionBox?.current?.isSameNode(e.relatedTarget)) return;
+            if (emotionBox?.current?.contains(e.relatedTarget)) return;
+            setIsVisibleBox(false);
+          }}
+        >
+          {!storyData?.storyCondition?.isLike ? <Icons name="FaceSmile" className="w-5 h-5 text-gray-500" /> : <span className="w-5 h-5">{storyData?.storyCondition?.emoji}</span>}
+          {!storyData?.storyCondition?.isLike ? <span className="ml-1 text-sm text-gray-500">공감하기</span> : <span className="ml-1 text-sm text-orange-500">공감했어요</span>}
+        </CustomFeedbackButton>
       )}
-
       {/* 공감하기: box */}
-      {category?.isLikeWithEmotion && (
+      {storyData?.storyCondition && storyData?.storyCondition?.category?.isLikeWithEmotion && (
         <div
           ref={emotionBox}
-          onBlur={blurEmotionBox}
-          className={`absolute bottom-11 left-5 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`}
+          onBlur={(e: FocusEvent<HTMLDivElement, Element>) => {
+            const prevEl = emotionBox?.current?.previousElementSibling as HTMLElement;
+            if (emotionBox?.current?.isSameNode(e.relatedTarget)) return;
+            if (emotionBox?.current?.contains(e.relatedTarget)) return;
+            prevEl?.focus();
+            setIsVisibleBox(false);
+          }}
+          className={`absolute bottom-11 left-0 scale-0 origin-bottom-left transition-all ${isVisibleBox ? "visible scale-100" : "invisible"} emotionBox`}
           tabIndex={0}
         >
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
             {Object.entries(EmotionIcon)
               .sort(([, a], [, b]) => a.index - b.index)
               .map(([key, emotion]) => (
-                <button key={key} type="button" onClick={() => clickEmotionIcon(key as EmotionKeys)} className="p-1">
-                  {emotion.text}
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => {
+                    if (userType === "member") toggleLike(key as EmotionKeys);
+                    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+                    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
+                    setIsVisibleBox(false);
+                  }}
+                  className="p-1"
+                >
+                  {emotion.emoji}
                 </button>
               ))}
           </div>
         </div>
       )}
-
       {/* 공감하기: result */}
-      {category?.isLikeWithEmotion && Boolean(likeRecords.length) && (
-        <div className="absolute top-1/2 right-0 inline-flex items-center pr-5 -translate-y-1/2">
-          <span>
-            {Object.entries(EmotionIcon)
-              .sort(([, a], [, b]) => a.index - b.index)
-              .filter(([key]) => likeRecords.find((i) => i.emotion === key))
-              .map(([key, emotion]) => (
-                <span key={key} className="w-5 h-5 text-sm">
-                  {emotion.text}
-                </span>
-              ))}
-          </span>
-          <span className="ml-1 text-sm text-gray-500">{likeRecords.length}</span>
+      {storyData?.storyCondition && storyData?.storyCondition?.category?.isLikeWithEmotion && Boolean(storyData?.storyCondition?.likes) && (
+        <div className="absolute top-1/2 right-0 inline-flex items-center -translate-y-1/2">
+          <span>{storyData.storyCondition.emojis}</span>
+          <span className="ml-1 text-sm text-gray-500">{storyData?.storyCondition?.likes}</span>
         </div>
       )}
-
       {/* 댓글/답변 */}
-      {router.pathname === "/stories/[id]" ? (
-        <FeedbackButton onClick={clickComment} className="last:ml-4">
+      {storyData?.storyCondition && router.pathname === "/stories/[id]" && (
+        <CustomFeedbackButton onClick={() => (document.querySelector(".container input#content") as HTMLInputElement)?.focus()} className="last:ml-4">
           <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
-          <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
-        </FeedbackButton>
-      ) : (
-        <FeedbackButton pathname={`/stories/${item?.id}`} className="last:ml-4">
+          <span className="ml-1 text-sm text-gray-500">
+            {storyData?.storyCondition?.comments
+              ? `${storyData?.storyCondition?.category?.commentType} ${storyData?.storyCondition?.comments}`
+              : `${storyData?.storyCondition?.category?.commentType}쓰기`}
+          </span>
+        </CustomFeedbackButton>
+      )}
+      {storyData?.storyCondition && router.pathname !== "/stories/[id]" && (
+        <CustomFeedbackButton pathname={`/stories/${item?.id}`} className="last:ml-4">
           <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
-          <span className="ml-1 text-sm text-gray-500">{commentCount ? `${category?.commentType} ${commentCount}` : `${category?.commentType}쓰기`}</span>
-        </FeedbackButton>
+          <span className="ml-1 text-sm text-gray-500">
+            {storyData?.storyCondition?.comments
+              ? `${storyData?.storyCondition?.category?.commentType} ${storyData?.storyCondition?.comments}`
+              : `${storyData?.storyCondition?.category?.commentType}쓰기`}
+          </span>
+        </CustomFeedbackButton>
       )}
     </div>
   );

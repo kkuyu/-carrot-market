@@ -11,7 +11,7 @@ export interface GetStoriesResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   stories: (Story & {
-    user: Pick<User, "id" | "name">;
+    user?: Pick<User, "id" | "name" | "avatar">;
     records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
     comments?: (Pick<StoryComment, "id"> & Pick<Partial<StoryComment>, "userId" | "content">)[];
   })[];
@@ -20,6 +20,57 @@ export interface GetStoriesResponse extends ResponseDataType {
 export interface PostStoriesResponse extends ResponseDataType {
   story: Story;
 }
+
+export const getStories = async (query: { prevCursor: number; pageSize: number; posX: number; posY: number; distance: number }) => {
+  const { prevCursor, pageSize, posX, posY, distance } = query;
+
+  const where = {
+    emdPosX: { gte: posX - distance, lte: posX + distance },
+    emdPosY: { gte: posY - distance, lte: posY + distance },
+  };
+
+  const totalCount = await client.story.count({
+    where,
+  });
+
+  const stories = await client.story.findMany({
+    where,
+    take: pageSize,
+    skip: prevCursor ? 1 : 0,
+    ...(prevCursor && { cursor: { id: prevCursor } }),
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+      records: {
+        select: {
+          id: true,
+          kind: true,
+          emotion: true,
+          userId: true,
+        },
+      },
+      comments: {
+        where: {
+          NOT: [{ content: "" }],
+          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  return { totalCount, stories };
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
@@ -57,62 +108,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const posX = +_posX.toString();
       const posY = +_posY.toString();
       const distance = +_distance.toString();
-      const boundaryArea = {
-        emdPosX: { gte: posX - distance, lte: posX + distance },
-        emdPosY: { gte: posY - distance, lte: posY + distance },
-      };
+
       if (isNaN(posX) || isNaN(posY) || isNaN(distance)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
 
-      // search
-      const where = {
-        ...boundaryArea,
-      };
-
-      // fetch data: client.stories
-      const totalCount = await client.story.count({
-        where,
-      });
-      const stories = await client.story.findMany({
-        where,
-        take: pageSize,
-        skip: prevCursor ? 1 : 0,
-        ...(prevCursor && { cursor: { id: prevCursor } }),
-        orderBy: {
-          createdAt: "desc",
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-            },
-          },
-          records: {
-            where: {
-              kind: Kind.StoryLike,
-            },
-            select: {
-              id: true,
-              kind: true,
-              emotion: true,
-              userId: true,
-            },
-          },
-          comments: {
-            where: {
-              NOT: [{ content: "" }],
-              AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
-            },
-            select: {
-              id: true,
-            },
-          },
-        },
-      });
+      // fetch data
+      const { totalCount, stories } = await getStories({ prevCursor, pageSize, posX, posY, distance });
 
       // result
       const result: GetStoriesResponse = {

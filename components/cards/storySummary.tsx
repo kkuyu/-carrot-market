@@ -1,8 +1,9 @@
 import type { HTMLAttributes } from "react";
 // @libs
-import { getCategory } from "@libs/utils";
+import { getStoryCondition } from "@libs/utils";
+import useUser from "@libs/client/useUser";
 // @api
-import { StoryCategories } from "@api/stories/types";
+import { StoryCondition } from "@api/stories/[id]";
 import { GetStoriesResponse } from "@api/stories";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 
@@ -10,12 +11,15 @@ export type StorySummaryItem = GetStoriesResponse["stories"][number] | GetCommen
 
 export interface StorySummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: StorySummaryItem;
+  condition?: StoryCondition;
 }
 
 const StorySummary = (props: StorySummaryProps) => {
-  const { item, className = "", ...restProps } = props;
+  const { item, condition, className = "", ...restProps } = props;
+  const { user } = useUser();
 
-  const category = item && getCategory<StoryCategories>(item?.category);
+  // variable: visible
+  const storyCondition = condition ?? getStoryCondition(item!, user?.id);
 
   if (!item) return null;
 
@@ -23,7 +27,7 @@ const StorySummary = (props: StorySummaryProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <strong className="block text-sm font-normal text-ellipsis">{item?.content}</strong>
       <div className="text-description text-sm text-ellipsis">
-        {category?.text && <span>{category?.text}</span>}
+        {storyCondition?.category && <span>{storyCondition?.category?.text}</span>}
         {item?.user?.name && <span>{item?.user?.name}</span>}
         {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
       </div>

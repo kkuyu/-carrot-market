@@ -31,11 +31,11 @@ export const StoryCategories = [
 ];
 
 export type EmotionKeys = Emotion;
-export const EmotionIcon: { [key in EmotionKeys]: { text: string; index: number } } = {
-  Like: { text: "👍", index: 0 },
-  Love: { text: "❤️", index: 1 },
-  Haha: { text: "😀", index: 2 },
-  Wow: { text: "😲", index: 3 },
-  Sad: { text: "😢", index: 4 },
-  Angry: { text: "😠", index: 5 },
+export const EmotionIcon: { [key in EmotionKeys]: { emoji: string; index: number } } = {
+  Like: { emoji: "👍", index: 0 },
+  Love: { emoji: "❤️", index: 1 },
+  Haha: { emoji: "😀", index: 2 },
+  Wow: { emoji: "😲", index: 3 },
+  Sad: { emoji: "😢", index: 4 },
+  Angry: { emoji: "😠", index: 5 },
 };

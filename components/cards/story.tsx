@@ -1,11 +1,11 @@
 import type { HTMLAttributes } from "react";
-import { useEffect, useState } from "react";
-import { Kind } from "@prisma/client";
 // @libs
-import { getCategory, getDiffTimeStr } from "@libs/utils";
+import { getStoryCondition } from "@libs/utils";
+import useUser from "@libs/client/useUser";
+import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
-import { StoryCategories, EmotionIcon } from "@api/stories/types";
 import { GetStoriesResponse } from "@api/stories";
+import { StoryCondition } from "@api/stories/[id]";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 import { GetSearchResultResponse } from "@api/search/result/[filter]";
 // @components
@@ -17,6 +17,7 @@ export type StoryItem = GetStoriesResponse["stories"][number] | GetProfilesStori
 
 export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   item: StoryItem;
+  condition?: StoryCondition;
   highlightWord?: string;
   summaryType?: "record" | "report";
   isVisiblePreviewPhoto?: boolean;
@@ -24,101 +25,81 @@ export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
 }
 
 const Story = (props: StoryProps) => {
-  const { item, highlightWord = "", summaryType = "record", isVisiblePreviewPhoto = false, isVisiblePreviewComment = false, className = "", ...restProps } = props;
+  const { item, condition, highlightWord, summaryType = "record", isVisiblePreviewPhoto = false, isVisiblePreviewComment = false, className = "", ...restProps } = props;
+  const { user } = useUser();
 
-  const [mounted, setMounted] = useState(false);
-
-  const today = new Date();
-  const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
-  const category = getCategory<StoryCategories>(item?.category);
-  const likeRecords = item?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
-  const previewComments = item?.comments?.filter((comment) => comment.content) || [];
-
-  const SummaryRecord = (summaryProps: { item: StoryProps["item"] } & HTMLAttributes<HTMLDivElement>) => {
-    const { item, className: summaryClassName = "", ...restSummaryProps } = summaryProps;
-    return (
-      <div className={`flex flex-wrap justify-between ${summaryClassName}`} {...restSummaryProps}>
-        <div className="text-description text-sm">
-          {item?.user?.name && <span>{item?.user?.name}</span>}
-          {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
-        </div>
-        <div className="text-description text-sm">{mounted && diffTime && <span>{diffTime}</span>}</div>
-      </div>
-    );
-  };
-
-  const SummaryReport = (summaryProps: { item: StoryProps["item"] } & HTMLAttributes<HTMLDivElement>) => {
-    const { item, className: summaryClassName = "", ...restSummaryProps } = summaryProps;
-    return (
-      <div className={`flex flex-wrap justify-between ${summaryClassName}`} {...restSummaryProps}>
-        <div className="text-description text-sm">
-          {item?.user?.name && <span>{item?.user?.name}</span>}
-          {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
-          {mounted && diffTime && <span>{diffTime}</span>}
-        </div>
-        <div className="flex">
-          {/* 궁금해요 */}
-          {!category?.isLikeWithEmotion && Boolean(likeRecords?.length) && (
-            <span className="inline-flex items-center">
-              <Icons name="QuestionMarkCircle" className="w-5 h-5 text-gray-500" />
-              <span className="ml-1 text-sm text-gray-500">{likeRecords?.length}</span>
-            </span>
-          )}
-          {/* 공감하기 */}
-          {category?.isLikeWithEmotion && Boolean(likeRecords?.length) && (
-            <span className="inline-flex items-center">
-              {Object.entries(EmotionIcon)
-                .sort(([, a], [, b]) => a.index - b.index)
-                .filter(([key]) => likeRecords.find((i) => i.emotion === key))
-                .map(([key, emotion]) => (
-                  <span key={key} className="w-5 h-5 text-sm">
-                    {emotion.text}
-                  </span>
-                ))}
-              <span className="ml-1 text-sm text-gray-500">{likeRecords.length}</span>
-            </span>
-          )}
-          {/* 댓글/답변 */}
-          {Boolean(item.comments?.length) && (
-            <span className="inline-flex items-center last:ml-2">
-              <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
-              <span className="ml-1 text-sm text-gray-500">{item.comments?.length}</span>
-            </span>
-          )}
-        </div>
-      </div>
-    );
-  };
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  // variable: visible
+  const { isMounted, timeState } = useTimeDiff(item?.createdAt.toString() || null);
+  const storyCondition = condition ?? getStoryCondition(item, user?.id);
 
   if (!item) return null;
 
   return (
     <div className={`relative ${className}`} {...restProps}>
-      <div className="flex">
-        <div className="grow-full">
-          <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
-          <strong className="mt-2 block font-normal">{highlightWord ? <HighlightText originalText={item?.content || ""} highlightWord={highlightWord} /> : item?.content}</strong>
-        </div>
-        {isVisiblePreviewPhoto && item?.photos && <Images cloudId={item.photos.replace(/;.*/, "")} alt="" className="flex-none rounded-md" />}
+      <div className={`${isVisiblePreviewPhoto && item?.photos ? "relative pr-16" : ""}`}>
+        <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{storyCondition?.category?.text}</em>
+        <strong className="mt-2 block font-normal">{highlightWord ? <HighlightText originalText={item?.content || ""} highlightWord={highlightWord} /> : item?.content}</strong>
+        {isVisiblePreviewPhoto && item?.photos && (
+          <div className="absolute top-0 right-0">
+            <Images cloudId={item.photos.replace(/;.*/, "")} alt="" className="rounded-md" />
+          </div>
+        )}
       </div>
-
-      {summaryType === "record" && <SummaryRecord item={item} className="mt-2" />}
-      {summaryType === "report" && <SummaryReport item={item} className="mt-2" />}
-
-      {isVisiblePreviewComment && Boolean(previewComments?.length) && (
+      {/* record */}
+      {summaryType === "record" && (
+        <div className="mt-2 flex flex-wrap justify-between">
+          <div className="text-description text-sm">
+            {item?.user?.name && <span>{item?.user?.name}</span>}
+            {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
+          </div>
+          <div className="text-description text-sm">{isMounted && timeState.diffStr && <span>{timeState.diffStr}</span>}</div>
+        </div>
+      )}
+      {/* report */}
+      {summaryType === "report" && (
+        <div className="mt-2 flex flex-wrap justify-between">
+          <div className="text-description text-sm">
+            {item?.user?.name && <span>{item?.user?.name}</span>}
+            {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
+            {isMounted && timeState.diffStr && <span>{timeState.diffStr}</span>}
+          </div>
+          <div className="flex">
+            {/* 궁금해요 */}
+            {!storyCondition?.category?.isLikeWithEmotion && Boolean(storyCondition?.likes) && (
+              <span className="inline-flex items-center">
+                <Icons name="QuestionMarkCircle" className="w-5 h-5 text-gray-500" />
+                <span className="ml-1 text-sm text-gray-500">{storyCondition?.likes}</span>
+              </span>
+            )}
+            {/* 공감하기 */}
+            {storyCondition?.category?.isLikeWithEmotion && Boolean(storyCondition?.likes) && (
+              <span className="inline-flex items-center">
+                <span className="w-5 h-5 text-sm">{storyCondition?.emoji}</span>
+                <span className="ml-1 text-sm text-gray-500">{storyCondition?.likes}</span>
+              </span>
+            )}
+            {/* 댓글/답변 */}
+            {Boolean(storyCondition?.likes) && (
+              <span className="inline-flex items-center last:ml-2">
+                <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
+                <span className="ml-1 text-sm text-gray-500">{storyCondition?.likes}</span>
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+      {isVisiblePreviewComment && Boolean(item?.comments?.filter((comment) => comment.content)?.length) && (
         <div className="mt-2">
           <strong className="sr-only">댓글</strong>
           <ul className="space-y-2">
-            {previewComments?.map((comment) => (
-              <li key={comment.id} className="relative block py-1.5 pl-6 pr-2 border border-gray-300 rounded-lg">
-                <span className="absolute top-2.5 left-2.5 w-2 h-2 border-l border-b border-gray-300" />
-                <span>{highlightWord ? <HighlightText originalText={comment?.content || ""} highlightWord={highlightWord} /> : comment?.content}</span>
-              </li>
-            ))}
+            {item?.comments
+              ?.filter((comment) => comment.content)
+              ?.map((comment) => (
+                <li key={comment.id} className="relative block py-1.5 pl-6 pr-2 border border-gray-300 rounded-lg">
+                  <span className="absolute top-2.5 left-2.5 w-2 h-2 border-l border-b border-gray-300" />
+                  <span>{highlightWord ? <HighlightText originalText={comment?.content || ""} highlightWord={highlightWord} /> : comment?.content}</span>
+                </li>
+              ))}
           </ul>
         </div>
       )}

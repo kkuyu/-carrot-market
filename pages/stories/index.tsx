@@ -2,19 +2,14 @@ import type { NextPage } from "next";
 import { useEffect } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
-import { Kind } from "@prisma/client";
 // @libs
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
-import client from "@libs/server/client";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
-import { GetUserResponse } from "@api/user";
-import { GetStoriesResponse } from "@api/stories";
+import { GetUserResponse, getUser } from "@api/user";
+import { GetStoriesResponse, getStories } from "@api/stories";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -25,36 +20,29 @@ import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
 
 const StoriesIndexPage: NextPage = () => {
-  const { user, currentAddr } = useUser();
-  const { changeLayout } = useLayouts();
+  const { currentAddr } = useUser();
 
+  // variable: visible
+  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
+
+  // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) => {
     const options = { url: "/api/stories", query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
     return getKey<GetStoriesResponse>(...arg, options);
   });
 
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
+  // variable: invisible
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : null;
 
   useEffect(() => {
-    if (isVisible && !isReachingEnd) {
-      setSize((size) => size + 1);
-    }
+    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
     if (!data?.[0].success && currentAddr.emdPosNm) mutate();
   }, [data, currentAddr]);
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
 
   return (
     <div className="container">
@@ -62,24 +50,22 @@ const StoriesIndexPage: NextPage = () => {
 
       {/* 동네생활: List */}
       {stories && Boolean(stories.length) && (
-        <div className="-mx-5">
-          <StoryList list={stories} cardProps={{ summaryType: "record" }} className="border-b divide-y-4">
-            <PictureList key="PictureList" className="px-5 pb-3" />
+        <>
+          <StoryList list={stories} cardProps={{ summaryType: "record" }} className="-mx-5 border-b divide-y-2">
+            <PictureList key="PictureList" />
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
-          {isReachingEnd ? <span className="list-loading">게시글을 모두 확인하였어요</span> : isLoading ? <span className="list-loading">게시글을 불러오고있어요</span> : null}
-        </div>
+          <span className="empty:hidden list-loading">{isReachingEnd ? "게시글을 모두 확인하였어요" : isLoading ? "게시글을 불러오고있어요" : null}</span>
+        </>
       )}
 
       {/* 동네생활: Empty */}
       {stories && !Boolean(stories.length) && (
-        <div className="list-empty">
-          <>
-            앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
-            <br />
-            등록된 게시글이 없어요
-          </>
-        </div>
+        <p className="list-empty">
+          앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
+          <br />
+          등록된 게시글이 없어요
+        </p>
       )}
 
       {/* 동네생활: InfiniteRef */}
@@ -113,54 +99,26 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // getStories
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
-  const stories =
-    !posX || !posY || !distance
-      ? []
-      : await client.story.findMany({
-          take: 10,
-          skip: 0,
-          orderBy: {
-            createdAt: "desc",
-          },
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-            records: {
-              where: {
-                kind: Kind.StoryLike,
-              },
-              select: {
-                id: true,
-                kind: true,
-                emotion: true,
-                userId: true,
-              },
-            },
-            comments: {
-              where: {
-                NOT: [{ content: "" }],
-                AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
-              },
-              select: {
-                id: true,
-              },
-            },
-          },
-          where: {
-            emdPosX: { gte: posX - distance, lte: posX + distance },
-            emdPosY: { gte: posY - distance, lte: posY + distance },
-          },
-        });
+
+  const { stories, totalCount } =
+    posX && posY && distance
+      ? await getStories({
+          prevCursor: 0,
+          pageSize: 10,
+          posX,
+          posY,
+          distance,
+        })
+      : {
+          stories: [],
+          totalCount: 0,
+        };
 
   // defaultLayout
   const defaultLayout = {
@@ -190,6 +148,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         response: {
           success: true,
+          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
           stories: JSON.parse(JSON.stringify(stories || [])),
         },
       },

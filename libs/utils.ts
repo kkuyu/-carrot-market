@@ -8,9 +8,9 @@ import { ResponseDataType } from "@libs/server/withHandler";
 import { ImageDeliveryResponse, GetFileResponse } from "@api/files";
 import { ProductCategories } from "@api/products/types";
 import { ProductCondition, GetProductsDetailResponse } from "@api/products/[id]";
-import { StoryCategories } from "@api/stories/types";
+import { StoryCategories, EmotionIcon } from "@api/stories/types";
+import { GetStoriesDetailResponse, StoryCondition } from "@api/stories/[id]";
 import { ReviewManners } from "@api/reviews/types";
-import { StoryCommentItem } from "@api/comments/[id]";
 
 export const getKey = <T extends ResponseDataType>(pageIndex: number, previousPageData: T | null, options: { url: string; query?: string }) => {
   const { url = "", query = "" } = options;
@@ -86,6 +86,29 @@ export const getProductCondition = (product: Partial<GetProductsDetailResponse["
     isSale: Boolean(product?.records?.find((record) => record.kind === Kind.ProductSale)),
     isPurchase: Boolean(product?.records?.find((record) => record.kind === Kind.ProductPurchase)),
     ...(userId ? { isLike: Boolean(product?.records?.find((record) => record.kind === Kind.ProductLike && record.userId === userId)) } : {}),
+  };
+};
+
+export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story"]> | null, userId: number | null = null): StoryCondition | null => {
+  if (!story || !story?.records) return null;
+  const category = getCategory<StoryCategories>(story?.category);
+  const likeRecords = story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
+  const likeRecord = likeRecords?.find((record) => record.userId === userId) || null;
+  const emotions = Object.entries(EmotionIcon)
+    .sort(([, a], [, b]) => a.index - b.index)
+    .filter(([key]) => likeRecords.find((i) => i.emotion === key));
+  return {
+    likes: likeRecords.length,
+    ...(category ? { category } : {}),
+    ...(story?.comments ? { comments: story?.comments?.length || 0 } : {}),
+    ...(category?.isLikeWithEmotion
+      ? {
+          emotion: likeRecord?.emotion,
+          emojis: emotions.length ? emotions.map(([key, emotion]) => emotion.emoji).join("") : null,
+          emoji: likeRecord?.emotion ? EmotionIcon?.[likeRecord?.emotion].emoji : null,
+        }
+      : {}),
+    ...(userId ? { isLike: Boolean(story?.records?.find((record) => record.kind === Kind.StoryLike && record.userId === userId)) } : {}),
   };
 };
 
