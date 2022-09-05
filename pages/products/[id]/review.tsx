@@ -4,18 +4,16 @@ import Link from "next/link";
 import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
-import { Kind } from "@prisma/client";
 // @libs
 import { getProductCondition, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 import client from "@libs/server/client";
 // @api
-import { GetUserResponse } from "@api/user";
+import { GetUserResponse, getUser } from "@api/user";
 import { PostReviewsResponse } from "@api/reviews";
-import { GetProductsDetailResponse } from "@api/products/[id]";
+import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
 import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -80,7 +78,7 @@ const ProductsReviewPage: NextPage = () => {
         </Link>
         {productData?.productCondition?.role?.myRole === "sellUser" && !productData?.product?.reviews?.length && (
           <div className="mt-2">
-            <Link href={`/products/${productData?.product?.id}/purchase`} passHref>
+            <Link href={`/products/${productData?.product?.id}/purchase/available`} passHref>
               <Buttons tag="a" status="default" size="sm" className="!inline-block !w-auto">
                 구매자 변경하기
               </Buttons>
@@ -109,16 +107,16 @@ const ProductsReviewPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getProduct: { response: GetProductsDetailResponse };
+  getProductsDetail: { response: GetProductsDetailResponse };
   getProfile: { response: GetProfilesDetailResponse };
   getPartnerProfile: { response: GetProfilesDetailResponse };
-}> = ({ getUser, getProduct, getProfile, getPartnerProfile }) => {
+}> = ({ getUser, getProductsDetail, getProfile, getPartnerProfile }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [`/api/products/${getProduct.response.product.id}`]: getProduct.response,
+          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
           [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [`/api/profiles/${getPartnerProfile.response.profile.id}`]: getPartnerProfile.response,
         },
@@ -133,7 +131,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // productId
   const productId: string = params?.id?.toString() || "";
@@ -151,48 +149,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!productId || isNaN(+productId)) invalidUrl = true;
-  // redirect `/products/${productId}`
-  if (invalidUrl) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // getProduct
-  const product = await client.product.findUnique({
-    where: {
-      id: +productId,
-    },
-    include: {
-      records: {
-        select: {
-          id: true,
-          kind: true,
-          userId: true,
-        },
-      },
-      reviews: {
-        select: {
-          id: true,
-          role: true,
-          sellUserId: true,
-          purchaseUserId: true,
-        },
-      },
-    },
-  });
-
-  // invalidProduct
-  let invalidProduct = false;
-  if (!product) invalidProduct = true;
-  // redirect `/products/${productId}`
-  if (invalidProduct) {
+  // getProductsDetail
+  const { product } =
+    productId && !isNaN(+productId)
+      ? await getProductsDetail({
+          id: +productId,
+        })
+      : {
+          product: null,
+        };
+  if (!product) {
     return {
       redirect: {
         permanent: false,
@@ -204,12 +170,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // condition
   const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
-  // invalidCondition
-  let invalidCondition = false;
-  if (productCondition?.isSale) invalidCondition = true;
-  if (productCondition?.role?.myRole !== "sellUser" && productCondition?.role?.myRole !== "purchaseUser") invalidCondition = true;
   // redirect `/products/${productId}`
-  if (invalidCondition) {
+  if (productCondition?.role?.myRole !== "sellUser" && productCondition?.role?.myRole !== "purchaseUser") {
     return {
       redirect: {
         permanent: false,
@@ -218,12 +180,22 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/products/${productId}/purchase`
+  // redirect `/products/${productId}`
+  if (productCondition?.isSale) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/${productId}`,
+      },
+    };
+  }
+
+  // redirect `/products/${productId}/purchase/available`
   if (!productCondition?.isPurchase) {
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}/purchase`,
+        destination: `/products/${productId}/purchase/available`,
       },
     };
   }
@@ -278,7 +250,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getProduct: {
+      getProductsDetail: {
         response: {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
