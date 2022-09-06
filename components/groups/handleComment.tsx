@@ -1,7 +1,7 @@
 import { useRouter } from "next/router";
 import type { HTMLAttributes } from "react";
 import { memo } from "react";
-import useSWR, { KeyedMutator } from "swr";
+import { KeyedMutator } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
@@ -34,18 +34,12 @@ const HandleComment = (props: HandleCommentProps) => {
   const { user } = useUser();
   const { openModal } = useModal();
 
-  const [deleteComment, { loading: deleteLoading }] = useMutation<PostCommentsDeleteResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item?.id}/delete` : "", {
+  // mutation data
+  const [deleteComment, { loading: loadingComment }] = useMutation<PostCommentsDeleteResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item?.id}/delete` : "", {
     onSuccess: () => {
       if (mutateStoryDetail) mutateStoryDetail();
       if (mutateStoryComments) mutateStoryComments();
       if (mutateCommentDetail) mutateCommentDetail();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
     },
   });
 
@@ -66,13 +60,13 @@ const HandleComment = (props: HandleCommentProps) => {
           text: "삭제",
           handler: () => {
             if (!item) return;
-            if (deleteLoading) return;
-            const time = new Date();
+            if (loadingComment) return;
+            const currentTime = new Date();
             // story boundMutate
             if (mutateStoryComments) {
               mutateStoryComments((prev) => {
                 if (!prev) return prev;
-                const comments = prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time }));
+                const comments = prev.comments.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: currentTime }));
                 return { ...prev, comments };
               }, false);
             }
@@ -80,8 +74,8 @@ const HandleComment = (props: HandleCommentProps) => {
             if (mutateCommentDetail) {
               mutateCommentDetail((prev) => {
                 if (!prev) return prev;
-                if (router?.query?.id?.toString() === item?.id?.toString()) return { ...prev, comment: { ...prev.comment, content: "", updatedAt: time } };
-                const reComments = (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: time }));
+                if (router?.query?.id?.toString() === item?.id?.toString()) return { ...prev, comment: { ...prev.comment, content: "", updatedAt: currentTime } };
+                const reComments = (prev?.comment?.reComments || [])?.map((comment) => (comment.id !== item?.id ? comment : { ...comment, content: "", updatedAt: currentTime }));
                 return { ...prev, comment: { ...prev.comment, reComments } };
               }, false);
             }

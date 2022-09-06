@@ -5,6 +5,7 @@ import { memo } from "react";
 import useSWR from "swr";
 import { Kind } from "@prisma/client";
 // @libs
+import { getCommentCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
@@ -30,50 +31,38 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
   const { user, type: userType } = useUser();
   const { openModal } = useModal();
 
-  const { data, mutate: boundMutate } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item.id}` : null);
-  const [updateLike, { loading: likeLoading }] = useMutation<PostCommentsLikeResponse>(data ? `/api/comments/${item?.id}/like` : "", {
+  // fetch data
+  const { data: commentData, mutate: mutateComment } = useSWR<GetCommentsDetailResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item.id}` : null, {
+    ...(item ? { fallbackData: { success: true, comment: item, commentCondition: getCommentCondition(item) } } : {}),
+  });
+
+  // mutation data
+  const [updateCommentLike, { loading: loadingCommentLike }] = useMutation<PostCommentsLikeResponse>(commentData ? `/api/comments/${item?.id}/like` : "", {
     onSuccess: () => {
-      boundMutate();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+      mutateComment();
     },
   });
 
-  const likeRecord = data?.comment?.records?.find((record) => record.userId === user?.id && record.kind === Kind.CommentLike);
-  const likeRecords = data?.comment?.records?.filter((record) => record.kind === Kind.CommentLike) || [];
-
-  // like
-  const clickLike = () => {
-    if (userType === "member") toggleLike();
-    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
-  };
+  // update: Kind.CommentLike.Record
   const toggleLike = () => {
-    if (!data) return;
-    if (likeLoading) return;
-    const isLike = !Boolean(likeRecord);
-    boundMutate((prev) => {
+    if (!commentData) return;
+    if (loadingCommentLike) return;
+    const currentCondition = commentData?.commentCondition ?? getCommentCondition(commentData?.comment!, user?.id);
+    mutateComment((prev) => {
       let records = prev?.comment?.records ? [...prev.comment.records] : [];
-      const idx = records.findIndex((record) => record.id === likeRecord?.id);
-      if (!isLike) records.splice(idx, 1);
-      if (isLike) records.push({ id: 0, kind: Kind.CommentLike, userId: user?.id! });
-      return prev && { ...prev, comment: { ...prev.comment, records: records } };
+      if (currentCondition?.isLike) records = records.filter((record) => record.kind !== Kind.CommentLike && record.userId !== user?.id);
+      if (!currentCondition?.isLike) records = [...records, { id: 0, kind: Kind.CommentLike, userId: user?.id! }];
+      return prev && { ...prev, comment: { ...prev.comment, records }, commentCondition: getCommentCondition({ ...commentData?.comment, records }, user?.id) };
     }, false);
-    updateLike({});
+    updateCommentLike({ like: !currentCondition?.isLike });
   };
 
-  // comment
-  const clickComment = () => {
-    (document.querySelector(".container input#content") as HTMLInputElement)?.focus();
-  };
+  if (!item) return null;
+  if (!item.content) return null;
+  if (item.depth < StoryCommentMinimumDepth) return null;
+  if (item.depth > StoryCommentMaximumDepth) return null;
 
-  // button
-  const FeedbackButton = (buttonProps: { pathname?: string; children: string | ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  const CustomFeedbackButton = (buttonProps: { pathname?: string; children: string | ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
@@ -91,28 +80,28 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
     );
   };
 
-  if (!item) return null;
-  if (!item.content) return null;
-  if (item.depth < StoryCommentMinimumDepth) return null;
-  if (item.depth > StoryCommentMaximumDepth) return null;
-
   return (
     <div className={`pl-11 space-x-2 ${className}`} {...restProps}>
-      {/* 좋아요: button */}
-      <FeedbackButton onClick={clickLike} className={`${likeRecord ? "text-orange-500" : "text-gray-500"}`}>
-        <>좋아요 {likeRecords.length || null}</>
-      </FeedbackButton>
-      {/* 답글: button */}
+      <CustomFeedbackButton
+        onClick={() => {
+          if (userType === "member") toggleLike();
+          if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+          if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
+        }}
+        className={`${commentData?.commentCondition?.isLike ? "text-orange-500" : "text-gray-500"}`}
+      >
+        {`좋아요 ${commentData?.commentCondition?.likes || ""}`}
+      </CustomFeedbackButton>
       {item.depth >= StoryCommentMaximumDepth ? (
         <></>
       ) : router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString() ? (
-        <FeedbackButton onClick={clickComment} className="text-gray-500">
+        <CustomFeedbackButton onClick={() => (document.querySelector(".container input#content") as HTMLInputElement)?.focus()} className="text-gray-500">
           답글쓰기
-        </FeedbackButton>
+        </CustomFeedbackButton>
       ) : (
-        <FeedbackButton pathname={`/comments/${item?.id}`} className="text-gray-500">
+        <CustomFeedbackButton pathname={`/comments/${item?.id}`} className="text-gray-500">
           답글쓰기
-        </FeedbackButton>
+        </CustomFeedbackButton>
       )}
     </div>
   );

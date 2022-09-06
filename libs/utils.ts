@@ -10,6 +10,7 @@ import { ProductCategories } from "@api/products/types";
 import { ProductCondition, GetProductsDetailResponse } from "@api/products/[id]";
 import { StoryCategories, EmotionIcon } from "@api/stories/types";
 import { GetStoriesDetailResponse, StoryCondition } from "@api/stories/[id]";
+import { GetCommentsDetailResponse, StoryCommentCondition, StoryCommentItem } from "@api/comments/[id]";
 import { ReviewManners } from "@api/reviews/types";
 
 export const getKey = <T extends ResponseDataType>(pageIndex: number, previousPageData: T | null, options: { url: string; query?: string }) => {
@@ -112,6 +113,11 @@ export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story
   };
 };
 
+export const getCommentCondition = (comment: Partial<GetCommentsDetailResponse["comment"]>, userId: number | null = null): StoryCommentCondition | null => {
+  if (!comment || !comment?.records) return null;
+  return {
+    likes: comment?.records?.filter((record) => record.kind === Kind.CommentLike)?.length || 0,
+    ...(userId ? { isLike: Boolean(comment?.records?.find((record) => record.kind === Kind.CommentLike && record.userId === userId)) } : {}),
   };
 };
 

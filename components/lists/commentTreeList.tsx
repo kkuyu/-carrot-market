@@ -22,20 +22,22 @@ const CommentTreeList = (props: CommentTreeListProps) => {
   const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, cardProps = {}, children, className = "", ...restProps } = props;
 
   const [isLoading, setIsLoading] = useState(false);
-  const [readType, setReadType] = useState<StoryCommentReadTypeEnum>("more");
+  const [readState, setReadState] = useState<{ type: StoryCommentReadTypeEnum; counts: number | null }>({ type: "more", counts: null });
 
   const readMoreReComments = () => {
     if (!reCommentRefId) return;
     if (!moreReComments) return;
     setIsLoading(true);
-    moreReComments(readType, reCommentRefId, !list.length ? 0 : list[list.length - 1].id);
+    moreReComments(readState.type, reCommentRefId, !list.length ? 0 : list[list.length - 1].id);
   };
 
   useEffect(() => {
     setIsLoading(false);
-    if (readType === "fold") return;
-    if (list.length === countReComments) setReadType("fold");
-  }, [list.length]);
+    setReadState((prev) => {
+      const type = list.length === countReComments || (prev.type === "fold" && prev.counts === countReComments) ? "fold" : "more";
+      return { type, counts: type === "fold" ? countReComments : null };
+    });
+  }, [list.length, countReComments]);
 
   if (!Boolean(list.length) && !countReComments) return null;
   if (depth < StoryCommentMinimumDepth) return null;

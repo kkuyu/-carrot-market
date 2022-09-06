@@ -8,7 +8,7 @@ export const StoryCommentReadTypeEnum = {
 export type StoryCommentReadTypeEnum = typeof StoryCommentReadTypeEnum[keyof typeof StoryCommentReadTypeEnum];
 
 export const StoryCommentMinimumDepth = 0;
-export const StoryCommentMaximumDepth = 2;
+export const StoryCommentMaximumDepth = 1;
 
 export type StoryCategories = {
   value: StoryCategory;

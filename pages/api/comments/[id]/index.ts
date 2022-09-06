@@ -1,15 +1,20 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Record, User, StoryComment, Story } from "@prisma/client";
 // @libs
-import { isInstance } from "@libs/utils";
+import { getCommentCondition, isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
 
+export interface StoryCommentCondition {
+  likes: number;
+  isLike?: boolean;
+}
+
 export type StoryCommentItem = StoryComment & {
-  user: Pick<User, "id" | "name" | "avatar">;
+  user?: Pick<User, "id" | "name" | "avatar">;
   story?: (Pick<Story, "id" | "userId" | "category"> & Partial<Story>) & { user?: Pick<User, "id" | "name" | "avatar"> };
   records?: Pick<Record, "id" | "kind" | "userId">[];
   _count?: { reComments: number };
@@ -18,6 +23,7 @@ export type StoryCommentItem = StoryComment & {
 
 export interface GetCommentsDetailResponse extends ResponseDataType {
   comment: StoryCommentItem;
+  commentCondition?: StoryCommentCondition | null;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {

@@ -1,8 +1,7 @@
 import Link from "next/link";
 import type { HTMLAttributes } from "react";
-import { useEffect, useState } from "react";
 // @libs
-import { getDiffTimeStr } from "@libs/utils";
+import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
@@ -19,15 +18,8 @@ export interface CommentProps extends HTMLAttributes<HTMLDivElement> {
 const Comment = (props: CommentProps) => {
   const { item, className = "", ...restProps } = props;
 
-  const [mounted, setMounted] = useState(false);
-
-  const today = new Date();
   const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
-  const diffTime = !isEdited ? getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime()) : getDiffTimeStr(new Date(item?.updatedAt).getTime(), today.getTime()) + " 수정";
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  const { isMounted, timeState } = useTimeDiff((!isEdited ? new Date(item?.createdAt).toString() : new Date(item?.updatedAt).toString()) || null);
 
   if (!item) return null;
   if (item.depth < StoryCommentMinimumDepth) return null;
@@ -36,11 +28,19 @@ const Comment = (props: CommentProps) => {
 
   return (
     <div className={`relative ${className}`} {...restProps}>
-      <Link href={`/profiles/${item?.user?.id}`}>
-        <a className="block">
-          <Profiles user={item?.user} signature={item?.story?.userId === item?.user?.id ? "작성자" : ""} emdPosNm={item?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} size="tiny" />
-        </a>
-      </Link>
+      {item?.user && (
+        <Link href={`/profiles/${item?.user?.id}`}>
+          <a className="block">
+            <Profiles
+              user={item?.user}
+              signature={item?.story?.userId === item?.user?.id ? "작성자" : ""}
+              emdPosNm={item?.emdPosNm}
+              diffTime={isMounted && timeState.diffStr ? timeState.diffStr : ""}
+              size="tiny"
+            />
+          </a>
+        </Link>
+      )}
       <div className="mt-1 pl-11">
         <p>{item.content}</p>
       </div>

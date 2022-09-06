@@ -5,18 +5,16 @@ import NextError from "next/error";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
-import { Kind } from "@prisma/client";
 // @libs
-import { getCategory, getDiffTimeStr, getCommentTree, truncateStr } from "@libs/utils";
+import { getStoryCondition, getCommentTree, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
-import client from "@libs/server/client";
+import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
-import { StoryCategories, StoryCommentMaximumDepth, StoryCommentMinimumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
-import { GetStoriesDetailResponse } from "@api/stories/[id]";
-import { GetStoriesCommentsResponse, PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
+import { GetStoriesDetailResponse, getStoriesDetail } from "@api/stories/[id]";
+import { GetStoriesCommentsResponse, PostStoriesCommentsResponse, getStoriesComments } from "@api/stories/[id]/comments";
 import { PostStoriesDeleteResponse } from "@api/stories/[id]/delete";
 import { PostStoriesViewsResponse } from "@api/stories/[id]/views";
 // @app
@@ -35,87 +33,51 @@ import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editS
 import CommentTreeList from "@components/lists/commentTreeList";
 import Profiles from "@components/profiles";
 
-const StoriesDetailPage: NextPage<{}> = () => {
+const StoriesDetailPage: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr, type: userType } = useUser();
   const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
-  // fetch data: story detail
-  const { data: storyData, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
-  const [mounted, setMounted] = useState(false);
-  const today = new Date();
-  const diffTime = storyData?.story && getDiffTimeStr(new Date(storyData?.story?.createdAt).getTime(), today.getTime());
-  const category = storyData?.story && getCategory<StoryCategories>(storyData?.story?.category);
-
-  // fetch data: story comments
+  // variable: invisible
   const [commentQuery, setCommentQuery] = useState("");
+
+  // fetch data
+  const { data: storyData, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
   const { data: commentData, mutate: mutateStoryComments } = useSWR<GetStoriesCommentsResponse>(router.query.id ? `/api/stories/${router.query.id}/comments?${commentQuery}` : null);
 
-  const [commentFlatList, setCommentFlatList] = useState<GetStoriesCommentsResponse["comments"]>(commentData?.comments ? commentData?.comments : []);
-  const commentLoading = useMemo(() => {
-    if (!commentFlatList?.length) return false;
-    return !!commentFlatList.find((comment) => comment.id === 0);
-  }, [commentFlatList]);
-  const commentTreeList = useMemo(() => {
-    if (!commentFlatList?.length) return [];
-    return getCommentTree(Math.max(...commentFlatList.map((v) => v.depth)), [...commentFlatList.map((v) => ({ ...v, reComments: [] }))]);
-  }, [commentFlatList]);
-
-  // new comment
-  const formData = useForm<EditStoryCommentTypes>({ defaultValues: { reCommentRefId: null } });
-  const [uploadStoryComment, { loading: uploadLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
+  // mutation data
+  const [updateComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
     onSuccess: () => {
       mutateStoryDetail();
       mutateStoryComments();
     },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
   });
-
-  // kebab action: delete
-  const [deleteStory, { loading: deleteLoading }] = useMutation<PostStoriesDeleteResponse>(`/api/stories/${router.query.id}/delete`, {
+  const [deleteStory, { loading: loadingStory }] = useMutation<PostStoriesDeleteResponse>(`/api/stories/${router.query.id}/delete`, {
     onSuccess: () => {
       router.replace("/stories");
     },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
   });
 
-  const moreReComments = (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => {
-    const commentExistedList = readType === "more" ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
-    setCommentFlatList(() => [...commentExistedList]);
-    setCommentQuery(() => {
-      let result = "";
-      result += `existed=${JSON.stringify(commentExistedList?.map((comment) => comment.id))}`;
-      result += `&readType=${readType}&reCommentRefId=${reCommentRefId}&prevCursor=${prevCursor}`;
-      return result;
-    });
-  };
+  // variable: visible
+  const { isMounted, timeState } = useTimeDiff(storyData?.story?.createdAt?.toString() || null);
+  const formData = useForm<EditStoryCommentTypes>({ defaultValues: { reCommentRefId: null } });
+  const [flatComments, setFlatComments] = useState<GetStoriesCommentsResponse["comments"]>(commentData?.comments ? commentData?.comments : []);
+  const loadingComments = useMemo(() => {
+    if (!flatComments?.length) return false;
+    return !!flatComments.find((comment) => comment.id === 0);
+  }, [flatComments]);
+  const treeComments = useMemo<GetStoriesCommentsResponse["comments"]>(() => {
+    if (!flatComments?.length) return [];
+    return getCommentTree(Math.max(...flatComments.map((v) => v.depth)), [...flatComments.map((v) => ({ ...v, reComments: [] }))]);
+  }, [flatComments]);
 
-  const validReComment = (data: EditStoryCommentTypes) => {
-    if (userType === "member") {
-      submitReComment(data);
-      return;
-    }
-    openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-  };
-
+  // update: StoryComment
   const submitReComment = (data: EditStoryCommentTypes) => {
-    if (!user || commentLoading || uploadLoading) return;
+    if (!user || loadingComment || loadingComments) return;
     if (!storyData?.story) return;
     mutateStoryDetail((prev) => {
-      return prev && { ...prev, story: { ...prev.story, comments: [...prev.story.comments, { id: 0 }] } };
+      return prev && { ...prev, story: { ...prev.story, comments: [...(prev.story.comments || []), { id: 0 }] } };
     }, false);
     mutateStoryComments((prev) => {
       const time = new Date();
@@ -125,10 +87,10 @@ const StoriesDetailPage: NextPage<{}> = () => {
       return prev && { ...prev, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
     formData.setValue("content", "");
-    uploadStoryComment({ ...data, ...currentAddr });
+    updateComment({ ...data, ...currentAddr });
   };
 
-  // modal: delete
+  // modal: ConfirmDeleteStory
   const openDeleteModal = () => {
     openModal<AlertModalProps>(AlertModal, "ConfirmDeleteStory", {
       actions: [
@@ -143,7 +105,7 @@ const StoriesDetailPage: NextPage<{}> = () => {
           style: AlertStyleEnum["destructive"],
           text: "삭제",
           handler: () => {
-            if (deleteLoading) return;
+            if (loadingStory) return;
             deleteStory({});
           },
         },
@@ -151,30 +113,27 @@ const StoriesDetailPage: NextPage<{}> = () => {
     });
   };
 
-  // merge comment data
   useEffect(() => {
     if (!commentData) return;
-    setCommentFlatList(() => [...commentData.comments]);
+    setFlatComments(() => [...commentData.comments]);
   }, [commentData]);
 
   useEffect(() => {
     if (!router?.query?.id) return;
-    setCommentQuery(() => "");
+    setCommentQuery("");
   }, [router?.query?.id]);
 
-  // setting layout
   useEffect(() => {
     if (!userType) return;
     const kebabActions = [
       { key: "welcome", style: ActionStyleEnum["primary"], text: "당근마켓 시작하기", handler: () => router.push(`/welcome`) },
-      { key: "report", style: ActionStyleEnum["default"], text: "신고", handler: () => console.log("신고") },
-      { key: "block", style: ActionStyleEnum["default"], text: "이 사용자의 글 보지 않기", handler: () => console.log("이 사용자의 글 보지 않기") },
       { key: "edit", style: ActionStyleEnum["default"], text: "수정", handler: () => router.push(`/stories/${storyData?.story?.id}/edit`) },
+      { key: "block", style: ActionStyleEnum["default"], text: "이 사용자의 글 보지 않기", handler: () => console.log("이 사용자의 글 보지 않기") },
+      { key: "report", style: ActionStyleEnum["destructive"], text: "신고", handler: () => console.log("신고") },
       { key: "delete", style: ActionStyleEnum["destructive"], text: "삭제", handler: () => openDeleteModal() },
       { key: "cancel", style: ActionStyleEnum["cancel"], text: "취소", handler: null },
     ];
     changeLayout({
-      meta: {},
       header: {
         kebabActions:
           userType === "guest"
@@ -183,42 +142,36 @@ const StoriesDetailPage: NextPage<{}> = () => {
             ? kebabActions.filter((action) => ["report", "block", "cancel"].includes(action.key))
             : kebabActions.filter((action) => ["edit", "delete", "cancel"].includes(action.key)),
       },
-      navBar: {},
     });
   }, [storyData?.story, user?.id, userType]);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   if (!storyData?.story) {
     return <NextError statusCode={404} />;
   }
 
   return (
-    <article className={`container ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
+    <article className={`container pt-5 ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
       <h1 className="sr-only">{truncateStr(storyData?.story?.content, 15)} | 동네생활</h1>
 
       {/* 게시글 정보 */}
-      <section className="-mx-5 border-b">
-        {/* 내용 */}
-        <div className="pt-5 pb-4 px-5">
-          {/* 카테고리 */}
-          <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{category?.text}</em>
-          {/* 판매자 */}
+      <section className="border-b">
+        {/* 카테고리 */}
+        <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{storyData?.storyCondition?.category?.text}</em>
+        {/* 판매자 */}
+        {storyData?.story?.user && (
           <Link href={`/profiles/${storyData?.story?.user?.id}`}>
             <a className="block py-3">
-              <Profiles user={storyData?.story?.user} emdPosNm={storyData?.story?.emdPosNm} diffTime={mounted && diffTime ? diffTime : ""} />
+              <Profiles user={storyData?.story?.user} emdPosNm={storyData?.story?.emdPosNm} diffTime={isMounted && timeState.diffStr ? timeState.diffStr : ""} size="sm" />
             </a>
           </Link>
-          {/* 게시글 내용 */}
-          <div className="pt-5 border-t">
-            <p className="whitespace-pre-wrap">{storyData?.story?.content}</p>
-          </div>
+        )}
+        {/* 게시글 내용 */}
+        <div className="pt-5 border-t">
+          <p className="whitespace-pre-wrap">{storyData?.story?.content}</p>
         </div>
         {/* 썸네일 */}
         {Boolean(storyData?.story?.photos?.length) && (
-          <div className="pb-5 px-5">
+          <div className="mt-4">
             <PictureList
               list={
                 storyData?.story?.photos?.split(";")?.map((src, index, array) => ({
@@ -233,32 +186,40 @@ const StoriesDetailPage: NextPage<{}> = () => {
           </div>
         )}
         <ArticleReport<PostStoriesViewsResponse>
-          fetchUrl={mounted && storyData?.story ? `/api/stories/${storyData?.story?.id}/views` : null}
+          fetchUrl={isMounted && storyData?.story ? `/api/stories/${storyData?.story?.id}/views` : null}
           initialState={{ id: storyData?.story?.id, views: storyData?.story?.views }}
-          className="empty:hidden pb-3 px-5"
+          className="empty:hidden mt-4"
         />
         {/* 피드백 */}
-        <FeedbackStory item={storyData?.story} />
+        <FeedbackStory item={storyData?.story} className="mt-3" />
       </section>
 
       {/* 댓글/답변 목록: list */}
-      {commentTreeList && Boolean(commentTreeList?.length) && (
+      {treeComments && Boolean(treeComments?.length) && (
         <div className="mt-5">
-          <CommentTreeList list={commentTreeList} moreReComments={moreReComments} cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}>
+          <CommentTreeList
+            list={treeComments}
+            cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}
+            moreReComments={(readType, reCommentRefId, prevCursor) => {
+              const comments = readType === "more" ? flatComments : flatComments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+              setFlatComments(() => comments);
+              setCommentQuery(() => `existed=${JSON.stringify(comments?.map((comment) => comment.id))}&readType=${readType}&reCommentRefId=${reCommentRefId}&prevCursor=${prevCursor}`);
+            }}
+          >
             <FeedbackComment key="FeedbackComment" />
-            {userType === "member" ? <HandleComment key="HandleComment" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} className="p-1" /> : <></>}
+            {userType === "member" ? <HandleComment key="HandleComment" className="p-1" mutateStoryDetail={mutateStoryDetail} mutateStoryComments={mutateStoryComments} /> : <></>}
             <CommentTreeList key="CommentTreeList" />
           </CommentTreeList>
         </div>
       )}
 
       {/* 댓글/답변 목록: empty */}
-      {commentTreeList && !Boolean(commentTreeList?.length) && (
+      {treeComments && !Boolean(treeComments?.length) && (
         <div className="list-empty">
           <>
-            아직 {category?.commentType}이 없어요
+            아직 {storyData?.storyCondition?.category?.commentType}이 없어요
             <br />
-            가장 먼저 {category?.commentType}을 남겨보세요
+            가장 먼저 {storyData?.storyCondition?.category?.commentType}을 남겨보세요
           </>
         </div>
       )}
@@ -267,7 +228,13 @@ const StoriesDetailPage: NextPage<{}> = () => {
       {userType !== "guest" && (
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-14 border-t bg-white">
-            <EditStoryComment formData={formData} onValid={validReComment} isLoading={commentLoading || uploadLoading} commentType={category?.commentType} className="w-full px-5" />
+            <EditStoryComment
+              formData={formData}
+              onValid={(data) => (userType === "member" ? submitReComment(data) : openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {}))}
+              isLoading={loadingComment || loadingComments}
+              commentType={storyData?.storyCondition?.category?.commentType}
+              className="w-full px-5"
+            />
           </div>
         </div>
       )}
@@ -276,15 +243,15 @@ const StoriesDetailPage: NextPage<{}> = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getStory: { response: GetStoriesDetailResponse };
-  getComments: { query: string; response: GetStoriesCommentsResponse };
-}> = ({ getStory, getComments }) => {
+  getStoriesDetail: { response: GetStoriesDetailResponse };
+  getStoriesComments: { query: string; response: GetStoriesCommentsResponse };
+}> = ({ getStoriesDetail, getStoriesComments }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          [`/api/stories/${getStory.response.story.id}`]: getStory.response,
-          [`/api/stories/${getStory.response.story.id}/comments?${getComments.query}`]: getComments.response,
+          [`/api/stories/${getStoriesDetail.response.story.id}`]: getStoriesDetail.response,
+          [`/api/stories/${getStoriesDetail.response.story.id}/comments?${getStoriesComments.query}`]: getStoriesComments.response,
         },
       }}
     >
@@ -306,94 +273,36 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // storyId
   const storyId: string = params?.id?.toString() || "";
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!storyId || isNaN(+storyId)) invalidUrl = true;
-  // 404
-  if (invalidUrl) {
+  // getStoriesDetail
+  const { story } = storyId
+    ? await getStoriesDetail({
+        id: +storyId,
+      })
+    : {
+        story: null,
+      };
+  if (!story) {
     return {
       notFound: true,
     };
   }
 
-  // getStory
-  const story = await client.story.findUnique({
-    where: {
-      id: +storyId,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      records: {
-        where: {
-          kind: Kind.StoryLike,
-        },
-        select: {
-          id: true,
-          kind: true,
-          emotion: true,
-          userId: true,
-        },
-      },
-      comments: {
-        where: {
-          NOT: [{ content: "" }],
-          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
-        },
-        select: {
-          id: true,
-        },
-      },
-    },
-  });
+  // condition
+  const storyCondition = getStoryCondition(story, null);
 
-  // invalidStory
-  let invalidStory = false;
-  if (!story) invalidStory = true;
-  // 404
-  if (invalidStory) {
-    return {
-      notFound: true,
-    };
-  }
-
-  // getComments
-  const comments = await client.storyComment.findMany({
-    where: {
-      storyId: story?.id,
-      depth: StoryCommentMinimumDepth,
-      NOT: [{ content: "" }],
-    },
-    orderBy: {
-      createdAt: "asc",
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      story: {
-        select: {
-          id: true,
-          userId: true,
-          category: true,
-        },
-      },
-      _count: {
-        select: {
-          reComments: true,
-        },
-      },
-    },
-  });
+  // getStoriesComments
+  const { comments } = storyId
+    ? await getStoriesComments({
+        storyId: +storyId,
+        existed: [],
+        readType: null,
+        reCommentRefId: 0,
+        prevCursor: 0,
+        pageSize: 0,
+      })
+    : {
+        comments: [],
+      };
 
   // defaultLayout
   const defaultLayout = {
@@ -413,13 +322,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       defaultLayout,
-      getStory: {
+      getStoriesDetail: {
         response: {
           success: true,
           story: JSON.parse(JSON.stringify(story || {})),
+          storyCondition: JSON.parse(JSON.stringify(storyCondition || {})),
         },
       },
-      getComments: {
+      getStoriesComments: {
         query: "",
         response: {
           success: true,

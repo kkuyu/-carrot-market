@@ -20,11 +20,50 @@ export interface StoryCondition {
 
 export interface GetStoriesDetailResponse extends ResponseDataType {
   story: Story & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments: Pick<StoryComment, "id">[];
+    user?: Pick<User, "id" | "name" | "avatar">;
+    records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
+    comments?: Pick<StoryComment, "id">[];
   };
+  storyCondition?: StoryCondition | null;
 }
+
+export const getStoriesDetail = async (query: { id: number }) => {
+  const { id } = query;
+
+  const story = await client.story.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+      records: {
+        select: {
+          id: true,
+          kind: true,
+          emotion: true,
+          userId: true,
+        },
+      },
+      comments: {
+        where: {
+          NOT: [{ content: "" }],
+          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  return { story };
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -47,40 +86,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const story = await client.story.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        records: {
-          where: {
-            kind: Kind.StoryLike,
-          },
-          select: {
-            id: true,
-            kind: true,
-            emotion: true,
-            userId: true,
-          },
-        },
-        comments: {
-          where: {
-            NOT: [{ content: "" }],
-            AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
-          },
-          select: {
-            id: true,
-          },
-        },
-      },
-    });
+    const { story } = await getStoriesDetail({ id });
     if (!story) {
       const error = new Error("NotFoundStory");
       error.name = "NotFoundStory";
@@ -91,6 +97,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: GetStoriesDetailResponse = {
       success: true,
       story,
+      storyCondition: getStoryCondition(story, user?.id),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
