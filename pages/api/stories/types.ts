@@ -10,6 +10,12 @@ export type StoryCommentReadTypeEnum = typeof StoryCommentReadTypeEnum[keyof typ
 export const StoryCommentMinimumDepth = 0;
 export const StoryCommentMaximumDepth = 1;
 
+export const StoryPhotoOptions = {
+  maxLength: 5,
+  duplicateDelete: true,
+  acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+};
+
 export type StoryCategories = {
   value: StoryCategory;
   text: string;

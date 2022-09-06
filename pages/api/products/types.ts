@@ -1,5 +1,11 @@
 import { ProductCategory } from "@prisma/client";
 
+export const ProductPhotoOptions = {
+  maxLength: 5,
+  duplicateDelete: true,
+  acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+};
+
 export type ProductCategories = { value: ProductCategory; text: string; emoji?: string }[];
 
 export const ProductCategories: ProductCategories = [

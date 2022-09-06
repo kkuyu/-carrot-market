@@ -2,9 +2,9 @@ import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { ProductCategory } from "@prisma/client";
 // @libs
-import { getCategory, FileOptions } from "@libs/utils";
+import { getCategory } from "@libs/utils";
 // @api
-import { ProductCategories } from "@api/products/types";
+import { ProductCategories, ProductPhotoOptions } from "@api/products/types";
 // @components
 import Labels from "@components/labels";
 import Inputs from "@components/inputs";
@@ -28,12 +28,11 @@ interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
   onValid: (validForm: EditProductTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
-  fileOptions: FileOptions;
   emdPosNm: string;
 }
 
 const EditProduct = (props: EditProductProps) => {
-  const { formId, formData, onValid, isSuccess, isLoading, fileOptions, emdPosNm, className = "", ...restProps } = props;
+  const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue, getValues } = formData;
 
   // variable: invisible
@@ -51,11 +50,10 @@ const EditProduct = (props: EditProductProps) => {
         <Files
           register={register("currentPhotoFiles")}
           name="currentPhotoFiles"
-          fileOptions={fileOptions}
+          fileOptions={ProductPhotoOptions}
           initialValue={getValues("originalPhotoPaths")}
           updateValue={(value) => setValue("currentPhotoFiles", value)}
           accept="image/*"
-          multiple={true}
         />
         <span className="empty:hidden invalid">{formState.errors.currentPhotoFiles?.message}</span>
       </div>

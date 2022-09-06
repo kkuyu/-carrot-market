@@ -9,6 +9,9 @@ import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCategories } f
 import { getStoryCondition } from "@libs/utils";
 
 export interface StoryCondition {
+  role: {
+    myRole: "author" | "reader" | "unknown";
+  };
   likes: number;
   category?: StoryCategories[number] & { kebabCaseValue: string };
   emotion?: string | null;

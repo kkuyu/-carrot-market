@@ -1,18 +1,17 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { SWRConfig } from "swr";
 // @libs
+import { validateFiles, submitFiles } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
-import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 import useMutation from "@libs/client/useMutation";
+import { withSsrSession } from "@libs/server/withSession";
 // @api
-import { GetUserResponse } from "@api/user";
+import { GetUserResponse, getUser } from "@api/user";
+import { StoryPhotoOptions } from "@api/stories/types";
 import { PostStoriesResponse } from "@api/stories";
-import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -22,73 +21,39 @@ import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 const StoriesUploadPage: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr } = useUser();
-  const { changeLayout } = useLayouts();
 
-  const formData = useForm<EditStoryTypes>();
+  // variable: invisible
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [photoLoading, setPhotoLoading] = useState(false);
-  const [uploadStory, { loading }] = useMutation<PostStoriesResponse>("/api/stories", {
+  // mutation data
+  const [uploadStory, { loading: loadingStory }] = useMutation<PostStoriesResponse>("/api/stories", {
     onSuccess: (data) => {
       router.replace(`/stories/${data.story.id}`);
     },
-    onError: (data) => {
-      setPhotoLoading(false);
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+    onCompleted: () => {
+      setIsLoading(false);
     },
   });
 
-  const submitStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
-    if (!user || loading || photoLoading) return;
+  // variable: visible
+  const formData = useForm<EditStoryTypes>();
 
-    if (!_photos?.length) {
+  // update: Product
+  const submitStory = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditStoryTypes) => {
+    if (!user || loadingStory || isLoading) return;
+    if (!currentPhotoFiles?.length) {
       uploadStory({ ...data, photos: [], ...currentAddr });
       return;
     }
-
-    let photos = [];
-    setPhotoLoading(true);
-    for (let index = 0; index < _photos.length; index++) {
-      // new photo
-      const form = new FormData();
-      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
-      // get cloudflare file data
-      const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
-      if (!fileResponse.success) {
-        const error = new Error("GetFileError");
-        error.name = "GetFileError";
-        console.error(error);
-        return;
-      }
-      // upload image delivery
-      const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
-      if (!imageResponse.success) {
-        const error = new Error("UploadFileError");
-        error.name = "UploadFileError";
-        console.error(error);
-        return;
-      }
-      photos.push(imageResponse.result.id);
-    }
-    uploadStory({ photos, ...data, ...currentAddr });
+    setIsLoading(true);
+    const { validFiles } = validateFiles(currentPhotoFiles, StoryPhotoOptions);
+    const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
+    uploadStory({ ...data, photos: validPaths, ...currentAddr });
   };
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {
-        submitId: "upload-story",
-      },
-      navBar: {},
-    });
-  }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="upload-story" formData={formData} onValid={submitStory} isLoading={loading || photoLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditStory formId="upload-story" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };
@@ -113,12 +78,12 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
   let invalidUser = false;
   if (!ssrUser.profile) invalidUser = true;
-  // redirect `stories`
+  // redirect `/stories`
   if (invalidUser) {
     return {
       redirect: {
@@ -137,6 +102,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
       title: "동네생활 글 쓰기",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
+      submitId: "upload-story",
     },
     navBar: {
       utils: [],

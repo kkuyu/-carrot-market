@@ -4,18 +4,15 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import useLayouts from "@libs/client/useLayouts";
-import { convertPhotoToFile } from "@libs/utils";
+import { getStoryCondition, validateFiles, submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import client from "@libs/server/client";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/user";
-import { GetStoriesDetailResponse } from "@api/stories/[id]";
+import { GetUserResponse, getUser } from "@api/user";
+import { StoryPhotoOptions } from "@api/stories/types";
+import { GetStoriesDetailResponse, getStoriesDetail } from "@api/stories/[id]";
 import { PostStoriesUpdateResponse } from "@api/stories/[id]/update";
-import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -25,125 +22,66 @@ import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 const StoriesEditPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
-  const { changeLayout } = useLayouts();
 
-  const { data: storyData, mutate } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
+  // variable: invisible
+  const [isLoading, setIsLoading] = useState(false);
 
+  // fetch data
+  const { data: storyData, mutate: mutateStory } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
+
+  // mutation data
+  const [editStory, { loading: loadingStory }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
+    onSuccess: async (data) => {
+      await mutateStory();
+      router.replace(`/stories/${data.story.id}`);
+    },
+    onCompleted: () => {
+      setIsLoading(false);
+    },
+  });
+
+  // variable: visible
   const formData = useForm<EditStoryTypes>({
     defaultValues: {
+      originalPhotoPaths: storyData?.story?.photos,
       category: storyData?.story?.category as EditStoryTypes["category"],
       content: storyData?.story?.content,
     },
   });
 
-  const [photoLoading, setPhotoLoading] = useState(true);
-  const [editStory, { loading }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
-    onSuccess: async (data) => {
-      await mutate((prev) => prev && { ...prev, story: { ...prev?.story, ...data?.story } });
-      router.replace(`/stories/${data.story.id}`);
-    },
-    onError: (data) => {
-      setPhotoLoading(false);
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-
-  const setDefaultPhotos = async () => {
-    if (!storyData?.story?.photos) {
-      setPhotoLoading(false);
-      return;
-    }
-
-    const transfer = new DataTransfer();
-    const photos = storyData?.story?.photos?.length ? storyData?.story.photos.split(";") : [];
-    for (let index = 0; index < photos.length; index++) {
-      const file = await convertPhotoToFile(photos[index]);
-      if (file !== null) transfer.items.add(file);
-    }
-
-    formData.setValue("photos", transfer.files);
-    setPhotoLoading(false);
-  };
-
-  const submitStory = async ({ photos: _photos, ...data }: EditStoryTypes) => {
-    if (!user || loading || photoLoading) return;
-
-    if (!_photos?.length) {
-      editStory({ ...data, photos: [] });
-      return;
-    }
-
-    let photos = [];
-    setPhotoLoading(true);
-    for (let index = 0; index < _photos.length; index++) {
-      // same photo
-      if (storyData?.story?.photos && storyData?.story.photos.includes(_photos[index].name)) {
-        photos.push(_photos[index].name);
-        continue;
-      }
-      // new photo
-      const form = new FormData();
-      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
-      // get cloudflare file data
-      const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
-      if (!fileResponse.success) {
-        const error = new Error("GetFileError");
-        error.name = "GetFileError";
-        console.error(error);
-        return;
-      }
-      // upload image delivery
-      const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
-      if (!imageResponse.success) {
-        const error = new Error("UploadFileError");
-        error.name = "UploadFileError";
-        console.error(error);
-        return;
-      }
-      photos.push(imageResponse.result.id);
-    }
-    editStory({ photos, ...data });
+  // update: Story
+  const submitStory = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditStoryTypes) => {
+    if (!user || loadingStory || isLoading) return;
+    setIsLoading(true);
+    const { validFiles } = validateFiles(currentPhotoFiles, StoryPhotoOptions);
+    const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
+    editStory({ ...data, photos: validPaths });
   };
 
   useEffect(() => {
     if (!storyData?.story) return;
-    setPhotoLoading(true);
+    formData.setValue("originalPhotoPaths", storyData?.story?.photos);
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
-    setDefaultPhotos();
   }, [storyData]);
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {
-        submitId: "edit-story",
-      },
-      navBar: {},
-    });
-  }, []);
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="edit-story" formData={formData} onValid={submitStory} isLoading={loading || photoLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
+      <EditStory formId="edit-story" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
     </div>
   );
 };
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getStory: { response: GetStoriesDetailResponse };
-}> = ({ getUser, getStory }) => {
+  getStoriesDetail: { response: GetStoriesDetailResponse };
+}> = ({ getUser, getStoriesDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [`/api/stories/${getStory.response.story.id}`]: getStory.response,
+          [`/api/stories/${getStoriesDetail.response.story.id}`]: getStoriesDetail.response,
         },
       }}
     >
@@ -156,7 +94,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // storyId
   const storyId: string = params?.id?.toString() || "";
@@ -174,11 +112,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!storyId || isNaN(+storyId)) invalidUrl = true;
-  // redirect `/stories/${storyId}`
-  if (invalidUrl) {
+  // getStoriesDetail
+  const { story } =
+    storyId && !isNaN(+storyId)
+      ? await getStoriesDetail({
+          id: +storyId,
+        })
+      : {
+          story: null,
+        };
+  if (!story) {
     return {
       redirect: {
         permanent: false,
@@ -187,19 +130,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // getStory
-  const story = await client.story.findUnique({
-    where: {
-      id: +storyId,
-    },
-  });
+  // condition
+  const storyCondition = getStoryCondition(story, ssrUser?.profile?.id);
 
-  // invalidStory
-  let invalidStory = false;
-  if (!story) invalidStory = true;
-  if (story?.userId !== ssrUser?.profile?.id) invalidStory = true;
   // redirect `/stories/${storyId}`
-  if (invalidStory) {
+  if (storyCondition?.role?.myRole !== "author") {
     return {
       redirect: {
         permanent: false,
@@ -211,12 +146,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: "글 수정 | 동네생활",
+      title: `글 수정 | ${truncateStr(story?.content, 15)} | 중고거래`,
     },
     header: {
       title: "동네생활 글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
+      submitId: "edit-story",
     },
     navBar: {
       utils: [],
@@ -229,10 +165,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getStory: {
+      getStoriesDetail: {
         response: {
           success: true,
           story: JSON.parse(JSON.stringify(story || {})),
+          storyCondition: JSON.parse(JSON.stringify(storyCondition || {})),
         },
       },
     },

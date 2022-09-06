@@ -167,6 +167,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
 
       {/* original select */}
       <select className="hidden" {...register} name={name} required={required} {...restProps}>
+        <option value="">{placeholder}</option>
         {optionGroups.map((group) => {
           if (optionGroups.length === 1)
             return group.options.map((option) => (

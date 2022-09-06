@@ -5,7 +5,7 @@ import { ProductCategory, StoryCategory, Kind } from "@prisma/client";
 import name from "@libs/name.json";
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
-import { ImageDeliveryResponse, GetFileResponse } from "@api/files";
+import { GetFilesResponse, DeleteFilesResponse, ImageDeliveryUpdateResponse } from "@api/files";
 import { ProductCategories } from "@api/products/types";
 import { ProductCondition, GetProductsDetailResponse } from "@api/products/[id]";
 import { StoryCategories, EmotionIcon } from "@api/stories/types";
@@ -98,7 +98,9 @@ export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story
   const emotions = Object.entries(EmotionIcon)
     .sort(([, a], [, b]) => a.index - b.index)
     .filter(([key]) => likeRecords.find((i) => i.emotion === key));
+  const myRole = userId === null ? "unknown" : userId === story?.userId ? "author" : "reader";
   return {
+    role: { myRole },
     likes: likeRecords.length,
     ...(category ? { category } : {}),
     ...(story?.comments ? { comments: story?.comments?.length || 0 } : {}),
@@ -125,33 +127,35 @@ export const getReviewManners = (mannerStr: string) => {
   return ReviewManners.find((v) => v.value === mannerStr) || null;
 };
 
-export type TimeLabel = "분" | "시간" | "일" | "개월" | "년";
-export type TimeConfig = { type?: "pastToPresent" | "presentToPast"; defaultValue?: string; minimumTimeLabel?: TimeLabel };
+export type TimeConfig = {
+  type?: "pastToPresent" | "presentToPast";
+  defaultValue?: string;
+  minimumTimeLabel?: "분" | "시간" | "일" | "개월" | "년";
+};
 
 export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeConfig) => {
-  const suffixStr = config?.type === "presentToPast" ? "후" : "전";
-  let resultStr = config?.defaultValue || `방금${suffixStr || " 전"}`;
+  const times = [
+    { ms: 1000 * 60, label: "분" },
+    { ms: 1000 * 60 * 60, label: "시간" },
+    { ms: 1000 * 60 * 60 * 24, label: "일" },
+    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" },
+    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" },
+  ].reverse();
 
   const diffTime = dateTo - dateFrom;
-  const times = [
-    { ms: 1000 * 60, label: "분" as TimeLabel },
-    { ms: 1000 * 60 * 60, label: "시간" as TimeLabel },
-    { ms: 1000 * 60 * 60 * 24, label: "일" as TimeLabel },
-    { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" as TimeLabel },
-    { ms: 1000 * 60 * 60 * 24 * 365, label: "년" as TimeLabel },
-  ].reverse();
+  const suffixStr = config?.type === "presentToPast" ? "후" : "전";
+  let resultStr = config?.defaultValue || `방금${suffixStr}`;
 
   for (let index = 0; index < times.length; index++) {
     const diff = Math.floor(diffTime / times[index].ms);
     if (diff > 0) {
-      resultStr = `${diff}${times[index].label}${suffixStr || " 전"}`;
+      resultStr = `${diff}${times[index].label}${suffixStr}`;
       break;
     }
     if (times[index].label === config?.minimumTimeLabel) {
       break;
     }
   }
-
   return resultStr;
 };
 
@@ -237,17 +241,23 @@ export const convertFileByPhoto = async (imageId: string, options?: { variant: s
   }
 };
 
-export const submitFiles = async (uploadFiles: FileList, options?: { originalPaths?: string[] }) => {
+export const submitFiles = async (uploadFiles: FileList | [], options?: { originalPaths?: string[] }) => {
   const uploadPaths = [];
+  const previousPaths = options?.originalPaths || [];
   for (let index = 0; index < uploadFiles.length; index++) {
-    if (options?.originalPaths?.includes(uploadFiles[index].name)) {
+    if (previousPaths?.includes(uploadFiles[index].name)) {
       uploadPaths.push(uploadFiles[index].name);
+      previousPaths.splice(previousPaths.indexOf(uploadFiles[index].name), 1);
       continue;
     }
     let path = null;
     const isCloudflareImages = /^image\/\w*$/.test(uploadFiles[index].type);
     if (isCloudflareImages) path = await submitFilesByPhoto(uploadFiles[index]);
-    if (path !== null) uploadPaths.push(path);
+    if (path) uploadPaths.push(path);
+  }
+  for (let index = 0; index < previousPaths.length; index++) {
+    const isCloudflareImages = /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(previousPaths[index]);
+    if (isCloudflareImages) await deleteFilesByPhoto(previousPaths[index]);
   }
   return { uploadPaths };
 };
@@ -256,13 +266,31 @@ export const submitFilesByPhoto = async (file: FileList[number]) => {
   try {
     const form = new FormData();
     form.append("file", file, file.name);
-    const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
+    const fileResponse: GetFilesResponse = await (await fetch("/api/files")).json();
     if (!fileResponse.success) new Error("ErrorFileResponse");
-    const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
+    const imageResponse: ImageDeliveryUpdateResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
     if (!imageResponse.success) new Error("ErrorImageResponse");
     return imageResponse.result.id;
   } catch (error) {
     console.error("submitFilesByPhoto", error, file);
+    return null;
+  }
+};
+
+export const deleteFilesByPhoto = async (id: string) => {
+  try {
+    const fileResponse: DeleteFilesResponse = await (
+      await fetch("/api/files", {
+        method: "DELETE",
+        headers: {
+          "Content-Type": "application/json; charset=utf-8",
+        },
+        body: JSON.stringify({ identifier: id }),
+      })
+    ).json();
+    return fileResponse;
+  } catch (error) {
+    console.error("deleteFilesByPhoto", error);
     return null;
   }
 };

@@ -1,9 +1,10 @@
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
 import { StoryCategory } from "@prisma/client";
+// @libs
 import { getCategory } from "@libs/utils";
 // @api
-import { StoryCategories } from "@api/stories/types";
+import { StoryCategories, StoryPhotoOptions } from "@api/stories/types";
 // @components
 import Labels from "@components/labels";
 import TextAreas from "@components/textareas";
@@ -12,7 +13,8 @@ import Buttons from "@components/buttons";
 import Selects from "@components/selects";
 
 export interface EditStoryTypes {
-  photos: FileList;
+  originalPhotoPaths: string;
+  currentPhotoFiles: FileList;
   category: StoryCategory;
   content: string;
 }
@@ -28,37 +30,29 @@ interface EditStoryProps extends HTMLAttributes<HTMLFormElement> {
 
 const EditStory = (props: EditStoryProps) => {
   const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
-  const { register, handleSubmit, formState, watch, setValue } = formData;
+  const { register, handleSubmit, formState, setValue, getValues } = formData;
 
-  const storyCategories = Object.values(StoryCategory)
-    .map(
-      (category) =>
-        getCategory<StoryCategories>(category, {
-          excludeCategory: [StoryCategory["POPULAR_STORY"]],
-        })!
-    )
-    .filter((category) => category);
-
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
+  // variable: invisible
+  const storyCategories = Object.values(StoryCategory).map(
+    (category) =>
+      getCategory<StoryCategories>(category, {
+        excludeCategory: [StoryCategory["POPULAR_STORY"]],
+      })!
+  );
 
   return (
     <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files
-          register={register("photos")}
-          name="photos"
-          fileOptions={fileOptions}
-          currentFiles={watch("photos")}
-          changeFiles={(value) => setValue("photos", value)}
+          register={register("currentPhotoFiles")}
+          name="currentPhotoFiles"
+          fileOptions={StoryPhotoOptions}
+          initialValue={getValues("originalPhotoPaths")}
+          updateValue={(value) => setValue("currentPhotoFiles", value)}
           accept="image/*"
-          multiple={true}
         />
-        <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
+        <span className="empty:hidden invalid">{formState.errors.currentPhotoFiles?.message}</span>
       </div>
       {/* 카테고리 */}
       <div className="space-y-1">
@@ -73,7 +67,7 @@ const EditStory = (props: EditStoryProps) => {
           initialValue={formData.getValues("category")}
           updateValue={(value) => setValue("category", value)}
           placeholder="카테고리를 선택해주세요"
-          optionGroups={[{ label: "카테고리 선택", options: storyCategories }]}
+          optionGroups={[{ label: "카테고리 선택", options: [...storyCategories.filter((category) => !!category)] }]}
           required
           name="category"
         />

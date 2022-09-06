@@ -10,6 +10,7 @@ import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
+import { ProductPhotoOptions } from "@api/products/types";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @app
@@ -24,11 +25,6 @@ const ProductsEditPage: NextPage = () => {
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
 
   // fetch data
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
@@ -58,12 +54,8 @@ const ProductsEditPage: NextPage = () => {
   // update: Product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
     if (!user || loadingProduct || isLoading) return;
-    if (!currentPhotoFiles?.length) {
-      editProduct({ ...data, photos: [] });
-      return;
-    }
     setIsLoading(true);
-    const { validFiles } = validateFiles(currentPhotoFiles, fileOptions);
+    const { validFiles } = validateFiles(currentPhotoFiles, ProductPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
     editProduct({ ...data, photos: validPaths });
   };
@@ -79,14 +71,7 @@ const ProductsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct
-        formId="edit-product"
-        formData={formData}
-        onValid={submitProduct}
-        isLoading={loadingProduct || isLoading}
-        fileOptions={fileOptions}
-        emdPosNm={productData?.product?.emdPosNm || ""}
-      />
+      <EditProduct formId="edit-product" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
   );
 };

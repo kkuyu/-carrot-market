@@ -19,7 +19,6 @@ interface FilesProps extends HTMLAttributes<HTMLInputElement> {
   required?: boolean;
   disabled?: boolean;
   accept?: string;
-  multiple?: boolean;
   register?: UseFormRegisterReturn;
   fileOptions?: FileOptions;
   initialValue?: string;
@@ -27,12 +26,12 @@ interface FilesProps extends HTMLAttributes<HTMLInputElement> {
 }
 
 const Files = (props: FilesProps) => {
-  const { name, required = false, disabled, accept, multiple = false, register, fileOptions, initialValue, updateValue, className = "", ...restProps } = props;
+  const { name, required = false, disabled, accept, register, fileOptions, initialValue, updateValue, className = "", ...restProps } = props;
   const { openToast } = useToast();
 
   const [isLoading, setIsLoading] = useState(true);
-  const [previewList, setPreviewList] = useState<PreviewItem[]>([]);
-  const [currentValues, setCurrentValues] = useState<FileList>();
+  const [fileState, setFileState] = useState<{ previews: PreviewItem[]; files?: FileList }>({ previews: [] });
+  const multiple = !fileOptions?.maxLength || fileOptions?.maxLength <= 1 ? false : true;
 
   const errorPreview = (e: SyntheticEvent<HTMLImageElement, Event>) => {
     const img = e.target as HTMLImageElement;
@@ -44,20 +43,19 @@ const Files = (props: FilesProps) => {
   };
 
   const updatePreview = () => {
-    // empty
-    if (!currentValues || !currentValues?.length) {
-      return setPreviewList([]);
-    }
-    // update preview
-    setPreviewList(
-      Array.from(currentValues).map((file: File) => ({
-        src: URL.createObjectURL(file),
-        raw: file,
-      }))
-    );
+    setFileState((prev) => ({
+      ...prev,
+      previews:
+        !prev?.files || !prev?.files?.length
+          ? []
+          : Array.from(prev?.files).map((file: File) => ({
+              src: URL.createObjectURL(file),
+              raw: file,
+            })),
+    }));
   };
 
-  const updateInitialFiles = async () => {
+  const initFiles = async () => {
     // empty
     if (!initialValue || !initialValue.length) {
       setIsLoading(false);
@@ -67,16 +65,16 @@ const Files = (props: FilesProps) => {
     const { validFiles } = await convertFiles(initialValue.split(";"));
     // update value
     if (updateValue) updateValue(validFiles);
-    setCurrentValues(validFiles);
+    setFileState((prev) => ({ ...prev, files: validFiles }));
     setIsLoading(false);
   };
 
-  const updateInputFiles = async (e: ChangeEvent<HTMLInputElement>) => {
+  const updateFiles = async (e: ChangeEvent<HTMLInputElement>) => {
     // empty
     if (!e.target.files || !e.target.files.length) return;
     // concat files
     const transfer = new DataTransfer();
-    const files = !multiple ? [...Array.from(e.target.files || [])] : [...Array.from(currentValues || []), ...Array.from(e.target.files || [])];
+    const files = !multiple ? [...Array.from(e.target.files || [])] : [...Array.from(fileState?.files || []), ...Array.from(e.target.files || [])];
     files.forEach((file) => transfer.items.add(file));
     // valid files
     const { errors, validFiles } = await validateFiles(transfer.files, fileOptions);
@@ -88,27 +86,27 @@ const Files = (props: FilesProps) => {
     });
     // update value
     if (updateValue) updateValue(validFiles);
-    setCurrentValues(transfer.files);
+    setFileState((prev) => ({ ...prev, files: validFiles }));
   };
 
   const removeFiles = (item: PreviewItem) => {
     // empty
-    if (!currentValues || !currentValues?.length) return;
+    if (!fileState?.files || !fileState?.files?.length) return;
     // filter files
     const transfer = new DataTransfer();
-    const files = Array.from(currentValues).filter((file) => file.name !== item.raw?.name);
+    const files = Array.from(fileState?.files).filter((file) => file.name !== item.raw?.name);
     files.forEach((file) => transfer.items.add(file));
     // update value
     if (updateValue) updateValue(transfer.files);
-    setCurrentValues(transfer.files);
+    setFileState((prev) => ({ ...prev, files: transfer.files }));
   };
 
   useEffect(() => {
     updatePreview();
-  }, [currentValues]);
+  }, [fileState?.files]);
 
   useEffect(() => {
-    updateInitialFiles();
+    initFiles();
   }, []);
 
   return (
@@ -124,7 +122,7 @@ const Files = (props: FilesProps) => {
           multiple={multiple}
           className="peer sr-only"
           {...restProps}
-          onChange={updateInputFiles}
+          onChange={updateFiles}
         />
         <label
           htmlFor={name}
@@ -133,13 +131,13 @@ const Files = (props: FilesProps) => {
         >
           <Icons name="Photo" className="w-5 h-5 text-gray-500" />
           <span className="mt-1 text-sm">
-            <em className={`not-italic ${previewList.length > 0 ? "text-orange-500" : ""}`}>{previewList.length}</em>
+            <em className={`not-italic ${fileState?.previews?.length > 0 ? "text-orange-500" : ""}`}>{fileState?.previews?.length}</em>
             {fileOptions?.maxLength ? `/${fileOptions?.maxLength}` : ""}
           </span>
         </label>
       </div>
       <div className="flex pl-20 pt-2 overflow-x-scroll before:block before:h-20">
-        {previewList?.map((item, index, array) => (
+        {fileState?.previews?.map((item, index, array) => (
           <div key={item.src} className="relative ml-3 w-20 shrink-0">
             <div className="relative border border-gray-300 rounded-md overflow-hidden">
               <span className="block pb-[100%]"></span>

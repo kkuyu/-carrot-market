@@ -10,6 +10,7 @@ import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
+import { ProductPhotoOptions } from "@api/products/types";
 import { PostProductsResponse } from "@api/products";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -23,11 +24,6 @@ const ProductsUploadPage: NextPage = () => {
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
 
   // mutation data
   const [uploadProduct, { loading: loadingProduct }] = useMutation<PostProductsResponse>("/api/products", {
@@ -42,7 +38,7 @@ const ProductsUploadPage: NextPage = () => {
   // variable: visible
   const formData = useForm<EditProductTypes>();
 
-  // update: product
+  // update: Product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
     if (!user || loadingProduct || isLoading) return;
     if (!currentPhotoFiles?.length) {
@@ -50,14 +46,14 @@ const ProductsUploadPage: NextPage = () => {
       return;
     }
     setIsLoading(true);
-    const { validFiles } = validateFiles(currentPhotoFiles, fileOptions);
+    const { validFiles } = validateFiles(currentPhotoFiles, ProductPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
     uploadProduct({ ...data, photos: validPaths, ...currentAddr });
   };
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="upload-product" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} fileOptions={fileOptions} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditProduct formId="upload-product" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };
