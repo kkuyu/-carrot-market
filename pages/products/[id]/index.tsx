@@ -136,7 +136,7 @@ const ProductsDetailPage: NextPage = () => {
     });
   }, [productData?.product, userType]);
 
-  if (!productData?.product) {
+  if (!productData?.success || !productData?.product) {
     return <NextError statusCode={404} />;
   }
 
@@ -272,7 +272,7 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          ...(getProductsDetail ? { [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response } : {}),
         },
       }}
     >

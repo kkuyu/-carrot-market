@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getStoryCondition, getCommentTree, truncateStr } from "@libs/utils";
+import { getStoryCondition, getCommentTree, truncateStr, submitFiles } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
@@ -62,14 +62,15 @@ const StoriesDetailPage: NextPage = () => {
   // variable: visible
   const { isMounted, timeState } = useTimeDiff(storyData?.story?.createdAt?.toString() || null);
   const formData = useForm<EditStoryCommentTypes>({ defaultValues: { reCommentRefId: null } });
-  const [flatComments, setFlatComments] = useState<GetStoriesCommentsResponse["comments"]>(commentData?.comments ? commentData?.comments : []);
-  const loadingComments = useMemo(() => {
-    if (!flatComments?.length) return false;
-    return !!flatComments.find((comment) => comment.id === 0);
-  }, [flatComments]);
-  const treeComments = useMemo<GetStoriesCommentsResponse["comments"]>(() => {
-    if (!flatComments?.length) return [];
-    return getCommentTree(Math.max(...flatComments.map((v) => v.depth)), [...flatComments.map((v) => ({ ...v, reComments: [] }))]);
+
+  // variable: comments
+  const [flatComments, setFlatComments] = useState<GetStoriesCommentsResponse["comments"]>(() => {
+    if (!commentData?.comment) return [];
+    return commentData?.comments;
+  });
+  const { treeComments, loadingComments } = useMemo(() => {
+    const treeComments = getCommentTree(Math.max(...flatComments.map((v) => v.depth)), [...flatComments.map((v) => ({ ...v, reComments: [] }))]);
+    return { treeComments, loadingComments: !!flatComments.find((comment) => comment.id === 0) };
   }, [flatComments]);
 
   // update: StoryComment
@@ -93,6 +94,7 @@ const StoriesDetailPage: NextPage = () => {
   // modal: ConfirmDeleteStory
   const openDeleteModal = () => {
     openModal<AlertModalProps>(AlertModal, "ConfirmDeleteStory", {
+      message: "삭제하시겠어요?",
       actions: [
         {
           key: "cancel",
@@ -106,6 +108,7 @@ const StoriesDetailPage: NextPage = () => {
           text: "삭제",
           handler: () => {
             if (loadingStory) return;
+            submitFiles([], { ...(storyData?.story?.photos?.length ? { originalPaths: storyData?.story?.photos?.split(";") } : {}) });
             deleteStory({});
           },
         },
@@ -114,9 +117,8 @@ const StoriesDetailPage: NextPage = () => {
   };
 
   useEffect(() => {
-    if (!commentData) return;
-    setFlatComments(() => [...commentData.comments]);
-  }, [commentData]);
+    setFlatComments((prev) => [...(commentData?.comments || prev)]);
+  }, [commentData?.comments]);
 
   useEffect(() => {
     if (!router?.query?.id) return;
@@ -145,7 +147,7 @@ const StoriesDetailPage: NextPage = () => {
     });
   }, [storyData?.story, user?.id, userType]);
 
-  if (!storyData?.story) {
+  if (!storyData?.success || !storyData?.story) {
     return <NextError statusCode={404} />;
   }
 
@@ -195,10 +197,11 @@ const StoriesDetailPage: NextPage = () => {
       </section>
 
       {/* 댓글/답변 목록: list */}
-      {treeComments && Boolean(treeComments?.length) && (
+      {isMounted && treeComments && Boolean(treeComments?.length) && (
         <div className="mt-5">
           <CommentTreeList
             list={treeComments}
+            prefix={storyData.story.id.toString()}
             cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}
             moreReComments={(readType, reCommentRefId, prevCursor) => {
               const comments = readType === "more" ? flatComments : flatComments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
@@ -214,7 +217,7 @@ const StoriesDetailPage: NextPage = () => {
       )}
 
       {/* 댓글/답변 목록: empty */}
-      {treeComments && !Boolean(treeComments?.length) && (
+      {isMounted && treeComments && !Boolean(treeComments?.length) && (
         <div className="list-empty">
           <>
             아직 {storyData?.storyCondition?.category?.commentType}이 없어요
@@ -250,8 +253,8 @@ const Page: NextPageWithLayout<{
     <SWRConfig
       value={{
         fallback: {
-          [`/api/stories/${getStoriesDetail.response.story.id}`]: getStoriesDetail.response,
-          [`/api/stories/${getStoriesDetail.response.story.id}/comments?${getStoriesComments.query}`]: getStoriesComments.response,
+          ...(getStoriesDetail ? { [`/api/stories/${getStoriesDetail?.response?.story?.id}`]: getStoriesDetail?.response } : {}),
+          ...(getStoriesDetail && getStoriesComments ? { [`/api/stories/${getStoriesDetail?.response?.story?.id}/comments?${getStoriesComments?.query}`]: getStoriesComments?.response } : {}),
         },
       }}
     >
@@ -274,13 +277,14 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const storyId: string = params?.id?.toString() || "";
 
   // getStoriesDetail
-  const { story } = storyId
-    ? await getStoriesDetail({
-        id: +storyId,
-      })
-    : {
-        story: null,
-      };
+  const { story } =
+    storyId && !isNaN(+storyId)
+      ? await getStoriesDetail({
+          id: +storyId,
+        })
+      : {
+          story: null,
+        };
   if (!story) {
     return {
       notFound: true,
@@ -291,9 +295,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const storyCondition = getStoryCondition(story, null);
 
   // getStoriesComments
-  const { comments } = storyId
+  const { comments } = story.id
     ? await getStoriesComments({
-        storyId: +storyId,
+        storyId: story.id,
         existed: [],
         readType: null,
         reCommentRefId: 0,

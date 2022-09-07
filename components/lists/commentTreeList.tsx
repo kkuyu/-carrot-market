@@ -13,13 +13,14 @@ interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
   depth?: number;
   reCommentRefId?: number;
   countReComments?: number;
-  moreReComments?: (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => void;
+  prefix?: string;
   cardProps?: Partial<CommentProps>;
+  moreReComments?: (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => void;
   children?: ReactElement | ReactElement[];
 }
 
 const CommentTreeList = (props: CommentTreeListProps) => {
-  const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, moreReComments, cardProps = {}, children, className = "", ...restProps } = props;
+  const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, prefix = "", cardProps = {}, moreReComments, children, className = "", ...restProps } = props;
 
   const [isLoading, setIsLoading] = useState(false);
   const [readState, setReadState] = useState<{ type: StoryCommentReadTypeEnum; counts: number | null }>({ type: "more", counts: null });
@@ -55,12 +56,12 @@ const CommentTreeList = (props: CommentTreeListProps) => {
               if (isValidElement(child)) {
                 if (child.key === "HandleComment") return cloneElement(child as ReactElement<HandleCommentProps>, { item: itemData });
                 if (child.key === "FeedbackComment") return cloneElement(child as ReactElement<FeedbackCommentProps>, { item: itemData });
-                if (child.key === "CommentTreeList") return cloneElement(child as ReactElement<CommentTreeListProps>, { list, cardProps, moreReComments, children, ...childInfo });
+                if (child.key === "CommentTreeList") return cloneElement(child as ReactElement<CommentTreeListProps>, { list, prefix, cardProps, moreReComments, children, ...childInfo });
               }
               return child;
             });
             return (
-              <li key={item.id} className="relative">
+              <li key={`${prefix}-${item.id}`} className="relative">
                 <Comment item={itemData} {...cardProps} />
                 {childrenWithProps}
               </li>

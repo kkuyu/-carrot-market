@@ -4,7 +4,7 @@ import Link from "next/link";
 import useSWR, { mutate, SWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 // @libs
-import { getKey, getProductCondition, truncateStr } from "@libs/utils";
+import { getKey, getProductCondition, submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
@@ -39,6 +39,7 @@ const ProductsDeletePage: NextPage = () => {
   // delete: Product
   const clickDelete = () => {
     if (loadingProduct) return;
+    submitFiles([], { ...(productData?.product?.photos?.length ? { originalPaths: productData?.product?.photos?.split(";") } : {}) });
     deleteProduct({});
   };
 
