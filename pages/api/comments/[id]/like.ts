@@ -12,10 +12,16 @@ export interface PostCommentsLikeResponse extends ResponseDataType {
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
+    const { like } = req.body;
     const { user } = req.session;
 
     // invalid
     if (!_id) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (typeof like !== "boolean") {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -35,13 +41,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id,
       },
       include: {
-        records: {
-          where: {
-            kind: Kind.CommentLike,
-            userId: user?.id,
-            commentId: id,
-          },
-        },
+        records: true,
       },
     });
     if (!comment) {
@@ -51,17 +51,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     let likeRecord = null;
-    const existed = comment.records.length ? comment.records[0] : null;
+    const existed = comment.records.find((record) => record.kind === Kind.CommentLike && record.userId === user?.id) || null;
 
-    if (existed) {
-      // delete record
+    // delete record
+    if (existed && like === false) {
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
-    } else {
-      // create record
+    }
+
+    // create record
+    if (!existed && like === true) {
       likeRecord = await client.record.create({
         data: {
           kind: Kind.CommentLike,

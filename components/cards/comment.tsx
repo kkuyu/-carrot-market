@@ -18,6 +18,7 @@ export interface CommentProps extends HTMLAttributes<HTMLDivElement> {
 const Comment = (props: CommentProps) => {
   const { item, className = "", ...restProps } = props;
 
+  // variable: visible
   const isEdited = new Date(item?.updatedAt).getTime() - new Date(item?.createdAt).getTime() > 100;
   const { isMounted, timeState } = useTimeDiff((!isEdited ? new Date(item?.createdAt).toString() : new Date(item?.updatedAt).toString()) || null);
 

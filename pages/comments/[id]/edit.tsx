@@ -4,15 +4,14 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
+import { getCommentCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import client from "@libs/server/client";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/user";
-import { GetCommentsDetailResponse } from "@api/comments/[id]";
+import { GetUserResponse, getUser } from "@api/user";
+import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
+import { GetCommentsDetailResponse, getCommentsDetail, getCommentsReComments } from "@api/comments/[id]";
 import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -23,33 +22,29 @@ import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editS
 const CommentsEditPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
-  const { changeLayout } = useLayouts();
 
-  const { data: commentData, mutate } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}` : null);
+  // fetch data
+  const { data: commentData, mutate: mutateComment } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&` : null);
 
+  // mutation data
+  const [editComment, { loading: loadingComment }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
+    onSuccess: async (data) => {
+      await mutateComment();
+      router.replace(`/comments/${data.comment.id}`);
+    },
+  });
+
+  // variable: visible
   const formData = useForm<EditStoryCommentTypes>({
     defaultValues: {
       content: commentData?.comment?.content,
     },
   });
 
-  const [editStoryComment, { loading }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
-    onSuccess: async (data) => {
-      await mutate((prev) => prev && { ...prev, comment: { ...prev?.comment } });
-      router.replace(`/comments/${data.comment.id}`);
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-
+  // update: StoryComment
   const submitStoryComment = async ({ ...data }: EditStoryCommentTypes) => {
-    if (!user || loading) return;
-    editStoryComment({ ...data });
+    if (!user || loadingComment) return;
+    editComment({ ...data });
   };
 
   useEffect(() => {
@@ -57,33 +52,23 @@ const CommentsEditPage: NextPage = () => {
     formData.setValue("content", commentData?.comment?.content);
   }, [commentData]);
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {
-        submitId: "edit-comment",
-      },
-      navBar: {},
-    });
-  }, []);
-
   return (
     <div className="container pt-5 pb-5">
-      <EditStoryComment formId="edit-comment" formData={formData} onValid={submitStoryComment} isLoading={loading} />
+      <EditStoryComment formId="edit-comment" formData={formData} onValid={submitStoryComment} isLoading={loadingComment} />
     </div>
   );
 };
 
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
-  getComment: { response: GetCommentsDetailResponse };
-}> = ({ getUser, getComment }) => {
+  getCommentsDetail: { response: GetCommentsDetailResponse };
+}> = ({ getUser, getCommentsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
-          [`/api/comments/${getComment.response.comment.id}`]: getComment.response,
+          [`/api/comments/${getCommentsDetail.response.comment.id}`]: getCommentsDetail.response,
         },
       }}
     >
@@ -96,7 +81,7 @@ Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // commentId
   const commentId: string = params?.id?.toString() || "";
@@ -114,11 +99,16 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!commentId || isNaN(+commentId)) invalidUrl = true;
-  // redirect `/comments/${commentId}`
-  if (invalidUrl) {
+  // getCommentsDetail
+  const { comment } =
+    commentId && !isNaN(+commentId)
+      ? await getCommentsDetail({
+          id: +commentId,
+        })
+      : {
+          comment: null,
+        };
+  if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
     return {
       redirect: {
         permanent: false,
@@ -127,26 +117,29 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // getComment
-  const comment = await client.storyComment.findUnique({
-    where: {
-      id: +commentId,
-    },
+  // condition
+  const commentCondition = getCommentCondition(comment, ssrUser?.profile?.id);
+
+  // redirect `/stories/${storyId}`
+  if (commentCondition?.role?.myRole !== "author") {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/comments/${commentId}`,
+      },
+    };
+  }
+
+  // fetch data: comments
+  const { comments } = await getCommentsReComments({
+    existed: [],
+    readType: null,
+    reCommentRefId: 0,
+    prevCursor: 0,
+    pageSize: 0,
+    commentDepth: comment.depth,
+    storyId: comment.storyId,
   });
-
-  // invalidComment
-  let invalidComment = false;
-  if (!comment) invalidComment = true;
-  if (comment?.userId !== ssrUser?.profile?.id) invalidComment = true;
-  // redirect `/comments/${commentId}`
-  if (invalidComment) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/comments/${commentId}`,
-      },
-    };
-  }
 
   // defaultLayout
   const defaultLayout = {
@@ -157,6 +150,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "댓글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
+      submitId: "edit-comment",
     },
     navBar: {
       utils: [],
@@ -169,10 +163,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getUser: {
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getComment: {
+      getCommentsDetail: {
+        query: "includeReComments=true&",
         response: {
           success: true,
-          comment: JSON.parse(JSON.stringify(comment || {})),
+          comment: JSON.parse(JSON.stringify({ ...comment, reComments: comments } || {})),
+          commentCondition: JSON.parse(JSON.stringify(commentCondition || {})),
         },
       },
     },

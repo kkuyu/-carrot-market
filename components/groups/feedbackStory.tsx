@@ -43,8 +43,8 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
 
   // mutation data
   const [updateProductLike, { loading: loadingProductLike }] = useMutation<PostStoriesLikeResponse>(item?.id ? `/api/stories/${item.id}/like` : "", {
-    onSuccess: () => {
-      mutateStory();
+    onSuccess: async () => {
+      await mutateStory();
     },
   });
 
@@ -55,10 +55,11 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
     const currentCondition = storyData?.storyCondition ?? getStoryCondition(storyData?.story!, user?.id);
     mutateStory((prev) => {
       let records = prev?.story?.records ? [...prev.story.records] : [];
-      if (currentCondition?.isLike && emotion && emotion === currentCondition?.emotion) records = records.filter((record) => record.userId !== user?.id);
-      if (currentCondition?.isLike && emotion && emotion !== currentCondition?.emotion) records = records.map((record) => (record.userId !== user?.id ? { ...record } : { ...record, emotion }));
-      if (currentCondition?.isLike && !emotion) records = records.filter((record) => record.userId !== user?.id);
-      if (!currentCondition?.isLike) records.push({ id: 0, kind: Kind.StoryLike, emotion, userId: user?.id! });
+      if (currentCondition?.isLike && emotion && emotion === currentCondition?.emotion) records = records.filter((record) => !(record.kind === Kind.StoryLike && record.userId == user?.id));
+      if (currentCondition?.isLike && emotion && emotion !== currentCondition?.emotion)
+        records = records.map((record) => (!(record.kind === Kind.StoryLike && record.userId == user?.id) ? { ...record } : { ...record, emotion }));
+      if (currentCondition?.isLike && !emotion) records = records.filter((record) => !(record.kind === Kind.StoryLike && record.userId == user?.id));
+      if (!currentCondition?.isLike) records = [...records, { id: 0, kind: Kind.StoryLike, emotion, userId: user?.id! }];
       return prev && { ...prev, story: { ...prev.story, records: records }, storyCondition: getStoryCondition({ ...storyData?.story, records }, user?.id) };
     }, false);
     updateProductLike({ like: !currentCondition?.isLike, emotion });

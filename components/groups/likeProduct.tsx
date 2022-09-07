@@ -40,14 +40,14 @@ const LikeProduct = (props: LikeProductProps) => {
     },
   });
 
-  // update: record like
+  // update: Record.Kind.ProductLike
   const toggleLike = () => {
     if (!productData?.product) return;
     if (loadingProductLike) return;
     const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product!, user?.id);
     mutateProduct((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
-      if (currentCondition?.isLike) records = records.filter((record) => record.kind !== Kind.ProductLike && record.userId !== user?.id);
+      if (currentCondition?.isLike) records = records.filter((record) => !(record.kind === Kind.ProductLike && record.userId === user?.id));
       if (!currentCondition?.isLike) records = [...records, { id: 0, kind: Kind.ProductSale, userId: user?.id! }];
       return prev && { ...prev, product: { ...prev.product, records }, productCondition: getProductCondition({ ...productData?.product, records }, user?.id) };
     }, false);

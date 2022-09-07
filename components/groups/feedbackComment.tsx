@@ -38,8 +38,8 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
 
   // mutation data
   const [updateCommentLike, { loading: loadingCommentLike }] = useMutation<PostCommentsLikeResponse>(commentData ? `/api/comments/${item?.id}/like` : "", {
-    onSuccess: () => {
-      mutateComment();
+    onSuccess: async () => {
+      await mutateComment();
     },
   });
 
@@ -50,7 +50,7 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
     const currentCondition = commentData?.commentCondition ?? getCommentCondition(commentData?.comment!, user?.id);
     mutateComment((prev) => {
       let records = prev?.comment?.records ? [...prev.comment.records] : [];
-      if (currentCondition?.isLike) records = records.filter((record) => record.kind !== Kind.CommentLike && record.userId !== user?.id);
+      if (currentCondition?.isLike) records = records.filter((record) => !(record.kind === Kind.CommentLike && record.userId === user?.id));
       if (!currentCondition?.isLike) records = [...records, { id: 0, kind: Kind.CommentLike, userId: user?.id! }];
       return prev && { ...prev, comment: { ...prev.comment, records }, commentCondition: getCommentCondition({ ...commentData?.comment, records }, user?.id) };
     }, false);

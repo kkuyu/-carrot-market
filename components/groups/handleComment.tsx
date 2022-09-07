@@ -36,10 +36,11 @@ const HandleComment = (props: HandleCommentProps) => {
 
   // mutation data
   const [deleteComment, { loading: loadingComment }] = useMutation<PostCommentsDeleteResponse>(item?.id && typeof item?.updatedAt !== "object" ? `/api/comments/${item?.id}/delete` : "", {
-    onSuccess: () => {
-      if (mutateStoryDetail) mutateStoryDetail();
-      if (mutateStoryComments) mutateStoryComments();
-      if (mutateCommentDetail) mutateCommentDetail();
+    onSuccess: async (data) => {
+      if (mutateStoryDetail) await mutateStoryDetail();
+      if (mutateStoryComments) await mutateStoryComments();
+      if (mutateCommentDetail && data.comment) await mutateCommentDetail();
+      if (mutateCommentDetail && !data.comment) router.replace(`/stories/${data.storyId}`);
     },
   });
 

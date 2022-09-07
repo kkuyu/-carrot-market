@@ -9,6 +9,7 @@ export const IconName = {
   ["Cog8Tooth"]: "Cog8Tooth",
   ["EllipsisVertical"]: "EllipsisVertical",
   ["FaceSmile"]: "FaceSmile",
+  ["HandThumbUp"]: "HandThumbUp",
   ["Heart"]: "Heart",
   ["HeartSolid"]: "HeartSolid",
   ["Home"]: "Home",

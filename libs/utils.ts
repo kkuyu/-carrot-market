@@ -92,13 +92,13 @@ export const getProductCondition = (product: Partial<GetProductsDetailResponse["
 
 export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story"]> | null, userId: number | null = null): StoryCondition | null => {
   if (!story || !story?.records) return null;
+  const myRole = userId === null ? "unknown" : userId === story?.userId ? "author" : "reader";
   const category = getCategory<StoryCategories>(story?.category);
   const likeRecords = story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
   const likeRecord = likeRecords?.find((record) => record.userId === userId) || null;
   const emotions = Object.entries(EmotionIcon)
     .sort(([, a], [, b]) => a.index - b.index)
     .filter(([key]) => likeRecords.find((i) => i.emotion === key));
-  const myRole = userId === null ? "unknown" : userId === story?.userId ? "author" : "reader";
   return {
     role: { myRole },
     likes: likeRecords.length,
@@ -117,7 +117,9 @@ export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story
 
 export const getCommentCondition = (comment: Partial<GetCommentsDetailResponse["comment"]>, userId: number | null = null): StoryCommentCondition | null => {
   if (!comment || !comment?.records) return null;
+  const myRole = userId === null ? "unknown" : userId === comment?.userId ? "author" : "reader";
   return {
+    role: { myRole },
     likes: comment?.records?.filter((record) => record.kind === Kind.CommentLike)?.length || 0,
     ...(userId ? { isLike: Boolean(comment?.records?.find((record) => record.kind === Kind.CommentLike && record.userId === userId)) } : {}),
   };
@@ -134,6 +136,9 @@ export type TimeConfig = {
 };
 
 export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeConfig) => {
+  let resultStr = null;
+  const diffTime = dateTo - dateFrom;
+  const suffixStr = config?.type === "presentToPast" ? "후" : "전";
   const times = [
     { ms: 1000 * 60, label: "분" },
     { ms: 1000 * 60 * 60, label: "시간" },
@@ -141,11 +146,6 @@ export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeCo
     { ms: 1000 * 60 * 60 * 24 * 30, label: "개월" },
     { ms: 1000 * 60 * 60 * 24 * 365, label: "년" },
   ].reverse();
-
-  const diffTime = dateTo - dateFrom;
-  const suffixStr = config?.type === "presentToPast" ? "후" : "전";
-  let resultStr = config?.defaultValue || `방금${suffixStr}`;
-
   for (let index = 0; index < times.length; index++) {
     const diff = Math.floor(diffTime / times[index].ms);
     if (diff > 0) {
@@ -156,7 +156,7 @@ export const getDiffTimeStr = (dateFrom: number, dateTo: number, config?: TimeCo
       break;
     }
   }
-  return resultStr;
+  return resultStr || config?.defaultValue || `방금${suffixStr}`;
 };
 
 export type FileOptions = {
@@ -169,7 +169,7 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
   let newFiles: File[] = [];
   let errors: Set<keyof typeof options> = new Set();
   // check duplicateDelete
-  for (let index = 0; index < originalFiles.length; index++) {
+  for (let index = 0; index < originalFiles?.length; index++) {
     if (!options?.duplicateDelete) {
       newFiles.push(originalFiles[index]);
       continue;
@@ -195,7 +195,7 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
   }
   // check maxLength
   if (options?.maxLength) {
-    if (originalFiles.length > options.maxLength) {
+    if (originalFiles?.length > options.maxLength) {
       errors.add("maxLength");
     }
     if (newFiles.length > options.maxLength) {
@@ -219,7 +219,7 @@ export const validateFiles = (originalFiles: FileList, options: FileOptions = {}
 
 export const convertFiles = async (originalPaths: string[], options?: { variant: string }) => {
   const transfer = new DataTransfer();
-  for (let index = 0; index < originalPaths.length; index++) {
+  for (let index = 0; index < originalPaths?.length; index++) {
     let file = null;
     const isCloudflareImages = /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(originalPaths[index]);
     if (isCloudflareImages) file = await convertFileByPhoto(originalPaths[index], options);
@@ -244,7 +244,7 @@ export const convertFileByPhoto = async (imageId: string, options?: { variant: s
 export const submitFiles = async (uploadFiles: FileList | [], options?: { originalPaths?: string[] }) => {
   const uploadPaths = [];
   const previousPaths = options?.originalPaths || [];
-  for (let index = 0; index < uploadFiles.length; index++) {
+  for (let index = 0; index < uploadFiles?.length; index++) {
     if (previousPaths?.includes(uploadFiles[index].name)) {
       uploadPaths.push(uploadFiles[index].name);
       previousPaths.splice(previousPaths.indexOf(uploadFiles[index].name), 1);
@@ -255,7 +255,7 @@ export const submitFiles = async (uploadFiles: FileList | [], options?: { origin
     if (isCloudflareImages) path = await submitFilesByPhoto(uploadFiles[index]);
     if (path) uploadPaths.push(path);
   }
-  for (let index = 0; index < previousPaths.length; index++) {
+  for (let index = 0; index < previousPaths?.length; index++) {
     const isCloudflareImages = /^\w{8}-\w{4}-\w{4}-\w{4}-\w{12}$/.test(previousPaths[index]);
     if (isCloudflareImages) await deleteFilesByPhoto(previousPaths[index]);
   }

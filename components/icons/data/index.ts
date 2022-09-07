@@ -8,6 +8,7 @@ export * from "@components/icons/data/chevronLeft";
 export * from "@components/icons/data/cog8Tooth";
 export * from "@components/icons/data/ellipsisVertical";
 export * from "@components/icons/data/faceSmile";
+export * from "@components/icons/data/handThumbUp";
 export * from "@components/icons/data/heart";
 export * from "@components/icons/data/heartSolid";
 export * from "@components/icons/data/home";

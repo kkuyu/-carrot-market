@@ -7,6 +7,7 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostCommentsDeleteResponse extends ResponseDataType {
   comment: StoryComment | null;
+  storyId: number;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -38,7 +39,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
         userId: true,
         storyId: true,
-        reCommentRefId: true,
+        reCommentRef: {
+          select: {
+            id: true,
+            _count: {
+              select: {
+                reComments: true,
+              },
+            },
+          },
+        },
         _count: {
           select: {
             reComments: true,
@@ -84,29 +94,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       });
     }
 
-    // fetch reCommentRef
-    const reCommentRef = !comment?.reCommentRefId
-      ? null
-      : await client.storyComment.findUnique({
-          where: {
-            id: comment?.reCommentRefId,
-          },
-          select: {
-            id: true,
-            content: true,
-            _count: {
-              select: {
-                reComments: true,
-              },
-            },
-          },
-        });
-
-    if (!newComment && reCommentRef?.id && !reCommentRef?.content && !reCommentRef?._count.reComments) {
-      // delete reCommentRef
+    if (comment?.reCommentRef?._count?.reComments === 1) {
       await client.storyComment.delete({
         where: {
-          id: reCommentRef?.id,
+          id: comment?.reCommentRef?.id,
         },
       });
     }
@@ -115,6 +106,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: PostCommentsDeleteResponse = {
       success: true,
       comment: newComment,
+      storyId: comment.storyId,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

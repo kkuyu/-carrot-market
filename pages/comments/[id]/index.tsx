@@ -1,19 +1,18 @@
 import type { GetStaticPaths, GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
+import Link from "next/link";
 import NextError from "next/error";
 import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getCommentTree, truncateStr } from "@libs/utils";
+import { getCommentCondition, getCommentTree, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
-import client from "@libs/server/client";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
-import { GetCommentsDetailResponse } from "@api/comments/[id]";
+import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { GetCommentsDetailResponse, getCommentsDetail, getCommentsReComments } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -26,67 +25,41 @@ import FeedbackComment from "@components/groups/feedbackComment";
 import HandleComment from "@components/groups/handleComment";
 import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editStoryComment";
 import StorySummary from "@components/cards/storySummary";
-import Link from "next/link";
 
 const CommentsDetailPage: NextPage = () => {
   const router = useRouter();
   const { user, currentAddr, type: userType } = useUser();
-  const { changeLayout } = useLayouts();
   const { openModal } = useModal();
 
-  // fetch data: comment detail
+  // variable: invisible
   const [commentQuery, setCommentQuery] = useState("");
+
+  // fetch data
   const { data: commentData, mutate: mutateCommentDetail } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentQuery}` : null);
 
-  const [commentFlatList, setCommentFlatList] = useState<GetCommentsDetailResponse["comment"][]>(() => {
+  // mutation data
+  const [updateComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
+    onSuccess: async () => {
+      mutateCommentDetail();
+    },
+  });
+
+  // variable: visible
+  const formData = useForm<EditStoryCommentTypes>();
+
+  // variable: comments
+  const [flatComments, setFlatComments] = useState<GetCommentsDetailResponse["comment"][]>(() => {
     if (!commentData?.comment) return [];
     return [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])];
   });
-  const commentLoading = useMemo(() => {
-    if (!commentFlatList?.length) return false;
-    return !!commentFlatList.find((comment) => comment.id === 0);
-  }, [commentFlatList]);
-  const commentTreeList = useMemo(() => {
-    if (!commentFlatList?.length) return [];
-    return getCommentTree(Math.max(...commentFlatList.map((v) => v.depth)), [...commentFlatList.map((v) => ({ ...v, reComments: [] }))]);
-  }, [commentFlatList]);
+  const { comment, treeComments, loadingComments } = useMemo(() => {
+    const [comment] = getCommentTree(Math.max(...flatComments.map((v) => v.depth)), [...flatComments.map((v) => ({ ...v, reComments: [] }))]);
+    return { comment: { ...comment, reComments: [] }, treeComments: comment?.reComments || [], loadingComments: !!flatComments.find((comment) => comment.id === 0) };
+  }, [flatComments]);
 
-  // new comment
-  const formData = useForm<EditStoryCommentTypes>();
-  const [uploadStoryComment, { loading: uploadLoading }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
-    onSuccess: () => {
-      mutateCommentDetail();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-
-  const moreReComments = (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => {
-    const commentExistedList = readType === "more" ? commentFlatList : commentFlatList.filter((comment) => comment.reCommentRefId !== reCommentRefId);
-    setCommentFlatList(() => [...commentExistedList]);
-    setCommentQuery(() => {
-      let result = "";
-      result += `existed=${JSON.stringify(commentExistedList?.map((comment) => comment.id))}`;
-      result += `&readType=${readType}&reCommentRefId=${reCommentRefId}&prevCursor=${prevCursor}`;
-      return result;
-    });
-  };
-
-  const validReComment = (data: EditStoryCommentTypes) => {
-    if (userType === "member") {
-      submitReComment(data);
-      return;
-    }
-    openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-  };
-
+  // update: StoryComment
   const submitReComment = (data: EditStoryCommentTypes) => {
-    if (!user || commentLoading || uploadLoading) return;
+    if (!user || loadingComment || loadingComments) return;
     if (!commentData?.comment) return;
     mutateCommentDetail((prev) => {
       const time = new Date();
@@ -96,94 +69,96 @@ const CommentsDetailPage: NextPage = () => {
       return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
     }, false);
     formData?.setValue("content", "");
-    uploadStoryComment({ ...data, ...currentAddr });
+    updateComment({ ...data, ...currentAddr });
   };
 
-  // merge comment data
   useEffect(() => {
-    if (!commentData) return;
-    setCommentFlatList(() => {
-      if (!commentData?.comment) return [];
-      return [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])];
-    });
+    setFlatComments((prev) => (commentData?.comment ? [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])] : prev));
   }, [commentData]);
 
   useEffect(() => {
     if (!router?.query?.id) return;
     setCommentQuery(() => "");
-    if (userType !== "guest") {
-      formData?.setValue("reCommentRefId", +router.query.id.toString());
-      formData?.setFocus("content");
-    }
-  }, [router?.query?.id, userType]);
+    formData?.setValue("reCommentRefId", +router.query.id.toString());
+    formData?.setFocus("content");
+  }, [router?.query?.id]);
 
-  // setting layout
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
-  if (!commentTreeList.length) {
+  if (!commentData?.success || !comment) {
     return <NextError statusCode={404} />;
   }
 
   return (
-    <article className={`container ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
-      <h1 className="sr-only">{truncateStr(commentTreeList?.[0]?.content, 15)} | 댓글</h1>
+    <article className="">
+      <h1 className="sr-only">{truncateStr(comment?.content, 15)} | 댓글</h1>
 
-      {commentTreeList?.[0]?.story && (
-        <Link href={`/stories/${commentTreeList?.[0].story.id}`}>
-          <a className="block -mx-5 px-5 py-3 bg-gray-200">
-            <StorySummary item={commentTreeList?.[0]?.story} />
+      {comment?.story && (
+        <Link href={`/stories/${comment.story.id}`}>
+          <a className="block px-5 py-3 bg-gray-200">
+            <StorySummary item={comment?.story} />
           </a>
         </Link>
       )}
 
-      <div className="relative mt-5">
-        <Comment item={commentTreeList?.[0]} className={userType === "member" ? "pr-8" : ""} />
-        <FeedbackComment item={commentTreeList?.[0]} />
-        {userType === "member" && <HandleComment item={commentTreeList?.[0]} mutateCommentDetail={mutateCommentDetail} />}
-      </div>
-
-      {/* 답글 목록: list */}
-      {Boolean(commentTreeList?.[0]?.reComments?.length) && (
-        <div className="mt-2">
-          <CommentTreeList
-            list={commentTreeList?.[0]?.reComments}
-            moreReComments={moreReComments}
-            depth={commentTreeList?.[0]?.depth + 1}
-            cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}
-          >
-            <FeedbackComment key="FeedbackComment" />
-            {userType === "member" ? <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} /> : <></>}
-            <CommentTreeList key="CommentTreeList" />
-          </CommentTreeList>
+      <section className={`container pt-5 ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
+        <div className="relative">
+          <Comment item={comment} className={userType === "member" ? "pr-8" : ""} />
+          <FeedbackComment item={comment} />
+          {userType === "member" && <HandleComment item={comment} mutateCommentDetail={mutateCommentDetail} />}
         </div>
-      )}
 
-      {/* 답글 입력 */}
-      {userType !== "guest" && (
-        <div className="fixed bottom-0 left-0 w-full z-[50]">
-          <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
-            <EditStoryComment formData={formData} onValid={validReComment} isLoading={commentLoading || uploadLoading} commentType="답글" className="w-full px-5" />
+        {/* 답글 목록: list */}
+        {Boolean(treeComments?.length) && (
+          <div className="mt-2">
+            <CommentTreeList
+              list={treeComments}
+              depth={comment?.depth + 1}
+              prefix={comment?.id?.toString()}
+              cardProps={{ className: `${userType === "member" ? "pr-8" : ""}` }}
+              moreReComments={(readType, reCommentRefId, prevCursor) => {
+                const comments = readType === "more" ? flatComments : flatComments.filter((comment) => comment.reCommentRefId !== reCommentRefId);
+                setFlatComments(() => [...comments]);
+                setCommentQuery(() => {
+                  let result = "";
+                  result += `existed=${JSON.stringify(comments?.map((comment) => comment.id))}`;
+                  result += `&readType=${readType}&reCommentRefId=${reCommentRefId}&prevCursor=${prevCursor}`;
+                  return result;
+                });
+              }}
+            >
+              <FeedbackComment key="FeedbackComment" />
+              {userType === "member" ? <HandleComment key="HandleComment" mutateCommentDetail={mutateCommentDetail} /> : <></>}
+              <CommentTreeList key="CommentTreeList" />
+            </CommentTreeList>
           </div>
-        </div>
-      )}
+        )}
+
+        {/* 답글 입력 */}
+        {userType !== "guest" && (
+          <div className="fixed bottom-0 left-0 w-full z-[50]">
+            <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
+              <EditStoryComment
+                formData={formData}
+                onValid={(data) => (userType === "member" ? submitReComment(data) : openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {}))}
+                isLoading={loadingComment || loadingComments}
+                commentType="답글"
+                className="w-full px-5"
+              />
+            </div>
+          </div>
+        )}
+      </section>
     </article>
   );
 };
 
 const Page: NextPageWithLayout<{
-  getComment: { query: string; response: GetCommentsDetailResponse };
-}> = ({ getComment }) => {
+  getCommentsDetail: { query: string; response: GetCommentsDetailResponse };
+}> = ({ getCommentsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          [`/api/comments/${getComment.response.comment.id}?${getComment.query}`]: getComment.response,
+          ...(getCommentsDetail ? { [`/api/comments/${getCommentsDetail.response.comment.id}?${getCommentsDetail.query}`]: getCommentsDetail.response } : {}),
         },
       }}
     >
@@ -204,98 +179,34 @@ export const getStaticPaths: GetStaticPaths = () => {
 export const getStaticProps: GetStaticProps = async ({ params }) => {
   const commentId: string = params?.id?.toString() || "";
 
-  // invalidUrl
-  let invalidUrl = false;
-  if (!commentId || isNaN(+commentId)) invalidUrl = true;
-  // 404
-  if (invalidUrl) {
+  // getCommentsDetail
+  const { comment } =
+    commentId && !isNaN(+commentId)
+      ? await getCommentsDetail({
+          id: +commentId,
+        })
+      : {
+          comment: null,
+        };
+  if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
     return {
       notFound: true,
     };
   }
 
-  // getComment
-  const comment = await client.storyComment.findUnique({
-    where: {
-      id: +commentId,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          name: true,
-          avatar: true,
-        },
-      },
-      story: {
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-        },
-      },
-      records: {
-        select: {
-          id: true,
-          kind: true,
-          userId: true,
-        },
-      },
-      _count: {
-        select: {
-          reComments: true,
-        },
-      },
-    },
+  // condition
+  const commentCondition = getCommentCondition(comment, null);
+
+  // fetch data: comments
+  const { comments } = await getCommentsReComments({
+    existed: [],
+    readType: null,
+    reCommentRefId: 0,
+    prevCursor: 0,
+    pageSize: 0,
+    commentDepth: comment.depth,
+    storyId: comment.storyId,
   });
-  const comments = comment
-    ? await client.storyComment.findMany({
-        where: {
-          storyId: comment.story.id,
-          depth: comment.depth + 1,
-        },
-        orderBy: {
-          createdAt: "asc",
-        },
-        include: {
-          user: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          story: {
-            select: {
-              id: true,
-              userId: true,
-              category: true,
-            },
-          },
-          _count: {
-            select: {
-              reComments: true,
-            },
-          },
-        },
-      })
-    : [];
-
-  // invalidComment
-  let invalidComment = false;
-  if (!comment) invalidComment = true;
-  if (comment?.depth && comment.depth < StoryCommentMinimumDepth) invalidComment = true;
-  if (comment?.depth && comment.depth > StoryCommentMaximumDepth) invalidComment = true;
-  // 404
-  if (invalidComment) {
-    return {
-      notFound: true,
-    };
-  }
 
   // defaultLayout
   const defaultLayout = {
@@ -315,11 +226,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   return {
     props: {
       defaultLayout,
-      getComment: {
+      getCommentsDetail: {
         query: "includeReComments=true&",
         response: {
           success: true,
           comment: JSON.parse(JSON.stringify({ ...comment, reComments: comments } || {})),
+          commentCondition: JSON.parse(JSON.stringify(commentCondition || {})),
         },
       },
     },

@@ -22,9 +22,11 @@ interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
 const CommentTreeList = (props: CommentTreeListProps) => {
   const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, prefix = "", cardProps = {}, moreReComments, children, className = "", ...restProps } = props;
 
+  // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
   const [readState, setReadState] = useState<{ type: StoryCommentReadTypeEnum; counts: number | null }>({ type: "more", counts: null });
 
+  // fetch: StoryComment
   const readMoreReComments = () => {
     if (!reCommentRefId) return;
     if (!moreReComments) return;
@@ -69,7 +71,7 @@ const CommentTreeList = (props: CommentTreeListProps) => {
           })}
         </ul>
       )}
-      {/* 답글: read more */}
+      {/* 답글: button */}
       {Boolean(countReComments) && depth !== StoryCommentMinimumDepth && (
         <div className="relative pl-3 mt-1">
           <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={readMoreReComments} disabled={isLoading}>
