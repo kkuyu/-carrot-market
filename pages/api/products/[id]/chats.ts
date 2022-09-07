@@ -3,7 +3,7 @@ import { Chat, ChatMessage, Product, User } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
-import { IronUserType, withSessionRoute } from "@libs/server/withSession";
+import { withSessionRoute } from "@libs/server/withSession";
 import { isInstance } from "@libs/utils";
 
 export interface GetProductsChatsResponse extends ResponseDataType {
@@ -23,14 +23,14 @@ export const ChatsFilterEnum = {
 
 export type ChatsFilterEnum = typeof ChatsFilterEnum[keyof typeof ChatsFilterEnum];
 
-export const getProductsChats = async (query: { user: IronUserType; pageSize: number; prevCursor: number; filter: ChatsFilterEnum; productId: number }) => {
-  const { user, pageSize, prevCursor, filter, productId } = query;
+export const getProductsChats = async (query: { pageSize: number; prevCursor: number; filter: ChatsFilterEnum; userId: number; productId: number }) => {
+  const { pageSize, prevCursor, filter, userId, productId } = query;
 
   const where = {
     productId,
     users: {
       some: {
-        id: user?.id,
+        id: userId,
       },
     },
     ...(filter === "available"
@@ -122,7 +122,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, chats } = await getProductsChats({ user, prevCursor, pageSize, filter, productId });
+    const { totalCount, chats } = await getProductsChats({ prevCursor, pageSize, filter, userId: user?.id, productId });
 
     // result
     const result: GetProductsChatsResponse = {

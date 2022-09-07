@@ -72,43 +72,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     let likeRecord = null;
     const existed = story.records.find((record) => record.kind === Kind.StoryLike && record.userId === user?.id) || null;
 
-    // early return result
-    if (!_emotion) {
-      if (existed && like === false) {
-        // delete record
-        await client.record.delete({
-          where: {
-            id: existed.id,
-          },
-        });
-      } else if (!existed && like === true) {
-        // create record
-        likeRecord = await client.record.create({
-          data: {
-            kind: Kind.StoryLike,
-            user: {
-              connect: {
-                id: user?.id,
-              },
-            },
-            story: {
-              connect: {
-                id: story.id,
-              },
-            },
-          },
-        });
-      }
-      // result
-      const result: PostStoriesLikeResponse = {
-        success: true,
-        likeRecord,
-      };
-      return res.status(200).json(result);
+    // delete record
+    if (existed && like === false && (!emotion || (emotion && emotion === existed?.emotion))) {
+      await client.record.delete({
+        where: {
+          id: existed.id,
+        },
+      });
     }
 
-    if (existed && like === false && existed?.emotion !== emotion) {
-      // update record
+    // update record
+    if (existed && like === false && emotion && emotion !== existed?.emotion) {
       likeRecord = await client.record.update({
         where: {
           id: existed.id,
@@ -117,19 +91,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           emotion,
         },
       });
-    } else if (existed && like === false && existed?.emotion === emotion) {
-      // delete record
-      await client.record.delete({
-        where: {
-          id: existed.id,
-        },
-      });
-    } else if (!existed && like === true) {
-      // create record
+    }
+
+    // create record
+    if (!existed && like === true) {
       likeRecord = await client.record.create({
         data: {
           kind: Kind.StoryLike,
-          emotion,
+          ...(emotion ? { emotion } : {}),
           user: {
             connect: {
               id: user?.id,

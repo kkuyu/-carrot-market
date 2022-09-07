@@ -18,35 +18,14 @@ export interface ProfilesProps extends HTMLAttributes<HTMLDivElement> {
 const Profiles = (props: ProfilesProps) => {
   const { user, signature, uuid, emdPosNm, diffTime, size = "base", className = "", ...restProps } = props;
 
-  const classNames = {
-    tiny: {
-      imageGap: "mr-2",
-      imageSize: "2.25rem",
-      userName: "text-sm",
-      userInfo: "text-xs",
-    },
-    sm: {
-      imageGap: "mr-3",
-      imageSize: "2.75rem",
-      userName: "text-sm",
-      userInfo: "text-sm",
-    },
-    base: {
-      imageGap: "mr-3",
-      imageSize: "3.5rem",
-      userName: "text-base",
-      userInfo: "text-sm",
-    },
-  };
-
   return (
     <div className={`flex items-center w-full ${className}`} {...restProps}>
-      <div className={`flex-none ${classNames[size].imageGap}`}>
-        <Images size={classNames[size].imageSize} cloudId={user?.avatar} alt="" className="rounded-full" />
+      <div className={`flex-none ${size === "tiny" || size === "sm" ? "mr-2" : "mr-3"}`}>
+        <Images size={`${size === "tiny" ? "2.25rem" : size === "sm" ? "2.75rem" : "3.5rem"}`} cloudId={user?.avatar} alt="" className="rounded-full" />
       </div>
       <div className="grow-full">
-        <strong className={`block font-semibold text-sm text-ellipsis ${classNames[size].userName}`}>{user?.name}</strong>
-        <div className={`text-description text-ellipsis ${classNames[size].userInfo}`}>
+        <strong className={`block font-semibold text-sm text-ellipsis ${size === "tiny" || size === "sm" ? "text-sm" : "text-base"}`}>{user?.name}</strong>
+        <div className={`text-description text-ellipsis ${size === "tiny" ? "text-xs" : "text-sm"}`}>
           {signature && <span>{signature}</span>}
           {emdPosNm && <span>{emdPosNm}</span>}
           {diffTime && <span>{diffTime}</span>}

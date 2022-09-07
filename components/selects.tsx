@@ -32,31 +32,28 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
   const { type = "bottomPanel", name, placeholder, initialValue, updateValue, optionGroups, required = false, register, className = "", ...restProps } = props;
   const { openPanel, closePanel } = usePanel();
 
-  const [isOpen, setIsOpen] = useState(false);
+  // variable: invisible
+  const [selectState, setSelectState] = useState<{ isOpen: boolean; currentValue: T }>({ isOpen: false, currentValue: initialValue });
+  const currentText = optionGroups.flatMap((group) => group.options).find((option) => option.value === selectState.currentValue)?.text || placeholder;
+
+  // variable: ref
+  const delayTimer: TimerRef = useRef(null);
   const combobox = useRef<HTMLButtonElement>(null);
   const listbox = useRef<HTMLDivElement>(null);
-  const delayTimer: TimerRef = useRef(null);
-
-  const [currentValue, setCurrentValue] = useState<T>(() => initialValue);
-  const currentText = optionGroups.flatMap((group) => group.options).find((option) => option.value === currentValue)?.text || placeholder;
 
   const toggleCombobox = () => {
     clearTimer(delayTimer);
-    setIsOpen(!isOpen);
+    setSelectState((prev) => ({ ...prev, isOpen: !prev.isOpen }));
   };
 
   const toggleDropdown = async () => {
     await setTimer(delayTimer, 0);
-    if (isOpen && listbox.current) {
-      listbox.current.focus();
-    }
-    if (!isOpen && combobox.current) {
-      combobox.current.focus();
-    }
+    if (selectState.isOpen && listbox.current) listbox.current.focus();
+    if (!selectState.isOpen && combobox.current) combobox.current.focus();
   };
 
   const toggleBottomPanel = async () => {
-    if (isOpen) {
+    if (selectState.isOpen) {
       const BottomSheet = ({ ...props }: BottomSheetProps) => {
         const { closeBottomPanel } = props;
         return (
@@ -66,7 +63,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
               lists={optionGroups}
               selectItem={async (item) => {
                 updateValue(item.value);
-                setCurrentValue(item.value);
+                setSelectState((prev) => ({ ...prev, currentValue: item.value }));
                 if (closeBottomPanel) await closeBottomPanel();
               }}
             />
@@ -75,10 +72,9 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
       };
       openPanel<BottomPanelProps>(BottomPanel, "selectBottomPanel", {
         children: <BottomSheet />,
-        closePanel: () => setIsOpen(false),
+        closePanel: () => setSelectState((prev) => ({ ...prev, isOpen: false })),
       });
-    }
-    if (!isOpen) {
+    } else {
       closePanel(BottomPanel, "selectBottomPanel");
     }
   };
@@ -86,7 +82,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
   useEffect(() => {
     if (type === "dropdown") toggleDropdown();
     if (type === "bottomPanel") toggleBottomPanel();
-  }, [isOpen]);
+  }, [selectState.isOpen]);
 
   if (!optionGroups) return null;
 
@@ -103,7 +99,7 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
           status="unset"
           onClick={() => selectItem(item)}
           className={`w-full text-left hover:font-semibold ${optionClassName}`}
-          aria-selected={item.value === currentValue}
+          aria-selected={item.value === selectState.currentValue}
         >
           {item.text}
         </Buttons>
@@ -130,42 +126,39 @@ const Selects = <T extends string | number>(props: SelectsProps<T>) => {
 
   return (
     <div className="relative">
-      {/* custom combobox */}
+      {/* combobox: custom */}
       <button
         ref={combobox}
         type="button"
         id={name}
         onClick={toggleCombobox}
         className={`relative w-full px-3 py-2 text-left border rounded-md outline-none
-        ${isOpen ? "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)]" : "border-gray-300"}
-        ${isOpen ? "focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]" : "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]"}
+        ${selectState.isOpen ? "border-orange-500 shadow-[0_0_0_1px_rgba(249,115,22,1)]" : "border-gray-300"}
+        ${selectState.isOpen ? "focus:border-orange-800 focus:shadow-[0_0_0_1px_rgba(194,65,11,1)]" : "focus:border-orange-500 focus:shadow-[0_0_0_1px_rgba(249,115,22,1)]"}
         ${className}`}
-        aria-expanded={isOpen ? "true" : "false"}
+        aria-expanded={selectState.isOpen ? "true" : "false"}
         aria-haspopup="listbox"
       >
-        <span className={`${currentValue ? "text-black" : "text-gray-500"}`}>{currentText}</span>
-        <span className={`absolute top-1/2 right-3 -translate-y-1/2 ${isOpen ? "rotate-180" : "rotate-0"}`} aria-hidden="true">
+        <span className={`${selectState.currentValue ? "text-black" : "text-gray-500"}`}>{currentText}</span>
+        <span className={`absolute top-1/2 right-3 -translate-y-1/2 ${selectState.isOpen ? "rotate-180" : "rotate-0"}`} aria-hidden="true">
           <Icons name="ChevronDown" className="w-5 h-5" />
         </span>
       </button>
-
-      {/* custom dropdown */}
-      {type === "dropdown" && isOpen && (
+      {/* dropdown: custom */}
+      {type === "dropdown" && selectState.isOpen && (
         <div className="mt-3">
           <CustomListbox
             lists={optionGroups}
             selectItem={(item) => {
               updateValue(item.value);
-              setCurrentValue(item.value);
-              setIsOpen(false);
+              setSelectState(() => ({ isOpen: false, currentValue: item.value }));
             }}
             className="max-h-28 py-2 px-3 border border-gray-300 rounded-md overflow-y-scroll focus:outline focus:outline-1"
             tabIndex={0}
           />
         </div>
       )}
-
-      {/* original select */}
+      {/* select: original */}
       <select className="hidden" {...register} name={name} required={required} {...restProps}>
         <option value="">{placeholder}</option>
         {optionGroups.map((group) => {

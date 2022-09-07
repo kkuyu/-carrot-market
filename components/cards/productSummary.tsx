@@ -28,7 +28,7 @@ const ProductSummary = (props: ProductSummaryProps) => {
   return (
     <div className={`flex items-start ${className}`} {...restProps}>
       <div className="flex-none">
-        <Images size="2.75rem" cloudId={item?.photos?.replace(/;.*/, "")} cloudVariant="public" alt="" className="rounded-md" />
+        <Images size="2.75rem" cloudId={item?.photos?.replace(/;.*/, "")} alt="" className="rounded-md" />
       </div>
       <div className="grow-full pl-3">
         <strong className="block text-sm font-normal text-ellipsis">

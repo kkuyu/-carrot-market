@@ -39,8 +39,10 @@ const ProductsIndexPage: NextPage = () => {
   }, [isVisible, isReachingEnd]);
 
   useEffect(() => {
-    if (userType === "guest") mutateUser();
-    if (!data?.[0].success && currentAddr?.emdAddrNm) mutate();
+    (async () => {
+      if (userType === "guest") await mutateUser();
+      if (!data?.[0].success && currentAddr?.emdAddrNm) await mutate();
+    })();
   }, [data, currentAddr, userType]);
 
   if (userType === "guest") return null;

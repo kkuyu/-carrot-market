@@ -38,7 +38,9 @@ const Story = (props: StoryProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <div className={`${isVisiblePreviewPhoto && item?.photos ? "relative pr-16" : ""}`}>
         <em className="px-2 py-1 text-sm not-italic bg-gray-200 rounded-sm">{storyCondition?.category?.text}</em>
-        <strong className="mt-2 block font-normal">{highlightWord ? <HighlightText originalText={item?.content || ""} highlightWord={highlightWord} /> : item?.content}</strong>
+        <strong className="mt-2 block font-normal">
+          {highlightWord ? <HighlightText originalText={item?.content || ""} highlightWord={highlightWord} className="font-semibold" /> : item?.content}
+        </strong>
         {isVisiblePreviewPhoto && item?.photos && (
           <div className="absolute top-0 right-0">
             <Images cloudId={item.photos.replace(/;.*/, "")} alt="" className="rounded-md" />

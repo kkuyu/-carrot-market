@@ -53,15 +53,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     let likeRecord = null;
     const existed = product.records.find((record) => record.kind === Kind.ProductLike && record.userId === user?.id) || null;
 
+    // delete record
     if (existed && like === false) {
-      // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
-    } else if (!existed && like === true) {
-      // create record
+    }
+
+    // create record
+    if (!existed && like === true) {
       likeRecord = await client.record.create({
         data: {
           user: {

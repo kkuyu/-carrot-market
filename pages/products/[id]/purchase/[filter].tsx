@@ -245,12 +245,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   }
 
   // getProductsChats
-  const { totalCount, chats } = req?.session?.user
+  const { totalCount, chats } = ssrUser?.profile?.id
     ? await getProductsChats({
-        user: req?.session?.user,
         prevCursor: 0,
         pageSize: 10,
         filter,
+        userId: ssrUser?.profile?.id,
         productId: +productId,
       })
     : {

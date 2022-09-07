@@ -33,7 +33,7 @@ const ProductsReviewPage: NextPage = () => {
 
   // mutation data
   const [uploadReview, { loading: loadingReview }] = useMutation<PostReviewsResponse>("/api/reviews", {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       router.replace(`/reviews/${data.review?.id}`);
     },
   });

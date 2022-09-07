@@ -28,7 +28,7 @@ const ProductsChatsPage: NextPage = () => {
   // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
-    const options = { url: "/api/products/[id]/chats", query: router.query.id ? `productId=${router.query.id}` : "" };
+    const options = { url: "/api/products/[id]/chats", query: router.query.id ? `filter=all&productId=${router.query.id}` : "" };
     return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
@@ -155,12 +155,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsChats
-  const { totalCount, chats } = req?.session?.user
+  const { totalCount, chats } = ssrUser?.profile?.id
     ? await getProductsChats({
-        user: req?.session?.user,
         prevCursor: 0,
         pageSize: 10,
         filter: "all",
+        userId: ssrUser?.profile?.id,
         productId: +productId,
       })
     : {
@@ -199,7 +199,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       getProductsChats: {
         options: {
           url: "/api/products/[id]/chats",
-          query: `productId=${product?.id}`,
+          query: `filter=all&productId=${product?.id}`,
         },
         response: {
           success: true,

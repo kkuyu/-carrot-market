@@ -26,17 +26,16 @@ const ChatList = (props: ChatListProps) => {
         if (!userGroup.length) return null;
         if (!item.chatMessages.length) return null;
         return userGroup.map((users) => {
+          const chat = <Chat item={item} users={users} {...cardProps} />;
           return (
             <li key={users.map((user) => user.id).join("-")}>
               {!selectItem ? (
                 <Link href={`/chats/${item.id}`}>
-                  <a className="block px-5 py-3">
-                    <Chat item={item} users={users} {...cardProps} />
-                  </a>
+                  <a className="block px-5 py-3">{chat}</a>
                 </Link>
               ) : (
                 <button type="button" className="block-arrow py-3" onClick={() => selectItem(item, users)}>
-                  <Chat item={item} users={users} {...cardProps} />
+                  {chat}
                 </button>
               )}
             </li>

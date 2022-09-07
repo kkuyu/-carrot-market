@@ -35,10 +35,10 @@ const Product = (props: ProductProps) => {
     <div className={`relative ${className}`} {...restProps}>
       <div className="flex items-start">
         <div className="flex-none">
-          <Images size="6rem" cloudId={item?.photos?.replace(/;.*/, "")} cloudVariant="public" alt="" className="rounded-md" />
+          <Images size="6rem" cloudId={item?.photos?.replace(/;.*/, "")} alt="" className="rounded-md" />
         </div>
         <div className="grow-full pl-4">
-          <strong className="block font-normal">{highlightWord ? <HighlightText originalText={item?.name || ""} highlightWord={highlightWord} /> : item?.name}</strong>
+          <strong className="block font-normal">{highlightWord ? <HighlightText originalText={item?.name || ""} highlightWord={highlightWord} className="font-semibold" /> : item?.name}</strong>
           <div className="text-description text-sm">
             {item?.emdPosNm && <span>{item?.emdPosNm}</span>}
             {isMounted && timeState.diffStr && <span>{timeState.diffStr}</span>}

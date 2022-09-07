@@ -54,7 +54,7 @@ const ProductsDetailPage: NextPage = () => {
     },
   });
   const [createChat, { loading: loadingChat }] = useMutation<PostChatsResponse>(`/api/chats`, {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       router.push(`/chats/${data.chat.id}`);
     },
   });

@@ -48,13 +48,13 @@ const StoriesDetailPage: NextPage = () => {
 
   // mutation data
   const [updateComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
-    onSuccess: () => {
-      mutateStoryDetail();
-      mutateStoryComments();
+    onSuccess: async () => {
+      await mutateStoryDetail();
+      await mutateStoryComments();
     },
   });
   const [deleteStory, { loading: loadingStory }] = useMutation<PostStoriesDeleteResponse>(`/api/stories/${router.query.id}/delete`, {
-    onSuccess: () => {
+    onSuccess: async () => {
       router.replace("/stories");
     },
   });

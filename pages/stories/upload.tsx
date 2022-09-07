@@ -27,7 +27,7 @@ const StoriesUploadPage: NextPage = () => {
 
   // mutation data
   const [uploadStory, { loading: loadingStory }] = useMutation<PostStoriesResponse>("/api/stories", {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       router.replace(`/stories/${data.story.id}`);
     },
     onCompleted: () => {

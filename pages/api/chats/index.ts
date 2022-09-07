@@ -19,6 +19,52 @@ export interface PostChatsResponse extends ResponseDataType {
   chat: Chat;
 }
 
+const getChats = async (query: { prevCursor: number; pageSize: number; userId: number }) => {
+  const { prevCursor, pageSize, userId } = query;
+
+  const where = {
+    users: {
+      some: {
+        id: userId,
+      },
+    },
+  };
+
+  const totalCount = await client.chat.count({
+    where,
+  });
+
+  const chats = await client.chat.findMany({
+    where,
+    take: pageSize,
+    skip: prevCursor ? 1 : 0,
+    ...(prevCursor && { cursor: { id: prevCursor } }),
+    orderBy: {
+      updatedAt: "desc",
+    },
+    include: {
+      users: {
+        select: {
+          id: true,
+          name: true,
+          avatar: true,
+        },
+      },
+      chatMessages: {
+        take: 1,
+        orderBy: {
+          updatedAt: "desc",
+        },
+      },
+      product: {
+        select: { id: true, name: true, photos: true },
+      },
+    },
+  });
+
+  return { totalCount, chats };
+};
+
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   if (req.method === "GET") {
     try {
@@ -53,46 +99,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         throw error;
       }
 
-      // search
-      const where = {
-        users: {
-          some: {
-            id: user?.id,
-          },
-        },
-      };
-
       // fetch data
-      const totalCount = await client.chat.count({
-        where,
-      });
-      const chats = await client.chat.findMany({
-        where,
-        take: pageSize,
-        skip: prevCursor ? 1 : 0,
-        ...(prevCursor && { cursor: { id: prevCursor } }),
-        orderBy: {
-          updatedAt: "desc",
-        },
-        include: {
-          users: {
-            select: {
-              id: true,
-              name: true,
-              avatar: true,
-            },
-          },
-          chatMessages: {
-            take: 1,
-            orderBy: {
-              updatedAt: "desc",
-            },
-          },
-          product: {
-            select: { id: true, name: true, photos: true },
-          },
-        },
-      });
+      const { totalCount, chats } = await getChats({ prevCursor, pageSize, userId: user?.id });
 
       // result
       const result: GetChatsResponse = {
