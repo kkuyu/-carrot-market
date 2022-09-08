@@ -81,10 +81,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,

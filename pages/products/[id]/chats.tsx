@@ -1,11 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
+import NextError from "next/error";
+import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
-import { getKey, getProductCondition, truncateStr } from "@libs/utils";
+import { getKey, truncateStr } from "@libs/utils";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
@@ -24,6 +25,7 @@ const ProductsChatsPage: NextPage = () => {
 
   // variable data: invisible
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
+  const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
@@ -37,19 +39,44 @@ const ProductsChatsPage: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
 
+  // update: isValidProduct
+  useEffect(() => {
+    const isInvalid = {
+      user: !(productData?.productCondition?.role?.myRole === "sellUser"),
+    };
+    // invalid
+    if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
+      setIsValidProduct(false);
+      const productId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      router.replace(redirectDestination ?? `/products/${productId}`);
+      return;
+    }
+    // valid
+    setIsValidProduct(true);
+  }, [productData]);
+
+  // update: infinite list
   useEffect(() => {
     if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
+  // reload: infinite list
   useEffect(() => {
-    if (!data?.[0].success && router.query.id) mutate();
+    (async () => {
+      if (!data?.[0].success && router.query.id) await mutate();
+    })();
   }, [data, router.query.id]);
+
+  if (!isValidProduct) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="">
       {/* 제품정보 */}
       {productData?.product && (
-        <Link href={`/products/${productData?.product.id}`}>
+        <Link href={`/products/${productData?.product?.id}`}>
           <a className="block px-5 py-3 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
           </a>
@@ -111,10 +138,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const productId: string = params?.id?.toString() || "";
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/products/${productId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -143,12 +168,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.role?.myRole !== "sellUser") {
+  const isInvalid = {
+    user: !(productCondition?.role?.myRole === "sellUser"),
+  };
+
+  // isInvalid
+  // redirect: redirectDestination ?? `/products/${productId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}`,
+        destination: redirectDestination ?? `/products/${productId}`,
       },
     };
   }

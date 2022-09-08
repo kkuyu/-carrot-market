@@ -1,10 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import NextError from "next/error";
+import { useEffect, useState } from "react";
 import useSWR, { mutate, SWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 // @libs
-import { getKey, getProductCondition, submitFiles, truncateStr } from "@libs/utils";
+import { getKey, submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
@@ -23,6 +25,9 @@ import ProductSummary from "@components/cards/productSummary";
 const ProductsDeletePage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
+
+  // variable: invisible
+  const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
@@ -43,19 +48,36 @@ const ProductsDeletePage: NextPage = () => {
     deleteProduct({});
   };
 
-  if (!productData?.product) return null;
+  // update: isValidProduct
+  useEffect(() => {
+    const isInvalid = {
+      user: !(productData?.productCondition?.role?.myRole === "sellUser"),
+    };
+    // invalid
+    if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
+      setIsValidProduct(false);
+      const productId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      router.replace(redirectDestination ?? `/products/${productId}`);
+      return;
+    }
+    // valid
+    setIsValidProduct(true);
+  }, [productData]);
+
+  if (!isValidProduct) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="">
       {/* 제품정보 */}
       {productData?.product && (
-        <div className="block px-5 py-3 bg-gray-200">
-          <Link href={`/products/${productData?.product?.id}`}>
-            <a className="">
-              <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
-            </a>
-          </Link>
-        </div>
+        <Link href={`/products/${productData?.product?.id}`}>
+          <a className="block px-5 py-3 bg-gray-200">
+            <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
+          </a>
+        </Link>
       )}
 
       <div className="container pb-5 [&:not(:first-child)]:mt-5">
@@ -84,7 +106,7 @@ const ProductsDeletePage: NextPage = () => {
                   </Buttons>
                 </Link>
               )}
-              {productData.productCondition && Boolean(productData?.productCondition?.review?.receiveReviewId) && (
+              {productData?.productCondition && Boolean(productData?.productCondition?.review?.receiveReviewId) && (
                 <Link href={`/reviews/${productData?.productCondition?.review?.receiveReviewId}`} passHref>
                   <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
                     받은 후기 보기
@@ -131,10 +153,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const productId: string = params?.id?.toString() || "";
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/products/${productId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -163,12 +183,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.role?.myRole !== "sellUser") {
+  const isInvalid = {
+    user: !(productCondition?.role?.myRole === "sellUser"),
+  };
+
+  // isInvalid
+  // redirect: redirectDestination ?? `/products/${productId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}`,
+        destination: redirectDestination ?? `/products/${productId}`,
       },
     };
   }

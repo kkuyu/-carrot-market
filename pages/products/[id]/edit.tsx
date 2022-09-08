@@ -1,10 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import NextError from "next/error";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getProductCondition, validateFiles, submitFiles, truncateStr } from "@libs/utils";
+import { validateFiles, submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
@@ -25,6 +26,7 @@ const ProductsEditPage: NextPage = () => {
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
@@ -60,14 +62,31 @@ const ProductsEditPage: NextPage = () => {
     editProduct({ ...data, photos: validPaths });
   };
 
+  // update: isValidProduct, formData
   useEffect(() => {
-    if (!productData?.product) return;
+    const isInvalid = {
+      user: !(productData?.productCondition?.role?.myRole === "sellUser"),
+    };
+    // invalid
+    if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
+      setIsValidProduct(false);
+      const productId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      router.replace(redirectDestination ?? `/products/${productId}`);
+      return;
+    }
+    // valid
+    setIsValidProduct(true);
     formData.setValue("originalPhotoPaths", productData?.product?.photos);
     formData.setValue("category", productData?.product?.category as EditProductTypes["category"]);
     formData.setValue("name", productData?.product?.name);
     formData.setValue("description", productData?.product?.description);
     formData.setValue("price", productData?.product?.price);
   }, [productData]);
+
+  if (!isValidProduct) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="container pt-5 pb-5">
@@ -104,10 +123,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const productId: string = params?.id?.toString() || "";
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/products/${productId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -136,12 +153,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.role?.myRole !== "sellUser") {
+  const isInvalid = {
+    user: !(productCondition?.role?.myRole === "sellUser"),
+  };
+
+  // isInvalid
+  // redirect: redirectDestination ?? `/products/${productId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}`,
+        destination: redirectDestination ?? `/products/${productId}`,
       },
     };
   }

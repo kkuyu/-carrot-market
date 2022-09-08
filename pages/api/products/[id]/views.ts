@@ -13,6 +13,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
   try {
     const { id: _id } = req.query;
 
+    console.log("api", _id);
+
     // invalid
     if (!_id) {
       const error = new Error("InvalidRequestBody");
@@ -27,6 +29,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
+
+    console.log("?");
 
     // fetch data
     const product = await client.product.update({

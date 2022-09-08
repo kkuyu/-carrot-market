@@ -1,11 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
+import NextError from "next/error";
+import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
-import { getKey, getProductCondition, isInstance, truncateStr } from "@libs/utils";
+import { getKey, isInstance, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
@@ -26,10 +27,12 @@ const ProductsPurchasePage: NextPage = () => {
   const router = useRouter();
 
   // variable data: invisible
+  const [isValidProduct, setIsValidProduct] = useState(true);
   const chatFilters: { value: ChatsFilterEnum; name: string; partnerName: string }[] = [
     { value: "all", name: "최근 채팅", partnerName: "최근 채팅한 이웃" },
     { value: "available", name: "대화중인 채팅", partnerName: "대화중인 이웃" },
   ];
+  const currentFilter = chatFilters.find((filter) => filter.value === router?.query?.filter?.toString())!;
 
   // fetch data
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
@@ -51,7 +54,6 @@ const ProductsPurchasePage: NextPage = () => {
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const chats = data ? data.flatMap((item) => item.chats) : null;
-  const currentFilter = chatFilters.find((filter) => filter.value === router?.query?.filter?.toString())!;
 
   // update: Record.Kind.ProductPurchase
   const purchaseItem = (item: GetProductsChatsResponse["chats"][number], chatUser: GetProductsChatsResponse["chats"][number]["users"]) => {
@@ -60,18 +62,48 @@ const ProductsPurchasePage: NextPage = () => {
     updateProductPurchase({ purchase: true, purchaseUserId: chatUser[0].id });
   };
 
+  // update: isValidProduct
+  useEffect(() => {
+    const isInvalid = {
+      user: !(productData?.productCondition?.role?.myRole === "sellUser"),
+      product: productData?.productCondition?.isSale,
+      sentReview: productData?.productCondition?.isPurchase && productData?.productCondition?.review?.sentReviewId,
+      receiveReview: productData?.productCondition?.review?.receiveReviewId,
+    };
+    // invalid
+    if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
+      setIsValidProduct(false);
+      const productId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/reviews/${productData?.productCondition?.review?.sentReviewId}`;
+      if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/reviews/${productData?.productCondition?.review?.receiveReviewId}`;
+      router.replace(redirectDestination ?? `/products/${productId}`);
+      return;
+    }
+    // valid
+    setIsValidProduct(true);
+  }, [productData]);
+
+  // update: infinite list
   useEffect(() => {
     if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
+  // reload: infinite list
   useEffect(() => {
-    if (!data?.[0].success && router.query.id) mutate();
+    (async () => {
+      if (!data?.[0].success && router.query.id) await mutate();
+    })();
   }, [data, router.query.id]);
+
+  if (!isValidProduct) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="">
       {/* 제품정보 */}
-      {currentFilter.value === "available" && productData?.product && (
+      {productData?.product && currentFilter.value === "available" && (
         <Link href={`/products/${productData?.product.id}`}>
           <a className="block px-5 py-3 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
@@ -88,6 +120,7 @@ const ProductsPurchasePage: NextPage = () => {
             구매자를 선택해주세요
           </strong>
         )}
+
         {/* 채팅 목록: List */}
         {chats && Boolean(chats.length) && (
           <>
@@ -101,12 +134,14 @@ const ProductsPurchasePage: NextPage = () => {
             <span className="empty:hidden list-loading">{isReachingEnd ? `${currentFilter.name}을 모두 확인하였어요` : isLoading ? `${currentFilter.name}을 불러오고있어요` : null}</span>
           </>
         )}
+
         {/* 채팅 목록: Empty */}
         {chats && !Boolean(chats.length) && (
           <p className="list-empty">
             <>{currentFilter.partnerName}이 없어요</>
           </p>
         )}
+
         {/* 채팅 목록: InfiniteRef */}
         <div id="infiniteRef" ref={infiniteRef} />
 
@@ -130,6 +165,7 @@ const Page: NextPageWithLayout<{
   getProductsDetail: { response: GetProductsDetailResponse };
   getProductsChats: { options: { url: string; query?: string }; response: GetProductsChatsResponse };
 }> = ({ getUser, getProductsDetail, getProductsChats }) => {
+  console.log(getProductsChats);
   return (
     <SWRConfig
       value={{
@@ -158,10 +194,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   const productId = params?.id?.toString() || "";
 
   // invalidFilter
-  let invalidFilter = false;
-  if (!filter || !isInstance(filter, ChatsFilterEnum)) invalidFilter = true;
   // redirect `/products/${productId}/purchase/available`,
-  if (invalidFilter) {
+  if (!filter || !isInstance(filter, ChatsFilterEnum)) {
     return {
       redirect: {
         permanent: false,
@@ -171,10 +205,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   }
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/products/${productId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -203,42 +235,23 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.role?.myRole !== "sellUser") {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
+  const isInvalid = {
+    user: !(productCondition?.role?.myRole === "sellUser"),
+    product: productCondition?.isSale,
+    sentReview: productCondition?.isPurchase && productCondition?.review?.sentReviewId,
+    receiveReview: productCondition?.review?.receiveReviewId,
+  };
 
-  // redirect `/products/${productId}`
-  if (productCondition?.isSale) {
+  // isInvalid
+  // redirect: redirectDestination ?? `/products/${productId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
+    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/reviews/${productCondition?.review?.sentReviewId}`;
+    if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/reviews/${productCondition?.review?.receiveReviewId}`;
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // redirect `/reviews/${productCondition?.review?.sentReviewId}`
-  if (productCondition?.isPurchase && productCondition?.review?.sentReviewId) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/reviews/${productCondition?.review?.sentReviewId}`,
-      },
-    };
-  }
-
-  // redirect `/products/${productId}/review`
-  if (productCondition?.review?.receiveReviewId) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}/review`,
+        destination: redirectDestination ?? `/products/${productId}`,
       },
     };
   }

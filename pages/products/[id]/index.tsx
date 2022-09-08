@@ -45,12 +45,8 @@ const ProductsDetailPage: NextPage = () => {
   // mutation data
   const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
     onSuccess: async (data) => {
-      if (!data.recordSale) {
-        await mutateProduct();
-        router.push(`/products/${router.query.id}/purchase/available`);
-      } else {
-        mutateProduct();
-      }
+      await mutateProduct();
+      if (!data.recordSale) router.push(`/products/${router.query.id}/purchase/available`);
     },
   });
   const [createChat, { loading: loadingChat }] = useMutation<PostChatsResponse>(`/api/chats`, {
@@ -63,10 +59,11 @@ const ProductsDetailPage: NextPage = () => {
   const { isMounted, timeState } = useTimeDiff(productData?.product?.createdAt.toString() || null);
 
   // update: Record.Kind.ProductSale
-  const toggleSale = () => {
-    if (!productData?.product) return;
+  const toggleSale = (sale: boolean) => {
     if (loadingProductSale) return;
-    const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product!, user?.id);
+    if (!productData?.product) return;
+    const currentCondition = productData?.productCondition ?? getProductCondition(productData?.product, user?.id);
+    if (currentCondition?.isSale === sale) return;
     mutateProduct((prev) => {
       let records = prev?.product?.records ? [...prev.product.records] : [];
       if (currentCondition?.isSale) records = records.filter((record) => record.kind !== Kind.ProductSale);
@@ -90,30 +87,20 @@ const ProductsDetailPage: NextPage = () => {
     openModal<AlertModalProps>(AlertModal, "ConfirmSoldToSale", {
       message: "판매중으로 변경하면 서로 주고받은 거래후기가 취소돼요.\n그래도 변경하시겠어요?",
       actions: [
-        {
-          key: "cancel",
-          style: AlertStyleEnum["cancel"],
-          text: "취소",
-          handler: null,
-        },
-        {
-          key: "destructive",
-          style: AlertStyleEnum["destructive"],
-          text: "변경",
-          handler: () => toggleSale(),
-        },
+        { key: "cancel", style: AlertStyleEnum["cancel"], text: "취소", handler: null },
+        { key: "destructive", style: AlertStyleEnum["destructive"], text: "변경", handler: () => toggleSale(true) },
       ],
     });
   };
 
-  // setting layout
+  // change: layout
   useEffect(() => {
     if (!userType) return;
     if (!productData?.product) return;
     const kebabActions = [
       { key: "welcome", style: ActionStyleEnum["primary"], text: "당근마켓 시작하기", handler: () => router.push(`/welcome`) },
-      { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (productData?.product?.reviews?.length ? openSaleModal() : toggleSale()) },
-      { key: "sold", style: ActionStyleEnum["default"], text: "판매완료", handler: () => toggleSale() },
+      { key: "sale", style: ActionStyleEnum["default"], text: "판매중", handler: () => (productData?.product?.reviews?.length ? openSaleModal() : toggleSale(true)) },
+      { key: "sold", style: ActionStyleEnum["default"], text: "판매완료", handler: () => toggleSale(false) },
       { key: "resume", style: ActionStyleEnum["default"], text: "끌어올리기", handler: () => router.push(`/products/${productData?.product?.id}/resume`) },
       { key: "edit", style: ActionStyleEnum["default"], text: "게시글 수정", handler: () => router.push(`/products/${productData?.product?.id}/edit`) },
       { key: "review", style: ActionStyleEnum["default"], text: "거래 후기 보내기", handler: () => router.push(`/products/${productData?.product?.id}/review`) },
@@ -134,7 +121,7 @@ const ProductsDetailPage: NextPage = () => {
             : kebabActions.filter((action) => ["sale", "edit", "review", "delete", "cancel"].includes(action.key)),
       },
     });
-  }, [productData?.product, userType]);
+  }, [productData?.product, user?.id, userType]);
 
   if (!productData?.success || !productData?.product) {
     return <NextError statusCode={404} />;

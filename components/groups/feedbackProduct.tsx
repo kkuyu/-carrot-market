@@ -33,20 +33,17 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   // mutation data
   const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: async (data) => {
-      if (!data.recordSale) {
-        await mutateProduct();
-        router.push(`/products/${item?.id}/purchase/available`);
-      } else {
-        router.push(`/products/${item?.id}`);
-      }
+      await mutateProduct();
+      if (!data.recordSale) router.push(`/products/${item?.id}/purchase/available`);
+      if (data.recordSale) router.push(`/products/${item?.id}`);
     },
   });
 
   // update: Record.Kind.ProductSale
-  const toggleSale = () => {
-    if (!productData?.product) return;
+  const toggleSale = (sale: boolean) => {
     if (loadingProductSale) return;
-    updateProductSale({ sale: !productData?.productCondition?.isSale });
+    if (!productData?.product) return;
+    updateProductSale({ sale });
   };
 
   if (!productData?.product) return null;
@@ -76,7 +73,7 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
           <CustomFeedbackButton onClick={() => router.push(`/products/${productData?.product?.id}/resume`)} disabled={loadingProductSale}>
             끌어올리기
           </CustomFeedbackButton>
-          <CustomFeedbackButton onClick={toggleSale} disabled={loadingProductSale}>
+          <CustomFeedbackButton onClick={() => toggleSale(false)} disabled={loadingProductSale}>
             판매완료
           </CustomFeedbackButton>
         </>

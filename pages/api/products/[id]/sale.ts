@@ -7,12 +7,13 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface PostProductsSaleResponse extends ResponseDataType {
   recordSale: Record | null;
+  purchaseUserId?: number;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { id: _id } = req.query;
-    const { sale } = req.body;
+    const { sale, purchase, purchaseUserId: _purchaseUserId } = req.body;
     const { user } = req.session;
 
     // invalid
@@ -26,11 +27,26 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
+    if (purchase && typeof purchase !== "boolean") {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (purchase && purchase === true && !_purchaseUserId) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
 
     // params
     const id = +_id.toString();
-    const isForcedUpdate = /\/chats\/[0-9]*$/.test(req?.headers?.referer || "");
+    const purchaseUserId = _purchaseUserId ? +_purchaseUserId.toString() : null;
     if (isNaN(id)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (purchaseUserId && isNaN(purchaseUserId)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -50,7 +66,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (!isForcedUpdate && product.userId !== user?.id) {
+    if (product.userId !== user?.id && purchaseUserId !== user?.id) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;
@@ -59,30 +75,28 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     let recordSale = null;
     const existed = product.records.find((record) => record.kind === Kind.ProductSale) || null;
 
+    // delete
     if (existed && sale === false) {
-      // delete record
       await client.record.delete({
         where: {
           id: existed.id,
         },
       });
-    } else if (!existed && sale === true) {
-      // delete record
+    }
+
+    // update record, productReview
+    if (!existed && sale === true) {
       await client.record.deleteMany({
         where: {
           productId: product.id,
           kind: Kind.ProductPurchase,
         },
       });
-
-      // delete review
       await client.productReview.deleteMany({
         where: {
           productId: product.id,
         },
       });
-
-      // create record
       recordSale = await client.record.create({
         data: {
           user: {
@@ -104,6 +118,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: PostProductsSaleResponse = {
       success: true,
       recordSale,
+      ...(purchaseUserId ? { purchaseUserId } : {}),
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -63,15 +63,20 @@ export const getProductsChats = async (query: { pageSize: number; prevCursor: nu
         },
       },
       chatMessages: {
-        take: 1,
+        take: 2,
         orderBy: {
           updatedAt: "desc",
+        },
+      },
+      _count: {
+        select: {
+          chatMessages: true,
         },
       },
     },
   });
 
-  return { totalCount, chats };
+  return { totalCount, chats: chats.filter((chat) => chat._count.chatMessages > 0) };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {

@@ -1,11 +1,12 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
+import NextError from "next/error";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getProductCondition, truncateStr } from "@libs/utils";
+import { truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
@@ -26,6 +27,9 @@ import EditReview, { EditReviewTypes } from "@components/forms/editReview";
 const ProductsReviewPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
+
+  // variable: invisible
+  const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
   const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
@@ -51,56 +55,81 @@ const ProductsReviewPage: NextPage = () => {
   // update: ProductReview
   const submitReview = (data: EditReviewTypes) => {
     if (!user || loadingReview) return;
-    uploadReview({
-      ...data,
-    });
+    uploadReview({ ...data });
   };
 
+  // update: formData, isValidProduct
   useEffect(() => {
-    if (!productData?.product) return;
-    if (!productData?.productCondition) return;
+    const isInvalid = {
+      user: !(productData?.productCondition?.role?.myRole === "sellUser" || productData?.productCondition?.role?.myRole === "purchaseUser"),
+      product: productData?.productCondition?.isSale,
+      purchase: !productData?.productCondition?.isPurchase,
+      sentReview: productData?.productCondition?.isPurchase && productData?.productCondition?.review?.sentReviewId,
+    };
+    // invalid
+    if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
+      setIsValidProduct(false);
+      const productId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      if (!redirectDestination && isInvalid.purchase) redirectDestination = `/products/${productId}/purchase/available`;
+      if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/reviews/${productData?.productCondition?.review?.sentReviewId}`;
+      router.replace(redirectDestination ?? `/products/${productId}`);
+      return;
+    }
+    // valid
+    setIsValidProduct(true);
     formData.setValue("productId", productData?.product?.id);
     formData.setValue("role", productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser");
     formData.setValue("sellUserId", productData?.productCondition?.role?.myRole === "sellUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!);
     formData.setValue("purchaseUserId", productData?.productCondition?.role?.myRole === "purchaseUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!);
-  }, [productData?.product, productData?.productCondition]);
+    formData.resetField("manners");
+    formData.resetField("satisfaction");
+    formData.resetField("text");
+  }, [productData]);
 
-  if (!productData?.product) return null;
+  if (!isValidProduct) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="">
       {/* 제품정보 */}
-      <div className="block px-5 py-3 bg-gray-200">
-        <Link href={`/products/${productData?.product?.id}`}>
-          <a className="">
-            <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
-          </a>
-        </Link>
-        {productData?.productCondition?.role?.myRole === "sellUser" && !productData?.product?.reviews?.length && (
-          <div className="mt-2">
-            <Link href={`/products/${productData?.product?.id}/purchase/available`} passHref>
-              <Buttons tag="a" status="default" size="sm" className="!inline-block !w-auto">
-                구매자 변경하기
-              </Buttons>
-            </Link>
+      {productData?.product && (
+        <div className="px-5 py-3 bg-gray-200">
+          <Link href={`/products/${productData?.product?.id}`}>
+            <a className="block">
+              <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
+            </a>
+          </Link>
+          <div className="empty:hidden mt-2">
+            {productData?.productCondition?.role?.myRole === "sellUser" && !productData?.product?.reviews?.length && (
+              <Link href={`/products/${productData?.product?.id}/purchase/available`} passHref>
+                <Buttons tag="a" status="default" size="sm" className="!inline-block !w-auto">
+                  구매자 변경하기
+                </Buttons>
+              </Link>
+            )}
           </div>
-        )}
-      </div>
-
-      <div className="container pt-5 pb-5">
-        {/* 안내 */}
-        <strong className="text-lg">
-          {user?.name}님,
-          <br />
-          {partnerProfileData?.profile?.name ? `${partnerProfileData?.profile?.name}님과 거래가 어떠셨나요?` : `거래가 어떠셨나요?`}
-        </strong>
-        <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
-
-        {/* 리뷰 */}
-        <div className="mt-5">
-          <EditReview formData={formData} onValid={submitReview} />
         </div>
-      </div>
+      )}
+
+      {/* 리뷰작성 */}
+      {partnerProfileData?.profile && (
+        <div className="container pt-5 pb-5">
+          {/* 안내 */}
+          <strong className="text-lg">
+            {user?.name}님,
+            <br />
+            {partnerProfileData?.profile?.name ? `${partnerProfileData?.profile?.name}님과 거래가 어떠셨나요?` : `거래가 어떠셨나요?`}
+          </strong>
+          <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
+
+          {/* 리뷰 */}
+          <div className="mt-5">
+            <EditReview formData={formData} onValid={submitReview} />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
@@ -108,16 +137,14 @@ const ProductsReviewPage: NextPage = () => {
 const Page: NextPageWithLayout<{
   getUser: { response: GetUserResponse };
   getProductsDetail: { response: GetProductsDetailResponse };
-  getProfile: { response: GetProfilesDetailResponse };
   getPartnerProfile: { response: GetProfilesDetailResponse };
-}> = ({ getUser, getProductsDetail, getProfile, getPartnerProfile }) => {
+}> = ({ getUser, getProductsDetail, getPartnerProfile }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           "/api/user": getUser.response,
           [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
-          [`/api/profiles/${getProfile.response.profile.id}`]: getProfile.response,
           [`/api/profiles/${getPartnerProfile.response.profile.id}`]: getPartnerProfile.response,
         },
       }}
@@ -137,10 +164,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const productId: string = params?.id?.toString() || "";
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
-  // redirect `/products/${productId}`
-  if (invalidUser) {
+  // redirect: `/products/${productId}`
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -169,42 +194,23 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.role?.myRole !== "sellUser" && productCondition?.role?.myRole !== "purchaseUser") {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
+  const isInvalid = {
+    user: !(productCondition?.role?.myRole === "sellUser" || productCondition?.role?.myRole === "purchaseUser"),
+    product: productCondition?.isSale,
+    purchase: !productCondition?.isPurchase,
+    sentReview: productCondition?.isPurchase && productCondition?.review?.sentReviewId,
+  };
 
-  // redirect `/products/${productId}`
-  if (productCondition?.isSale) {
+  // isInvalid
+  // redirect: redirectDestination ?? `/products/${productId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
+    if (!redirectDestination && isInvalid.purchase) redirectDestination = `/products/${productId}/purchase/available`;
+    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/reviews/${productCondition?.review?.sentReviewId}`;
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
-
-  // redirect `/products/${productId}/purchase/available`
-  if (!productCondition?.isPurchase) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}/purchase/available`,
-      },
-    };
-  }
-
-  // redirect `/reviews/${productCondition?.review?.sentReviewId}`
-  if (productCondition?.isPurchase && productCondition?.review?.sentReviewId) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/reviews/${productCondition?.review?.sentReviewId}`,
+        destination: redirectDestination ?? `/products/${productId}`,
       },
     };
   }
@@ -254,12 +260,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           success: true,
           product: JSON.parse(JSON.stringify(product || {})),
           productCondition: JSON.parse(JSON.stringify(productCondition || {})),
-        },
-      },
-      getProfile: {
-        response: {
-          success: true,
-          profile: JSON.parse(JSON.stringify(ssrUser.profile || {})),
         },
       },
       getPartnerProfile: {

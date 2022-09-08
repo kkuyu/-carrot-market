@@ -34,10 +34,12 @@ const ProductsIndexPage: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
 
+  // update: infinite list
   useEffect(() => {
     if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
+  // reload: infinite list
   useEffect(() => {
     (async () => {
       if (userType === "guest") await mutateUser();

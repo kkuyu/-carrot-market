@@ -1,13 +1,14 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
+import NextError from "next/error";
 import { useState, useEffect } from "react";
 import type { HTMLAttributes } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { mutate, SWRConfig } from "swr";
 import { unstable_serialize } from "swr/infinite";
 // @libs
-import { getKey, getProductCondition, truncateStr } from "@libs/utils";
+import { getKey, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useTimeDiff from "@libs/client/useTimeDiff";
@@ -26,7 +27,7 @@ import ProductSummary from "@components/cards/productSummary";
 import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
 
 type ResumeState = {
-  type: "HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | null;
+  type: "HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | "Error" | null;
   possibleDate: Date | null;
   afterDate: Date | null;
 };
@@ -36,6 +37,7 @@ const ProductsResumePage: NextPage = () => {
   const { user } = useUser();
 
   // variable: invisible
+  const [isValidProduct, setIsValidProduct] = useState(true);
   const [resumeState, setResumeState] = useState<ResumeState>({ type: null, possibleDate: null, afterDate: null });
 
   // fetch data
@@ -70,8 +72,23 @@ const ProductsResumePage: NextPage = () => {
     });
   };
 
+  // update: isValidProduct, resumeState, formData
   useEffect(() => {
-    if (!productData?.product) return;
+    const isInvalid = {
+      user: !(productData?.productCondition?.role?.myRole === "sellUser"),
+      product: !productData?.productCondition?.isSale,
+    };
+    // invalid
+    if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
+      setIsValidProduct(false);
+      setResumeState(() => ({ type: "Error", possibleDate: null, afterDate: null }));
+      const productId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      router.replace(redirectDestination ?? `/products/${productId}`);
+      return;
+    }
+    // valid
+    setIsValidProduct(true);
     formData.setValue("originalPrice", productData?.product?.price);
     formData.setValue("currentPrice", productData?.product?.price);
     setResumeState(() => {
@@ -92,8 +109,10 @@ const ProductsResumePage: NextPage = () => {
     });
   }, [productData]);
 
-  if (!productData?.product) return null;
-  if (resumeState.type === null) return null;
+  if (!resumeState.type) return null;
+  if (!isValidProduct || resumeState.type === "Error") {
+    return <NextError statusCode={500} />;
+  }
 
   const CustomGuideContent = (guideProps: {} & HTMLAttributes<HTMLDivElement>) => {
     const { className = "", ...guideRestProps } = guideProps;
@@ -117,14 +136,17 @@ const ProductsResumePage: NextPage = () => {
   return (
     <div className="">
       {/* 제품정보 */}
-      <Link href={`/products/${productData?.product?.id}`}>
-        <a className="block px-5 py-3 bg-gray-200">
-          <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
-        </a>
-      </Link>
+      {productData?.product && (
+        <Link href={`/products/${productData?.product?.id}`}>
+          <a className="block px-5 py-3 bg-gray-200">
+            <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
+          </a>
+        </Link>
+      )}
 
+      {/* 끌어올리기 폼 */}
       <div className="container pt-5 pb-5">
-        {/* 끌어올리기: HoldOff */}
+        {/* HoldOff */}
         {resumeState.type === "HoldOff" && (
           <>
             <strong className="text-lg">
@@ -135,7 +157,7 @@ const ProductsResumePage: NextPage = () => {
             <CustomGuideContent className="mt-4" />
           </>
         )}
-        {/* 끌어올리기: MaxCount */}
+        {/* MaxCount */}
         {resumeState.type === "MaxCount" && (
           <>
             <strong className="text-lg">
@@ -148,7 +170,7 @@ const ProductsResumePage: NextPage = () => {
             <CustomGuideContent className="mt-4" />
           </>
         )}
-        {/* 끌어올리기: ReadyFreeProduct */}
+        {/* ReadyFreeProduct */}
         {resumeState.type === "ReadyFreeProduct" && (
           <>
             <strong className="text-lg">
@@ -161,7 +183,7 @@ const ProductsResumePage: NextPage = () => {
             </div>
           </>
         )}
-        {/* 끌어올리기: ReadyPayProduct */}
+        {/* ReadyPayProduct */}
         {resumeState.type === "ReadyPayProduct" && (
           <>
             <strong className="text-lg">
@@ -207,10 +229,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const productId: string = params?.id?.toString() || "";
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/products/${productId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -239,22 +259,19 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/products/${productId}`
-  if (productCondition?.role?.myRole !== "sellUser") {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/${productId}`,
-      },
-    };
-  }
+  const isInvalid = {
+    user: !(productCondition?.role?.myRole === "sellUser"),
+    product: !productCondition?.isSale,
+  };
 
-  // redirect `/products/${productId}`
-  if (!productCondition?.isSale) {
+  // isInvalid
+  // redirect: redirectDestination ?? `/products/${productId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
     return {
       redirect: {
         permanent: false,
-        destination: `/products/${productId}`,
+        destination: redirectDestination ?? `/products/${productId}`,
       },
     };
   }

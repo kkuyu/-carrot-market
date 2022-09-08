@@ -21,7 +21,7 @@ import ProductList from "@components/lists/productList";
 
 const ProductsCategoryDetailPage: NextPage = () => {
   const router = useRouter();
-  const { currentAddr, type: userType, mutate: mutateUser } = useUser();
+  const { currentAddr, type: userType } = useUser();
 
   // variable: invisible
   const category = getCategory<ProductCategories>(router.query?.category?.toString() || "");
@@ -41,12 +41,16 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const products = data ? data.flatMap((item) => item.products) : null;
 
+  // update: infinite list
   useEffect(() => {
     if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
+  // reload: infinite list
   useEffect(() => {
-    if (!data?.[0].success && category && currentAddr?.emdAddrNm) mutate();
+    (async () => {
+      if (!data?.[0].success && category && currentAddr?.emdAddrNm) await mutate();
+    })();
   }, [data, category, currentAddr, userType]);
 
   return (
@@ -100,14 +104,23 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
+  // invalidUser
+  // redirect: `/`
+  if (!ssrUser.profile) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/`,
+      },
+    };
+  }
+
   // category
   const category = getCategory<ProductCategories>(params?.category?.toString() || "");
 
   // invalidCategory
-  let invalidCategory = false;
-  if (!category || !isInstance(category?.value, ProductCategory)) invalidCategory = true;
-  if (invalidCategory) {
-    // redirect `/products/categories`
+  // redirect `/products/categories`
+  if (!category || !isInstance(category?.value, ProductCategory)) {
     return {
       redirect: {
         permanent: false,
