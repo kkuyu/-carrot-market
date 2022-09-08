@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getStoryCondition, getCommentTree, truncateStr, submitFiles } from "@libs/utils";
+import { getCommentTree, truncateStr, submitFiles } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
@@ -116,15 +116,18 @@ const StoriesDetailPage: NextPage = () => {
     });
   };
 
+  // update: flatComments
   useEffect(() => {
     setFlatComments((prev) => [...(commentData?.comments || prev)]);
   }, [commentData?.comments]);
 
+  // reset: commentQuery
   useEffect(() => {
     if (!router?.query?.id) return;
     setCommentQuery("");
   }, [router?.query?.id]);
 
+  // change: layout
   useEffect(() => {
     if (!userType) return;
     const kebabActions = [

@@ -1,10 +1,11 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import NextError from "next/error";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getStoryCondition, validateFiles, submitFiles, truncateStr } from "@libs/utils";
+import { validateFiles, submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
@@ -25,6 +26,7 @@ const StoriesEditPage: NextPage = () => {
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidStory, setIsValidStory] = useState(true);
 
   // fetch data
   const { data: storyData, mutate: mutateStory } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
@@ -58,12 +60,29 @@ const StoriesEditPage: NextPage = () => {
     editStory({ ...data, photos: validPaths });
   };
 
+  // update: isValidStory, formData
   useEffect(() => {
-    if (!storyData?.story) return;
+    const isInvalid = {
+      user: !(storyData?.storyCondition?.role?.myRole === "author"),
+    };
+    // invalid
+    if (!storyData?.success || !storyData?.story || Object.values(isInvalid).includes(true)) {
+      setIsValidStory(false);
+      const storyId = router?.query?.id?.toString();
+      let redirectDestination = null;
+      router.replace(redirectDestination ?? `/stories/${storyId}`);
+      return;
+    }
+    // valid
+    setIsValidStory(true);
     formData.setValue("originalPhotoPaths", storyData?.story?.photos);
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
   }, [storyData]);
+
+  if (!isValidStory) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="container pt-5 pb-5">
@@ -100,10 +119,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const storyId: string = params?.id?.toString() || "";
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/stories/${storyId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,
@@ -132,12 +149,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // redirect `/stories/${storyId}`
-  if (storyCondition?.role?.myRole !== "author") {
+  const isInvalid = {
+    user: !(storyCondition?.role?.myRole === "author"),
+  };
+
+  // isInvalid
+  // redirect: redirectDestination ?? `/stories/${storyId}`,
+  if (Object.values(isInvalid).includes(true)) {
+    let redirectDestination = null;
     return {
       redirect: {
         permanent: false,
-        destination: `/stories/${storyId}`,
+        destination: redirectDestination ?? `/stories/${storyId}`,
       },
     };
   }

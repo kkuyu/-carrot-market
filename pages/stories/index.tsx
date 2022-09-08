@@ -36,12 +36,16 @@ const StoriesIndexPage: NextPage = () => {
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const stories = data ? data.flatMap((item) => item.stories) : null;
 
+  // update: infinite list
   useEffect(() => {
     if (isVisible && !isReachingEnd) setSize((size) => size + 1);
   }, [isVisible, isReachingEnd]);
 
+  // reload: infinite list
   useEffect(() => {
-    if (!data?.[0].success && currentAddr.emdPosNm) mutate();
+    (async () => {
+      if (!data?.[0].success && currentAddr.emdPosNm) await mutate();
+    })();
   }, [data, currentAddr]);
 
   return (
@@ -100,6 +104,17 @@ Page.getLayout = getLayout;
 export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
+
+  // invalidUser
+  // redirect: `/`
+  if (!ssrUser?.currentAddr) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/`,
+      },
+    };
+  }
 
   // getStories
   const posX = ssrUser?.currentAddr?.emdPosX;
