@@ -277,22 +277,20 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const storyId: string = params?.id?.toString() || "";
 
   // getStoriesDetail
-  const { story } =
+  const { story, storyCondition } =
     storyId && !isNaN(+storyId)
       ? await getStoriesDetail({
           id: +storyId,
         })
       : {
           story: null,
+          storyCondition: null,
         };
   if (!story) {
     return {
       notFound: true,
     };
   }
-
-  // condition
-  const storyCondition = getStoryCondition(story, null);
 
   // getStoriesComments
   const { comments } = story.id

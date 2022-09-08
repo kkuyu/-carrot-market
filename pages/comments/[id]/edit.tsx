@@ -100,13 +100,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getCommentsDetail
-  const { comment } =
+  const { comment, commentCondition } =
     commentId && !isNaN(+commentId)
       ? await getCommentsDetail({
           id: +commentId,
+          userId: ssrUser?.profile?.id,
         })
       : {
           comment: null,
+          commentCondition: null,
         };
   if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
     return {
@@ -116,9 +118,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
     };
   }
-
-  // condition
-  const commentCondition = getCommentCondition(comment, ssrUser?.profile?.id);
 
   // redirect `/stories/${storyId}`
   if (commentCondition?.role?.myRole !== "author") {

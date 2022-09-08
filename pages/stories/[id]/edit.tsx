@@ -113,13 +113,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getStoriesDetail
-  const { story } =
+  const { story, storyCondition } =
     storyId && !isNaN(+storyId)
       ? await getStoriesDetail({
           id: +storyId,
+          userId: ssrUser?.profile?.id,
         })
       : {
           story: null,
+          storyCondition: null,
         };
   if (!story) {
     return {
@@ -129,9 +131,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
     };
   }
-
-  // condition
-  const storyCondition = getStoryCondition(story, ssrUser?.profile?.id);
 
   // redirect `/stories/${storyId}`
   if (storyCondition?.role?.myRole !== "author") {

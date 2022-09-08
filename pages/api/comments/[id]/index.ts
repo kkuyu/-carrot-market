@@ -29,8 +29,9 @@ export interface GetCommentsDetailResponse extends ResponseDataType {
   commentCondition?: StoryCommentCondition | null;
 }
 
-export const getCommentsDetail = async (query: { id: number }) => {
-  const { id } = query;
+export const getCommentsDetail = async (query: { id: number; userId?: number }) => {
+  const { id, userId } = query;
+
   const comment = await client.storyComment.findUnique({
     where: {
       id,
@@ -69,7 +70,9 @@ export const getCommentsDetail = async (query: { id: number }) => {
     },
   });
 
-  return { comment };
+  const commentCondition = getCommentCondition(comment, userId || null);
+
+  return { comment, commentCondition };
 };
 
 export const getCommentsReComments = async (query: {
@@ -190,7 +193,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { comment } = await getCommentsDetail({ id });
+    const { comment, commentCondition } = await getCommentsDetail({ id });
     if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
       const error = new Error("NotFoundComment");
       error.name = "NotFoundComment";
@@ -202,7 +205,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const result: GetCommentsDetailResponse = {
         success: true,
         comment,
-        commentCondition: getCommentCondition(comment, user?.id),
+        commentCondition,
       };
       return res.status(200).json(result);
     }
@@ -226,7 +229,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: GetCommentsDetailResponse = {
       success: true,
       comment: { ...comment, reComments: comments },
-      commentCondition: getCommentCondition(comment, user?.id),
+      commentCondition,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

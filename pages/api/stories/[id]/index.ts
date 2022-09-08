@@ -30,8 +30,8 @@ export interface GetStoriesDetailResponse extends ResponseDataType {
   storyCondition?: StoryCondition | null;
 }
 
-export const getStoriesDetail = async (query: { id: number }) => {
-  const { id } = query;
+export const getStoriesDetail = async (query: { id: number; userId?: number }) => {
+  const { id, userId } = query;
 
   const story = await client.story.findUnique({
     where: {
@@ -65,7 +65,9 @@ export const getStoriesDetail = async (query: { id: number }) => {
     },
   });
 
-  return { story };
+  const storyCondition = getStoryCondition(story, userId || null);
+
+  return { story, storyCondition };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -89,7 +91,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { story } = await getStoriesDetail({ id });
+    const { story, storyCondition } = await getStoriesDetail({ id, userId: user?.id });
     if (!story) {
       const error = new Error("NotFoundStory");
       error.name = "NotFoundStory";
@@ -100,7 +102,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: GetStoriesDetailResponse = {
       success: true,
       story,
-      storyCondition: getStoryCondition(story, user?.id),
+      storyCondition,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

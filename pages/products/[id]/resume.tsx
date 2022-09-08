@@ -220,13 +220,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsDetail
-  const { product } =
+  const { product, productCondition } =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
+          userId: ssrUser?.profile?.id,
         })
       : {
           product: null,
+          productCondition: null,
         };
   if (!product) {
     return {
@@ -236,9 +238,6 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
     };
   }
-
-  // condition
-  const productCondition = getProductCondition(product, ssrUser?.profile?.id);
 
   // redirect `/products/${productId}`
   if (productCondition?.role?.myRole !== "sellUser") {

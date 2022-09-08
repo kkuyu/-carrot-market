@@ -115,7 +115,7 @@ export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story
   };
 };
 
-export const getCommentCondition = (comment: Partial<GetCommentsDetailResponse["comment"]>, userId: number | null = null): StoryCommentCondition | null => {
+export const getCommentCondition = (comment: Partial<GetCommentsDetailResponse["comment"]> | null, userId: number | null = null): StoryCommentCondition | null => {
   if (!comment || !comment?.records) return null;
   const myRole = userId === null ? "unknown" : userId === comment?.userId ? "author" : "reader";
   return {

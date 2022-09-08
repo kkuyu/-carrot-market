@@ -33,8 +33,8 @@ export interface GetProductsDetailResponse extends ResponseDataType {
   productCondition?: ProductCondition | null;
 }
 
-export const getProductsDetail = async (query: { id: number }) => {
-  const { id } = query;
+export const getProductsDetail = async (query: { id: number; userId?: number }) => {
+  const { id, userId } = query;
 
   const product = await client.product.findUnique({
     where: {
@@ -75,7 +75,9 @@ export const getProductsDetail = async (query: { id: number }) => {
     },
   });
 
-  return { product };
+  const productCondition = getProductCondition(product, userId || null);
+
+  return { product, productCondition };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -99,7 +101,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { product } = await getProductsDetail({ id });
+    const { product, productCondition } = await getProductsDetail({ id, userId: user?.id });
     if (!product) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
@@ -110,7 +112,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const result: GetProductsDetailResponse = {
       success: true,
       product,
-      productCondition: getProductCondition(product, user?.id),
+      productCondition,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -80,7 +80,7 @@ const CommentsDetailPage: NextPage = () => {
     if (!router?.query?.id) return;
     setCommentQuery(() => "");
     formData?.setValue("reCommentRefId", +router.query.id.toString());
-    formData?.setFocus("content");
+    if (userType !== "guest") formData?.setFocus("content");
   }, [router?.query?.id]);
 
   if (!commentData?.success || !comment) {
@@ -180,22 +180,20 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const commentId: string = params?.id?.toString() || "";
 
   // getCommentsDetail
-  const { comment } =
+  const { comment, commentCondition } =
     commentId && !isNaN(+commentId)
       ? await getCommentsDetail({
           id: +commentId,
         })
       : {
           comment: null,
+          commentCondition: null,
         };
   if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
     return {
       notFound: true,
     };
   }
-
-  // condition
-  const commentCondition = getCommentCondition(comment, null);
 
   // fetch data: comments
   const { comments } = await getCommentsReComments({

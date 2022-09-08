@@ -295,22 +295,20 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   const productId: string = params?.id?.toString() || "";
 
   // getProductsDetail
-  const { product } =
+  const { product, productCondition } =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
         })
       : {
           product: null,
+          productCondition: null,
         };
   if (!product) {
     return {
       notFound: true,
     };
   }
-
-  // condition
-  const productCondition = getProductCondition(product, null);
 
   // defaultLayout
   const defaultLayout = {
