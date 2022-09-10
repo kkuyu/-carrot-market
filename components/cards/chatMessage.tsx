@@ -7,25 +7,22 @@ export type ChatMessageItem = GetChatsDetailResponse["chat"]["chatMessages"][num
 export interface ChatMessageProps extends HTMLAttributes<HTMLDivElement> {
   item: ChatMessageItem;
   direction: "forward" | "reverse";
-  isDifferentDate: boolean;
-  currentDate: string;
+  isVisibleDate?: boolean;
 }
 
 const ChatMessage = (props: ChatMessageProps) => {
-  const { item, direction, isDifferentDate, currentDate, className = "", ...restProps } = props;
-
-  const createdDate = new Date(item.createdAt);
+  const { item, direction, isVisibleDate = false, className = "", ...restProps } = props;
 
   return (
     <>
-      {isDifferentDate && (
-        <span key={`${item.id}-${currentDate}`} className="block pt-2 text-center text-sm text-gray-500">
-          {currentDate}
+      {isVisibleDate && (
+        <span key={item.createdAt.toString()} className="block pt-2 text-center text-sm text-gray-500">
+          {new Date(item?.createdAt).toISOString().replace(/T.*$/, "")}
         </span>
       )}
-      <div className={`flex items-end justify-end ${direction === "forward" ? "flex-row" : direction === "reverse" ? "flex-row-reverse" : ""} ${className}`} {...restProps}>
-        <span className="flex-none px-2 py-0.5 text-sm text-gray-500">{createdDate.toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</span>
-        <p className={`px-2.5 py-1.5 rounded-xl ${direction === "forward" ? "text-white bg-orange-500" : direction === "reverse" ? "bg-gray-200" : ""}`}>{item.text}</p>
+      <div className={`flex items-end justify-end ${direction === "forward" ? "flex-row" : "flex-row-reverse"} ${className}`} {...restProps}>
+        <span className="flex-none px-2 py-0.5 text-sm text-gray-500">{new Date(item.createdAt).toLocaleTimeString("ko-KR", { hour: "2-digit", minute: "2-digit" })}</span>
+        <p className={`px-2.5 py-1.5 rounded-xl ${direction === "forward" ? "text-white bg-orange-500" : "bg-gray-200"}`}>{item.text}</p>
       </div>
     </>
   );

@@ -16,11 +16,14 @@ const ChatMessageList = (props: ChatMessageListProps) => {
 
   return (
     <div className={`space-y-2.5 ${className}`} {...restProps}>
-      {list.map((item, index) => {
-        const currentDate = new Date(item.createdAt).toISOString().replace(/T.*$/, "");
-        const beforeDate = index === 0 ? "" : new Date(list[index - 1].createdAt).toISOString().replace(/T.*$/, "");
-        return <ChatMessage key={item.id} item={item} direction={item.user.id === user?.id ? "forward" : "reverse"} isDifferentDate={currentDate !== beforeDate} currentDate={currentDate} />;
-      })}
+      {list.map((item, index) => (
+        <ChatMessage
+          key={item.id}
+          item={item}
+          isVisibleDate={new Date(item?.createdAt).toLocaleDateString() !== new Date(list?.[index - 1]?.createdAt).toLocaleDateString()}
+          direction={item.user.id === user?.id ? "forward" : "reverse"}
+        />
+      ))}
     </div>
   );
 };

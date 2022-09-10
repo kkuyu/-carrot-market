@@ -19,7 +19,7 @@ export interface PostChatsResponse extends ResponseDataType {
   chat: Chat;
 }
 
-const getChats = async (query: { prevCursor: number; pageSize: number; userId: number }) => {
+export const getChats = async (query: { prevCursor: number; pageSize: number; userId: number }) => {
   const { prevCursor, pageSize, userId } = query;
 
   const where = {
@@ -59,10 +59,15 @@ const getChats = async (query: { prevCursor: number; pageSize: number; userId: n
       product: {
         select: { id: true, name: true, photos: true },
       },
+      _count: {
+        select: {
+          chatMessages: true,
+        },
+      },
     },
   });
 
-  return { totalCount, chats };
+  return { totalCount, chats: chats.filter((chat) => chat._count.chatMessages > 0) };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -137,7 +142,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         throw error;
       }
 
-      // fetch data
+      // validation: user
       for (let index = 0; index < userIds.length; index++) {
         const foundUser = await client.user.findUnique({
           where: {
@@ -154,7 +159,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         }
       }
 
-      // fetch product
+      // validation: product
       const productId = _productId ? +_productId.toString() : null;
       const product = productId
         ? await client.product.findUnique({
@@ -186,37 +191,30 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
       });
 
-      // early return result
-      if (existedChat) {
-        const result: PostChatsResponse = {
-          success: true,
-          chat: existedChat,
-        };
-        return res.status(200).json(result);
-      }
-
       // create chat
-      const newChat = await client.chat.create({
-        data: {
-          users: {
-            connect: userIds.map((id: number) => ({ id: +id })),
-          },
-          ...(product?.id
-            ? {
-                product: {
-                  connect: {
-                    id: product.id,
-                  },
-                },
-              }
-            : {}),
-        },
-      });
+      const newChat = !existedChat
+        ? await client.chat.create({
+            data: {
+              users: {
+                connect: userIds.map((id: number) => ({ id: +id })),
+              },
+              ...(product?.id
+                ? {
+                    product: {
+                      connect: {
+                        id: product.id,
+                      },
+                    },
+                  }
+                : {}),
+            },
+          })
+        : null;
 
       // result
       const result: PostChatsResponse = {
         success: true,
-        chat: newChat,
+        chat: (newChat || existedChat)!,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {
