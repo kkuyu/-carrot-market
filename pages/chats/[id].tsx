@@ -158,7 +158,7 @@ const ChatsDetailPage: NextPage = () => {
               userGroup.find((user) => productData?.productCondition?.role?.partnerUserId === user?.id) &&
               !productData?.productCondition?.isSale &&
               productData?.productCondition?.review?.sentReviewId && (
-                <Link href={`/reviews/${productData?.productCondition?.review?.sentReviewId}`} passHref>
+                <Link href={`/products/reviews/${productData?.productCondition?.review?.sentReviewId}`} passHref>
                   <Buttons tag="a" size="sm" status="default" className="!inline-block !w-auto !text-left">
                     보낸 후기 보기
                   </Buttons>

@@ -77,12 +77,17 @@ const ProductsEditPage: NextPage = () => {
     }
     // valid
     setIsValidProduct(true);
+  }, [productData]);
+
+  // update: isValidProduct, formData
+  useEffect(() => {
+    if (!productData?.product) return;
     formData.setValue("originalPhotoPaths", productData?.product?.photos);
     formData.setValue("category", productData?.product?.category as EditProductTypes["category"]);
     formData.setValue("name", productData?.product?.name);
     formData.setValue("description", productData?.product?.description);
     formData.setValue("price", productData?.product?.price);
-  }, [productData]);
+  }, [productData?.product]);
 
   if (!isValidProduct) {
     return <NextError statusCode={500} />;

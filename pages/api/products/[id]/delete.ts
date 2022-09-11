@@ -47,8 +47,8 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
-    // delete product review
-    await client.productReview.deleteMany({
+    // delete review
+    await client.review.deleteMany({
       where: {
         productId: product.id,
       },

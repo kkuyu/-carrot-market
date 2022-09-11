@@ -143,20 +143,22 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // validation: user
-      for (let index = 0; index < userIds.length; index++) {
-        const foundUser = await client.user.findUnique({
-          where: {
-            id: +userIds[index],
-          },
-          select: {
-            id: true,
-          },
-        });
-        if (!foundUser) {
-          const error = new Error("NotFoundUser");
-          error.name = "NotFoundUser";
-          throw error;
-        }
+      const foundUsers = await client.$transaction(
+        userIds.map((id: number) =>
+          client.user.findUnique({
+            where: {
+              id,
+            },
+            select: {
+              id: true,
+            },
+          })
+        )
+      );
+      if (foundUsers.includes(null)) {
+        const error = new Error("NotFoundUser");
+        error.name = "NotFoundUser";
+        throw error;
       }
 
       // validation: product
@@ -191,30 +193,31 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
       });
 
-      // create chat
-      const newChat = !existedChat
-        ? await client.chat.create({
-            data: {
-              users: {
-                connect: userIds.map((id: number) => ({ id: +id })),
-              },
-              ...(product?.id
-                ? {
-                    product: {
-                      connect: {
-                        id: product.id,
-                      },
-                    },
-                  }
-                : {}),
-            },
-          })
-        : null;
+      const newChat = await client.chat.upsert({
+        where: {
+          id: existedChat?.id || 0,
+        },
+        update: {},
+        create: {
+          users: {
+            connect: userIds.map((id: number) => ({ id: +id })),
+          },
+          ...(product?.id
+            ? {
+                product: {
+                  connect: {
+                    id: product.id,
+                  },
+                },
+              }
+            : {}),
+        },
+      });
 
       // result
       const result: PostChatsResponse = {
         success: true,
-        chat: (newChat || existedChat)!,
+        chat: newChat,
       };
       return res.status(200).json(result);
     } catch (error: unknown) {

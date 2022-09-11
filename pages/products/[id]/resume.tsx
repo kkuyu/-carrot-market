@@ -72,7 +72,7 @@ const ProductsResumePage: NextPage = () => {
     });
   };
 
-  // update: isValidProduct, resumeState, formData
+  // update: isValidProduct, resumeState
   useEffect(() => {
     const isInvalid = {
       user: !(productData?.productCondition?.role?.myRole === "sellUser"),
@@ -89,6 +89,11 @@ const ProductsResumePage: NextPage = () => {
     }
     // valid
     setIsValidProduct(true);
+  }, [productData]);
+
+  // update: formData, resumeState
+  useEffect(() => {
+    if (!productData?.product) return;
     formData.setValue("originalPrice", productData?.product?.price);
     formData.setValue("currentPrice", productData?.product?.price);
     setResumeState(() => {
@@ -107,7 +112,7 @@ const ProductsResumePage: NextPage = () => {
       if (currentState.possibleDate && currentState.possibleDate > currentDate) currentState.type = "HoldOff";
       return currentState;
     });
-  }, [productData]);
+  }, [productData?.product]);
 
   if (!resumeState.type) return null;
   if (!isValidProduct || resumeState.type === "Error") {

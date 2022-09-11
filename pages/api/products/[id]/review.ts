@@ -1,21 +1,21 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, ProductReview } from "@prisma/client";
+import { Kind, Manner, MannerValue, Review } from "@prisma/client";
 // @libs
+import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostReviewsResponse extends ResponseDataType {
-  review: ProductReview | null;
+export interface PostProductsDetailReviewResponse extends ResponseDataType {
+  review: Review | null;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { role, satisfaction, manners = [], text, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId, productId: _productId } = req.body;
-    const { user } = req.session;
+    const { role, id: _id, score: _score, manners = [], description, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId } = req.body;
 
     // invalid
-    if (!role || !satisfaction || !manners.length || !_purchaseUserId || !_sellUserId) {
+    if (!role || !_id || !_score || !manners.length || !_purchaseUserId || !_sellUserId) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -27,10 +27,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // params
+    const id = +_id.toString();
     const sellUserId = +_sellUserId.toString();
     const purchaseUserId = +_purchaseUserId.toString();
-    const productId = +_productId.toString();
-    if (isNaN(sellUserId) || isNaN(purchaseUserId) || isNaN(productId)) {
+    const score = +_score.toString();
+    if (isNaN(id) || isNaN(sellUserId) || isNaN(purchaseUserId) || isNaN(score)) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (manners.map((manner: string) => isInstance(manner, MannerValue)).includes(false)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -71,7 +77,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // fetch product
     const product = await client.product.findUnique({
       where: {
-        id: productId,
+        id,
       },
       include: {
         records: {
@@ -88,12 +94,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "NotFoundProduct";
       throw error;
     }
-    if (product.records.find((record) => record.kind === Kind.ProductSale)) {
-      const error = new Error("NotFoundProduct");
-      error.name = "NotFoundProduct";
-      throw error;
-    }
-    if (!product.records.find((record) => record.kind === Kind.ProductPurchase)) {
+    if (product.records.find((record) => record.kind === Kind.ProductSale) || !product.records.find((record) => record.kind === Kind.ProductPurchase)) {
       const error = new Error("NotFoundProduct");
       error.name = "NotFoundProduct";
       throw error;
@@ -105,11 +106,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // create product review
-    const newReview = await client.productReview.create({
+    const newReview = await client.review.create({
       data: {
         role,
-        satisfaction,
-        text,
+        score,
+        description,
         sellUser: {
           connect: {
             id: sellUser.id,
@@ -128,28 +129,23 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       },
     });
 
-    for (let index = 0; index < manners.length; index++) {
-      const reviewTarget = newReview.role === "sellUser" ? purchaseUser : sellUser;
-      const existed = reviewTarget.manners.find((manner) => manner.value === manners[index]);
-      if (existed) {
-        // update manner
-        await client.manner.update({
+    const reviewTarget = newReview.role === "sellUser" ? purchaseUser : sellUser;
+
+    await client.$transaction(
+      manners.map((manner: MannerValue) =>
+        client.manner.upsert({
           where: {
-            id: existed.id,
+            id: reviewTarget?.manners?.find((existed: Manner) => existed.value === manner)?.id || 0,
           },
-          data: {
+          update: {
             reviews: {
               connect: {
                 id: newReview.id,
               },
             },
           },
-        });
-      } else {
-        // create manner
-        await client.manner.create({
-          data: {
-            value: manners[index],
+          create: {
+            value: manner,
             reviews: {
               connect: {
                 id: newReview.id,
@@ -161,12 +157,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
               },
             },
           },
-        });
-      }
-    }
+        })
+      )
+    );
 
     // result
-    const result: PostReviewsResponse = {
+    const result: PostProductsDetailReviewResponse = {
       success: true,
       review: newReview,
     };

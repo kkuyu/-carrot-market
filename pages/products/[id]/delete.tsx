@@ -100,14 +100,14 @@ const ProductsDeletePage: NextPage = () => {
             <span>서로 주고받은 거래후기가 취소돼요</span>
             <div className="mt-1 space-x-2">
               {productData?.productCondition && Boolean(productData?.productCondition?.review?.sentReviewId) && (
-                <Link href={`/reviews/${productData?.productCondition?.review?.sentReviewId}`} passHref>
+                <Link href={`/products/reviews/${productData?.productCondition?.review?.sentReviewId}`} passHref>
                   <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
                     보낸 후기 보기
                   </Buttons>
                 </Link>
               )}
               {productData?.productCondition && Boolean(productData?.productCondition?.review?.receiveReviewId) && (
-                <Link href={`/reviews/${productData?.productCondition?.review?.receiveReviewId}`} passHref>
+                <Link href={`/products/reviews/${productData?.productCondition?.review?.receiveReviewId}`} passHref>
                   <Buttons tag="a" sort="round-box" size="sm" status="default" className="inline-block w-auto">
                     받은 후기 보기
                   </Buttons>

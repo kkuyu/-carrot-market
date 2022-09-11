@@ -60,7 +60,7 @@ const StoriesEditPage: NextPage = () => {
     editStory({ ...data, photos: validPaths });
   };
 
-  // update: isValidStory, formData
+  // update: formData
   useEffect(() => {
     const isInvalid = {
       user: !(storyData?.storyCondition?.role?.myRole === "author"),
@@ -75,10 +75,15 @@ const StoriesEditPage: NextPage = () => {
     }
     // valid
     setIsValidStory(true);
+  }, [storyData]);
+
+  // update: isValidStory
+  useEffect(() => {
+    if (!storyData?.story) return;
     formData.setValue("originalPhotoPaths", storyData?.story?.photos);
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
-  }, [storyData]);
+  }, [storyData?.story]);
 
   if (!isValidStory) {
     return <NextError statusCode={500} />;

@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Product, Record, ProductReview, User } from "@prisma/client";
+import { Chat, Product, Record, Review, User } from "@prisma/client";
 // @libs
 import { getProductCondition } from "@libs/utils";
 import client from "@libs/server/client";
@@ -28,7 +28,7 @@ export interface GetProductsDetailResponse extends ResponseDataType {
     user?: Pick<User, "id" | "name" | "avatar">;
     records?: Pick<Record, "id" | "kind" | "userId">[];
     chats?: (Chat & { _count: { chatMessages: number } })[];
-    reviews?: Pick<ProductReview, "id" | "role" | "sellUserId" | "purchaseUserId">[];
+    reviews?: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
   };
   productCondition?: ProductCondition | null;
 }
@@ -65,6 +65,14 @@ export const getProductsDetail = async (query: { id: number; userId?: number }) 
         },
       },
       reviews: {
+        where: {
+          OR: [
+            { role: "sellUser", sellUserId: userId },
+            { role: "sellUser", purchaseUserId: userId, score: { gt: 40 } },
+            { role: "purchaseUser", purchaseUserId: userId },
+            { role: "purchaseUser", sellUserId: userId, score: { gt: 40 } },
+          ],
+        },
         select: {
           id: true,
           role: true,

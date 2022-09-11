@@ -23,7 +23,7 @@ export type StoryCategories = {
   commentType?: "댓글" | "답변";
 }[];
 
-export const StoryCategories = [
+export const StoryCategories: StoryCategories = [
   { value: StoryCategory["POPULAR_STORY"], text: "인기소식" },
   { value: StoryCategory["QUESTION"], text: "동네질문", isLikeWithEmotion: false, commentType: "답변" as StoryCategories[number]["commentType"] },
   { value: StoryCategory["INCIDENT"], text: "동네사건사고", isLikeWithEmotion: true, commentType: "댓글" as StoryCategories[number]["commentType"] },

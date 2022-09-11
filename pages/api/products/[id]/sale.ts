@@ -84,7 +84,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       });
     }
 
-    // update record, productReview
+    // update record, review
     if (!existed && sale === true) {
       await client.record.deleteMany({
         where: {
@@ -92,7 +92,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           kind: Kind.ProductPurchase,
         },
       });
-      await client.productReview.deleteMany({
+      await client.review.deleteMany({
         where: {
           productId: product.id,
         },

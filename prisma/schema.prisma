@@ -18,38 +18,38 @@ enum EmdType {
 }
 
 model User {
-  id                 Int             @id @default(autoincrement())
-  name               String
-  phone              String          @unique
-  email              String?         @unique
-  avatar             String          @default("")
-  concerns           String          @default("")
-  emdType            EmdType
-  MAIN_emdAddrNm     String
-  MAIN_emdPosNm      String
-  MAIN_emdPosDx      Float
-  MAIN_emdPosX       Float
-  MAIN_emdPosY       Float
-  SUB_emdAddrNm      String?
-  SUB_emdPosNm       String?
-  SUB_emdPosDx       Float?
-  SUB_emdPosX        Float?
-  SUB_emdPosY        Float?
-  createdAt          DateTime        @default(now())
-  updatedAt          DateTime        @updatedAt
-  tokens             Token[]
-  searchRecords      SearchRecord[]
-  products           Product[]
-  chats              Chat[]
-  chatMessages       ChatMessage[]
-  stories            Story[]
-  comments           StoryComment[]
-  sellUserReview     ProductReview[] @relation(name: "sellUserReview")
-  purchaseUserReview ProductReview[] @relation(name: "purchaseUserReview")
-  manners            Manner[]
-  records            Record[]
-  streams            Stream[]
-  messages           Message[]
+  id                   Int            @id @default(autoincrement())
+  name                 String
+  phone                String         @unique
+  email                String?        @unique
+  avatar               String         @default("")
+  concerns             String         @default("")
+  emdType              EmdType
+  MAIN_emdAddrNm       String
+  MAIN_emdPosNm        String
+  MAIN_emdPosDx        Float
+  MAIN_emdPosX         Float
+  MAIN_emdPosY         Float
+  SUB_emdAddrNm        String?
+  SUB_emdPosNm         String?
+  SUB_emdPosDx         Float?
+  SUB_emdPosX          Float?
+  SUB_emdPosY          Float?
+  createdAt            DateTime       @default(now())
+  updatedAt            DateTime       @updatedAt
+  tokens               Token[]
+  searchRecords        SearchRecord[]
+  products             Product[]
+  chats                Chat[]
+  chatMessages         ChatMessage[]
+  stories              Story[]
+  comments             StoryComment[]
+  reviewBySellUser     Review[]       @relation(name: "reviewBySellUser")
+  reviewByPurchaseUser Review[]       @relation(name: "reviewByPurchaseUser")
+  manners              Manner[]
+  records              Record[]
+  streams              Stream[]
+  messages             Message[]
 }
 
 model Token {
@@ -111,7 +111,7 @@ model Product {
   updatedAt   DateTime        @updatedAt
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
-  reviews     ProductReview[]
+  reviews     Review[]
   chats       Chat[]
   records     Record[]
 }
@@ -188,30 +188,53 @@ model StoryComment {
   reCommentRefId Int?
 }
 
-model Manner {
-  id        Int             @id @default(autoincrement())
-  value     String
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt()
-  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userId    Int
-  reviews   ProductReview[]
-}
-
-model ProductReview {
+model Review {
   id             Int      @id @default(autoincrement())
   role           String
-  satisfaction   String
+  score          Int
   manners        Manner[]
-  text           String?  @db.MediumText
+  description    String?  @db.MediumText
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
-  sellUser       User     @relation(name: "sellUserReview", fields: [sellUserId], references: [id], onDelete: Cascade)
+  sellUser       User     @relation(name: "reviewBySellUser", fields: [sellUserId], references: [id], onDelete: Cascade)
   sellUserId     Int
-  purchaseUser   User     @relation(name: "purchaseUserReview", fields: [purchaseUserId], references: [id], onDelete: Cascade)
+  purchaseUser   User     @relation(name: "reviewByPurchaseUser", fields: [purchaseUserId], references: [id], onDelete: Cascade)
   purchaseUserId Int
   product        Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
   productId      Int
+}
+
+enum MannerValue {
+  COME_CLOSE_TO_MAKE_A_TRADE
+  KIND_AND_GOOD_MANNERS
+  PUNCTUAL
+  RESPOND_QUICKLY
+  GAVE_FOR_FREE
+  PRODUCT_STATUS_IS_AS_DESCRIBED
+  PRODUCT_DESCRIPTION_IS_DETAILED
+  GOOD_PRODUCT_AT_REASONABLE_PRICE
+  UNFRIENDLY
+  SPEAKS_INFORMALLY
+  DECIDED_TIME_AND_PLACE_BUT_CANCELED_RIGHT_BEFORE_TRADE
+  DECIDED_TIME_AND_PLACE_BUT_CAN_NOT_CONTACT
+  DID_NOT_SHOW_UP_FOR_THE_MEETING_PLACE
+  CONVERSATION_HAS_NOTHING_TO_DO_WITH_THE_TRADE
+  NOT_PUNCTUAL
+  DOES_NOT_PROVIDE_DETAILS_THAT_ARE_NOT_IN_THE_POST
+  KEEP_ASKING_ABOUT_PRODUCT_EVEN_THOUGH_DOES_NOT_WANT_TO_BUY
+  MADE_RESERVATION_BUT_DOES_NOT_SET_A_TRADE_TIME
+  SAW_THE_CHAT_MESSAGE_BUT_NO_RESPONSE
+  KEEP_ASKING_FOR_PRICES_DO_NOT_WANT
+}
+
+model Manner {
+  id        Int         @id @default(autoincrement())
+  value     MannerValue
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt()
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId    Int
+  reviews   Review[]
 }
 
 enum Kind {

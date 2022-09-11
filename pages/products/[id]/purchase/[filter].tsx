@@ -75,8 +75,8 @@ const ProductsPurchasePage: NextPage = () => {
       setIsValidProduct(false);
       const productId = router?.query?.id?.toString();
       let redirectDestination = null;
-      if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/reviews/${productData?.productCondition?.review?.sentReviewId}`;
-      if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/reviews/${productData?.productCondition?.review?.receiveReviewId}`;
+      if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productData?.productCondition?.review?.sentReviewId}`;
+      if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/products/${productId}/review`;
       router.replace(redirectDestination ?? `/products/${productId}`);
       return;
     }
@@ -246,8 +246,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   // redirect: redirectDestination ?? `/products/${productId}`,
   if (Object.values(isInvalid).includes(true)) {
     let redirectDestination = null;
-    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/reviews/${productCondition?.review?.sentReviewId}`;
-    if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/reviews/${productCondition?.review?.receiveReviewId}`;
+    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productCondition?.review?.sentReviewId}`;
+    if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/products/${productId}/review`;
     return {
       redirect: {
         permanent: false,
