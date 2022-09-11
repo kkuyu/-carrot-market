@@ -5,10 +5,11 @@ import { ProductCategory, StoryCategory, Kind } from "@prisma/client";
 import name from "@libs/name.json";
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
-import { GetFilesResponse, DeleteFilesResponse, ImageDeliveryUpdateResponse } from "@api/files";
 import { ProductCategories } from "@api/products/types";
+import { StoryCategories } from "@api/stories/types";
+import { CommentEmotionIcon } from "@api/comments/types";
+import { GetFilesResponse, DeleteFilesResponse, ImageDeliveryUpdateResponse } from "@api/files";
 import { ProductCondition, GetProductsDetailResponse } from "@api/products/[id]";
-import { StoryCategories, EmotionIcon } from "@api/stories/types";
 import { GetStoriesDetailResponse, StoryCondition } from "@api/stories/[id]";
 import { GetCommentsDetailResponse, StoryCommentCondition, StoryCommentItem } from "@api/comments/[id]";
 
@@ -95,9 +96,7 @@ export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story
   const category = getCategory<StoryCategories>(story?.category);
   const likeRecords = story?.records?.filter((record) => record.kind === Kind.StoryLike) || [];
   const likeRecord = likeRecords?.find((record) => record.userId === userId) || null;
-  const emotions = Object.entries(EmotionIcon)
-    .sort(([, a], [, b]) => a.index - b.index)
-    .filter(([key]) => likeRecords.find((i) => i.emotion === key));
+  const emotions = Object.entries(CommentEmotionIcon).filter(([key]) => likeRecords.find((i) => i.emotion === key));
   return {
     role: { myRole },
     likes: likeRecords.length,
@@ -107,7 +106,7 @@ export const getStoryCondition = (story: Partial<GetStoriesDetailResponse["story
       ? {
           emotion: likeRecord?.emotion,
           emojis: emotions.length ? emotions.map(([key, emotion]) => emotion.emoji).join("") : null,
-          emoji: likeRecord?.emotion ? EmotionIcon?.[likeRecord?.emotion].emoji : null,
+          emoji: likeRecord?.emotion ? CommentEmotionIcon?.[likeRecord?.emotion].emoji : null,
         }
       : {}),
     ...(userId ? { isLike: Boolean(story?.records?.find((record) => record.kind === Kind.StoryLike && record.userId === userId)) } : {}),

@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Record } from "@prisma/client";
+import { Emotion, Kind, Record } from "@prisma/client";
 // @libs
-import { getCategory } from "@libs/utils";
+import { getCategory, isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCategories, EmotionIcon, EmotionKeys } from "@api/stories/types";
+import { StoryCategories } from "@api/stories/types";
 
 export interface PostStoriesLikeResponse extends ResponseDataType {
   likeRecord: Record | null;
@@ -29,7 +29,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (_emotion && !Object.keys(EmotionIcon).includes(_emotion.toString())) {
+    if (_emotion && !isInstance(_emotion.toString(), Emotion)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -37,7 +37,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const id = +_id.toString();
-    const emotion = _emotion ? (_emotion.toString() as EmotionKeys) : null;
+    const emotion = _emotion ? (_emotion.toString() as Emotion) : null;
     if (isNaN(id)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";

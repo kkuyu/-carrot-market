@@ -4,13 +4,12 @@ import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getCommentCondition } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
+import { CommentMaximumDepth, CommentMinimumDepth } from "@api/comments/types";
 import { GetUserResponse, getUser } from "@api/user";
-import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
 import { GetCommentsDetailResponse, getCommentsDetail, getCommentsReComments } from "@api/comments/[id]";
 import { PostCommentsUpdateResponse } from "@api/comments/[id]/update";
 // @app
@@ -110,7 +109,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           comment: null,
           commentCondition: null,
         };
-  if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
+  if (!comment || comment.depth < CommentMinimumDepth || comment.depth > CommentMaximumDepth) {
     return {
       redirect: {
         permanent: false,

@@ -7,7 +7,7 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
 import { StoryCommentItem } from "@api/comments/[id]";
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth, CommentReadEnum } from "@api/comments/types";
 
 export interface GetStoriesCommentsResponse extends ResponseDataType {
   comments: StoryCommentItem[];
@@ -17,7 +17,7 @@ export interface PostStoriesCommentsResponse extends ResponseDataType {
   comment: StoryComment;
 }
 
-export const getStoriesComments = async (query: { storyId: number; existed: number[]; readType: StoryCommentReadTypeEnum | null; reCommentRefId: number; prevCursor: number; pageSize: number }) => {
+export const getStoriesComments = async (query: { storyId: number; existed: number[]; readType: CommentReadEnum | null; reCommentRefId: number; prevCursor: number; pageSize: number }) => {
   const { storyId, existed, readType, reCommentRefId, prevCursor, pageSize } = query;
 
   // comment params
@@ -50,7 +50,7 @@ export const getStoriesComments = async (query: { storyId: number; existed: numb
   const defaultComments = await client.storyComment.findMany({
     where: {
       storyId: storyId,
-      depth: StoryCommentMinimumDepth,
+      depth: CommentMinimumDepth,
     },
     orderBy: {
       createdAt: "asc",
@@ -94,7 +94,7 @@ export const getStoriesComments = async (query: { storyId: number; existed: numb
         where: {
           storyId: storyId,
           reCommentRefId,
-          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+          AND: [{ depth: { gte: CommentMinimumDepth, lte: CommentMaximumDepth } }],
         },
         orderBy: {
           createdAt: "asc",
@@ -118,7 +118,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (_readType && !isInstance(_readType.toString(), StoryCommentReadTypeEnum)) {
+      if (_readType && !isInstance(_readType.toString(), CommentReadEnum)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -148,7 +148,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       const existed: number[] = _existed ? JSON.parse(_existed?.toString()) : [];
-      const readType = _readType ? (_readType?.toString() as StoryCommentReadTypeEnum) : null;
+      const readType = _readType ? (_readType?.toString() as CommentReadEnum) : null;
       const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : 0;
       const prevCursor = _prevCursor ? +_prevCursor?.toString() : 0;
       const pageSize = !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10;

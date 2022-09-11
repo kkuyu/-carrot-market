@@ -7,7 +7,7 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
@@ -89,8 +89,8 @@ const HandleComment = (props: HandleCommentProps) => {
 
   if (!item) return null;
   if (!item.content) return null;
-  if (item.depth < StoryCommentMinimumDepth) return null;
-  if (item.depth > StoryCommentMaximumDepth) return null;
+  if (item.depth < CommentMinimumDepth) return null;
+  if (item.depth > CommentMaximumDepth) return null;
 
   return (
     <Buttons

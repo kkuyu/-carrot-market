@@ -1,5 +1,7 @@
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
+// @api
+import { CommentTypeEnum } from "@api/comments/types";
 // @components
 import Labels from "@components/labels";
 import Inputs from "@components/inputs";
@@ -18,11 +20,11 @@ interface EditStoryCommentProps extends HTMLAttributes<HTMLFormElement> {
   onValid: (validForm: EditStoryCommentTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
-  commentType?: "댓글" | "답변" | "답글";
+  commentType?: CommentTypeEnum;
 }
 
 const EditStoryComment = (props: EditStoryCommentProps) => {
-  const { formId, formData, onValid, isSuccess, isLoading, commentType = "댓글", className = "", ...restProps } = props;
+  const { formId, formData, onValid, isSuccess, isLoading, commentType = CommentTypeEnum.comment, className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   if (!formId) {

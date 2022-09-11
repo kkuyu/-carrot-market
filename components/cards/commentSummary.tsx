@@ -4,7 +4,7 @@ import { getCommentCondition, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 import { StoryCommentCondition } from "@api/comments/[id]";
 import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 // @components
@@ -27,8 +27,8 @@ const CommentSummary = (props: CommentSummaryProps) => {
   const commentCondition = condition ?? getCommentCondition(item, user?.id);
 
   if (!item) return null;
-  if (item.depth < StoryCommentMinimumDepth) return null;
-  if (item.depth > StoryCommentMaximumDepth) return null;
+  if (item.depth < CommentMinimumDepth) return null;
+  if (item.depth > CommentMaximumDepth) return null;
 
   return (
     <div className={`relative ${className}`} {...restProps}>

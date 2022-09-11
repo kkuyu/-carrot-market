@@ -1,6 +1,7 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { Kind, Story, Record, User, StoryCategory, StoryComment } from "@prisma/client";
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+// @api
+import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 // @libs
 import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
@@ -60,7 +61,7 @@ export const getStories = async (query: { prevCursor: number; pageSize: number; 
       comments: {
         where: {
           NOT: [{ content: "" }],
-          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+          AND: [{ depth: { gte: CommentMinimumDepth, lte: CommentMaximumDepth } }],
         },
         select: {
           id: true,

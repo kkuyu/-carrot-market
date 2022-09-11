@@ -10,7 +10,7 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
-import { EmotionIcon, EmotionKeys } from "@api/stories/types";
+import { CommentEmotionIcon } from "@api/comments/types";
 import { GetStoriesResponse } from "@api/stories";
 import { GetStoriesDetailResponse } from "@api/stories/[id]";
 import { PostStoriesLikeResponse } from "@api/stories/[id]/like";
@@ -49,7 +49,7 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   });
 
   // update: story.record
-  const toggleLike = (emotion: null | EmotionKeys = null) => {
+  const toggleLike = (emotion: null | keyof CommentEmotionIcon = null) => {
     if (!storyData) return;
     if (loadingProductLike) return;
     const currentCondition = storyData?.storyCondition ?? getStoryCondition(storyData?.story!, user?.id);
@@ -129,23 +129,21 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
           tabIndex={0}
         >
           <div className="px-2 bg-white border border-gray-300 rounded-lg">
-            {Object.entries(EmotionIcon)
-              .sort(([, a], [, b]) => a.index - b.index)
-              .map(([key, emotion]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => {
-                    if (userType === "member") toggleLike(key as EmotionKeys);
-                    if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
-                    if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
-                    setIsVisibleBox(false);
-                  }}
-                  className="p-1"
-                >
-                  {emotion.emoji}
-                </button>
-              ))}
+            {Object.entries(CommentEmotionIcon).map(([key, emotion]) => (
+              <button
+                key={key}
+                type="button"
+                onClick={() => {
+                  if (userType === "member") toggleLike(key as keyof CommentEmotionIcon);
+                  if (userType === "non-member") openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {});
+                  if (userType === "guest") openModal<WelcomeAlertModalProps>(WelcomeAlertModal, WelcomeAlertModalName, {});
+                  setIsVisibleBox(false);
+                }}
+                className="p-1"
+              >
+                {emotion.emoji}
+              </button>
+            ))}
           </div>
         </div>
       )}

@@ -1,12 +1,13 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { StoryComment, Kind, Record, Story, User } from "@prisma/client";
 // @libs
+import { getStoryCondition } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCategories } from "@api/stories/types";
-import { getStoryCondition } from "@libs/utils";
+import { StoryCategories } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 
 export interface StoryCondition {
   role: {
@@ -56,7 +57,7 @@ export const getStoriesDetail = async (query: { id: number; userId?: number }) =
       comments: {
         where: {
           NOT: [{ content: "" }],
-          AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
+          AND: [{ depth: { gte: CommentMinimumDepth, lte: CommentMaximumDepth } }],
         },
         select: {
           id: true,

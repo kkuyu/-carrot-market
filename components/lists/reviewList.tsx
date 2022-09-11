@@ -6,12 +6,11 @@ import { useEffect, useState } from "react";
 import { getDiffTimeStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 // @api
-import { GetProfilesDetailResponse } from "@api/profiles/[id]";
 import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews/[filter]";
 // @components
 import Profiles from "@components/profiles";
 
-type ReviewListItem = GetProfilesDetailResponse["reviews"][number] | GetProfilesReviewsResponse["reviews"][number];
+type ReviewListItem = GetProfilesReviewsResponse["reviews"][number];
 
 interface ReviewListProps extends HTMLAttributes<HTMLUListElement> {
   list: ReviewListItem[];
@@ -36,7 +35,7 @@ const ReviewList = (props: ReviewListProps) => {
         const profile = item.role === "sellUser" ? item.sellUser : item.role === "purchaseUser" ? item.purchaseUser : null;
         const signature = item.role === "sellUser" ? "판매자" : item.role === "purchaseUser" ? "구매자" : null;
 
-        if (!profile || !signature || item.text === "") return null;
+        if (!profile || !signature || item.description === "") return null;
 
         const today = new Date();
         const diffTime = getDiffTimeStr(new Date(item?.createdAt).getTime(), today.getTime());
@@ -48,7 +47,7 @@ const ReviewList = (props: ReviewListProps) => {
               <Link href={`/profiles/${profile?.id}`}>
                 <a className="block">
                   <Profiles user={profile!} signature={signature} diffTime={mounted && diffTime ? diffTime : ""} size="sm" />
-                  <p className="pt-1 pl-14 pb-3">{item.text}</p>
+                  <p className="pt-1 pl-14 pb-3">{item.description}</p>
                 </a>
               </Link>
             </li>
@@ -63,8 +62,8 @@ const ReviewList = (props: ReviewListProps) => {
                 <Profiles user={profile!} signature={signature} diffTime={mounted && diffTime ? diffTime : ""} size="sm" />
               </a>
             </Link>
-            <Link href={`/reviews/${item?.id}`}>
-              <a className="block pt-1 pl-14 pb-3">{item.text}</a>
+            <Link href={`/products/reviews/${item?.id}`}>
+              <a className="block pt-1 pl-14 pb-3">{item.description}</a>
             </Link>
           </li>
         );

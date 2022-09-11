@@ -1,7 +1,7 @@
 import type { HTMLAttributes, ReactElement } from "react";
 import { Children, cloneElement, isValidElement, useEffect, useState } from "react";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth, CommentReadEnum } from "@api/comments/types";
 // @components
 import Comment, { CommentItem, CommentProps } from "@components/cards/comment";
 import { HandleCommentProps } from "@components/groups/handleComment";
@@ -15,16 +15,16 @@ interface CommentTreeListProps extends HTMLAttributes<HTMLDivElement> {
   countReComments?: number;
   prefix?: string;
   cardProps?: Partial<CommentProps>;
-  moreReComments?: (readType: StoryCommentReadTypeEnum, reCommentRefId: number, prevCursor: number) => void;
+  moreReComments?: (readType: CommentReadEnum, reCommentRefId: number, prevCursor: number) => void;
   children?: ReactElement | ReactElement[];
 }
 
 const CommentTreeList = (props: CommentTreeListProps) => {
-  const { list = [], depth = StoryCommentMinimumDepth, reCommentRefId = 0, countReComments = 0, prefix = "", cardProps = {}, moreReComments, children, className = "", ...restProps } = props;
+  const { list = [], depth = CommentMinimumDepth, reCommentRefId = 0, countReComments = 0, prefix = "", cardProps = {}, moreReComments, children, className = "", ...restProps } = props;
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
-  const [readState, setReadState] = useState<{ type: StoryCommentReadTypeEnum; counts: number | null }>({ type: "more", counts: null });
+  const [readState, setReadState] = useState<{ type: CommentReadEnum; counts: number | null }>({ type: "more", counts: null });
 
   // fetch: StoryComment
   const readMoreReComments = () => {
@@ -43,8 +43,8 @@ const CommentTreeList = (props: CommentTreeListProps) => {
   }, [list.length, countReComments]);
 
   if (!Boolean(list.length) && !countReComments) return null;
-  if (depth < StoryCommentMinimumDepth) return null;
-  if (depth > StoryCommentMaximumDepth) return null;
+  if (depth < CommentMinimumDepth) return null;
+  if (depth > CommentMaximumDepth) return null;
 
   return (
     <div className={`${depth !== 0 ? "pl-11" : ""} ${className}`} {...restProps}>
@@ -72,7 +72,7 @@ const CommentTreeList = (props: CommentTreeListProps) => {
         </ul>
       )}
       {/* 답글: button */}
-      {Boolean(countReComments) && depth !== StoryCommentMinimumDepth && (
+      {Boolean(countReComments) && depth !== CommentMinimumDepth && (
         <div className="relative pl-3 mt-1">
           <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={readMoreReComments} disabled={isLoading}>
             <span className="text-gray-500">

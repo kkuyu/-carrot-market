@@ -6,7 +6,7 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth, StoryCommentReadTypeEnum } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth, CommentReadEnum } from "@api/comments/types";
 
 export interface StoryCommentCondition {
   role: {
@@ -77,7 +77,7 @@ export const getCommentsDetail = async (query: { id: number; userId?: number }) 
 
 export const getCommentsReComments = async (query: {
   existed: number[];
-  readType: StoryCommentReadTypeEnum | null;
+  readType: CommentReadEnum | null;
   reCommentRefId: number;
   prevCursor: number;
   pageSize: number;
@@ -155,7 +155,7 @@ export const getCommentsReComments = async (query: {
         where: {
           storyId,
           reCommentRefId,
-          AND: { depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } },
+          AND: { depth: { gte: CommentMinimumDepth, lte: CommentMaximumDepth } },
         },
         orderBy,
         include,
@@ -177,7 +177,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (_readType && !isInstance(_readType.toString(), StoryCommentReadTypeEnum)) {
+    if (_readType && !isInstance(_readType.toString(), CommentReadEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -194,7 +194,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // fetch data
     const { comment, commentCondition } = await getCommentsDetail({ id });
-    if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
+    if (!comment || comment.depth < CommentMinimumDepth || comment.depth > CommentMaximumDepth) {
       const error = new Error("NotFoundComment");
       error.name = "NotFoundComment";
       throw error;
@@ -212,7 +212,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // comment params
     const existed: number[] = _existed ? JSON.parse(_existed?.toString()) : [];
-    const readType = _readType ? (_readType?.toString() as StoryCommentReadTypeEnum) : null;
+    const readType = _readType ? (_readType?.toString() as CommentReadEnum) : null;
     const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : 0;
     const prevCursor = _prevCursor ? +_prevCursor?.toString() : 0;
     const pageSize = !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10;

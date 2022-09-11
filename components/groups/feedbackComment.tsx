@@ -10,7 +10,7 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 import { GetStoriesCommentsResponse } from "@api/stories/[id]/comments";
 import { GetCommentsDetailResponse } from "@api/comments/[id]";
 import { PostCommentsLikeResponse } from "@api/comments/[id]/like";
@@ -59,8 +59,8 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
 
   if (!item) return null;
   if (!item.content) return null;
-  if (item.depth < StoryCommentMinimumDepth) return null;
-  if (item.depth > StoryCommentMaximumDepth) return null;
+  if (item.depth < CommentMinimumDepth) return null;
+  if (item.depth > CommentMaximumDepth) return null;
 
   const CustomFeedbackButton = (buttonProps: { pathname?: string; children: string | ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
@@ -92,7 +92,7 @@ const FeedbackComment = (props: FeedbackCommentProps) => {
       >
         {`좋아요 ${commentData?.commentCondition?.likes || ""}`}
       </CustomFeedbackButton>
-      {item.depth >= StoryCommentMaximumDepth ? (
+      {item.depth >= CommentMaximumDepth ? (
         <></>
       ) : router.pathname === "/comments/[id]" && router?.query?.id?.toString() === item?.id.toString() ? (
         <CustomFeedbackButton onClick={() => (document.querySelector(".container input#content") as HTMLInputElement)?.focus()} className="text-gray-500">

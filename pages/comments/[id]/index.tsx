@@ -6,12 +6,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import { getCommentCondition, getCommentTree, truncateStr } from "@libs/utils";
+import { getCommentTree, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
-import { StoryCommentMinimumDepth, StoryCommentMaximumDepth } from "@api/stories/types";
+import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 import { GetCommentsDetailResponse, getCommentsDetail, getCommentsReComments } from "@api/comments/[id]";
 import { PostStoriesCommentsResponse } from "@api/stories/[id]/comments";
 // @app
@@ -189,7 +189,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           comment: null,
           commentCondition: null,
         };
-  if (!comment || comment.depth < StoryCommentMinimumDepth || comment.depth > StoryCommentMaximumDepth) {
+  if (!comment || comment.depth < CommentMinimumDepth || comment.depth > CommentMaximumDepth) {
     return {
       notFound: true,
     };
