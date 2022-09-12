@@ -82,14 +82,14 @@ const StoriesIndexPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getStories: { options: { url: string; query?: string }; response: GetStoriesResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getStories: { options: { url: string; query: string }; response: GetStoriesResponse };
 }> = ({ getUser, getStories }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetStoriesResponse]) => getKey<GetStoriesResponse>(...arg, getStories.options))]: [getStories.response],
         },
       }}
@@ -121,11 +121,10 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
 
-  const { stories, totalCount } =
+  const stories =
     posX && posY && distance
       ? await getStories({
           prevCursor: 0,
-          pageSize: 10,
           posX,
           posY,
           distance,
@@ -154,6 +153,10 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getStories: {
@@ -163,8 +166,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         response: {
           success: true,
-          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
-          stories: JSON.parse(JSON.stringify(stories || [])),
+          ...JSON.parse(JSON.stringify(stories || {})),
         },
       },
     },

@@ -40,7 +40,7 @@ const CommentsDetailPage: NextPage = () => {
   // mutation data
   const [updateComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
     onSuccess: async () => {
-      mutateCommentDetail();
+      await mutateCommentDetail();
     },
   });
 
@@ -72,10 +72,12 @@ const CommentsDetailPage: NextPage = () => {
     updateComment({ ...data, ...currentAddr });
   };
 
+  // update: flatComments
   useEffect(() => {
     setFlatComments((prev) => (commentData?.comment ? [{ ...commentData?.comment, reComments: [] }, ...(commentData?.comment?.reComments || [])] : prev));
   }, [commentData]);
 
+  // update: commentQuery, formData
   useEffect(() => {
     if (!router?.query?.id) return;
     setCommentQuery(() => "");
@@ -99,7 +101,7 @@ const CommentsDetailPage: NextPage = () => {
         </Link>
       )}
 
-      <section className={`container pt-5 ${userType !== "guest" ? "pb-16" : "pb-5"}`}>
+      <section className={`container pt-5 ${userType !== "guest" && comment.depth < CommentMaximumDepth ? "pb-16" : "pb-5"}`}>
         <div className="relative">
           <Comment item={comment} className={userType === "member" ? "pr-8" : ""} />
           <FeedbackComment item={comment} />
@@ -133,7 +135,7 @@ const CommentsDetailPage: NextPage = () => {
         )}
 
         {/* 답글 입력 */}
-        {userType !== "guest" && (
+        {userType !== "guest" && comment.depth < CommentMaximumDepth && (
           <div className="fixed bottom-0 left-0 w-full z-[50]">
             <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
               <EditStoryComment
@@ -152,13 +154,13 @@ const CommentsDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getCommentsDetail: { query: string; response: GetCommentsDetailResponse };
+  getCommentsDetail: { options: { url: string; query: string }; response: GetCommentsDetailResponse };
 }> = ({ getCommentsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          ...(getCommentsDetail ? { [`/api/comments/${getCommentsDetail.response.comment.id}?${getCommentsDetail.query}`]: getCommentsDetail.response } : {}),
+          ...(getCommentsDetail ? { [`${getCommentsDetail.options.url}?${getCommentsDetail.options.query}`]: getCommentsDetail.response } : {}),
         },
       }}
     >
@@ -177,10 +179,11 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  const commentId: string = params?.id?.toString() || "";
+  // params
+  const commentId = params?.id?.toString() || "";
 
   // getCommentsDetail
-  const { comment, commentCondition } =
+  const commentsDetail =
     commentId && !isNaN(+commentId)
       ? await getCommentsDetail({
           id: +commentId,
@@ -189,27 +192,26 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           comment: null,
           commentCondition: null,
         };
-  if (!comment || comment.depth < CommentMinimumDepth || comment.depth > CommentMaximumDepth) {
+  if (!commentsDetail?.comment || commentsDetail?.comment?.depth < CommentMinimumDepth || commentsDetail?.comment?.depth > CommentMaximumDepth) {
     return {
       notFound: true,
     };
   }
 
   // fetch data: comments
-  const { comments } = await getCommentsReComments({
+  const commentsReComments = await getCommentsReComments({
     existed: [],
     readType: null,
     reCommentRefId: 0,
     prevCursor: 0,
-    pageSize: 0,
-    commentDepth: comment.depth,
-    storyId: comment.storyId,
+    commentDepth: commentsDetail?.comment.depth,
+    storyId: commentsDetail?.comment.storyId,
   });
 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${truncateStr(comment?.content, 15)} | 댓글`,
+      title: `${truncateStr(commentsDetail?.comment?.content, 15)} | 댓글`,
     },
     header: {
       title: "댓글",
@@ -225,11 +227,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     props: {
       defaultLayout,
       getCommentsDetail: {
-        query: "includeReComments=true&",
+        options: {
+          url: `/api/comments/${commentsDetail?.comment?.id}`,
+          query: "includeReComments=true&",
+        },
         response: {
           success: true,
-          comment: JSON.parse(JSON.stringify({ ...comment, reComments: comments } || {})),
-          commentCondition: JSON.parse(JSON.stringify(commentCondition || {})),
+          ...JSON.parse(JSON.stringify({ ...commentsDetail, comment: { ...commentsDetail?.comment, reComments: commentsReComments?.comments } } || {})),
         },
       },
     },

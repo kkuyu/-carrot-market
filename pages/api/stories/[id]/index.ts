@@ -24,7 +24,7 @@ export interface StoryCondition {
 
 export interface GetStoriesDetailResponse extends ResponseDataType {
   story: Story & {
-    user?: Pick<User, "id" | "name" | "avatar">;
+    user?: Pick<User, "id" | "name" | "photos">;
     records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
     comments?: Pick<StoryComment, "id">[];
   };
@@ -43,7 +43,7 @@ export const getStoriesDetail = async (query: { id: number; userId?: number }) =
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       records: {
@@ -68,7 +68,10 @@ export const getStoriesDetail = async (query: { id: number; userId?: number }) =
 
   const storyCondition = getStoryCondition(story, userId || null);
 
-  return { story, storyCondition };
+  return {
+    story,
+    storyCondition,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {

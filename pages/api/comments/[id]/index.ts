@@ -17,8 +17,8 @@ export interface StoryCommentCondition {
 }
 
 export type StoryCommentItem = StoryComment & {
-  user?: Pick<User, "id" | "name" | "avatar">;
-  story?: Partial<Story> & { user?: Pick<User, "id" | "name" | "avatar"> };
+  user?: Pick<User, "id" | "name" | "photos">;
+  story?: Partial<Story> & { user?: Pick<User, "id" | "name" | "photos"> };
   records?: Pick<Record, "id" | "kind" | "userId">[];
   _count?: { reComments: number };
   reComments?: StoryCommentItem[];
@@ -41,7 +41,7 @@ export const getCommentsDetail = async (query: { id: number; userId?: number }) 
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       story: {
@@ -50,7 +50,7 @@ export const getCommentsDetail = async (query: { id: number; userId?: number }) 
             select: {
               id: true,
               name: true,
-              avatar: true,
+              photos: true,
             },
           },
         },
@@ -72,19 +72,14 @@ export const getCommentsDetail = async (query: { id: number; userId?: number }) 
 
   const commentCondition = getCommentCondition(comment, userId || null);
 
-  return { comment, commentCondition };
+  return {
+    comment,
+    commentCondition,
+  };
 };
 
-export const getCommentsReComments = async (query: {
-  existed: number[];
-  readType: CommentReadEnum | null;
-  reCommentRefId: number;
-  prevCursor: number;
-  pageSize: number;
-  commentDepth: number;
-  storyId: number;
-}) => {
-  const { existed, readType, reCommentRefId, prevCursor, pageSize, commentDepth, storyId } = query;
+export const getCommentsReComments = async (query: { existed: number[]; readType: CommentReadEnum | null; reCommentRefId: number; prevCursor: number; commentDepth: number; storyId: number }) => {
+  const { existed, readType, reCommentRefId, prevCursor, commentDepth, storyId } = query;
   let comments = [] as StoryCommentItem[];
 
   const orderBy = {
@@ -95,7 +90,7 @@ export const getCommentsReComments = async (query: {
       select: {
         id: true,
         name: true,
-        avatar: true,
+        photos: true,
       },
     },
     story: {
@@ -150,7 +145,7 @@ export const getCommentsReComments = async (query: {
   const moreComments = readType
     ? await client.storyComment.findMany({
         skip: prevCursor ? 1 : 0,
-        ...(readType === "more" && { take: pageSize }),
+        ...(readType === "more" && { take: !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10 }),
         ...(prevCursor && { cursor: { id: prevCursor } }),
         where: {
           storyId,
@@ -163,7 +158,9 @@ export const getCommentsReComments = async (query: {
     : [];
   comments = comments.concat(moreComments);
 
-  return { comments };
+  return {
+    comments,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -193,7 +190,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { comment, commentCondition } = await getCommentsDetail({ id });
+    const { comment, commentCondition } = await getCommentsDetail({ id, userId: user?.id });
     if (!comment || comment.depth < CommentMinimumDepth || comment.depth > CommentMaximumDepth) {
       const error = new Error("NotFoundComment");
       error.name = "NotFoundComment";
@@ -215,7 +212,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const readType = _readType ? (_readType?.toString() as CommentReadEnum) : null;
     const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : 0;
     const prevCursor = _prevCursor ? +_prevCursor?.toString() : 0;
-    const pageSize = !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10;
     if (isNaN(reCommentRefId) || isNaN(prevCursor)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -223,7 +219,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data: comments
-    const { comments } = await getCommentsReComments({ existed, readType, reCommentRefId, prevCursor, pageSize, commentDepth: comment.depth, storyId: comment.storyId });
+    const { comments } = await getCommentsReComments({ existed, readType, reCommentRefId, prevCursor, commentDepth: comment.depth, storyId: comment.storyId });
 
     // result
     const result: GetCommentsDetailResponse = {

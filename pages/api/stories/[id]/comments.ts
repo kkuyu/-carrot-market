@@ -17,8 +17,8 @@ export interface PostStoriesCommentsResponse extends ResponseDataType {
   comment: StoryComment;
 }
 
-export const getStoriesComments = async (query: { storyId: number; existed: number[]; readType: CommentReadEnum | null; reCommentRefId: number; prevCursor: number; pageSize: number }) => {
-  const { storyId, existed, readType, reCommentRefId, prevCursor, pageSize } = query;
+export const getStoriesComments = async (query: { storyId: number; existed: number[]; readType: CommentReadEnum | null; reCommentRefId: number; prevCursor: number }) => {
+  const { storyId, existed, readType, reCommentRefId, prevCursor } = query;
 
   // comment params
   let comments = [] as StoryCommentItem[];
@@ -29,7 +29,7 @@ export const getStoriesComments = async (query: { storyId: number; existed: numb
       select: {
         id: true,
         name: true,
-        avatar: true,
+        photos: true,
       },
     },
     story: {
@@ -89,7 +89,7 @@ export const getStoriesComments = async (query: { storyId: number; existed: numb
   const moreComments = readType
     ? await client.storyComment.findMany({
         skip: prevCursor ? 1 : 0,
-        ...(readType === "more" && { take: pageSize }),
+        ...(readType === "more" && { take: !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10 }),
         ...(prevCursor && { cursor: { id: prevCursor } }),
         where: {
           storyId: storyId,
@@ -104,7 +104,9 @@ export const getStoriesComments = async (query: { storyId: number; existed: numb
     : [];
   comments = comments.concat(moreComments);
 
-  return { comments };
+  return {
+    comments,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -151,14 +153,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       const readType = _readType ? (_readType?.toString() as CommentReadEnum) : null;
       const reCommentRefId = _reCommentRefId ? +_reCommentRefId?.toString() : 0;
       const prevCursor = _prevCursor ? +_prevCursor?.toString() : 0;
-      const pageSize = !readType || !reCommentRefId ? 0 : !prevCursor ? 2 : 10;
       if (isNaN(reCommentRefId) || isNaN(prevCursor)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
 
-      const { comments } = await getStoriesComments({ storyId: story.id, existed, readType, reCommentRefId, prevCursor, pageSize });
+      const { comments } = await getStoriesComments({ storyId: story.id, existed, readType, reCommentRefId, prevCursor });
 
       // result
       const result: GetStoriesCommentsResponse = {

@@ -43,7 +43,7 @@ const StoriesDetailPage: NextPage = () => {
   const [commentQuery, setCommentQuery] = useState("");
 
   // fetch data
-  const { data: storyData, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}` : null);
+  const { data: storyData, mutate: mutateStoryDetail } = useSWR<GetStoriesDetailResponse>(router.query.id ? `/api/stories/${router.query.id}?` : null);
   const { data: commentData, mutate: mutateStoryComments } = useSWR<GetStoriesCommentsResponse>(router.query.id ? `/api/stories/${router.query.id}/comments?${commentQuery}` : null);
 
   // mutation data
@@ -121,7 +121,7 @@ const StoriesDetailPage: NextPage = () => {
     setFlatComments((prev) => [...(commentData?.comments || prev)]);
   }, [commentData?.comments]);
 
-  // reset: commentQuery
+  // update: commentQuery
   useEffect(() => {
     if (!router?.query?.id) return;
     setCommentQuery("");
@@ -249,15 +249,19 @@ const StoriesDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getStoriesDetail: { response: GetStoriesDetailResponse };
-  getStoriesComments: { query: string; response: GetStoriesCommentsResponse };
+  getStoriesDetail: { options: { url: string; query: string }; response: GetStoriesDetailResponse };
+  getStoriesComments: { options: { url: string; query: string }; response: GetStoriesCommentsResponse };
 }> = ({ getStoriesDetail, getStoriesComments }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          ...(getStoriesDetail ? { [`/api/stories/${getStoriesDetail?.response?.story?.id}`]: getStoriesDetail?.response } : {}),
-          ...(getStoriesDetail && getStoriesComments ? { [`/api/stories/${getStoriesDetail?.response?.story?.id}/comments?${getStoriesComments?.query}`]: getStoriesComments?.response } : {}),
+          ...(getStoriesDetail
+            ? {
+                [`${getStoriesDetail?.options?.url}?${getStoriesDetail?.options?.query}`]: getStoriesDetail.response,
+                [`${getStoriesComments?.options?.url}?${getStoriesComments?.options?.query}`]: getStoriesComments.response,
+              }
+            : {}),
         },
       }}
     >
@@ -276,11 +280,11 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  // storyId
-  const storyId: string = params?.id?.toString() || "";
+  // params
+  const storyId = params?.id?.toString() || "";
 
   // getStoriesDetail
-  const { story, storyCondition } =
+  const storiesDetail =
     storyId && !isNaN(+storyId)
       ? await getStoriesDetail({
           id: +storyId,
@@ -289,21 +293,20 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           story: null,
           storyCondition: null,
         };
-  if (!story) {
+  if (!storiesDetail?.story) {
     return {
       notFound: true,
     };
   }
 
   // getStoriesComments
-  const { comments } = story.id
+  const storiesComments = storiesDetail?.story?.id
     ? await getStoriesComments({
-        storyId: story.id,
+        storyId: storiesDetail?.story?.id,
         existed: [],
         readType: null,
         reCommentRefId: 0,
         prevCursor: 0,
-        pageSize: 0,
       })
     : {
         comments: [],
@@ -312,7 +315,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${truncateStr(story?.content, 15)} | 동네생활`,
+      title: `${truncateStr(storiesDetail?.story?.content, 15)} | 동네생활`,
     },
     header: {
       title: "",
@@ -328,17 +331,23 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     props: {
       defaultLayout,
       getStoriesDetail: {
+        options: {
+          url: `/api/stories/${storyId}`,
+          query: "",
+        },
         response: {
           success: true,
-          story: JSON.parse(JSON.stringify(story || {})),
-          storyCondition: JSON.parse(JSON.stringify(storyCondition || {})),
+          ...JSON.parse(JSON.stringify(storiesDetail || {})),
         },
       },
       getStoriesComments: {
-        query: "",
+        options: {
+          url: `/api/stories/${storyId}/comments`,
+          query: "",
+        },
         response: {
           success: true,
-          comments: JSON.parse(JSON.stringify(comments || [])),
+          ...JSON.parse(JSON.stringify(storiesComments || {})),
         },
       },
     },

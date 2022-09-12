@@ -12,7 +12,7 @@ export interface GetStoriesResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   stories: (Story & {
-    user?: Pick<User, "id" | "name" | "avatar">;
+    user?: Pick<User, "id" | "name" | "photos">;
     records?: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
     comments?: (Pick<StoryComment, "id"> & Pick<Partial<StoryComment>, "userId" | "content">)[];
   })[];
@@ -22,8 +22,8 @@ export interface PostStoriesResponse extends ResponseDataType {
   story: Story;
 }
 
-export const getStories = async (query: { prevCursor: number; pageSize: number; posX: number; posY: number; distance: number }) => {
-  const { prevCursor, pageSize, posX, posY, distance } = query;
+export const getStories = async (query: { prevCursor: number; posX: number; posY: number; distance: number }) => {
+  const { prevCursor, posX, posY, distance } = query;
 
   const where = {
     emdPosX: { gte: posX - distance, lte: posX + distance },
@@ -36,7 +36,7 @@ export const getStories = async (query: { prevCursor: number; pageSize: number; 
 
   const stories = await client.story.findMany({
     where,
-    take: pageSize,
+    take: 10,
     skip: prevCursor ? 1 : 0,
     ...(prevCursor && { cursor: { id: prevCursor } }),
     orderBy: {
@@ -47,7 +47,7 @@ export const getStories = async (query: { prevCursor: number; pageSize: number; 
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       records: {
@@ -70,7 +70,10 @@ export const getStories = async (query: { prevCursor: number; pageSize: number; 
     },
   });
 
-  return { totalCount, stories };
+  return {
+    totalCount,
+    stories,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -98,7 +101,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // page
       const prevCursor = +_prevCursor.toString();
-      const pageSize = 10;
       if (isNaN(prevCursor) || prevCursor === -1) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
@@ -117,7 +119,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // fetch data
-      const { totalCount, stories } = await getStories({ prevCursor, pageSize, posX, posY, distance });
+      const { totalCount, stories } = await getStories({ prevCursor, posX, posY, distance });
 
       // result
       const result: GetStoriesResponse = {

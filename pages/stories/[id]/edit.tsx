@@ -29,13 +29,13 @@ const StoriesEditPage: NextPage = () => {
   const [isValidStory, setIsValidStory] = useState(true);
 
   // fetch data
-  const { data: storyData, mutate: mutateStory } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}` : null);
+  const { data: storyData, mutate: mutateStory } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}?` : null);
 
   // mutation data
   const [editStory, { loading: loadingStory }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutateStory();
-      router.replace(`/stories/${data.story.id}`);
+      await router.replace(`/stories/${data.story.id}`);
     },
     onCompleted: () => {
       setIsLoading(false);
@@ -60,8 +60,9 @@ const StoriesEditPage: NextPage = () => {
     editStory({ ...data, photos: validPaths });
   };
 
-  // update: formData
+  // update: isValidStory
   useEffect(() => {
+    if (loadingStory) return;
     const isInvalid = {
       user: !(storyData?.storyCondition?.role?.myRole === "author"),
     };
@@ -75,9 +76,9 @@ const StoriesEditPage: NextPage = () => {
     }
     // valid
     setIsValidStory(true);
-  }, [storyData]);
+  }, [loadingStory, storyData]);
 
-  // update: isValidStory
+  // update: formData
   useEffect(() => {
     if (!storyData?.story) return;
     formData.setValue("originalPhotoPaths", storyData?.story?.photos);
@@ -97,15 +98,15 @@ const StoriesEditPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getStoriesDetail: { response: GetStoriesDetailResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getStoriesDetail: { options: { url: string; query: string }; response: GetStoriesDetailResponse };
 }> = ({ getUser, getStoriesDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/stories/${getStoriesDetail.response.story.id}`]: getStoriesDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getStoriesDetail?.options?.url}?${getStoriesDetail?.options?.query}`]: getStoriesDetail.response,
         },
       }}
     >
@@ -117,11 +118,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const storyId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // storyId
-  const storyId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect `/stories/${storyId}`
@@ -135,7 +136,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getStoriesDetail
-  const { story, storyCondition } =
+  const storiesDetail =
     storyId && !isNaN(+storyId)
       ? await getStoriesDetail({
           id: +storyId,
@@ -145,7 +146,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           story: null,
           storyCondition: null,
         };
-  if (!story) {
+  if (!storiesDetail?.story) {
     return {
       redirect: {
         permanent: false,
@@ -155,7 +156,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   const isInvalid = {
-    user: !(storyCondition?.role?.myRole === "author"),
+    user: !(storiesDetail?.storyCondition?.role?.myRole === "author"),
   };
 
   // isInvalid
@@ -173,7 +174,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `글 수정 | ${truncateStr(story?.content, 15)} | 중고거래`,
+      title: `글 수정 | ${truncateStr(storiesDetail?.story?.content, 15)} | 중고거래`,
     },
     header: {
       title: "동네생활 글 수정",
@@ -190,13 +191,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getStoriesDetail: {
+        options: {
+          url: `/api/stories/${storyId}`,
+          query: "",
+        },
         response: {
           success: true,
-          story: JSON.parse(JSON.stringify(story || {})),
-          storyCondition: JSON.parse(JSON.stringify(storyCondition || {})),
+          ...JSON.parse(JSON.stringify(storiesDetail || {})),
         },
       },
     },

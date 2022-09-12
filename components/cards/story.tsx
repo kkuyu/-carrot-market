@@ -6,14 +6,14 @@ import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { GetStoriesResponse } from "@api/stories";
 import { StoryCondition } from "@api/stories/[id]";
-import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
+import { GetProfilesDetailStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
 import { GetSearchResultResponse } from "@api/search/result/[filter]";
 // @components
 import HighlightText from "@components/highlightText";
 import Icons from "@components/icons";
 import Images from "@components/images";
 
-export type StoryItem = GetStoriesResponse["stories"][number] | GetProfilesStoriesResponse["stories"][number] | GetSearchResultResponse["stories"][number];
+export type StoryItem = GetStoriesResponse["stories"][number] | GetProfilesDetailStoriesResponse["stories"][number] | GetSearchResultResponse["stories"][number];
 
 export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   item: StoryItem;
@@ -81,10 +81,10 @@ const Story = (props: StoryProps) => {
               </span>
             )}
             {/* 댓글/답변 */}
-            {Boolean(storyCondition?.likes) && (
+            {Boolean(storyCondition?.comments) && (
               <span className="inline-flex items-center last:ml-2">
                 <Icons name="ChatBubbleOvalLeftEllipsis" className="w-5 h-5 text-gray-500" />
-                <span className="ml-1 text-sm text-gray-500">{storyCondition?.likes}</span>
+                <span className="ml-1 text-sm text-gray-500">{storyCondition?.comments}</span>
               </span>
             )}
           </div>

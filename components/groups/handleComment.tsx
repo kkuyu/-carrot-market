@@ -40,7 +40,7 @@ const HandleComment = (props: HandleCommentProps) => {
       if (mutateStoryDetail) await mutateStoryDetail();
       if (mutateStoryComments) await mutateStoryComments();
       if (mutateCommentDetail && data.comment) await mutateCommentDetail();
-      if (mutateCommentDetail && !data.comment) router.replace(`/stories/${data.storyId}`);
+      if (mutateCommentDetail && !data.comment) await router.replace(`/stories/${data.storyId}`);
     },
   });
 
