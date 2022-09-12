@@ -6,7 +6,7 @@ export interface ProfilesProps extends HTMLAttributes<HTMLDivElement> {
   user: {
     id: number;
     name: string;
-    avatar?: string;
+    photos: string;
   };
   signature?: string;
   uuid?: string;
@@ -21,7 +21,13 @@ const Profiles = (props: ProfilesProps) => {
   return (
     <div className={`flex items-center w-full ${className}`} {...restProps}>
       <div className={`flex-none ${size === "tiny" || size === "sm" ? "mr-2" : "mr-3"}`}>
-        <Images size={`${size === "tiny" ? "2.25rem" : size === "sm" ? "2.75rem" : "3.5rem"}`} cloudId={user?.avatar} text={user?.name?.slice(0, 2)} alt="" className="rounded-full" />
+        <Images
+          size={`${size === "tiny" ? "2.25rem" : size === "sm" ? "2.75rem" : "3.5rem"}`}
+          cloudId={user?.photos?.replace(/;.*/, "")}
+          text={user?.name?.slice(0, 2)}
+          alt=""
+          className="rounded-full"
+        />
       </div>
       <div className="grow-full">
         <strong className={`block font-semibold text-sm text-ellipsis ${size === "tiny" || size === "sm" ? "text-sm" : "text-base"}`}>{user?.name}</strong>

@@ -18,7 +18,7 @@ const Images = (props: ImagesProps) => {
 
   // variable: invisible
   const [imageState, setImageState] = useState({ isMounted: false, isError: false });
-  const cloudVariant = /^[\d|\.]*(rem)$/.test(size) && parseFloat(size) <= 3.5 ? "avatar" : "public";
+  const cloudVariant = /^[\d|\.]*(rem)$/.test(size) && parseFloat(size) <= 3.5 ? "small" : "public";
 
   useEffect(() => {
     setImageState((prev) => ({ ...prev, isMounted: true }));

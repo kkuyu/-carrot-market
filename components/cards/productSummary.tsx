@@ -5,11 +5,11 @@ import useUser from "@libs/client/useUser";
 // @api
 import { GetProductsResponse } from "@api/products";
 import { GetProductsDetailResponse, ProductCondition } from "@api/products/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
 // @components
 import Images from "@components/images";
 
-export type ProductSummaryItem = GetProductsResponse["products"][number] | GetProfilesProductsResponse["products"][number] | GetProductsDetailResponse["product"];
+export type ProductSummaryItem = GetProductsResponse["products"][number] | GetProfilesDetailProductsResponse["products"][number] | GetProductsDetailResponse["product"];
 
 export interface ProductSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductSummaryItem;

@@ -6,14 +6,14 @@ import { useEffect, useState } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
-import { getKey, isInstance, truncateStr } from "@libs/utils";
+import { getKey, getPostposition, isInstance, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
-import { GetProductsChatsResponse, getProductsChats, ChatsFilterEnum } from "@api/products/[id]/chats";
+import { GetProductsChatsResponse, ChatsFilterEnum, getProductsChats } from "@api/products/[id]/chats/[filter]";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -28,24 +28,24 @@ const ProductsPurchasePage: NextPage = () => {
 
   // variable data: invisible
   const [isValidProduct, setIsValidProduct] = useState(true);
-  const chatFilters: { value: ChatsFilterEnum; name: string; partnerName: string }[] = [
-    { value: "all", name: "최근 채팅", partnerName: "최근 채팅한 이웃" },
-    { value: "available", name: "대화중인 채팅", partnerName: "대화중인 이웃" },
+  const chatTypes: { key: string; isInfinite: boolean; filter: ChatsFilterEnum; caption: string; partnerName: string }[] = [
+    { key: "chat", isInfinite: true, filter: "all", caption: "최근 채팅", partnerName: "최근 채팅한 이웃" },
+    { key: "chat", isInfinite: true, filter: "available", caption: "대화중인 채팅", partnerName: "대화중인 이웃" },
   ];
-  const currentFilter = chatFilters.find((filter) => filter.value === router?.query?.filter?.toString())!;
+  const currentType = chatTypes.find((type) => type.filter === router?.query?.filter?.toString())!;
 
   // fetch data
-  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router?.query?.id}?` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
-    const options = { url: "/api/products/[id]/chats", query: router.query.id ? `filter=${currentFilter.value}&productId=${router.query.id}` : "" };
+    const options = { url: router?.query?.id && currentType.filter ? `/api/products/${router?.query?.id}/chats/${currentType.filter}` : "", query: "" };
     return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
   // mutation data
-  const [updateProductPurchase, { loading: loadingProductPurchase }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router.query.id}/purchase`, {
+  const [updateProductPurchase, { loading: loadingProductPurchase }] = useMutation<PostProductsPurchaseResponse>(`/api/products/${router?.query?.id}/purchase`, {
     onSuccess: async () => {
       await mutateProduct();
-      router.replace(`/products/${router.query.id}/review`);
+      await router.replace(`/products/${router?.query?.id}/review`);
     },
   });
 
@@ -103,7 +103,7 @@ const ProductsPurchasePage: NextPage = () => {
   return (
     <div className="">
       {/* 제품정보 */}
-      {productData?.product && currentFilter.value === "available" && (
+      {productData?.product && currentType.filter === "available" && (
         <Link href={`/products/${productData?.product.id}`}>
           <a className="block px-5 py-3 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
@@ -113,7 +113,7 @@ const ProductsPurchasePage: NextPage = () => {
 
       {/* 구매자 선택 */}
       <div className="container [&:not(:first-child)]:mt-5 pb-5">
-        {currentFilter.value === "available" && (
+        {currentType.filter === "available" && (
           <strong className="text-lg">
             판매가 완료되었어요
             <br />
@@ -131,14 +131,16 @@ const ProductsPurchasePage: NextPage = () => {
               selectItem={purchaseItem}
               className="-mx-5 border-b [&:not(:first-child)]:mt-5 [&:not(:first-child)]:border-t"
             />
-            <span className="empty:hidden list-loading">{isReachingEnd ? `${currentFilter.name}을 모두 확인하였어요` : isLoading ? `${currentFilter.name}을 불러오고있어요` : null}</span>
+            <span className="empty:hidden list-loading">
+              {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
+            </span>
           </>
         )}
 
         {/* 채팅 목록: Empty */}
         {chats && !Boolean(chats.length) && (
           <p className="list-empty">
-            <>{currentFilter.partnerName}이 없어요</>
+            <>{getPostposition(currentType.caption, "이;가")}이 없어요</>
           </p>
         )}
 
@@ -148,9 +150,9 @@ const ProductsPurchasePage: NextPage = () => {
         {/* 구매자 찾기 */}
         {chats && (!Boolean(chats.length) || isReachingEnd) && (
           <div className="text-center">
-            <Link href={`/products/${router.query.id}/purchase/${chatFilters.find((filter) => filter.value !== currentFilter.value)?.value!}`} passHref>
+            <Link href={`/products/${router.query.id}/purchase/${chatTypes.find((type) => type.filter !== currentType.filter)?.filter!}`} passHref>
               <Buttons tag="a" sort="text-link" size="sm" status="default">
-                {`${chatFilters.find((filter) => filter.value !== currentFilter.value)?.name!}에서 구매자 찾기`}
+                {`${chatTypes.find((type) => type.filter !== currentType.filter)?.caption!}에서 구매자 찾기`}
               </Buttons>
             </Link>
           </div>
@@ -161,17 +163,16 @@ const ProductsPurchasePage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
-  getProductsChats: { options: { url: string; query?: string }; response: GetProductsChatsResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
+  getProductsChats: { options: { url: string; query: string }; response: GetProductsChatsResponse };
 }> = ({ getUser, getProductsDetail, getProductsChats }) => {
-  console.log(getProductsChats);
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => getKey<GetProductsChatsResponse>(...arg, getProductsChats.options))]: [
             getProductsChats.response,
           ],
@@ -185,13 +186,13 @@ const Page: NextPageWithLayout<{
 
 Page.getLayout = getLayout;
 
-export const getServerSideProps = withSsrSession(async ({ req, params, query }) => {
+export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const filter = (params?.filter?.toString() as ChatsFilterEnum) || "";
+  const productId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // productId
-  const filter = (query?.filter?.toString() as ChatsFilterEnum) || "";
-  const productId = params?.id?.toString() || "";
 
   // invalidFilter
   // redirect `/products/${productId}/purchase/available`,
@@ -216,7 +217,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   }
 
   // getProductsDetail
-  const { product, productCondition } =
+  const productsDetail =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
@@ -226,7 +227,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
           product: null,
           productCondition: null,
         };
-  if (!product) {
+  if (!productsDetail?.product) {
     return {
       redirect: {
         permanent: false,
@@ -236,17 +237,17 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   }
 
   const isInvalid = {
-    user: !(productCondition?.role?.myRole === "sellUser"),
-    product: productCondition?.isSale,
-    sentReview: productCondition?.isPurchase && productCondition?.review?.sentReviewId,
-    receiveReview: productCondition?.review?.receiveReviewId,
+    user: !(productsDetail?.productCondition?.role?.myRole === "sellUser"),
+    product: productsDetail?.productCondition?.isSale,
+    sentReview: productsDetail?.productCondition?.isPurchase && productsDetail?.productCondition?.review?.sentReviewId,
+    receiveReview: productsDetail?.productCondition?.review?.receiveReviewId,
   };
 
   // isInvalid
   // redirect: redirectDestination ?? `/products/${productId}`,
   if (Object.values(isInvalid).includes(true)) {
     let redirectDestination = null;
-    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productCondition?.review?.sentReviewId}`;
+    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productsDetail?.productCondition?.review?.sentReviewId}`;
     if (!redirectDestination && isInvalid.receiveReview) redirectDestination = `/products/${productId}/review`;
     return {
       redirect: {
@@ -257,13 +258,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   }
 
   // getProductsChats
-  const { totalCount, chats } = ssrUser?.profile?.id
+  const productsChats = ssrUser?.profile?.id
     ? await getProductsChats({
-        prevCursor: 0,
-        pageSize: 10,
+        id: +productId,
         filter,
+        prevCursor: 0,
         userId: ssrUser?.profile?.id,
-        productId: +productId,
       })
     : {
         totalCount: 0,
@@ -273,7 +273,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `구매자 선택 | ${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `구매자 선택 | ${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "구매자 선택",
@@ -289,24 +289,30 @@ export const getServerSideProps = withSsrSession(async ({ req, params, query }) 
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
       getProductsChats: {
         options: {
-          url: "/api/products/[id]/chats",
-          query: `filter=${filter}&productId=${product?.id}`,
+          url: `/api/products/${productId}/chats/${filter}`,
+          query: "",
         },
         response: {
           success: true,
-          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
-          chats: JSON.parse(JSON.stringify(chats || [])),
+          ...JSON.parse(JSON.stringify(productsChats || {})),
         },
       },
     },

@@ -10,8 +10,8 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
-import { GetUserResponse, getUser } from "@api/user";
 import { ProductPhotoOptions } from "@api/products/types";
+import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @app
@@ -29,13 +29,13 @@ const ProductsEditPage: NextPage = () => {
   const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
-  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}?` : null);
 
   // mutation data
   const [editProduct, { loading: loadingProduct }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutateProduct();
-      router.replace(`/products/${data.product.id}`);
+      await router.replace(`/products/${data.product.id}`);
     },
     onCompleted: () => {
       setIsLoading(false);
@@ -62,8 +62,9 @@ const ProductsEditPage: NextPage = () => {
     editProduct({ ...data, photos: validPaths });
   };
 
-  // update: isValidProduct, formData
+  // update: isValidProduct
   useEffect(() => {
+    if (loadingProduct) return;
     const isInvalid = {
       user: !(productData?.productCondition?.role?.myRole === "sellUser"),
     };
@@ -77,9 +78,9 @@ const ProductsEditPage: NextPage = () => {
     }
     // valid
     setIsValidProduct(true);
-  }, [productData]);
+  }, [loadingProduct, productData]);
 
-  // update: isValidProduct, formData
+  // update: formData
   useEffect(() => {
     if (!productData?.product) return;
     formData.setValue("originalPhotoPaths", productData?.product?.photos);
@@ -101,15 +102,15 @@ const ProductsEditPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
 }> = ({ getUser, getProductsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
         },
       }}
     >
@@ -121,11 +122,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const productId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // productId
-  const productId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect `/products/${productId}`
@@ -139,7 +140,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsDetail
-  const { product, productCondition } =
+  const productsDetail =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
@@ -149,7 +150,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           product: null,
           productCondition: null,
         };
-  if (!product) {
+  if (!productsDetail?.product) {
     return {
       redirect: {
         permanent: false,
@@ -159,7 +160,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   const isInvalid = {
-    user: !(productCondition?.role?.myRole === "sellUser"),
+    user: !(productsDetail?.productCondition?.role?.myRole === "sellUser"),
   };
 
   // isInvalid
@@ -177,7 +178,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `글 수정 | ${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `글 수정 | ${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "중고거래 글 수정",
@@ -194,13 +195,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
     },

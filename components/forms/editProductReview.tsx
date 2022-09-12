@@ -11,7 +11,6 @@ import TextAreas from "@components/textareas";
 import CheckBoxes from "@components/checkBoxes";
 
 export interface EditProductReviewTypes {
-  id: number;
   role: "sellUser" | "purchaseUser";
   sellUserId: number;
   purchaseUserId: number;
@@ -21,6 +20,7 @@ export interface EditProductReviewTypes {
 }
 
 interface EditProductReviewProps extends HTMLAttributes<HTMLFormElement> {
+  formId: string;
   formData: UseFormReturn<EditProductReviewTypes, object>;
   onValid: (validForm: EditProductReviewTypes) => void;
   isSuccess?: boolean;
@@ -28,40 +28,42 @@ interface EditProductReviewProps extends HTMLAttributes<HTMLFormElement> {
 }
 
 const EditProductReview = (props: EditProductReviewProps) => {
-  const { formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
+  const { formId, formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, getValues, resetField } = formData;
 
   const [editState, setEditState] = useState<{ score: number; isFoldMode: boolean }>({ score: 0, isFoldMode: true });
 
   return (
-    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
+    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 선호도 */}
-      <div>
-        {ProductReviewScores.map((score) => (
-          <span key={score.value}>
-            <input
-              {...register("score", {
-                onChange: () => {
-                  const currentScore = getValues("score");
-                  setEditState((prev) => ({
-                    ...prev,
-                    score: currentScore,
-                    isFoldMode: !Boolean(currentScore),
-                  }));
-                  resetField("manners");
-                  resetField("description");
-                },
-              })}
-              type="radio"
-              id={`score-${score.value}`}
-              value={score.value}
-              className="peer sr-only"
-            />
-            <label htmlFor={`score-${score.value}`} className="inline-block mr-2 px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-orange-500 peer-checked:border-orange-500">
-              {score.text}
-            </label>
-          </span>
-        ))}
+      <div className="space-y-1">
+        <div className="flex flex-wrap gap-2">
+          {ProductReviewScores.map((score) => (
+            <span key={score.value}>
+              <input
+                {...register("score", {
+                  onChange: () => {
+                    const currentScore = getValues("score");
+                    setEditState((prev) => ({
+                      ...prev,
+                      score: currentScore,
+                      isFoldMode: !Boolean(currentScore),
+                    }));
+                    resetField("manners");
+                    resetField("description");
+                  },
+                })}
+                type="radio"
+                id={`score-${score.value}`}
+                value={score.value}
+                className="peer sr-only"
+              />
+              <label htmlFor={`score-${score.value}`} className="inline-block px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-orange-500 peer-checked:border-orange-500">
+                {score.text}
+              </label>
+            </span>
+          ))}
+        </div>
       </div>
       {!editState.isFoldMode && (
         <>

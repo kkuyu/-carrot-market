@@ -8,7 +8,7 @@ export type IronUserType = {
 export type IronDummyUserType = {
   id: number;
   name: string;
-  avatar: "";
+  photos: "";
   emdType: "MAIN";
   MAIN_emdAddrNm: string;
   MAIN_emdPosNm: string;

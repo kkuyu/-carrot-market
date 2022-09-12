@@ -19,12 +19,12 @@ const ProductList = (props: ProductListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y ${className}`} {...restProps}>
+    <ul className={`[&:not(.divide-y-2)]:divide-y ${className}`} {...restProps}>
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
             if (child.key === "LikeProduct") return cloneElement(child as ReactElement<LikeProductProps>, { item });
-            if (child.key === "FeedbackProduct") return cloneElement(child as ReactElement<FeedbackProductProps>, { item });
+            if (child.key === "FeedbackProduct") return <div className="px-5">{cloneElement(child as ReactElement<FeedbackProductProps>, { item })}</div>;
             if (child.key === "HandleProduct") return cloneElement(child as ReactElement<HandleProductProps>, { item });
           }
           return child;

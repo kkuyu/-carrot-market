@@ -12,16 +12,17 @@ export interface PostProductsDetailReviewResponse extends ResponseDataType {
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { role, id: _id, score: _score, manners = [], description, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId } = req.body;
+    const { id: _id } = req.query;
+    const { role, score: _score, manners = [], description, purchaseUserId: _purchaseUserId, sellUserId: _sellUserId } = req.body;
 
     // invalid
     if (!role || !_id || !_score || !manners.length || !_purchaseUserId || !_sellUserId) {
-      const error = new Error("InvalidRequestBody");
+      const error = new Error("InvalidRequestBody 111");
       error.name = "InvalidRequestBody";
       throw error;
     }
     if (role !== "sellUser" && role !== "purchaseUser") {
-      const error = new Error("InvalidRequestBody");
+      const error = new Error("InvalidRequestBody 222");
       error.name = "InvalidRequestBody";
       throw error;
     }
@@ -32,12 +33,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     const purchaseUserId = +_purchaseUserId.toString();
     const score = +_score.toString();
     if (isNaN(id) || isNaN(sellUserId) || isNaN(purchaseUserId) || isNaN(score)) {
-      const error = new Error("InvalidRequestBody");
+      const error = new Error("InvalidRequestBody 333");
       error.name = "InvalidRequestBody";
       throw error;
     }
     if (manners.map((manner: string) => isInstance(manner, MannerValue)).includes(false)) {
-      const error = new Error("InvalidRequestBody");
+      const error = new Error("InvalidRequestBody 444");
       error.name = "InvalidRequestBody";
       throw error;
     }

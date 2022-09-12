@@ -14,7 +14,7 @@ import useModal from "@libs/client/useModal";
 import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
-import { GetProductsDetailRecommendsResponse } from "@api/products/[id]/recommends";
+import { GetProductsDetailRecommendsResponse, RecommendsTypeEnum } from "@api/products/[id]/recommends";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsViewsResponse } from "@api/products/[id]/views";
 import { PostChatsResponse } from "@api/chats";
@@ -39,19 +39,19 @@ const ProductsDetailPage: NextPage = () => {
   const { openModal } = useModal();
 
   // fetch data
-  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
-  const { data: recommendsData } = useSWR<GetProductsDetailRecommendsResponse>(router.query.id ? `/api/products/${router.query.id}/recommends` : null);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}?` : null);
+  const { data: recommendsData } = useSWR<GetProductsDetailRecommendsResponse>(router.query.id ? `/api/products/${router.query.id}/recommends?` : null);
 
   // mutation data
   const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(router.query.id ? `/api/products/${router.query.id}/sale` : "", {
     onSuccess: async (data) => {
       await mutateProduct();
-      if (!data.recordSale) router.push(`/products/${router.query.id}/purchase/available`);
+      if (!data.recordSale) await router.push(`/products/${router.query.id}/purchase/available`);
     },
   });
   const [createChat, { loading: loadingChat }] = useMutation<PostChatsResponse>(`/api/chats`, {
     onSuccess: async (data) => {
-      router.push(`/chats/${data.chat.id}`);
+      await router.push(`/chats/${data.chat.id}`);
     },
   });
 
@@ -233,14 +233,14 @@ const ProductsDetailPage: NextPage = () => {
         {/* <div>todo: 신고하기</div> */}
 
         {/* 중고거래: 상품목록 */}
-        {Boolean(recommendsData?.products.length) && (
+        {Boolean(recommendsData?.products?.length) && (
           <section className="mt-5 pt-5 border-t">
             <h2 className="text-xl">
-              {recommendsData?.type === "userProducts"
+              {recommendsData?.type === RecommendsTypeEnum.User
                 ? `${productData?.product?.user?.name}님의 판매 상품`
-                : recommendsData?.type === "similarProducts"
+                : recommendsData?.type === RecommendsTypeEnum.Similar
                 ? `이 글과 함께 본 판매 상품`
-                : recommendsData?.type === "latestProducts"
+                : recommendsData?.type === RecommendsTypeEnum.Latest
                 ? `최근 등록된 판매 상품`
                 : ""}
             </h2>
@@ -253,13 +253,13 @@ const ProductsDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getProductsDetail: { response: GetProductsDetailResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
 }> = ({ getProductsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          ...(getProductsDetail ? { [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response } : {}),
+          ...(getProductsDetail ? { [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response } : {}),
         },
       }}
     >
@@ -278,11 +278,11 @@ export const getStaticPaths: GetStaticPaths = () => {
 };
 
 export const getStaticProps: GetStaticProps = async ({ params }) => {
-  // productId
-  const productId: string = params?.id?.toString() || "";
+  // params
+  const productId = params?.id?.toString() || "";
 
   // getProductsDetail
-  const { product, productCondition } =
+  const productsDetail =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
@@ -291,7 +291,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           product: null,
           productCondition: null,
         };
-  if (!product) {
+  if (!productsDetail?.product) {
     return {
       notFound: true,
     };
@@ -300,12 +300,12 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "",
       titleTag: "strong",
-      isTransparent: Boolean(product?.photos?.length) ? true : false,
+      isTransparent: Boolean(productsDetail?.product?.photos?.length) ? true : false,
       utils: ["back", "title", "home", "share", "kebab"],
     },
     navBar: {
@@ -317,10 +317,13 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     props: {
       defaultLayout,
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
     },

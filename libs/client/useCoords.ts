@@ -12,6 +12,7 @@ const useCoords = (): UseCoordsState => {
   const onSuccess = ({ coords: { latitude, longitude } }: GeolocationPosition) => {
     setCoords({ state: "granted", latitude, longitude });
   };
+
   const onError = (error: GeolocationPositionError) => {
     setCoords({
       state: error.code == error.PERMISSION_DENIED ? "denied" : "error",
@@ -19,6 +20,7 @@ const useCoords = (): UseCoordsState => {
       longitude: 0,
     });
   };
+
   useEffect(() => {
     navigator.geolocation.getCurrentPosition(onSuccess, onError);
   }, []);

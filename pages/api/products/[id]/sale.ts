@@ -92,6 +92,11 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           kind: Kind.ProductPurchase,
         },
       });
+      await client.manner.deleteMany({
+        where: {
+          productId: product.id,
+        },
+      });
       await client.review.deleteMany({
         where: {
           productId: product.id,

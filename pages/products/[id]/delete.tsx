@@ -3,17 +3,16 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
 import { useEffect, useState } from "react";
-import useSWR, { mutate, SWRConfig } from "swr";
-import { unstable_serialize } from "swr/infinite";
+import useSWR, { mutate, SWRConfig, useSWRConfig } from "swr";
 // @libs
-import { getKey, submitFiles, truncateStr } from "@libs/utils";
+import { submitFiles, truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -25,19 +24,26 @@ import ProductSummary from "@components/cards/productSummary";
 const ProductsDeletePage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
+  const swrConfig = useSWRConfig();
 
   // variable: invisible
   const [isValidProduct, setIsValidProduct] = useState(true);
+  const productsCaches = Array.from(swrConfig.cache as Map<any, any>).filter(([key, value]) => /^(\$inf\$\/api\/|\/api)/.test(key) && key.includes(`/api/profiles/${user?.id}/products/all`));
 
   // fetch data
-  const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
+  const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}?` : null);
 
   // mutation data
   const [deleteProduct, { loading: loadingProduct }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
     onSuccess: async () => {
-      const options = { url: `/api/profiles/${user?.id}/products/all` };
-      await mutate(unstable_serialize((...arg: [index: number, previousPageData: GetProfilesProductsResponse]) => getKey<GetProfilesProductsResponse>(...arg, options)));
-      router.replace(`/profiles/${user?.id}/products/all`);
+      productsCaches?.forEach(async ([key, value]) => {
+        const filterProducts = (data: GetProfilesDetailProductsResponse) => data && { ...data, products: data?.products?.filter((product) => product?.id !== productData?.product?.id) };
+        let updateValue = null;
+        if (/^\$inf\$\/api\//.test(key)) updateValue = value.map((data: GetProfilesDetailProductsResponse) => filterProducts(data));
+        if (/^\/api\//.test(key)) updateValue = filterProducts(value);
+        if (updateValue) await mutate(key, updateValue);
+      });
+      await router.replace(`/profiles/${user?.id}/products/all`);
     },
   });
 
@@ -126,15 +132,15 @@ const ProductsDeletePage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
 }> = ({ getUser, getProductsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
         },
       }}
     >
@@ -146,11 +152,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const productId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // productId
-  const productId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect `/products/${productId}`
@@ -164,7 +170,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsDetail
-  const { product, productCondition } =
+  const productsDetail =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
@@ -174,7 +180,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           product: null,
           productCondition: null,
         };
-  if (!product) {
+  if (!productsDetail?.product) {
     return {
       redirect: {
         permanent: false,
@@ -184,7 +190,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   const isInvalid = {
-    user: !(productCondition?.role?.myRole === "sellUser"),
+    user: !(productsDetail?.productCondition?.role?.myRole === "sellUser"),
   };
 
   // isInvalid
@@ -202,7 +208,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `글 삭제 | ${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `글 삭제 | ${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "중고거래 글 삭제",
@@ -218,13 +224,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
     },

@@ -9,7 +9,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsLikeResponse } from "@api/products/[id]/like";
 // @components
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
@@ -17,7 +17,7 @@ import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } f
 import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
-export type LikeProductItem = GetProfilesProductsResponse["products"][number];
+export type LikeProductItem = GetProfilesDetailProductsResponse["products"][number];
 
 export interface LikeProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: LikeProductItem;

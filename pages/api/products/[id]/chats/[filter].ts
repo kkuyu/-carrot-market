@@ -10,7 +10,7 @@ export interface GetProductsChatsResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   chats: (Chat & {
-    users: Pick<User, "id" | "name" | "avatar">[];
+    users: Pick<User, "id" | "name" | "photos">[];
     chatMessages: ChatMessage[];
     product?: Pick<Product, "id" | "name" | "photos"> | null;
   })[];
@@ -23,11 +23,11 @@ export const ChatsFilterEnum = {
 
 export type ChatsFilterEnum = typeof ChatsFilterEnum[keyof typeof ChatsFilterEnum];
 
-export const getProductsChats = async (query: { pageSize: number; prevCursor: number; filter: ChatsFilterEnum; userId: number; productId: number }) => {
-  const { pageSize, prevCursor, filter, userId, productId } = query;
+export const getProductsChats = async (query: { filter: ChatsFilterEnum; id: number; prevCursor: number; userId: number }) => {
+  const { filter, id, prevCursor, userId } = query;
 
   const where = {
-    productId,
+    productId: id,
     users: {
       some: {
         id: userId,
@@ -48,7 +48,7 @@ export const getProductsChats = async (query: { pageSize: number; prevCursor: nu
 
   const chats = await client.chat.findMany({
     where,
-    take: pageSize,
+    take: 10,
     skip: prevCursor ? 1 : 0,
     ...(prevCursor && { cursor: { id: prevCursor } }),
     orderBy: {
@@ -59,7 +59,7 @@ export const getProductsChats = async (query: { pageSize: number; prevCursor: nu
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       chatMessages: {
@@ -76,16 +76,19 @@ export const getProductsChats = async (query: { pageSize: number; prevCursor: nu
     },
   });
 
-  return { totalCount, chats: chats.filter((chat) => chat._count.chatMessages > 0) };
+  return {
+    totalCount,
+    chats: chats.filter((chat) => chat._count.chatMessages > 0),
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { prevCursor: _prevCursor, filter: _filter, productId: _productId } = req.query;
+    const { filter: _filter, id: _id, prevCursor: _prevCursor } = req.query;
     const { user } = req.session;
 
     // invalid
-    if (!_prevCursor || !_filter || !_productId) {
+    if (!_prevCursor || !_filter || !_id) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -105,7 +108,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // page
     const prevCursor = +_prevCursor.toString();
-    const pageSize = 10;
     if (isNaN(prevCursor) || prevCursor === -1) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -114,20 +116,20 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // params
     const filter = _filter.toString() as ChatsFilterEnum;
-    const productId = +_productId.toString();
+    const id = +_id.toString();
     if (!isInstance(filter, ChatsFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (productId && isNaN(productId)) {
+    if (id && isNaN(id)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // fetch data
-    const { totalCount, chats } = await getProductsChats({ prevCursor, pageSize, filter, userId: user?.id, productId });
+    const { totalCount, chats } = await getProductsChats({ filter, id, prevCursor, userId: user?.id });
 
     // result
     const result: GetProductsChatsResponse = {

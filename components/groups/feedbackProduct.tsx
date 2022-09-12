@@ -9,12 +9,12 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import Buttons from "@components/buttons";
 
-export type FeedbackProductItem = GetProfilesProductsResponse["products"][number];
+export type FeedbackProductItem = GetProfilesDetailProductsResponse["products"][number];
 
 export interface FeedbackProductProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackProductItem;
@@ -34,8 +34,8 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: async (data) => {
       await mutateProduct();
-      if (!data.recordSale) router.push(`/products/${item?.id}/purchase/available`);
-      if (data.recordSale) router.push(`/products/${item?.id}`);
+      if (!data.recordSale) await router.push(`/products/${item?.id}/purchase/available`);
+      if (data.recordSale) await router.push(`/products/${item?.id}`);
     },
   });
 
@@ -67,7 +67,7 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   };
 
   return (
-    <div className={`empty:pt-9 flex border-t divide-x ${className}`} {...restProps}>
+    <div className={`empty:pt-9 flex border-t ${className}`} {...restProps}>
       {productData?.product && productData?.productCondition?.isSale && (
         <>
           <CustomFeedbackButton onClick={() => router.push(`/products/${productData?.product?.id}/resume`)} disabled={loadingProductSale}>

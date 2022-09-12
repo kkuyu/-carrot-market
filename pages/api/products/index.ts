@@ -19,8 +19,8 @@ export interface PostProductsResponse extends ResponseDataType {
   product: Product;
 }
 
-export const getProducts = async (query: { prevCursor: number; pageSize: number; posX: number; posY: number; distance: number }) => {
-  const { prevCursor, pageSize, posX, posY, distance } = query;
+export const getProducts = async (query: { prevCursor: number; posX: number; posY: number; distance: number }) => {
+  const { prevCursor, posX, posY, distance } = query;
 
   const where = {
     emdPosX: { gte: posX - distance, lte: posX + distance },
@@ -34,7 +34,7 @@ export const getProducts = async (query: { prevCursor: number; pageSize: number;
 
   const products = await client.product.findMany({
     where,
-    take: pageSize,
+    take: 10,
     skip: prevCursor ? 1 : 0,
     ...(prevCursor && { cursor: { id: prevCursor } }),
     orderBy: {
@@ -60,7 +60,10 @@ export const getProducts = async (query: { prevCursor: number; pageSize: number;
     },
   });
 
-  return { totalCount, products };
+  return {
+    totalCount,
+    products,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -88,7 +91,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // page
       const prevCursor = +_prevCursor.toString();
-      const pageSize = 10;
       if (isNaN(prevCursor) || prevCursor === -1) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
@@ -106,7 +108,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // fetch data
-      const { totalCount, products } = await getProducts({ prevCursor, pageSize, posX, posY, distance });
+      const { totalCount, products } = await getProducts({ prevCursor, posX, posY, distance });
 
       // result
       const result: GetProductsResponse = {

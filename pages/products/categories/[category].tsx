@@ -79,16 +79,16 @@ const ProductsCategoryDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProducts: { options: { url: string; query?: string }; response: GetProductsCategoriesResponse };
-}> = ({ getUser, getProducts }) => {
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsCategories: { options: { url: string; query: string }; response: GetProductsCategoriesResponse };
+}> = ({ getUser, getProductsCategories }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => getKey<GetProductsCategoriesResponse>(...arg, getProducts.options))]: [
-            getProducts.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => getKey<GetProductsCategoriesResponse>(...arg, getProductsCategories.options))]: [
+            getProductsCategories.response,
           ],
         },
       }}
@@ -129,15 +129,15 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // getProducts
+  // getProductsCategories
   const posX = ssrUser?.currentAddr?.emdPosX;
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
-  const { totalCount, products } =
+
+  const productsCategoriesData =
     posX && posY && distance && category
       ? await getProductsCategories({
           prevCursor: 0,
-          pageSize: 10,
           posX,
           posY,
           distance,
@@ -167,17 +167,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getProducts: {
+      getProductsCategories: {
         options: {
           url: `/api/products/categories/${category?.kebabCaseValue}`,
           query: `posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {
           success: true,
-          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
-          products: JSON.parse(JSON.stringify(products || [])),
+          ...JSON.parse(JSON.stringify(productsCategoriesData || {})),
         },
       },
     },

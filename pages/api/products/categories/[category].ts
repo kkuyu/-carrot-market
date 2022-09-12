@@ -14,8 +14,8 @@ export interface GetProductsCategoriesResponse extends ResponseDataType {
   products: (Product & { records: Pick<Record, "id" | "kind" | "userId">[]; chats?: (Chat & { _count: { chatMessages: number } })[] })[];
 }
 
-export const getProductsCategories = async (query: { prevCursor: number; pageSize: number; posX: number; posY: number; distance: number; category: ProductCategory }) => {
-  const { prevCursor, pageSize, posX, posY, distance, category } = query;
+export const getProductsCategories = async (query: { prevCursor: number; posX: number; posY: number; distance: number; category: ProductCategory }) => {
+  const { prevCursor, posX, posY, distance, category } = query;
 
   const where = {
     emdPosX: { gte: posX - distance, lte: posX + distance },
@@ -29,7 +29,7 @@ export const getProductsCategories = async (query: { prevCursor: number; pageSiz
 
   const products = await client.product.findMany({
     where,
-    take: pageSize,
+    take: 10,
     skip: prevCursor ? 1 : 0,
     ...(prevCursor && { cursor: { id: prevCursor } }),
     orderBy: category !== "POPULAR_PRODUCT" ? { resumeAt: "desc" } : [{ records: { _count: "desc" } }, { resumeAt: "desc" }],
@@ -53,7 +53,10 @@ export const getProductsCategories = async (query: { prevCursor: number; pageSiz
     },
   });
 
-  return { totalCount, products };
+  return {
+    totalCount,
+    products,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -80,7 +83,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // page
     const prevCursor = +_prevCursor.toString();
-    const pageSize = 10;
     if (isNaN(prevCursor) || prevCursor === -1) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
@@ -104,7 +106,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, products } = await getProductsCategories({ prevCursor, pageSize, posX, posY, distance, category: category.value });
+    const { totalCount, products } = await getProductsCategories({ prevCursor, posX, posY, distance, category: category.value });
 
     // result
     const result: GetProductsCategoriesResponse = {

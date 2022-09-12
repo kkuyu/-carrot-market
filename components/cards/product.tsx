@@ -6,14 +6,14 @@ import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { ProductCondition } from "@api/products/[id]";
 import { GetProductsResponse } from "@api/products";
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { GetSearchResultResponse } from "@api/search/result/[filter]";
 // @components
 import Images from "@components/images";
 import HighlightText from "@components/highlightText";
 import Icons from "@components/icons";
 
-export type ProductItem = GetProductsResponse["products"][number] | GetProfilesProductsResponse["products"][number] | GetSearchResultResponse["products"][number];
+export type ProductItem = GetProductsResponse["products"][number] | GetProfilesDetailProductsResponse["products"][number] | GetSearchResultResponse["products"][number];
 
 export interface ProductProps extends HTMLAttributes<HTMLDivElement> {
   item: ProductItem;

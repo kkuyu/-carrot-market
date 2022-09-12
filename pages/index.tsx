@@ -51,9 +51,9 @@ const ProductsIndexPage: NextPage = () => {
 
   return (
     <div className="container">
-      <h1 className="sr-only">판매상품</h1>
+      <h1 className="sr-only">판매 상품</h1>
 
-      {/* 판매상품: List */}
+      {/* 판매 상품: List */}
       {products && Boolean(products.length) && (
         <>
           <ProductList list={products} className="-mx-5 border-b" />
@@ -61,16 +61,16 @@ const ProductsIndexPage: NextPage = () => {
         </>
       )}
 
-      {/* 판매상품: Empty */}
+      {/* 판매 상품: Empty */}
       {products && !Boolean(products.length) && (
         <p className="list-empty">
-          앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
+          앗! {currentAddr?.emdPosNm ? `${currentAddr?.emdPosNm} 근처에는` : "근처에"}
           <br />
           등록된 판매 상품이 없어요
         </p>
       )}
 
-      {/* 판매상품: InfiniteRef */}
+      {/* 판매 상품: InfiniteRef */}
       <div id="infiniteRef" ref={infiniteRef} />
 
       {/* 글쓰기 */}
@@ -80,14 +80,14 @@ const ProductsIndexPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProducts: { options: { url: string; query?: string }; response: GetProductsResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProducts: { options: { url: string; query: string }; response: GetProductsResponse };
 }> = ({ getUser, getProducts }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProductsResponse]) => getKey<GetProductsResponse>(...arg, getProducts.options))]: [getProducts.response],
         },
       }}
@@ -121,11 +121,10 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const posY = ssrUser?.currentAddr?.emdPosY;
   const distance = ssrUser?.currentAddr?.emdPosDx;
 
-  const { products, totalCount } =
+  const productsData =
     posX && posY && distance
       ? await getProducts({
           prevCursor: 0,
-          pageSize: 10,
           posX,
           posY,
           distance,
@@ -157,6 +156,10 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProducts: {
@@ -166,8 +169,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         response: {
           success: true,
-          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
-          products: JSON.parse(JSON.stringify(products || [])),
+          ...JSON.parse(JSON.stringify(productsData || 0)),
         },
       },
     },

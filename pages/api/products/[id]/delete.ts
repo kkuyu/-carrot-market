@@ -47,6 +47,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
+    // delete manner
+    await client.manner.deleteMany({
+      where: {
+        productId: product.id,
+      },
+    });
+
     // delete review
     await client.review.deleteMany({
       where: {

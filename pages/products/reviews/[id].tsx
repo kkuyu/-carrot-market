@@ -26,9 +26,9 @@ const ReviewsDetailPage: NextPage = () => {
   const [isValidReview, setIsValidReview] = useState(true);
 
   // fetch data
-  const { data: reviewData } = useSWR<GetProductsReviewsDetailResponse>(router.query.id ? `/api/products/reviews/${router.query.id}` : null);
-  const { data: productData } = useSWR<GetProductsDetailResponse>(reviewData?.review?.productId ? `/api/products/${reviewData?.review?.productId}` : null);
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(productData?.productCondition?.role?.partnerUserId ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}` : null);
+  const { data: reviewData } = useSWR<GetProductsReviewsDetailResponse>(router.query.id ? `/api/products/reviews/${router.query.id}?` : null);
+  const { data: productData } = useSWR<GetProductsDetailResponse>(reviewData?.review?.productId ? `/api/products/${reviewData?.review?.productId}?` : null);
+  const { data: profileData } = useSWR<GetProfilesDetailResponse>(productData?.productCondition?.role?.partnerUserId ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}?` : null);
 
   // update: isValidReview
   useEffect(() => {
@@ -71,7 +71,18 @@ const ReviewsDetailPage: NextPage = () => {
       <p className="empty:hidden mt-2">
         {profileData?.profile && productData?.product && (
           <span className="block">
-            {profileData?.profile?.name}님과 {productData?.product?.name}를 거래했어요
+            <Link href={`/profiles/${profileData?.profile?.id}`} passHref>
+              <Buttons tag="a" sort="text-link" status="default" className="pl-0 pr-0">
+                {profileData?.profile?.name}
+              </Buttons>
+            </Link>
+            님과
+            <Link href={`/products/${productData?.product?.id}`} passHref>
+              <Buttons tag="a" sort="text-link" status="default" className="pr-0">
+                {productData?.product?.name}
+              </Buttons>
+            </Link>
+            를 거래했어요
           </span>
         )}
         {reviewData?.review?.score && reviewData?.review?.score <= 40 && <span className="block">작성한 내용은 상대방에게 전달되지 않으니 안심하세요</span>}
@@ -123,19 +134,19 @@ const ReviewsDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
-  getProfilesDetail: { response: GetProfilesDetailResponse };
-  getProductsReviewsDetail: { response: GetProductsReviewsDetailResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
+  getProfilesDetail: { options: { url: string; query: string }; response: GetProfilesDetailResponse };
+  getProductsReviewsDetail: { options: { url: string; query: string }; response: GetProductsReviewsDetailResponse };
 }> = ({ getUser, getProductsDetail, getProfilesDetail, getProductsReviewsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
-          [`/api/profiles/${getProfilesDetail.response.profile.id}`]: getProfilesDetail.response,
-          [`/api/reviews/${getProductsReviewsDetail.response.review.id}`]: getProductsReviewsDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
+          [`${getProfilesDetail?.options?.url}?${getProfilesDetail?.options?.query}`]: getProfilesDetail.response,
+          [`${getProductsReviewsDetail?.options?.url}?${getProductsReviewsDetail?.options?.query}`]: getProductsReviewsDetail.response,
         },
       }}
     >
@@ -147,11 +158,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const reviewId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // reviewId
-  const reviewId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect `/user`
@@ -165,7 +176,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsReviewsDetail
-  const { review } =
+  const productsReviewsDetail =
     reviewId && !isNaN(+reviewId)
       ? await getProductsReviewsDetail({
           id: +reviewId,
@@ -174,7 +185,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       : {
           review: null,
         };
-  if (!review) {
+  if (!productsReviewsDetail?.review) {
     return {
       redirect: {
         permanent: false,
@@ -184,9 +195,9 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsDetail
-  const { product, productCondition } = review?.productId
+  const productsDetail = productsReviewsDetail?.review?.productId
     ? await getProductsDetail({
-        id: review?.productId,
+        id: productsReviewsDetail?.review?.productId,
         userId: ssrUser?.profile?.id,
       })
     : {
@@ -195,18 +206,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       };
 
   // getProfilesDetail
-  const { profile } = productCondition?.role?.partnerUserId
+  const profilesDetail = productsDetail?.productCondition?.role?.partnerUserId
     ? await getProfilesDetail({
-        id: productCondition?.role?.partnerUserId,
+        id: productsDetail?.productCondition?.role?.partnerUserId,
       })
     : {
         profile: null,
       };
 
   const isInvalid = {
-    user: !(productCondition?.role?.myRole === "sellUser" || productCondition?.role?.myRole === "purchaseUser"),
-    product: productCondition?.isSale || !productCondition?.isPurchase,
-    profile: !profile,
+    user: !(productsDetail?.productCondition?.role?.myRole === "sellUser" || productsDetail?.productCondition?.role?.myRole === "purchaseUser"),
+    product: productsDetail?.productCondition?.isSale || !productsDetail?.productCondition?.isPurchase,
+    profile: !profilesDetail?.profile,
   };
 
   // isInvalid
@@ -224,10 +235,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${review.role === productCondition?.role?.myRole ? "보낸" : "받은"} 거래 후기 | ${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `${productsReviewsDetail?.review.role === productsDetail?.productCondition?.role?.myRole ? "보낸" : "받은"} 거래 후기 | ${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
-      title: `${review.role === productCondition?.role?.myRole ? "보낸" : "받은"} 거래 후기`,
+      title: `${productsReviewsDetail?.review.role === productsDetail?.productCondition?.role?.myRole ? "보낸" : "받은"} 거래 후기`,
       titleTag: "strong",
       utils: ["back", "title", "home"],
     },
@@ -240,25 +251,40 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productsDetail?.product?.id}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
       getProfilesDetail: {
+        options: {
+          url: `/api/profiles/${profilesDetail?.profile?.id}`,
+          query: "",
+        },
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(profile || {})),
+          ...JSON.parse(JSON.stringify(profilesDetail || {})),
         },
       },
       getProductsReviewsDetail: {
+        options: {
+          url: `/api/products/reviews/${reviewId}`,
+          query: "",
+        },
         response: {
           success: true,
-          review: JSON.parse(JSON.stringify(review || {})),
+          ...JSON.parse(JSON.stringify(productsReviewsDetail || {})),
         },
       },
     },

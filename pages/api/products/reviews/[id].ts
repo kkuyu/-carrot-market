@@ -7,8 +7,8 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProductsReviewsDetailResponse extends ResponseDataType {
   review: Review & {
-    sellUser: Pick<User, "id" | "name" | "avatar">;
-    purchaseUser: Pick<User, "id" | "name" | "avatar">;
+    sellUser: Pick<User, "id" | "name" | "photos">;
+    purchaseUser: Pick<User, "id" | "name" | "photos">;
     manners: Manner[];
   };
 }
@@ -31,21 +31,23 @@ export const getProductsReviewsDetail = async (query: { id: number; userId: numb
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       purchaseUser: {
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       manners: true,
     },
   });
 
-  return { review };
+  return {
+    review,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {

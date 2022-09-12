@@ -31,20 +31,21 @@ const ProductsReviewPage: NextPage = () => {
   const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
-  const { data: productData } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}` : null);
-  const { data: profileData } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}` : null);
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}?` : null);
+  const { data: profileData, mutate: mutateProfile } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}?` : null);
 
   // mutation data
-  const [uploadReview, { loading: loadingReview }] = useMutation<PostProductsDetailReviewResponse>("/api/products/[id]/review", {
+  const [uploadReview, { loading: loadingReview }] = useMutation<PostProductsDetailReviewResponse>(productData?.product?.id ? `/api/products/${productData?.product?.id}/review` : "", {
     onSuccess: async (data) => {
-      router.replace(`/products/reviews/${data?.review?.id}`);
+      await mutateProduct();
+      await mutateProfile();
+      await router.replace(`/products/reviews/${data?.review?.id}`);
     },
   });
 
   // variable: visible
   const formData = useForm<EditProductReviewTypes>({
     defaultValues: {
-      id: productData?.product?.id,
       role: productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser",
       sellUserId: productData?.productCondition?.role?.myRole === "sellUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!,
       purchaseUserId: productData?.productCondition?.role?.myRole === "purchaseUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!,
@@ -59,6 +60,7 @@ const ProductsReviewPage: NextPage = () => {
 
   // update: isValidProduct
   useEffect(() => {
+    if (loadingReview) return;
     const isInvalid = {
       user: !(productData?.productCondition?.role?.myRole === "sellUser" || productData?.productCondition?.role?.myRole === "purchaseUser"),
       product: productData?.productCondition?.isSale,
@@ -68,22 +70,21 @@ const ProductsReviewPage: NextPage = () => {
     };
     // invalid
     if (!productData?.success || !productData?.product || Object.values(isInvalid).includes(true)) {
-      setIsValidProduct(false);
       const productId = router?.query?.id?.toString();
       let redirectDestination = null;
       if (!redirectDestination && isInvalid.purchase) redirectDestination = `/products/${productId}/purchase/available`;
       if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productData?.productCondition?.review?.sentReviewId}`;
       router.replace(redirectDestination ?? `/products/${productId}`);
+      setIsValidProduct(false);
       return;
     }
     // valid
     setIsValidProduct(true);
-  }, [productData]);
+  }, [loadingReview, productData]);
 
   // update: formData
   useEffect(() => {
     if (!productData?.product) return;
-    formData.setValue("id", productData?.product?.id);
     formData.setValue("role", productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser");
     formData.setValue("sellUserId", productData?.productCondition?.role?.myRole === "sellUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!);
     formData.setValue("purchaseUserId", productData?.productCondition?.role?.myRole === "purchaseUser" ? user?.id! : productData?.productCondition?.role?.partnerUserId!);
@@ -127,8 +128,8 @@ const ProductsReviewPage: NextPage = () => {
           <p className="mt-2">거래 선호도는 나만 볼 수 있어요</p>
 
           {/* 리뷰 */}
-          <div className="mt-5">
-            <EditProductReview formData={formData} onValid={submitReview} />
+          <div className="mt-4">
+            <EditProductReview formId="upload-review" formData={formData} onValid={submitReview} isLoading={loadingReview} />
           </div>
         </div>
       )}
@@ -137,17 +138,17 @@ const ProductsReviewPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
-  getProfilesDetail: { response: GetProfilesDetailResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
+  getProfilesDetail: { options: { url: string; query: string }; response: GetProfilesDetailResponse };
 }> = ({ getUser, getProductsDetail, getProfilesDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
-          [`/api/profiles/${getProfilesDetail.response.profile.id}`]: getProfilesDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
+          [`${getProfilesDetail?.options?.url}?${getProfilesDetail?.options?.query}`]: getProfilesDetail.response,
         },
       }}
     >
@@ -159,11 +160,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const productId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // productId
-  const productId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect: `/products/${productId}`
@@ -177,7 +178,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsDetail
-  const { product, productCondition } =
+  const productsDetail =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
@@ -187,7 +188,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           product: null,
           productCondition: null,
         };
-  if (!product) {
+  if (!productsDetail?.product) {
     return {
       redirect: {
         permanent: false,
@@ -197,20 +198,20 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProfilesDetail
-  const { profile } = productCondition?.role?.partnerUserId
+  const profilesDetail = productsDetail?.productCondition?.role?.partnerUserId
     ? await getProfilesDetail({
-        id: productCondition?.role?.partnerUserId,
+        id: productsDetail?.productCondition?.role?.partnerUserId,
       })
     : {
         profile: null,
       };
 
   const isInvalid = {
-    user: !(productCondition?.role?.myRole === "sellUser" || productCondition?.role?.myRole === "purchaseUser"),
-    product: productCondition?.isSale,
-    purchase: !productCondition?.isPurchase,
-    sentReview: Boolean(productCondition?.review?.sentReviewId),
-    profile: !profile,
+    user: !(productsDetail?.productCondition?.role?.myRole === "sellUser" || productsDetail?.productCondition?.role?.myRole === "purchaseUser"),
+    product: productsDetail?.productCondition?.isSale,
+    purchase: !productsDetail?.productCondition?.isPurchase,
+    sentReview: Boolean(productsDetail?.productCondition?.review?.sentReviewId),
+    profile: !profilesDetail?.profile,
   };
 
   // isInvalid
@@ -218,7 +219,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   if (Object.values(isInvalid).includes(true)) {
     let redirectDestination = null;
     if (!redirectDestination && isInvalid.purchase) redirectDestination = `/products/${productId}/purchase/available`;
-    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productCondition?.review?.sentReviewId}`;
+    if (!redirectDestination && isInvalid.sentReview) redirectDestination = `/products/reviews/${productsDetail?.productCondition?.review?.sentReviewId}`;
     return {
       redirect: {
         permanent: false,
@@ -230,7 +231,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `거래 후기 보내기 | ${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `거래 후기 보내기 | ${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "거래 후기 보내기",
@@ -246,19 +247,30 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
       getProfilesDetail: {
+        options: {
+          url: `/api/profiles/${productsDetail?.productCondition?.role?.partnerUserId}`,
+          query: "",
+        },
         response: {
           success: true,
-          profile: JSON.parse(JSON.stringify(profile || {})),
+          ...JSON.parse(JSON.stringify(profilesDetail || {})),
         },
       },
     },

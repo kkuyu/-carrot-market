@@ -28,7 +28,7 @@ const ProductsUploadPage: NextPage = () => {
   // mutation data
   const [uploadProduct, { loading: loadingProduct }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: async (data) => {
-      router.replace(`/products/${data.product.id}`);
+      await router.replace(`/products/${data.product.id}`);
     },
     onCompleted: () => {
       setIsLoading(false);

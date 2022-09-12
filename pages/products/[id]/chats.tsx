@@ -10,9 +10,9 @@ import { getKey, truncateStr } from "@libs/utils";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
-import { GetProductsChatsResponse, getProductsChats } from "@api/products/[id]/chats";
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
+import { GetProductsChatsResponse, getProductsChats } from "@api/products/[id]/chats/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -28,9 +28,9 @@ const ProductsChatsPage: NextPage = () => {
   const [isValidProduct, setIsValidProduct] = useState(true);
 
   // fetch data
-  const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}` : null);
+  const { data: productData } = useSWR<GetProductsDetailResponse>(router.query.id ? `/api/products/${router.query.id}?` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
-    const options = { url: "/api/products/[id]/chats", query: router.query.id ? `filter=all&productId=${router.query.id}` : "" };
+    const options = { url: router.query.id ? `/api/products/${router.query.id}/chats/all` : "", query: "" };
     return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
@@ -107,16 +107,16 @@ const ProductsChatsPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
-  getProductsChats: { options: { url: string; query?: string }; response: GetProductsChatsResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
+  getProductsChats: { options: { url: string; query: string }; response: GetProductsChatsResponse };
 }> = ({ getUser, getProductsDetail, getProductsChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => getKey<GetProductsChatsResponse>(...arg, getProductsChats.options))]: [
             getProductsChats.response,
           ],
@@ -131,11 +131,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const productId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // productId
-  const productId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect `/products/${productId}`
@@ -149,7 +149,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsDetail
-  const { product, productCondition } =
+  const productsDetail =
     productId && !isNaN(+productId)
       ? await getProductsDetail({
           id: +productId,
@@ -159,7 +159,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           product: null,
           productCondition: null,
         };
-  if (!product) {
+  if (!productsDetail?.product) {
     return {
       redirect: {
         permanent: false,
@@ -169,7 +169,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   const isInvalid = {
-    user: !(productCondition?.role?.myRole === "sellUser"),
+    user: !(productsDetail?.productCondition?.role?.myRole === "sellUser"),
   };
 
   // isInvalid
@@ -185,13 +185,12 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getProductsChats
-  const { totalCount, chats } = ssrUser?.profile?.id
+  const productsChats = ssrUser?.profile?.id
     ? await getProductsChats({
-        prevCursor: 0,
-        pageSize: 10,
         filter: "all",
+        id: +productId,
+        prevCursor: 0,
         userId: ssrUser?.profile?.id,
-        productId: +productId,
       })
     : {
         totalCount: 0,
@@ -201,7 +200,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `대화 중인 채팅방 | ${truncateStr(product?.name, 15)} | 중고거래`,
+      title: `대화 중인 채팅방 | ${truncateStr(productsDetail?.product?.name, 15)} | 중고거래`,
     },
     header: {
       title: "대화 중인 채팅방",
@@ -217,24 +216,30 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getProductsDetail: {
+        options: {
+          url: `/api/products/${productId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
       getProductsChats: {
         options: {
-          url: "/api/products/[id]/chats",
-          query: `filter=all&productId=${product?.id}`,
+          url: `/api/products/${productId}/chats/all`,
+          query: "",
         },
         response: {
           success: true,
-          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
-          chats: JSON.parse(JSON.stringify(chats || [])),
+          ...JSON.parse(JSON.stringify(productsChats || {})),
         },
       },
     },

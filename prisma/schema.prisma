@@ -22,8 +22,7 @@ model User {
   name                 String
   phone                String         @unique
   email                String?        @unique
-  avatar               String         @default("")
-  concerns             String         @default("")
+  photos               String         @default("") @db.Text
   emdType              EmdType
   MAIN_emdAddrNm       String
   MAIN_emdPosNm        String
@@ -38,6 +37,7 @@ model User {
   createdAt            DateTime       @default(now())
   updatedAt            DateTime       @updatedAt
   tokens               Token[]
+  concerns             Concern[]
   searchRecords        SearchRecord[]
   products             Product[]
   chats                Chat[]
@@ -59,6 +59,39 @@ model Token {
   updatedAt DateTime @updatedAt
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
+}
+
+enum ConcernValue {
+  SPORTS
+  STUDY
+  FAMILY_AND_PARENTING
+  FRIEND
+  CRAFT
+  COMPANION_ANIMAL
+  GAME
+  MUSIC
+  MOVIE
+  FOOD
+  CULTURE_AND_ART
+  TRAVEL
+  PICTURE_AND_VIDEO
+  READING
+  FASHION
+  TECH
+  CAR_AND_MOTORCYCLE
+  INVESTMENT_AND_FINANCE
+  VOLUNTEERING
+  BEAUTY_AND_COSMETOLOGY
+  PLANT
+  INTERIOR
+}
+
+model Concern {
+  id        Int          @id @default(autoincrement())
+  value     ConcernValue
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt()
+  user      User[]
 }
 
 model SearchRecord {
@@ -111,6 +144,7 @@ model Product {
   updatedAt   DateTime        @updatedAt
   user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId      Int
+  manners     Manner[]
   reviews     Review[]
   chats       Chat[]
   records     Record[]
@@ -234,6 +268,8 @@ model Manner {
   updatedAt DateTime    @updatedAt()
   user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   userId    Int
+  product   Product?    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  productId Int?
   reviews   Review[]
 }
 

@@ -7,7 +7,7 @@ import { GetUserResponse } from "@api/user";
 
 export interface UserProfile {
   loading: boolean;
-  user: (Pick<User, "id" | "name" | "avatar"> & Partial<User>) | null;
+  user: (Pick<User, "id" | "name" | "photos"> & Partial<GetUserResponse["profile"]>) | null;
   currentAddr: GetUserResponse["currentAddr"];
   type: "member" | "non-member" | "guest" | null;
   mutate: KeyedMutator<GetUserResponse>;
@@ -15,7 +15,7 @@ export interface UserProfile {
 
 const useUser = (): UserProfile => {
   const router = useRouter();
-  const { data, error, mutate } = useSWR<GetUserResponse>("/api/user");
+  const { data, error, mutate } = useSWR<GetUserResponse>("/api/user?");
 
   useEffect(() => {
     if (data?.error?.name === "InvalidCookie") {

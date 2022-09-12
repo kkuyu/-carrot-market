@@ -25,7 +25,7 @@ export interface ProductCondition {
 
 export interface GetProductsDetailResponse extends ResponseDataType {
   product: Product & {
-    user?: Pick<User, "id" | "name" | "avatar">;
+    user?: Pick<User, "id" | "name" | "photos">;
     records?: Pick<Record, "id" | "kind" | "userId">[];
     chats?: (Chat & { _count: { chatMessages: number } })[];
     reviews?: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
@@ -45,7 +45,7 @@ export const getProductsDetail = async (query: { id: number; userId?: number }) 
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       records: {
@@ -85,7 +85,10 @@ export const getProductsDetail = async (query: { id: number; userId?: number }) 
 
   const productCondition = getProductCondition(product, userId || null);
 
-  return { product, productCondition };
+  return {
+    product,
+    productCondition,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {

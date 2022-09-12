@@ -8,16 +8,16 @@ import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
+import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
 import Buttons, { ButtonsProps } from "@components/buttons";
 import Icons from "@components/icons";
 
-export type HandleProductItem = GetProfilesProductsResponse["products"][number];
+export type HandleProductItem = GetProfilesDetailProductsResponse["products"][number];
 
 export interface HandleProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleProductItem;
@@ -39,8 +39,8 @@ const HandleProduct = (props: HandleProductProps) => {
   const [updateProductSale, { loading: loadingProductSale }] = useMutation<PostProductsSaleResponse>(item?.id ? `/api/products/${item.id}/sale` : "", {
     onSuccess: async (data) => {
       await mutateProduct();
-      if (!data.recordSale) router.push(`/products/${item?.id}/purchase/available`);
-      if (data.recordSale) router.push(`/products/${item?.id}`);
+      if (!data.recordSale) await router.push(`/products/${item?.id}/purchase/available`);
+      if (data.recordSale) await router.push(`/products/${item?.id}`);
     },
   });
 
