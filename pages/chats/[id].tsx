@@ -3,7 +3,7 @@ import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
 import { useForm } from "react-hook-form";
-import useSWR, { mutate, SWRConfig } from "swr";
+import useSWR, { SWRConfig } from "swr";
 // @libs
 import { truncateStr } from "@libs/utils";
 import useUser from "@libs/client/useUser";
@@ -12,8 +12,8 @@ import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
-import { GetChatsDetailResponse, PostChatsDetailResponse, getChatsDetail } from "@api/chats/[id]";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
+import { GetChatsDetailResponse, PostChatsDetailResponse, getChatsDetail } from "@api/chats/[id]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 import { PostProductsPurchaseResponse } from "@api/products/[id]/purchase";
 // @app
@@ -32,8 +32,8 @@ const ChatsDetailPage: NextPage = () => {
   const { openModal } = useModal();
 
   // fetch data
-  const { data: chatData, mutate: mutateChat } = useSWR<GetChatsDetailResponse>(router.query.id ? `/api/chats/${router.query.id}` : null, { refreshInterval: 1000, revalidateOnFocus: false });
-  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(chatData?.chat?.productId ? `/api/products/${chatData?.chat?.productId}` : null);
+  const { data: chatData, mutate: mutateChat } = useSWR<GetChatsDetailResponse>(router.query.id ? `/api/chats/${router.query.id}?` : null, { refreshInterval: 1000, revalidateOnFocus: false });
+  const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(chatData?.chat?.productId ? `/api/products/${chatData?.chat?.productId}?` : null);
 
   // mutation data
   const [uploadChatMessage, { loading: loadingChatMessage }] = useMutation<PostChatsDetailResponse>(`/api/chats/${router.query.id}`, {
@@ -47,7 +47,7 @@ const ChatsDetailPage: NextPage = () => {
     {
       onSuccess: async (data) => {
         await mutateProduct();
-        router.push(`/products/${data?.recordPurchase?.productId}/review`);
+        await router.push(`/products/${data?.recordPurchase?.productId}/review`);
       },
     }
   );
@@ -202,17 +202,17 @@ const ChatsDetailPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getChatsDetail: { response: GetChatsDetailResponse };
-  getProductsDetail: { response: GetProductsDetailResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getChatsDetail: { options: { url: string; query: string }; response: GetChatsDetailResponse };
+  getProductsDetail: { options: { url: string; query: string }; response: GetProductsDetailResponse };
 }> = ({ getUser, getChatsDetail, getProductsDetail }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
-          ...(getChatsDetail ? { [`/api/chats/${getChatsDetail.response.chat.id}`]: getChatsDetail.response } : {}),
-          ...(getProductsDetail ? { [`/api/products/${getProductsDetail.response.product.id}`]: getProductsDetail.response } : {}),
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
+          [`${getProductsDetail?.options?.url}?${getProductsDetail?.options?.query}`]: getProductsDetail.response,
+          [`${getChatsDetail?.options?.url}?${getChatsDetail?.options?.query}`]: getChatsDetail.response,
         },
       }}
     >
@@ -224,11 +224,11 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const chatId = params?.id?.toString() || "";
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
-  // chatId
-  const chatId: string = params?.id?.toString() || "";
 
   // invalidUser
   // redirect `/chats`
@@ -242,7 +242,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // getChatsDetail
-  const { chat } =
+  const chatsDetail =
     chatId && !isNaN(+chatId)
       ? await getChatsDetail({
           id: +chatId,
@@ -251,7 +251,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       : {
           chat: null,
         };
-  if (!chat) {
+  if (!chatsDetail?.chat) {
     return {
       redirect: {
         permanent: false,
@@ -260,14 +260,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  const userGroup = chat?.users ? chat?.users?.filter((chatUser) => chatUser.id !== ssrUser?.profile?.id) : [];
+  const userGroup = chatsDetail?.chat?.users ? chatsDetail?.chat?.users?.filter((chatUser: { id: number; name: string; photos: string }) => chatUser.id !== ssrUser?.profile?.id) : [];
   const userNames = userGroup?.map((chatUser) => chatUser.name)?.join(", ");
 
   // getProductsDetail
-  const { product, productCondition } =
-    chat && chat?.productId
+  const productsDetail =
+    chatsDetail?.chat && chatsDetail?.chat?.productId
       ? await getProductsDetail({
-          id: chat?.productId,
+          id: chatsDetail?.chat?.productId,
           userId: ssrUser?.profile?.id,
         })
       : {
@@ -294,21 +294,30 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getChatsDetail: {
+      getProductsDetail: {
+        options: {
+          url: productsDetail?.product?.id ? `/api/products/${productsDetail?.product?.id}` : "",
+          query: "",
+        },
         response: {
           success: true,
-          chat: JSON.parse(JSON.stringify(chat || {})),
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(productsDetail || {})),
         },
       },
-      getProductsDetail: {
+      getChatsDetail: {
+        options: {
+          url: `/api/chats/${chatId}`,
+          query: "",
+        },
         response: {
           success: true,
-          product: JSON.parse(JSON.stringify(product || {})),
-          productCondition: JSON.parse(JSON.stringify(productCondition || {})),
+          ...JSON.parse(JSON.stringify(chatsDetail || {})),
         },
       },
     },

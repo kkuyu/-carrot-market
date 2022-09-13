@@ -86,14 +86,14 @@ const ChatsIndexPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
-  getChats: { options: { url: string; query?: string }; response: GetChatsResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
+  getChats: { options: { url: string; query: string }; response: GetChatsResponse };
 }> = ({ getUser, getChats }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
           [unstable_serialize((...arg: [index: number, previousPageData: GetChatsResponse]) => getKey<GetChatsResponse>(...arg, getChats.options))]: [getChats.response],
         },
       }}
@@ -110,9 +110,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // getChats
-  const { totalCount, chats } = ssrUser?.profile?.id
+  const chats = ssrUser?.profile?.id
     ? await getChats({
-        pageSize: 10,
         prevCursor: 0,
         userId: ssrUser?.profile?.id,
       })
@@ -140,16 +139,20 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
       getChats: {
         options: {
           url: ssrUser.profile ? "/api/chats" : "",
+          query: "",
         },
         response: {
           success: true,
-          totalCount: JSON.parse(JSON.stringify(totalCount || 0)),
-          chats: JSON.parse(JSON.stringify(chats || [])),
+          ...JSON.parse(JSON.stringify(chats || {})),
         },
       },
     },

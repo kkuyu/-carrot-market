@@ -33,7 +33,7 @@ const Chat = (props: ChatProps) => {
             <Images
               key={user.id}
               size={array.length === 1 ? "3.5rem" : "2rem"}
-              {...(index === 3 && array.length > 4 ? { text: `+${array.length - 4}` } : { cloudId: user?.avatar, text: user?.name?.slice(0, 2) })}
+              {...(index === 3 && array.length > 4 ? { text: `+${array.length - 4}` } : { cloudId: user?.photos?.replace(/;.*/, ""), text: user?.name?.slice(0, 2) })}
               alt=""
               className={`rounded-full ${array.length === 1 ? "" : "outline outline-1 outline-white"}`}
             />

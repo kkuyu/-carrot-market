@@ -7,8 +7,8 @@ import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetChatsDetailResponse extends ResponseDataType {
   chat: Chat & {
-    chatMessages: (ChatMessage & { user: Pick<User, "id" | "name" | "avatar"> })[];
-    users: Pick<User, "id" | "name" | "avatar">[];
+    chatMessages: (ChatMessage & { user: Pick<User, "id" | "name" | "photos"> })[];
+    users: Pick<User, "id" | "name" | "photos">[];
   };
 }
 
@@ -36,7 +36,7 @@ export const getChatsDetail = async (query: { id: number; userId?: number }) => 
             select: {
               id: true,
               name: true,
-              avatar: true,
+              photos: true,
             },
           },
         },
@@ -45,7 +45,7 @@ export const getChatsDetail = async (query: { id: number; userId?: number }) => 
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       _count: {
@@ -56,7 +56,9 @@ export const getChatsDetail = async (query: { id: number; userId?: number }) => 
     },
   });
 
-  return { chat };
+  return {
+    chat,
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {

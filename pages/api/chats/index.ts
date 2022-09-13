@@ -9,7 +9,7 @@ export interface GetChatsResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   chats: (Chat & {
-    users: Pick<User, "id" | "name" | "avatar">[];
+    users: Pick<User, "id" | "name" | "photos">[];
     chatMessages: ChatMessage[];
     product?: Pick<Product, "id" | "name" | "photos"> | null;
   })[];
@@ -19,8 +19,8 @@ export interface PostChatsResponse extends ResponseDataType {
   chat: Chat;
 }
 
-export const getChats = async (query: { prevCursor: number; pageSize: number; userId: number }) => {
-  const { prevCursor, pageSize, userId } = query;
+export const getChats = async (query: { prevCursor: number; userId: number }) => {
+  const { prevCursor, userId } = query;
 
   const where = {
     users: {
@@ -36,7 +36,7 @@ export const getChats = async (query: { prevCursor: number; pageSize: number; us
 
   const chats = await client.chat.findMany({
     where,
-    take: pageSize,
+    take: 10,
     skip: prevCursor ? 1 : 0,
     ...(prevCursor && { cursor: { id: prevCursor } }),
     orderBy: {
@@ -47,7 +47,7 @@ export const getChats = async (query: { prevCursor: number; pageSize: number; us
         select: {
           id: true,
           name: true,
-          avatar: true,
+          photos: true,
         },
       },
       chatMessages: {
@@ -67,7 +67,10 @@ export const getChats = async (query: { prevCursor: number; pageSize: number; us
     },
   });
 
-  return { totalCount, chats: chats.filter((chat) => chat._count.chatMessages > 0) };
+  return {
+    totalCount,
+    chats: chats.filter((chat) => chat._count.chatMessages > 0),
+  };
 };
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
@@ -97,7 +100,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // page
       const prevCursor = +_prevCursor.toString();
-      const pageSize = 10;
       if (isNaN(prevCursor) || prevCursor === -1) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
@@ -105,7 +107,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       }
 
       // fetch data
-      const { totalCount, chats } = await getChats({ prevCursor, pageSize, userId: user?.id });
+      const { totalCount, chats } = await getChats({ prevCursor, userId: user?.id });
 
       // result
       const result: GetChatsResponse = {
