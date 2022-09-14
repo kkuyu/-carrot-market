@@ -44,6 +44,14 @@ export const truncateStr = (str: string = "", count: number = 0) => {
   return str.length > count ? str.slice(0, count - 1) + "..." : str;
 };
 
+export type PostPositionFormats = "을;를" | "은;는" | "이;가" | "과;와" | "으로;로";
+
+export const getPostposition = (str: string, format: PostPositionFormats) => {
+  const lastCharCode = str.charCodeAt(str.length - 1);
+  const hasFinalConsonant = (lastCharCode - 0xac00) % 28 > 0;
+  return `${str}${hasFinalConsonant ? format.replace(/\;.*$/g, "") : format.replace(/^.*\;/g, "")}`;
+};
+
 export const getRandomName = () => {
   const adjectiveIndex = Math.floor(Math.random() * name.adjective.length);
   const animalIndex = Math.floor(Math.random() * name.animal.length);

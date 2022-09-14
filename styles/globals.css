@@ -54,7 +54,7 @@ strong {
   @apply pt-12;
 }
 .main:not(:last-child) {
-  @apply pb-16;
+  @apply pb-14;
 }
 #layout-header.is-transparent ~ .main {
   @apply pt-0;
@@ -110,14 +110,6 @@ strong {
 }
 .list-empty {
   @apply py-10 text-center text-gray-500;
-}
-
-.block-arrow {
-  @apply relative block w-full pl-5 pr-12;
-}
-.block-arrow:before {
-  @apply absolute top-1/2 right-4 -translate-y-1/2 w-5 h-5;
-  content: url("data:image/svg+xml; utf8, <svg fill='none' stroke='rgb(75 85 99)' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'><path stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M9 5l7 7-7 7'></path></svg>");
 }
 
 form .invalid {

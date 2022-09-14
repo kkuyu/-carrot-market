@@ -5,6 +5,7 @@ export * from "@components/icons/data/chatBubbleOvalLeftEllipsis";
 export * from "@components/icons/data/checkCircle";
 export * from "@components/icons/data/chevronDown";
 export * from "@components/icons/data/chevronLeft";
+export * from "@components/icons/data/chevronRight";
 export * from "@components/icons/data/cog8Tooth";
 export * from "@components/icons/data/ellipsisVertical";
 export * from "@components/icons/data/faceSmile";

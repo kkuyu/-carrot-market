@@ -34,6 +34,7 @@ const CommentTreeList = (props: CommentTreeListProps) => {
     moreReComments(readState.type, reCommentRefId, !list.length ? 0 : list[list.length - 1].id);
   };
 
+  // update: isLoading, readState
   useEffect(() => {
     setIsLoading(false);
     setReadState((prev) => {

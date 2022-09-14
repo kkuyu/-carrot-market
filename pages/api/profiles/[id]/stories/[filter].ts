@@ -1,34 +1,73 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Kind, Record, Story, StoryComment, User } from "@prisma/client";
 // @libs
 import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { StoryCommentMaximumDepth, StoryCommentMinimumDepth } from "@api/stories/types";
+import { CommentMaximumDepth, CommentMinimumDepth } from "@api/comments/types";
+import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
 
-export interface GetProfilesStoriesResponse extends ResponseDataType {
-  totalCount: number;
-  lastCursor: number;
-  stories: (Story & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    records: Pick<Record, "id" | "kind" | "emotion" | "userId">[];
-    comments?: (Pick<StoryComment, "id"> & Pick<Partial<StoryComment>, "userId" | "content">)[];
-  })[];
-  comments: (StoryComment & {
-    user: Pick<User, "id" | "name" | "avatar">;
-    story: Pick<Story, "id" | "content" | "createdAt">;
-    records: Pick<Record, "id" | "kind" | "userId">[];
-  })[];
-}
+export type GetProfilesDetailStoriesResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "stories">;
 
-export const StoriesFilterEnum = {
-  ["story"]: "story",
-  ["comment"]: "comment",
+export const ProfileStoriesFilterEnum = {
+  ["all"]: "all",
 } as const;
 
-export type StoriesFilterEnum = typeof StoriesFilterEnum[keyof typeof StoriesFilterEnum];
+export type ProfileStoriesFilterEnum = typeof ProfileStoriesFilterEnum[keyof typeof ProfileStoriesFilterEnum];
+
+export const getProfilesDetailStories = async (query: { filter: ProfileStoriesFilterEnum; id: number; prevCursor: number }) => {
+  const { filter, id, prevCursor } = query;
+
+  const where = {
+    userId: id,
+  };
+
+  const totalCount = await client.story.count({
+    where,
+  });
+
+  const stories = await client.story.findMany({
+    where,
+    take: 10,
+    skip: prevCursor ? 1 : 0,
+    ...(prevCursor && { cursor: { id: prevCursor } }),
+    orderBy: {
+      createdAt: "desc",
+    },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          photos: true,
+        },
+      },
+      records: {
+        select: {
+          id: true,
+          kind: true,
+          emotion: true,
+          userId: true,
+        },
+      },
+      comments: {
+        where: {
+          NOT: { content: "" },
+          AND: { depth: { gte: CommentMinimumDepth, lte: CommentMaximumDepth } },
+        },
+        select: {
+          id: true,
+        },
+      },
+    },
+  });
+
+  return {
+    totalCount,
+    stories,
+  };
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -42,10 +81,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as StoriesFilterEnum;
+    const filter = _filter.toString() as ProfileStoriesFilterEnum;
     const prevCursor = +_prevCursor.toString();
-    const pageSize = 10;
-    if (!isInstance(filter, StoriesFilterEnum)) {
+    if (!isInstance(filter, ProfileStoriesFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -64,115 +102,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       throw error;
     }
 
-    const whereByStory = {
-      userId: id,
-    };
-    const whereByComment = {
-      userId: id,
-      NOT: [{ content: "" }],
-      AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
-    };
-
     // fetch data
-    const totalCount =
-      filter === "story"
-        ? await client.story.count({
-            where: whereByStory,
-          })
-        : filter === "comment"
-        ? await client.storyComment.count({
-            where: whereByComment,
-          })
-        : 0;
-
-    const stories =
-      filter === "story"
-        ? await client.story.findMany({
-            where: whereByStory,
-            take: pageSize,
-            skip: prevCursor ? 1 : 0,
-            ...(prevCursor && { cursor: { id: prevCursor } }),
-            orderBy: {
-              createdAt: "desc",
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                },
-              },
-              records: {
-                where: {
-                  kind: Kind.StoryLike,
-                },
-                select: {
-                  id: true,
-                  kind: true,
-                  emotion: true,
-                  userId: true,
-                },
-              },
-              comments: {
-                where: {
-                  NOT: [{ content: "" }],
-                  AND: [{ depth: { gte: StoryCommentMinimumDepth, lte: StoryCommentMaximumDepth } }],
-                },
-                select: {
-                  id: true,
-                },
-              },
-            },
-          })
-        : [];
-
-    const comments =
-      filter === "comment"
-        ? await client.storyComment.findMany({
-            where: whereByComment,
-            take: pageSize,
-            skip: prevCursor ? 1 : 0,
-            ...(prevCursor && { cursor: { id: prevCursor } }),
-            orderBy: {
-              createdAt: "desc",
-            },
-            include: {
-              user: {
-                select: {
-                  id: true,
-                  name: true,
-                  avatar: true,
-                },
-              },
-              records: {
-                where: {
-                  kind: Kind.CommentLike,
-                },
-                select: {
-                  id: true,
-                  kind: true,
-                  userId: true,
-                },
-              },
-              story: {
-                select: {
-                  id: true,
-                  content: true,
-                  createdAt: true,
-                },
-              },
-            },
-          })
-        : [];
+    const { totalCount, stories } = await getProfilesDetailStories({ filter, id, prevCursor });
 
     // result
-    const result: GetProfilesStoriesResponse = {
+    const result: GetProfilesDetailStoriesResponse = {
       success: true,
       totalCount,
-      lastCursor: filter === "story" ? (stories.length ? stories[stories.length - 1].id : -1) : filter === "comment" ? (comments.length ? comments[comments.length - 1].id : -1) : -1,
+      lastCursor: stories.length ? stories[stories.length - 1].id : -1,
       stories,
-      comments,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

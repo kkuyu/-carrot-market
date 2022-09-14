@@ -1,15 +1,33 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { User, Manner, ProductReview } from "@prisma/client";
+import { User, Manner, Review, Concern } from "@prisma/client";
 // @libs
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
 export interface GetProfilesDetailResponse extends ResponseDataType {
-  profile: User & { _count?: { products: number } };
-  manners: (Manner & { reviews: Pick<ProductReview, "id" | "satisfaction">[] })[];
-  reviews: (ProductReview & { purchaseUser?: Pick<User, "id" | "name" | "avatar">; sellUser?: Pick<User, "id" | "name" | "avatar"> })[];
+  profile: User & { concerns?: Concern[]; _count?: { products: number } };
 }
+
+export const getProfilesDetail = async (query: { id: number }) => {
+  const { id } = query;
+
+  const profile = await client.user.findUnique({
+    where: {
+      id,
+    },
+    include: {
+      concerns: true,
+      _count: {
+        select: {
+          products: true,
+        },
+      },
+    },
+  });
+
+  return { profile };
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -31,86 +49,17 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const profile = await client.user.findUnique({
-      where: {
-        id,
-      },
-      include: {
-        _count: {
-          select: {
-            products: true,
-          },
-        },
-      },
-    });
+    const { profile } = await getProfilesDetail({ id });
     if (!profile) {
       const error = new Error("NotFoundProfile");
       error.name = "NotFoundProfile";
       throw error;
     }
 
-    // fetch manner
-    const manners = await client.manner.findMany({
-      where: {
-        userId: profile.id,
-        reviews: {
-          some: {
-            NOT: [{ satisfaction: "dislike" }],
-          },
-        },
-      },
-      include: {
-        reviews: {
-          select: {
-            id: true,
-            satisfaction: true,
-          },
-        },
-      },
-    });
-
-    // fetch product review
-    const reviews = await client.productReview.findMany({
-      take: 3,
-      orderBy: {
-        createdAt: "desc",
-      },
-      where: {
-        satisfaction: {
-          not: "dislike",
-        },
-        text: {
-          not: "",
-        },
-        OR: [
-          { role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } },
-          { role: "purchaseUser", sellUserId: id, product: { userId: { equals: id } } },
-        ],
-      },
-      include: {
-        purchaseUser: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-        sellUser: {
-          select: {
-            id: true,
-            name: true,
-            avatar: true,
-          },
-        },
-      },
-    });
-
     // result
     const result: GetProfilesDetailResponse = {
       success: true,
       profile,
-      manners: manners.sort((a, b) => b.reviews.length - a.reviews.length).splice(0, 3),
-      reviews,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -98,7 +98,7 @@ const ProductsReviewPage: NextPage = () => {
     <div className="">
       {/* 제품정보 */}
       {productData?.product && (
-        <div className="px-5 py-3 bg-gray-200">
+        <div className="px-5 py-3.5 bg-gray-200">
           <Link href={`/products/${productData?.product?.id}`}>
             <a className="block">
               <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />

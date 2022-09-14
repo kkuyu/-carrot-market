@@ -38,10 +38,12 @@ const CommentSummary = (props: CommentSummaryProps) => {
           <span>{`"${truncateStr(item?.story?.content, 10)}"에서 ${isMounted && timeState.diffStr ? timeState.diffStr : ""}`}</span>
         </div>
         <div className="flex">
-          <span className="inline-flex items-center">
-            <Icons name="HandThumbUp" className="w-4 h-4 text-gray-500" />
-            <span className="ml-1 text-sm text-gray-500">{commentCondition?.likes}</span>
-          </span>
+          {Boolean(commentCondition?.likes) && (
+            <span className="inline-flex items-center">
+              <Icons name="HandThumbUp" className="w-4 h-4 text-gray-500" />
+              <span className="ml-1 text-sm text-gray-500">{commentCondition?.likes}</span>
+            </span>
+          )}
         </div>
       </div>
     </div>

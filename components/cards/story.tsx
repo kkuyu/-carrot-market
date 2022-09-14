@@ -76,7 +76,7 @@ const Story = (props: StoryProps) => {
             {/* 공감하기 */}
             {storyCondition?.category?.isLikeWithEmotion && Boolean(storyCondition?.likes) && (
               <span className="inline-flex items-center">
-                <span className="w-5 h-5 text-sm">{storyCondition?.emoji}</span>
+                <span className="w-5 h-5 text-sm">{storyCondition?.emojis}</span>
                 <span className="ml-1 text-sm text-gray-500">{storyCondition?.likes}</span>
               </span>
             )}

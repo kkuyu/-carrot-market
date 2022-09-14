@@ -6,6 +6,7 @@ export const IconName = {
   ["CheckCircle"]: "CheckCircle",
   ["ChevronDown"]: "ChevronDown",
   ["ChevronLeft"]: "ChevronLeft",
+  ["ChevronRight"]: "ChevronRight",
   ["Cog8Tooth"]: "Cog8Tooth",
   ["EllipsisVertical"]: "EllipsisVertical",
   ["FaceSmile"]: "FaceSmile",

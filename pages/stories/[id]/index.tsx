@@ -165,7 +165,7 @@ const StoriesDetailPage: NextPage = () => {
         {/* 판매자 */}
         {storyData?.story?.user && (
           <Link href={`/profiles/${storyData?.story?.user?.id}`}>
-            <a className="block py-3">
+            <a className="block py-3.5">
               <Profiles user={storyData?.story?.user} emdPosNm={storyData?.story?.emdPosNm} diffTime={isMounted && timeState.diffStr ? timeState.diffStr : ""} size="sm" />
             </a>
           </Link>

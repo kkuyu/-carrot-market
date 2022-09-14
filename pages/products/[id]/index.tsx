@@ -151,7 +151,7 @@ const ProductsDetailPage: NextPage = () => {
           {/* 판매자 */}
           {productData?.product?.user && (
             <Link href={`/profiles/${productData?.product?.user?.id}`}>
-              <a className="block py-3">
+              <a className="block py-3.5">
                 <Profiles user={productData?.product?.user} emdPosNm={productData?.product?.emdPosNm} />
               </a>
             </Link>

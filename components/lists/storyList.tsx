@@ -20,7 +20,7 @@ const StoryList = (props: StoryListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`[&:not(.divide-y-2)]:divide-y ${className}`} {...restProps}>
+    <ul className={`[&:not(.divide-y-2)]:divide-y [&:not(.border-b-2)]:border-b ${className}`} {...restProps}>
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {

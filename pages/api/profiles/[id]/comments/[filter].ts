@@ -5,66 +5,58 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
+import { CommentMaximumDepth, CommentMinimumDepth } from "@api/comments/types";
 import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
 
-export type GetProfilesDetailReviewsResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "reviews">;
+export type GetProfilesDetailCommentsResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "comments">;
 
-export const ProfileReviewsFilterEnum = {
+export const ProfileCommentsFilterEnum = {
   ["all"]: "all",
-  ["preview"]: "preview",
-  ["purchaseUser"]: "purchaseUser",
-  ["sellUser"]: "sellUser",
 } as const;
 
-export type ProfileReviewsFilterEnum = typeof ProfileReviewsFilterEnum[keyof typeof ProfileReviewsFilterEnum];
+export type ProfileCommentsFilterEnum = typeof ProfileCommentsFilterEnum[keyof typeof ProfileCommentsFilterEnum];
 
-export const getProfilesDetailReviews = async (query: { filter: ProfileReviewsFilterEnum; id: number; prevCursor: number }) => {
+export const getProfilesDetailComments = async (query: { filter: ProfileCommentsFilterEnum; id: number; prevCursor: number }) => {
   const { filter, id, prevCursor } = query;
 
   const where = {
-    score: {
-      gt: 40,
-    },
-    description: {
-      not: "",
-    },
-    ...(filter === "all" || filter === "preview"
-      ? {
-          OR: [
-            { role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } },
-            { role: "purchaseUser", sellUserId: id, product: { userId: { equals: id } } },
-          ],
-        }
-      : {}),
-    ...(filter === "purchaseUser" ? { OR: [{ role: "purchaseUser", sellUserId: id, product: { userId: { equals: id } } }] } : {}),
-    ...(filter === "sellUser" ? { OR: [{ role: "sellUser", purchaseUserId: id, product: { userId: { not: id } } }] } : {}),
+    userId: id,
+    NOT: [{ content: "" }],
+    AND: [{ depth: { gte: CommentMinimumDepth, lte: CommentMaximumDepth } }],
   };
 
-  const totalCount = await client.review.count({
+  const totalCount = await client.storyComment.count({
     where,
   });
 
-  const reviews = await client.review.findMany({
+  const comments = await client.storyComment.findMany({
     where,
-    take: filter === "preview" ? 3 : 10,
+    take: 10,
     skip: prevCursor ? 1 : 0,
     ...(prevCursor && { cursor: { id: prevCursor } }),
     orderBy: {
       createdAt: "desc",
     },
     include: {
-      purchaseUser: {
+      user: {
         select: {
           id: true,
           name: true,
           photos: true,
         },
       },
-      sellUser: {
+      records: {
         select: {
           id: true,
-          name: true,
-          photos: true,
+          kind: true,
+          userId: true,
+        },
+      },
+      story: {
+        select: {
+          id: true,
+          content: true,
+          createdAt: true,
         },
       },
     },
@@ -72,7 +64,7 @@ export const getProfilesDetailReviews = async (query: { filter: ProfileReviewsFi
 
   return {
     totalCount,
-    reviews,
+    comments,
   };
 };
 
@@ -88,9 +80,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as ProfileReviewsFilterEnum;
+    const filter = _filter.toString() as ProfileCommentsFilterEnum;
     const prevCursor = +_prevCursor.toString();
-    if (!isInstance(filter, ProfileReviewsFilterEnum)) {
+    if (!isInstance(filter, ProfileCommentsFilterEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -110,14 +102,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, reviews } = await getProfilesDetailReviews({ filter, id, prevCursor });
+    const { totalCount, comments } = await getProfilesDetailComments({ filter, id, prevCursor });
 
     // result
-    const result: GetProfilesDetailReviewsResponse = {
+    const result: GetProfilesDetailCommentsResponse = {
       success: true,
       totalCount,
-      lastCursor: reviews.length ? reviews[reviews.length - 1].id : -1,
-      reviews: reviews.map((review) => ({ ...review, score: 0, productId: 0 })),
+      lastCursor: comments.length ? comments[comments.length - 1].id : -1,
+      comments,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -14,16 +14,16 @@ interface ProductListProps extends HTMLAttributes<HTMLUListElement> {
 }
 
 const ProductList = (props: ProductListProps) => {
-  const { list, children = [], cardProps = {}, className = "", ...restProps } = props;
+  const { list, children = null, cardProps = {}, className = "", ...restProps } = props;
 
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`[&:not(.divide-y-2)]:divide-y ${className}`} {...restProps}>
+    <ul className={`[&:not(.divide-y-2)]:divide-y [&:not(.border-b-2)]:border-b ${className}`} {...restProps}>
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {
-            if (child.key === "LikeProduct") return cloneElement(child as ReactElement<LikeProductProps>, { item });
+            if (child.key === "LikeProduct") return cloneElement(child as ReactElement<LikeProductProps>, { item, className: "absolute top-3 right-3 p-2" });
             if (child.key === "FeedbackProduct") return <div className="px-5">{cloneElement(child as ReactElement<FeedbackProductProps>, { item })}</div>;
             if (child.key === "HandleProduct") return cloneElement(child as ReactElement<HandleProductProps>, { item });
           }
@@ -32,7 +32,7 @@ const ProductList = (props: ProductListProps) => {
         return (
           <li key={item?.id} className="relative">
             <Link href={`/products/${item?.id}`}>
-              <a className="block px-5 py-3">
+              <a className="block px-5 py-3.5">
                 <Product item={item} {...cardProps} />
               </a>
             </Link>

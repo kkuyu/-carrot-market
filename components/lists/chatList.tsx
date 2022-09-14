@@ -4,6 +4,7 @@ import type { HTMLAttributes } from "react";
 import useUser from "@libs/client/useUser";
 // @components
 import Chat, { ChatItem, ChatProps } from "@components/cards/chat";
+import Icons from "@components/icons";
 
 interface ChatListProps extends HTMLAttributes<HTMLUListElement> {
   list: ChatItem[];
@@ -31,11 +32,12 @@ const ChatList = (props: ChatListProps) => {
             <li key={users.map((user) => user.id).join("-")}>
               {!selectItem ? (
                 <Link href={`/chats/${item.id}`}>
-                  <a className="block px-5 py-3">{chat}</a>
+                  <a className="block px-5 py-3.5">{chat}</a>
                 </Link>
               ) : (
-                <button type="button" className="block-arrow py-3" onClick={() => selectItem(item, users)}>
+                <button type="button" className="block relative w-full py-3.5 pl-5 pr-12" onClick={() => selectItem(item, users)}>
                   {chat}
+                  <Icons name="ChevronRight" className="absolute top-1/2 right-4 w-5 h-5 -translate-y-1/2 text-gray-500" />
                 </button>
               )}
             </li>

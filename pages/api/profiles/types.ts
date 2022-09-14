@@ -1,51 +1,44 @@
-export const ProfilesConcernEnum = {
-  ["운동"]: "sports",
-  ["스터디"]: "study",
-  ["가족/육아"]: "family",
-  ["동네친구"]: "friend",
-  ["공예/만들기"]: "craft",
-  ["반려동물"]: "companion-animal",
-  ["게임"]: "game",
-  ["음악"]: "music",
-  ["영화"]: "movie",
-  ["음식"]: "food",
-  ["문화/예술"]: "culture/art",
-  ["여행"]: "travel",
-  ["사진/영상"]: "picture/video",
-  ["독서"]: "reading",
-  ["패션"]: "fashion",
-  ["테크"]: "tech",
-  ["차/오토바이"]: "car/motorcycle",
-  ["투자/금융"]: "investment/finance",
-  ["봉사활동"]: "volunteering",
-  ["뷰티/미용"]: "beauty/cosmetology",
-  ["식물"]: "plant",
-  ["인테리어"]: "interior",
-} as const;
+import { ConcernValue } from "@prisma/client";
+// @api
+import { ProfileProductsFilterEnum } from "@api/profiles/[id]/products/[filter]";
+import { ProfileStoriesFilterEnum } from "@api/profiles/[id]/stories/[filter]";
+import { ProfileCommentsFilterEnum } from "@api/profiles/[id]/comments/[filter]";
+import { ProfileReviewsFilterEnum } from "@api/profiles/[id]/reviews/[filter]";
+import { ProfileMannersFilterEnum } from "@api/profiles/[id]/manners/[filter]";
 
-export type ProfilesConcernEnum = typeof ProfilesConcernEnum[keyof typeof ProfilesConcernEnum];
+export const ProfilePhotoOptions = {
+  maxLength: 5,
+  duplicateDelete: true,
+  acceptTypes: ["image/jpeg", "image/png", "image/gif"],
+};
 
-export const ProfilesConcern: { text: keyof typeof ProfilesConcernEnum; value: ProfilesConcernEnum; emoji: string }[] = [
-  { text: "운동", value: "sports", emoji: "👟" },
-  { text: "스터디", value: "study", emoji: "📚" },
-  { text: "가족/육아", value: "family", emoji: "🍼" },
-  { text: "동네친구", value: "friend", emoji: "🌟" },
-  { text: "공예/만들기", value: "craft", emoji: "🧶" },
-  { text: "반려동물", value: "companion-animal", emoji: "🐾" },
-  { text: "게임", value: "game", emoji: "🎮" },
-  { text: "음악", value: "music", emoji: "🎹" },
-  { text: "영화", value: "movie", emoji: "🎥" },
-  { text: "음식", value: "food", emoji: "🍽️" },
-  { text: "문화/예술", value: "culture/art", emoji: "🖼️" },
-  { text: "여행", value: "travel", emoji: "✈️" },
-  { text: "사진/영상", value: "picture/video", emoji: "📷" },
-  { text: "독서", value: "reading", emoji: "📙" },
-  { text: "패션", value: "fashion", emoji: "👓" },
-  { text: "테크", value: "tech", emoji: "💻" },
-  { text: "차/오토바이", value: "car/motorcycle", emoji: "🚙" },
-  { text: "투자/금융", value: "investment/finance", emoji: "📈" },
-  { text: "봉사활동", value: "volunteering", emoji: "🙌" },
-  { text: "뷰티/미용", value: "beauty/cosmetology", emoji: "🧼" },
-  { text: "식물", value: "plant", emoji: "🌱" },
-  { text: "인테리어", value: "interior", emoji: "🛏️" },
+export type ProfileConcerns = {
+  value: ConcernValue;
+  text: string;
+  emoji: string;
+}[];
+
+export const ProfileConcerns = [
+  { value: ConcernValue.SPORTS, text: "운동", emoji: "👟" },
+  { value: ConcernValue.STUDY, text: "스터디", emoji: "📚" },
+  { value: ConcernValue.FAMILY_AND_PARENTING, text: "가족/육아", emoji: "🍼" },
+  { value: ConcernValue.FRIEND, text: "동네친구", emoji: "🌟" },
+  { value: ConcernValue.CRAFT, text: "공예/만들기", emoji: "🧶" },
+  { value: ConcernValue.COMPANION_ANIMAL, text: "반려동물", emoji: "🐾" },
+  { value: ConcernValue.GAME, text: "게임", emoji: "🎮" },
+  { value: ConcernValue.MUSIC, text: "음악", emoji: "🎹" },
+  { value: ConcernValue.MOVIE, text: "영화", emoji: "🎥" },
+  { value: ConcernValue.FOOD, text: "음식", emoji: "🍽️" },
+  { value: ConcernValue.CULTURE_AND_ART, text: "문화/예술", emoji: "🖼️" },
+  { value: ConcernValue.TRAVEL, text: "여행", emoji: "✈️" },
+  { value: ConcernValue.PICTURE_AND_VIDEO, text: "사진/영상", emoji: "📷" },
+  { value: ConcernValue.READING, text: "독서", emoji: "📙" },
+  { value: ConcernValue.FASHION, text: "패션", emoji: "👓" },
+  { value: ConcernValue.TECH, text: "테크", emoji: "💻" },
+  { value: ConcernValue.CAR_AND_MOTORCYCLE, text: "차/오토바이", emoji: "🚙" },
+  { value: ConcernValue.INVESTMENT_AND_FINANCE, text: "투자/금융", emoji: "📈" },
+  { value: ConcernValue.VOLUNTEERING, text: "봉사활동", emoji: "🙌" },
+  { value: ConcernValue.BEAUTY_AND_COSMETOLOGY, text: "뷰티/미용", emoji: "🧼" },
+  { value: ConcernValue.PLANT, text: "식물", emoji: "🌱" },
+  { value: ConcernValue.INTERIOR, text: "인테리어", emoji: "🛏️" },
 ];

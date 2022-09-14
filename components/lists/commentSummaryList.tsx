@@ -14,12 +14,12 @@ const CommentSummaryList = (props: CommentSummaryListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`divide-y-4 ${className}`} {...restProps}>
+    <ul className={`[&:not(.divide-y-2)]:divide-y ${className}`} {...restProps}>
       {list?.map((item) => {
         return (
           <li key={item.id} className="relative">
             <Link href={`/stories/${item?.story?.id}`}>
-              <a className="block px-5 py-3">
+              <a className="block px-5 py-3.5">
                 <CommentSummary item={item} {...cardProps} />
               </a>
             </Link>

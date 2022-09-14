@@ -1,16 +1,14 @@
 import type { HTMLAttributes } from "react";
-// @libs
-import { getReviewManners } from "@libs/utils";
 // @api
-import { GetProfilesDetailResponse } from "@api/profiles/[id]";
-import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners";
+import { ProductMannerValues } from "@api/products/reviews/types";
+import { GetProfilesDetailMannersResponse } from "@api/profiles/[id]/manners/[filter]";
 // @components
 import Icons from "@components/icons";
 
-type MannerListItem = GetProfilesMannersResponse["manners"][number] | GetProfilesDetailResponse["manners"][number];
+type MannerItem = GetProfilesDetailMannersResponse["manners"][number];
 
 interface MannerListProps extends HTMLAttributes<HTMLUListElement> {
-  list: MannerListItem[];
+  list: MannerItem[];
 }
 
 const MannerList = (props: MannerListProps) => {
@@ -19,18 +17,19 @@ const MannerList = (props: MannerListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`space-y-1 ${className}`} {...restProps}>
+    <ul className={`${className}`} {...restProps}>
       {list.map((item) => {
-        const manner = getReviewManners(item.value);
-        const count = item?.reviews?.length;
+        const manner = ProductMannerValues.find((manner) => manner.value === item.value);
         if (!manner) return null;
-        if (count === 0) return null;
+        if (item._count.reviews === 0) return null;
         return (
           <li key={item.id}>
-            <div className="flex items-start">
-              <span className="grow-full pr-2">{manner.text}</span>
-              <Icons name="ChatBubbleLeftRight" className="flex-none w-5 h-5" />
-              <span className="px-2 font-semibold">{count}</span>
+            <div className="flex items-start py-1 space-x-2">
+              <strong className="grow-full font-normal">{manner.text}</strong>
+              <span className="inline-flex items-center space-x-1">
+                <Icons name="ChatBubbleLeftRight" className="flex-none w-4 h-4" />
+                <em className="font-semibold not-italic">{item._count.reviews}</em>
+              </span>
             </div>
           </li>
         );

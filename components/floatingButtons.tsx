@@ -36,8 +36,8 @@ const FloatingButtons = (props: FloatingButtonsProps) => {
   };
 
   return (
-    <div className="fixed-container bottom-0 pointer-events-none">
-      <div className="fixed-inner flex justify-end -translate-x-2 -translate-y-16">
+    <div className="fixed-container bottom-14 pointer-events-none">
+      <div className="fixed-inner flex justify-end -translate-x-3 -translate-y-3">
         <CustomIconButton
           pathname={userType === "member" ? (router.pathname === "/" ? "/products/upload" : router.pathname === "/stories" ? "/stories/upload" : null) : null}
           onClick={() => openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {})}

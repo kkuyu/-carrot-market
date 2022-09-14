@@ -1,21 +1,14 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { Chat, Kind, Product, Record, Review, User } from "@prisma/client";
+import { Kind } from "@prisma/client";
 // @libs
 import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
+// @api
+import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
 
-export interface GetProfilesDetailProductsResponse extends ResponseDataType {
-  totalCount: number;
-  lastCursor: number;
-  products: (Product & {
-    user?: Pick<User, "id" | "name" | "photos">;
-    records?: Pick<Record, "id" | "kind" | "userId">[];
-    chats?: (Chat & { _count: { chatMessages: number } })[];
-    reviews?: Pick<Review, "id" | "role" | "sellUserId" | "purchaseUserId">[];
-  })[];
-}
+export type GetProfilesDetailProductsResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "products">;
 
 export const ProfileProductsFilterEnum = {
   ["all"]: "all",

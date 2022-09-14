@@ -95,7 +95,7 @@ const CommentsDetailPage: NextPage = () => {
 
       {comment?.story && (
         <Link href={`/stories/${comment.story.id}`}>
-          <a className="block px-5 py-3 bg-gray-200">
+          <a className="block px-5 py-3.5 bg-gray-200">
             <StorySummary item={comment?.story} />
           </a>
         </Link>

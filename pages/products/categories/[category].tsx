@@ -58,7 +58,7 @@ const ProductsCategoryDetailPage: NextPage = () => {
       {/* 카테고리: List */}
       {products && Boolean(products.length) && (
         <>
-          <ProductList list={products} className="-mx-5 border-b" />
+          <ProductList list={products} className="-mx-5" />
           <span className="empty:hidden list-loading">{isReachingEnd ? `${category?.text} 상품을 모두 확인하였어요` : isLoading ? `${category?.text} 상품을 불러오고있어요` : null}</span>
         </>
       )}

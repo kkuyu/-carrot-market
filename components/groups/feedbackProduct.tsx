@@ -52,14 +52,23 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
-        <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`basis-full py-2 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
+        <Buttons
+          tag="button"
+          type="button"
+          sort="text-link"
+          size="sm"
+          status="unset"
+          onClick={onClick}
+          className={`basis-full py-1.5 font-semibold text-center ${buttonClassName}`}
+          {...buttonRestProps}
+        >
           {children}
         </Buttons>
       );
     }
     return (
       <Link href={pathname} passHref>
-        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`basis-full py-2 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
+        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`basis-full py-1.5 font-semibold text-center ${buttonClassName}`} {...buttonRestProps}>
           {children}
         </Buttons>
       </Link>
@@ -67,7 +76,7 @@ const FeedbackProduct = (props: FeedbackProductProps) => {
   };
 
   return (
-    <div className={`empty:pt-9 flex border-t ${className}`} {...restProps}>
+    <div className={`empty:pt-8 flex border-t ${className}`} {...restProps}>
       {productData?.product && productData?.productCondition?.isSale && (
         <>
           <CustomFeedbackButton onClick={() => router.push(`/products/${productData?.product?.id}/resume`)} disabled={loadingProductSale}>

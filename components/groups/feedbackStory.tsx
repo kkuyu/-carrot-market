@@ -71,14 +71,14 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...buttonRestProps } = buttonProps;
     if (!pathname) {
       return (
-        <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`inline-flex items-center py-2 ${buttonClassName}`} {...buttonRestProps}>
+        <Buttons tag="button" type="button" sort="text-link" size="sm" status="unset" onClick={onClick} className={`inline-flex items-center py-1.5 ${buttonClassName}`} {...buttonRestProps}>
           {children}
         </Buttons>
       );
     }
     return (
       <Link href={pathname} passHref>
-        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`inline-flex items-center py-2 ${buttonClassName}`} {...buttonRestProps}>
+        <Buttons tag="a" sort="text-link" size="sm" status="unset" className={`inline-flex items-center py-1.5 ${buttonClassName}`} {...buttonRestProps}>
           {children}
         </Buttons>
       </Link>
@@ -86,7 +86,7 @@ const FeedbackStory = (props: FeedbackStoryProps) => {
   };
 
   return (
-    <div className={`empty:pt-9 relative flex border-t ${className}`} {...restProps}>
+    <div className={`empty:pt-8 relative flex border-t ${className}`} {...restProps}>
       {/* 궁금해요: button */}
       {storyData?.storyCondition && !storyData?.storyCondition?.category?.isLikeWithEmotion && (
         <CustomFeedbackButton

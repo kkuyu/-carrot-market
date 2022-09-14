@@ -105,7 +105,7 @@ const ProductsPurchasePage: NextPage = () => {
       {/* 제품정보 */}
       {productData?.product && currentType.filter === "available" && (
         <Link href={`/products/${productData?.product.id}`}>
-          <a className="block px-5 py-3 bg-gray-200">
+          <a className="block px-5 py-3.5 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
           </a>
         </Link>
