@@ -2,7 +2,7 @@ import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
 import NextError from "next/error";
-import { useEffect, Fragment } from "react";
+import { useEffect, Fragment, useMemo } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
@@ -11,9 +11,9 @@ import useUser from "@libs/client/useUser";
 import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
-import { UserModelsEnum, UsersDetailModels } from "@api/user/types";
 import { GetUserResponse, getUser } from "@api/user";
-import { GetUserDetailProductsResponse, UserProductsFilterEnum, getUserDetailProducts } from "@api/user/products/[filter]";
+import { GetUserDetailModelsResponse, UserModelsEnum, UserModelsEnums, UserDetailContents } from "@api/user/[models]/[filter]";
+import { UserProductsFilterEnum, getUserDetailProducts } from "@api/user/products/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -22,14 +22,12 @@ import FeedbackProduct from "@components/groups/feedbackProduct";
 import ProductList from "@components/lists/productList";
 import LikeProduct from "@components/groups/likeProduct";
 
-type GetUserDetailModelsResponse = GetUserDetailProductsResponse;
-
 const UserDetailModelsPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
 
   // variable data: invisible
-  const modelTypes: { key: string; isInfinite: boolean; models: UserModelsEnum; filter: UsersDetailModels[keyof UsersDetailModels]; caption: string; tabName: string }[] = [
+  const modelTypes: { key: string; isInfinite: boolean; models: UserModelsEnum; filter: UserModelsEnums[keyof UserModelsEnums]; caption: string; tabName: string }[] = [
     { key: "purchase", isInfinite: true, models: "products", filter: "purchase", caption: "구매내역", tabName: "구매내역" },
     { key: "like", isInfinite: true, models: "products", filter: "like", caption: "관심목록", tabName: "관심목록" },
   ];
@@ -45,7 +43,15 @@ const UserDetailModelsPage: NextPage = () => {
   const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const contents = data ? data.flatMap((item) => item?.[currentType.models]) : null;
+  const contents = useMemo(() => {
+    if (!data) return {} as UserDetailContents;
+    return data.reduce((acc, cur) => {
+      Object.entries(cur)
+        .filter(([key, values]) => Array.isArray(values) && values.length)
+        .forEach(([key, values]) => (acc[key as UserModelsEnum] = [...(acc?.[key as UserModelsEnum] || []), ...values]));
+      return acc;
+    }, {} as UserDetailContents);
+  }, [data]);
 
   // update: infinite list
   useEffect(() => {
@@ -85,10 +91,10 @@ const UserDetailModelsPage: NextPage = () => {
         <h2 className="sr-only">나의 {currentType.caption}</h2>
 
         {/* Models: List */}
-        {contents && Boolean(contents.length) && currentType.isInfinite && (
+        {currentType.isInfinite && Boolean(contents?.[currentType.models]?.length) && (
           <>
             {currentType.models === "products" && (
-              <ProductList list={contents} className={`-mx-5 ${currentType.filter === "purchase" ? "border-b-2 divide-y-2" : ""}`}>
+              <ProductList list={contents?.products || []} className={`-mx-5 ${currentType.filter === "purchase" ? "border-b-2 divide-y-2" : ""}`}>
                 {currentType.filter === "like" ? <LikeProduct key="LikeProduct" /> : <></>}
                 {currentType.filter === "purchase" ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
               </ProductList>
@@ -100,7 +106,7 @@ const UserDetailModelsPage: NextPage = () => {
         )}
 
         {/* Models: Empty */}
-        {contents && !Boolean(contents.length) && currentType.isInfinite && (
+        {currentType.isInfinite && !Boolean(contents?.[currentType.models]?.length) && (
           <p className="list-empty">
             <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
           </p>
@@ -141,7 +147,7 @@ Page.getLayout = getLayout;
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // params
   const models = (params?.models?.toString() as UserModelsEnum) || "";
-  const filter = (params?.filter?.toString() as UsersDetailModels[keyof UsersDetailModels]) || "";
+  const filter = (params?.filter?.toString() as UserModelsEnums[keyof UserModelsEnums]) || "";
   const profileId = params?.id?.toString() || "";
 
   // invalidModels
@@ -152,11 +158,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   }
 
   // invalidFilter
-  if (!filter || !isInstance(filter, UsersDetailModels?.[models] || {})) {
+  if (!filter || !isInstance(filter, UserModelsEnums?.[models] || {})) {
     return {
       redirect: {
         permanent: false,
-        destination: `/user/${profileId}/${models}/${Object.keys(UsersDetailModels?.[models])?.[0]}`,
+        destination: `/user/${profileId}/${models}/${Object.keys(UserModelsEnums?.[models])?.[0]}`,
       },
     };
   }
@@ -179,7 +185,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const userDetailProducts =
     ssrUser?.profile?.id && !isNaN(+ssrUser?.profile?.id)
       ? await getUserDetailProducts({
-          filter: filter as Extract<UsersDetailModels[keyof UsersDetailModels], UserProductsFilterEnum>,
+          filter: filter as Extract<UserModelsEnums[keyof UserModelsEnums], UserProductsFilterEnum>,
           prevCursor: 0,
           userId: ssrUser?.profile?.id,
         })

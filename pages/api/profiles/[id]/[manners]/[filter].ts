@@ -1,6 +1,7 @@
 import { Chat, Manner, Product, Record, Review, Story, StoryComment, User } from "@prisma/client";
 // @libs
 import { ResponseDataType } from "@libs/server/withHandler";
+// @api
 import { ProfileProductsFilterEnum } from "@api/profiles/[id]/products/[filter]";
 import { ProfileStoriesFilterEnum } from "@api/profiles/[id]/stories/[filter]";
 import { ProfileCommentsFilterEnum } from "@api/profiles/[id]/comments/[filter]";

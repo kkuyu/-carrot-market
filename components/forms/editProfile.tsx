@@ -1,11 +1,12 @@
 import Link from "next/link";
 import type { HTMLAttributes } from "react";
 import { UseFormReturn } from "react-hook-form";
+import { ConcernValue } from "@prisma/client";
 // @libs
 import { getRandomName } from "@libs/utils";
-import useUser from "@libs/client/useUser";
+import type { UserProfile } from "@libs/client/useUser";
 // @api
-import { ProfilesConcernEnum, ProfilesConcern } from "@api/profiles/types";
+import { ProfilePhotoOptions, ProfileConcerns } from "@api/profiles/types";
 // @components
 import Labels from "@components/labels";
 import Files from "@components/files";
@@ -14,9 +15,10 @@ import Inputs from "@components/inputs";
 import Icons from "@components/icons";
 
 export interface EditProfileTypes {
-  photos?: FileList;
+  originalPhotoPaths: string;
+  currentPhotoFiles: FileList;
   name: string;
-  concerns?: ProfilesConcernEnum[];
+  concerns?: ConcernValue[];
 }
 
 interface EditProfileProps extends HTMLAttributes<HTMLFormElement> {
@@ -25,42 +27,27 @@ interface EditProfileProps extends HTMLAttributes<HTMLFormElement> {
   onValid: (validForm: EditProfileTypes) => void;
   isSuccess?: boolean;
   isLoading?: boolean;
+  userType: UserProfile["type"];
 }
 
 const EditProfile = (props: EditProfileProps) => {
-  const { formId, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
-  const { register, handleSubmit, formState, watch, setValue } = formData;
-  const { type: userType } = useUser();
-
-  const fileOptions = {
-    maxLength: 10,
-    duplicateDelete: true,
-    acceptTypes: ["image/jpeg", "image/png", "image/gif"],
-  };
-
-  const makeRandomName = () => {
-    const name = getRandomName();
-    setValue("name", name);
-  };
+  const { formId, formData, onValid, isSuccess, isLoading, userType, className = "", ...restProps } = props;
+  const { register, handleSubmit, formState, getValues, setValue } = formData;
 
   return (
     <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
-      {userType !== "member" && (
-        <p className="text-notice">
-          프로필 사진 및 관심사 설정은
-          <Link href="/account/phone" passHref>
-            <Buttons tag="a" sort="text-link" status="default" className="align-top">
-              휴대폰 인증
-            </Buttons>
-          </Link>
-          후 이용 가능합니다.
-        </p>
-      )}
       {/* 이미지 업로드 */}
       {userType === "member" && (
         <div className="space-y-1">
-          <Files register={register("photos")} name="photos" fileOptions={fileOptions} currentFiles={watch("photos")} changeFiles={(value) => setValue("photos", value)} accept="image/*" />
-          <span className="empty:hidden invalid">{formState.errors.photos?.message}</span>
+          <Files
+            register={register("currentPhotoFiles")}
+            name="currentPhotoFiles"
+            fileOptions={ProfilePhotoOptions}
+            initialValue={getValues("originalPhotoPaths")}
+            updateValue={(value) => setValue("currentPhotoFiles", value)}
+            accept="image/*"
+          />
+          <span className="empty:hidden invalid">{formState.errors.currentPhotoFiles?.message}</span>
         </div>
       )}
       {/* 닉네임 */}
@@ -77,7 +64,18 @@ const EditProfile = (props: EditProfileProps) => {
           name="name"
           type="text"
           appendButtons={
-            <Buttons tag="button" type="button" sort="icon-block" size="sm" status="default" onClick={makeRandomName} aria-label="랜덤 닉네임 만들기">
+            <Buttons
+              tag="button"
+              type="button"
+              sort="icon-block"
+              size="sm"
+              status="default"
+              onClick={() => {
+                const name = getRandomName();
+                setValue("name", name);
+              }}
+              aria-label="랜덤 닉네임 만들기"
+            >
               <Icons name="Sparkles" strokeWidth={1.5} className="w-6 h-6" />
             </Buttons>
           }
@@ -87,19 +85,33 @@ const EditProfile = (props: EditProfileProps) => {
       {/* 관심사 */}
       {userType === "member" && (
         <div className="space-y-1">
-          <Labels text="관심사" htmlFor="concerns" />
-          <div>
-            <p className="text-gray-500">나의 관심사를 선택해 보세요.</p>
-            {ProfilesConcern.map((concern) => (
+          <Labels tag="span" text="관심사" htmlFor="concerns" />
+          <p className="text-gray-500">나의 관심사를 선택해 보세요.</p>
+          <div className="flex flex-wrap gap-2">
+            {ProfileConcerns.map((concern) => (
               <span key={concern.value}>
                 <input {...register("concerns")} type="checkbox" id={concern.value} value={concern.value} className="peer sr-only" />
-                <label htmlFor={concern.value} className="inline-block mt-2 mr-2 px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-gray-600 peer-checked:border-gray-600">
+                <label htmlFor={concern.value} className="block px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-gray-600 peer-checked:border-gray-600">
                   {concern.emoji} {concern.text}
                 </label>
               </span>
             ))}
           </div>
           <span className="empty:hidden invalid">{formState.errors.concerns?.message}</span>
+        </div>
+      )}
+      {/* 안내 */}
+      {userType !== "member" && (
+        <div className="text-center">
+          <p className="inline-block text-notice opacity-60">
+            프로필 사진 및 관심사 설정은
+            <Link href="/account/phone" passHref>
+              <Buttons tag="a" sort="text-link" status="default">
+                휴대폰 인증
+              </Buttons>
+            </Link>
+            후 이용 가능합니다.
+          </p>
         </div>
       )}
       {/* 완료 */}

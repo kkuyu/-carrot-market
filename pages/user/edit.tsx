@@ -1,19 +1,18 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
+import NextError from "next/error";
 import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
-import { SWRConfig } from "swr";
+import useSWR, { SWRConfig } from "swr";
 // @libs
-import { convertPhotoToFile } from "@libs/utils";
+import { validateFiles, submitFiles } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse, PostUserResponse } from "@api/user";
+import { ProfilePhotoOptions } from "@api/profiles/types";
+import { GetUserResponse, PostUserResponse, getUser } from "@api/user";
 import { PostDummyResponse } from "@api/user/dummy";
-import { GetFileResponse, ImageDeliveryResponse } from "@api/files";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -23,140 +22,65 @@ import EditProfile, { EditProfileTypes } from "@components/forms/editProfile";
 const UserEditPage: NextPage = () => {
   const router = useRouter();
   const { user, type: userType, mutate: mutateUser } = useUser();
-  const { changeLayout } = useLayouts();
 
-  const formData = useForm<EditProfileTypes>({
-    defaultValues: {
-      name: user?.name,
-      concerns: !user?.concerns ? [] : (user.concerns.split(";") as EditProfileTypes["concerns"]),
-    },
-  });
+  // variable: invisible
+  const [isLoading, setIsLoading] = useState(false);
 
-  const [photoLoading, setPhotoLoading] = useState(true);
-  const [updateUser, { loading: updateUserLoading }] = useMutation<PostUserResponse>(`/api/user`, {
-    onSuccess: async (data) => {
-      await mutateUser();
-      router.replace(`/profiles/${user?.id}`);
-    },
-    onError: (data) => {
-      setPhotoLoading(false);
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-  const [updateDummy, { loading: updateDummyLoading }] = useMutation<PostDummyResponse>("/api/user/dummy", {
+  // mutation data
+  const [updateUser, { loading: loadingUser }] = useMutation<PostUserResponse | PostDummyResponse>(userType === "member" ? "/api/user" : "/api/user/dummy", {
     onSuccess: async () => {
       await mutateUser();
-      router.replace(`/user`);
+      await router.replace(`/user`);
     },
-    onError: (data) => {
-      setPhotoLoading(false);
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          break;
-      }
+    onCompleted: () => {
+      setIsLoading(false);
     },
   });
 
-  const setDefaultPhotos = async () => {
-    if (!user?.avatar) {
-      setPhotoLoading(false);
-      return;
-    }
+  // variable: visible
+  const formData = useForm<EditProfileTypes>({
+    defaultValues: {
+      originalPhotoPaths: user?.photos,
+      name: user?.name,
+      concerns: !user?.concerns ? [] : user?.concerns?.map((concern) => concern.value),
+    },
+  });
 
-    const transfer = new DataTransfer();
-    const photos = user?.avatar?.length ? user?.avatar?.split(";") : [];
-    for (let index = 0; index < photos.length; index++) {
-      const file = await convertPhotoToFile(photos[index]);
-      if (file !== null) transfer.items.add(file);
-    }
-
-    formData.setValue("photos", transfer.files);
-    setPhotoLoading(false);
-  };
-
-  const submitUser = async ({ photos: _photos, ...data }: EditProfileTypes) => {
-    if (!user || updateUserLoading || updateDummyLoading || photoLoading) return;
-
-    if (userType !== "member") {
-      updateDummy({ ...data });
-      return;
-    }
-
-    if (!_photos?.length) {
-      updateUser({ ...data, photos: [] });
-      return;
-    }
-
-    let photos = [];
-    setPhotoLoading(true);
-    for (let index = 0; index < _photos.length; index++) {
-      // same photo
-      if (user?.avatar && user.avatar.includes(_photos[index].name)) {
-        photos.push(_photos[index].name);
-        continue;
-      }
-      // new photo
-      const form = new FormData();
-      form.append("file", _photos[index], `${user?.id}-${index}-${_photos[index].name}`);
-      // get cloudflare file data
-      const fileResponse: GetFileResponse = await (await fetch("/api/files")).json();
-      if (!fileResponse.success) {
-        const error = new Error("GetFileError");
-        error.name = "GetFileError";
-        console.error(error);
-        return;
-      }
-      // upload image delivery
-      const imageResponse: ImageDeliveryResponse = await (await fetch(fileResponse.uploadURL, { method: "POST", body: form })).json();
-      if (!imageResponse.success) {
-        const error = new Error("UploadFileError");
-        error.name = "UploadFileError";
-        console.error(error);
-        return;
-      }
-      photos.push(imageResponse.result.id);
-    }
-    updateUser({ ...data, photos });
+  // update: User
+  const submitUser = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProfileTypes) => {
+    if (!user || loadingUser || isLoading) return;
+    setIsLoading(true);
+    const { validFiles } = validateFiles(currentPhotoFiles, ProfilePhotoOptions);
+    const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
+    updateUser({ ...data, photos: validPaths });
   };
 
   useEffect(() => {
     if (!user) return;
-    setPhotoLoading(true);
+    formData.setValue("originalPhotoPaths", user?.photos);
     formData.setValue("name", user?.name);
-    formData.setValue("concerns", !user?.concerns ? [] : (user.concerns.split(";") as EditProfileTypes["concerns"]));
-    setDefaultPhotos();
+    formData.setValue("concerns", !user?.concerns ? [] : user?.concerns?.map((concern) => concern.value));
   }, [user]);
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {
-        submitId: "edit-profile",
-      },
-      navBar: {},
-    });
-  }, []);
+  if (!user) {
+    return <NextError statusCode={500} />;
+  }
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProfile formId="edit-profile" formData={formData} onValid={submitUser} isLoading={(userType === "member" ? updateUserLoading : updateDummyLoading) || photoLoading} />
+      <EditProfile formId="edit-profile" formData={formData} onValid={submitUser} isLoading={loadingUser || isLoading} userType={userType} />
     </div>
   );
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
 }> = ({ getUser }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
         },
       }}
     >
@@ -167,9 +91,9 @@ const Page: NextPageWithLayout<{
 
 Page.getLayout = getLayout;
 
-export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // defaultLayout
   const defaultLayout = {
@@ -180,6 +104,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "프로필 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
+      submitId: "edit-profile",
     },
     navBar: {
       utils: [],
@@ -190,6 +115,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
     },

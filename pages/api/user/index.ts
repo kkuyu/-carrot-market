@@ -1,5 +1,5 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { EmdType, User } from "@prisma/client";
+import { EmdType, User, Concern, ConcernValue } from "@prisma/client";
 // @libs
 import { getAbsoluteUrl, isInstance } from "@libs/utils";
 import client from "@libs/server/client";
@@ -9,7 +9,7 @@ import { withSessionRoute, IronUserType, IronDummyUserType } from "@libs/server/
 import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
 
 export interface GetUserResponse extends ResponseDataType {
-  profile: User | null;
+  profile: (User & { concerns: Concern[] }) | null;
   dummyProfile: IronDummyUserType | null;
   currentAddr: {
     emdAddrNm: string | null;
@@ -37,6 +37,9 @@ export const getUser = async (query: { user?: IronUserType; dummyUser?: IronDumm
     ? await client.user.findUnique({
         where: {
           id: user.id,
+        },
+        include: {
+          concerns: true,
         },
       })
     : null;
@@ -95,7 +98,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
   if (req.method === "POST") {
     try {
       const { user } = req.session;
-      const { email, phone, name, photos, concerns, emdType, mainAddrNm, mainDistance, subAddrNm, subDistance } = req.body;
+      const { email, phone, name, photos, emdType, mainAddrNm, mainDistance, subAddrNm, subDistance, concerns: _concerns } = req.body;
 
       // invalid
       if (JSON.stringify(req.body) === JSON.stringify({})) {
@@ -108,12 +111,12 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (concerns && !Array.isArray(concerns)) {
+      if (emdType && !isInstance(emdType, EmdType)) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
       }
-      if (emdType && !isInstance(emdType, EmdType)) {
+      if (_concerns && !Array.isArray(_concerns) && _concerns?.find((concern: string) => isInstance(concern, ConcernValue))) {
         const error = new Error("InvalidRequestBody");
         error.name = "InvalidRequestBody";
         throw error;
@@ -124,6 +127,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         where: {
           id: user?.id,
         },
+        include: {
+          concerns: true,
+        },
       });
       if (!foundUser) {
         const error = new Error("NotFoundUser");
@@ -133,8 +139,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       let userPayload: Partial<User> = {
         ...(name && { name }),
-        ...(photos && { avatar: photos.join(";") }),
-        ...(concerns && { concerns: concerns.join(";") }),
+        ...(photos && { photos: photos.join(";") }),
       };
 
       // email
@@ -250,6 +255,58 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
         data: userPayload,
       });
+
+      // disconnect concern
+      await client.$transaction(
+        foundUser.concerns.map(({ id }: Concern) =>
+          client.concern.update({
+            where: {
+              id,
+            },
+            data: {
+              user: {
+                disconnect: {
+                  id: user?.id,
+                },
+              },
+            },
+          })
+        )
+      );
+
+      // connect concern
+      await client.$transaction(
+        await (
+          await client.$transaction(
+            _concerns.map((value: ConcernValue) =>
+              client.concern.findFirst({
+                where: { value },
+              })
+            )
+          )
+        ).map((concern: Concern | null, index: number) =>
+          client.concern.upsert({
+            where: {
+              id: concern?.id || 0,
+            },
+            create: {
+              value: _concerns?.[index],
+              user: {
+                connect: {
+                  id: user?.id,
+                },
+              },
+            },
+            update: {
+              user: {
+                connect: {
+                  id: user?.id,
+                },
+              },
+            },
+          })
+        )
+      );
 
       // result
       const result: PostUserResponse = {

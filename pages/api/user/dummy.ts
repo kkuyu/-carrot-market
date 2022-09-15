@@ -66,7 +66,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // update dummyUser
     req.session.dummyUser = {
       id: -1,
-      avatar: "",
+      photos: "",
       emdType: "MAIN",
       ...dummyPayload,
     };
