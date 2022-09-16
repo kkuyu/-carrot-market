@@ -36,7 +36,7 @@ const HometownSearchModal = (props: HometownSearchModalProps & LayerModalProps &
   // variable: invisible
   const [locateKeyword, setLocateKeyword] = useState("");
 
-  const { data: searchData, error: searchError } = useSWR<GetSearchKeywordResponse | GetSearchBoundaryResponse>(
+  const { data: locateData, error: locateError } = useSWR<GetSearchKeywordResponse | GetSearchBoundaryResponse>(
     Boolean(locateKeyword.length)
       ? `/api/locate/searchKeyword?keyword=${locateKeyword}`
       : state !== "loading"
@@ -112,7 +112,7 @@ const HometownSearchModal = (props: HometownSearchModalProps & LayerModalProps &
           <div className="fixed-inner flex flex-col justify-between h-[9.25rem] px-5 pt-5 bg-white">
             <EditLocateKeyword formType="create" formData={formData} onValid={submitLocate} onReset={resetLocate} />
             <div className="">
-              <strong>{`${Boolean(locateKeyword?.length) ? `${locateKeyword} 검색 결과` : "근처 동네"}`}</strong>
+              <strong>{`${Boolean(locateKeyword?.length) ? `'${locateKeyword}' 검색 결과` : "근처 동네"}`}</strong>
             </div>
             <span className="absolute top-full left-0 w-full h-2 bg-gradient-to-b from-white" />
           </div>
@@ -120,10 +120,10 @@ const HometownSearchModal = (props: HometownSearchModalProps & LayerModalProps &
 
         <div className="container pt-[9.25rem] pb-3">
           {/* 검색 결과: Loading */}
-          {/* {!searchData && !searchError && <p className="list-loading">로딩중</p>} */}
+          {/* {!locateData && !locateError && <p className="list-loading">로딩중</p>} */}
 
           {/* 검색 결과: List */}
-          {searchData && <LocateList status={searchData.status} list={searchData.emdList} selectLocate={selectLocate} resetLocate={resetLocate} />}
+          {locateData && <LocateList status={locateData.status} list={locateData.emdList} selectLocate={selectLocate} resetLocate={resetLocate} />}
         </div>
       </section>
     </LayerModal>

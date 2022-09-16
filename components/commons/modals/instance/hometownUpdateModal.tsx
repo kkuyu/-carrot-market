@@ -4,7 +4,6 @@ import { EmdType } from "@prisma/client";
 // @libs
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
-import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { PostUserResponse } from "@api/user";
@@ -15,7 +14,6 @@ import LayerModal, { LayerModalProps } from "@components/commons/modals/case/lay
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } from "@components/commons/modals/instance/registerAlertModal";
 import HometownSearchModal, { HometownSearchModalProps, HometownSearchModalName } from "@components/commons/modals/instance/hometownSearchModal";
-import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import EditHometown, { EditHometownTypes } from "@components/forms/editHometown";
 
 export interface HometownUpdateModalProps {}
@@ -25,7 +23,6 @@ export const HometownUpdateModalName = "HometownUpdate";
 const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps & ModalComponentProps) => {
   const { user, currentAddr, type: userType, mutate: mutateUser } = useUser();
   const { openModal, closeModal } = useModal();
-  const { openToast } = useToast();
 
   // mutation data
   const [updateUser, { loading: loadingUser }] = useMutation<PostUserResponse | PostDummyResponse>(userType === "member" ? "/api/user" : "/api/user/dummy", {

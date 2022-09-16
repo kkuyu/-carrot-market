@@ -1,8 +1,5 @@
 import type { GetStaticProps, NextPage } from "next";
 import Link from "next/link";
-import { useEffect } from "react";
-// @libs
-import useLayouts from "@libs/client/useLayouts";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -11,16 +8,6 @@ import Icons from "@components/icons";
 import Buttons from "@components/buttons";
 
 const WelcomeIndexPage: NextPage = () => {
-  const { changeLayout } = useLayouts();
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
   return (
     <section className="container flex flex-col items-center h-min-full-screen pt-5 pb-5">
       <div className="grow-full inline-flex flex-col justify-center text-center">
