@@ -32,7 +32,7 @@ const ProductsEditPage: NextPage = () => {
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router.query.id}?` : null);
 
   // mutation data
-  const [editProduct, { loading: loadingProduct }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
+  const [updateProduct, { loading: loadingProduct }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutateProduct();
       await router.replace(`/products/${data.product.id}`);
@@ -55,11 +55,11 @@ const ProductsEditPage: NextPage = () => {
 
   // update: Product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
-    if (!user || loadingProduct || isLoading) return;
+    if (loadingProduct || isLoading) return;
     setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, ProductPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
-    editProduct({ ...data, photos: validPaths });
+    updateProduct({ ...data, photos: validPaths });
   };
 
   // update: isValidProduct
@@ -96,7 +96,7 @@ const ProductsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="edit-product" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
+      <EditProduct id="edit-product" formType="update" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
     </div>
   );
 };

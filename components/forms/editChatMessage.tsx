@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 // @components
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
@@ -10,14 +10,15 @@ export interface EditChatMessageTypes {
 }
 
 interface EditChatMessageProps extends HTMLAttributes<HTMLFormElement> {
+  formType: "create";
   formData: UseFormReturn<EditChatMessageTypes, object>;
-  onValid: (validForm: EditChatMessageTypes) => void;
+  onValid: SubmitHandler<EditChatMessageTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
 const EditChatMessage = (props: EditChatMessageProps) => {
-  const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit } = formData;
 
   return (

@@ -47,7 +47,7 @@ const StoriesDetailPage: NextPage = () => {
   const { data: commentData, mutate: mutateStoryComments } = useSWR<GetStoriesCommentsResponse>(router.query.id ? `/api/stories/${router.query.id}/comments?${commentQuery}` : null);
 
   // mutation data
-  const [updateComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
+  const [createStoryComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${router.query.id}/comments`, {
     onSuccess: async () => {
       await mutateStoryDetail();
       await mutateStoryComments();
@@ -74,7 +74,7 @@ const StoriesDetailPage: NextPage = () => {
   }, [flatComments]);
 
   // update: StoryComment
-  const submitReComment = (data: EditStoryCommentTypes) => {
+  const submitStoryComment = (data: EditStoryCommentTypes) => {
     if (!user || loadingComment || loadingComments) return;
     if (!storyData?.story) return;
     mutateStoryDetail((prev) => {
@@ -88,7 +88,7 @@ const StoriesDetailPage: NextPage = () => {
       return prev && { ...prev, comments: [...prev.comments, { ...dummyComment, user, ...dummyAddr }] };
     }, false);
     formData.setValue("content", "");
-    updateComment({ ...data, ...currentAddr });
+    createStoryComment({ ...data, ...currentAddr });
   };
 
   // modal: ConfirmDeleteStory
@@ -235,8 +235,9 @@ const StoriesDetailPage: NextPage = () => {
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-14 border-t bg-white">
             <EditStoryComment
+              formType="create"
               formData={formData}
-              onValid={(data) => (userType === "member" ? submitReComment(data) : openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {}))}
+              onValid={(data) => (userType === "member" ? submitStoryComment(data) : openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {}))}
               isLoading={loadingComment || loadingComments}
               commentType={storyData?.storyCondition?.category?.commentType}
               className="w-full px-5"

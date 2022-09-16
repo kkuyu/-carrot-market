@@ -38,7 +38,7 @@ const CommentsDetailPage: NextPage = () => {
   const { data: commentData, mutate: mutateCommentDetail } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&${commentQuery}` : null);
 
   // mutation data
-  const [updateComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
+  const [createStoryComment, { loading: loadingComment }] = useMutation<PostStoriesCommentsResponse>(`/api/stories/${commentData?.comment?.storyId}/comments`, {
     onSuccess: async () => {
       await mutateCommentDetail();
     },
@@ -58,9 +58,9 @@ const CommentsDetailPage: NextPage = () => {
   }, [flatComments]);
 
   // update: StoryComment
-  const submitReComment = (data: EditStoryCommentTypes) => {
-    if (!user || loadingComment || loadingComments) return;
+  const submitStoryComment = (data: EditStoryCommentTypes) => {
     if (!commentData?.comment) return;
+    if (!user || loadingComment || loadingComments) return;
     mutateCommentDetail((prev) => {
       const time = new Date();
       const { content, reCommentRefId = null } = data;
@@ -69,7 +69,7 @@ const CommentsDetailPage: NextPage = () => {
       return prev && { ...prev, comment: { ...prev.comment, reComments: [...(prev?.comment?.reComments || []), { ...dummyComment, user, ...dummyAddr }] } };
     }, false);
     formData?.setValue("content", "");
-    updateComment({ ...data, ...currentAddr });
+    createStoryComment({ ...data, ...currentAddr });
   };
 
   // update: flatComments
@@ -139,8 +139,9 @@ const CommentsDetailPage: NextPage = () => {
           <div className="fixed bottom-0 left-0 w-full z-[50]">
             <div className="relative flex items-center mx-auto w-full h-14 max-w-screen-sm border-t bg-white">
               <EditStoryComment
+                formType="create"
                 formData={formData}
-                onValid={(data) => (userType === "member" ? submitReComment(data) : openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {}))}
+                onValid={(data) => (userType === "member" ? submitStoryComment(data) : openModal<RegisterAlertModalProps>(RegisterAlertModal, RegisterAlertModalName, {}))}
                 isLoading={loadingComment || loadingComments}
                 commentType="답글"
                 className="w-full px-5"

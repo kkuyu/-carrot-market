@@ -68,7 +68,7 @@ const UserEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProfile formId="edit-profile" formData={formData} onValid={submitUser} isLoading={loadingUser || isLoading} userType={userType} />
+      <EditProfile id="edit-profile" formType="update" formData={formData} onValid={submitUser} isLoading={loadingUser || isLoading} userType={userType} />
     </div>
   );
 };

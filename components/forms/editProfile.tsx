@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { ConcernValue } from "@prisma/client";
 // @libs
 import { getRandomName } from "@libs/utils";
@@ -22,20 +22,20 @@ export interface EditProfileTypes {
 }
 
 interface EditProfileProps extends HTMLAttributes<HTMLFormElement> {
-  formId: string;
+  formType: "update";
   formData: UseFormReturn<EditProfileTypes, object>;
-  onValid: (validForm: EditProfileTypes) => void;
+  onValid: SubmitHandler<EditProfileTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
   userType: UserProfile["type"];
 }
 
 const EditProfile = (props: EditProfileProps) => {
-  const { formId, formData, onValid, isSuccess, isLoading, userType, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, userType, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, getValues, setValue } = formData;
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 이미지 업로드 */}
       {userType === "member" && (
         <div className="space-y-1">
@@ -91,7 +91,11 @@ const EditProfile = (props: EditProfileProps) => {
             {ProfileConcerns.map((concern) => (
               <span key={concern.value}>
                 <input {...register("concerns")} type="checkbox" id={concern.value} value={concern.value} className="peer sr-only" />
-                <label htmlFor={concern.value} className="block px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-gray-600 peer-checked:border-gray-600">
+                <label
+                  htmlFor={concern.value}
+                  className="block px-3 py-1 rounded-lg border
+                    peer-focus:ring-2 peer-focus:ring-offset-2 peer-focus:ring-gray-300 peer-checked:text-white peer-checked:bg-gray-600 peer-checked:border-gray-600"
+                >
                   {concern.emoji} {concern.text}
                 </label>
               </span>

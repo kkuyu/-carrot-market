@@ -26,7 +26,7 @@ const StoriesUploadPage: NextPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // mutation data
-  const [uploadStory, { loading: loadingStory }] = useMutation<PostStoriesResponse>("/api/stories", {
+  const [createStory, { loading: loadingStory }] = useMutation<PostStoriesResponse>("/api/stories", {
     onSuccess: async (data) => {
       await router.replace(`/stories/${data.story.id}`);
     },
@@ -40,20 +40,16 @@ const StoriesUploadPage: NextPage = () => {
 
   // update: Product
   const submitStory = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditStoryTypes) => {
-    if (!user || loadingStory || isLoading) return;
-    if (!currentPhotoFiles?.length) {
-      uploadStory({ ...data, photos: [], ...currentAddr });
-      return;
-    }
+    if (loadingStory || isLoading) return;
     setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, StoryPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
-    uploadStory({ ...data, photos: validPaths, ...currentAddr });
+    createStory({ ...data, photos: validPaths, ...currentAddr });
   };
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="upload-story" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditStory id="upload-story" formType="create" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };

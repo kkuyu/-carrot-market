@@ -35,7 +35,7 @@ const ProductsReviewPage: NextPage = () => {
   const { data: profileData, mutate: mutateProfile } = useSWR<GetProfilesDetailResponse>(productData ? `/api/profiles/${productData?.productCondition?.role?.partnerUserId}?` : null);
 
   // mutation data
-  const [uploadReview, { loading: loadingReview }] = useMutation<PostProductsDetailReviewResponse>(productData?.product?.id ? `/api/products/${productData?.product?.id}/review` : "", {
+  const [createProductReview, { loading: loadingReview }] = useMutation<PostProductsDetailReviewResponse>(productData?.product?.id ? `/api/products/${productData?.product?.id}/review` : "", {
     onSuccess: async (data) => {
       await mutateProduct();
       await mutateProfile();
@@ -54,8 +54,8 @@ const ProductsReviewPage: NextPage = () => {
 
   // update: Review
   const submitReview = (data: EditProductReviewTypes) => {
-    if (!user || loadingReview) return;
-    uploadReview({ ...data });
+    if (loadingReview) return;
+    createProductReview({ ...data });
   };
 
   // update: isValidProduct
@@ -129,7 +129,7 @@ const ProductsReviewPage: NextPage = () => {
 
           {/* 리뷰 */}
           <div className="mt-4">
-            <EditProductReview formId="upload-review" formData={formData} onValid={submitReview} isLoading={loadingReview} />
+            <EditProductReview id="upload-review" formType="create" formData={formData} onValid={submitReview} isLoading={loadingReview} />
           </div>
         </div>
       )}

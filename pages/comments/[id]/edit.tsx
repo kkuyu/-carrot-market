@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import useSWR, { SWRConfig } from "swr";
 // @libs
-import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
@@ -21,7 +20,6 @@ import EditStoryComment, { EditStoryCommentTypes } from "@components/forms/editS
 
 const CommentsEditPage: NextPage = () => {
   const router = useRouter();
-  const { user } = useUser();
 
   // variable: invisible
   const [isValidComment, setIsValidComment] = useState(true);
@@ -30,7 +28,7 @@ const CommentsEditPage: NextPage = () => {
   const { data: commentData, mutate: mutateComment } = useSWR<GetCommentsDetailResponse>(router?.query?.id ? `/api/comments/${router.query.id}?includeReComments=true&` : null);
 
   // mutation data
-  const [editComment, { loading: loadingComment }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
+  const [updateStoryComment, { loading: loadingComment }] = useMutation<PostCommentsUpdateResponse>(`/api/comments/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutateComment();
       await router.replace(`/comments/${data.comment.id}`);
@@ -46,8 +44,8 @@ const CommentsEditPage: NextPage = () => {
 
   // update: StoryComment
   const submitStoryComment = async ({ ...data }: EditStoryCommentTypes) => {
-    if (!user || loadingComment) return;
-    editComment({ ...data });
+    if (loadingComment) return;
+    updateStoryComment({ ...data });
   };
 
   // update: isValidComment
@@ -80,7 +78,7 @@ const CommentsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStoryComment formId="edit-comment" formData={formData} onValid={submitStoryComment} isLoading={loadingComment} />
+      <EditStoryComment id="update-comment" formType="update" formData={formData} onValid={submitStoryComment} isLoading={loadingComment} />
     </div>
   );
 };
@@ -108,10 +106,9 @@ Page.getLayout = getLayout;
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // params
   const commentId = params?.id?.toString() || "";
-  
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
-
 
   // invalidUser
   let invalidUser = false;
@@ -181,7 +178,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       title: "댓글 수정",
       titleTag: "h1",
       utils: ["back", "title", "submit"],
-      submitId: "edit-comment",
+      submitId: "update-comment",
     },
     navBar: {
       utils: [],

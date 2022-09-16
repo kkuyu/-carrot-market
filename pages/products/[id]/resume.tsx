@@ -191,7 +191,14 @@ const ProductsResumePage: NextPage = () => {
               지금 끌어올리시겠어요?
             </strong>
             <div className="mt-4">
-              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loadingProduct} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
+              <ResumeProduct
+                formType="update"
+                formData={formData}
+                onValid={submitProduct}
+                isLoading={loadingProduct}
+                resumeDiffStr={resumeTimeState.diffStr}
+                nextResumeDiffStr={nextResumeTimeState.diffStr}
+              />
             </div>
           </>
         )}
@@ -204,7 +211,14 @@ const ProductsResumePage: NextPage = () => {
               가격을 낮춰보세요
             </strong>
             <div className="mt-4">
-              <ResumeProduct formData={formData} onValid={submitProduct} isLoading={loadingProduct} resumeDiffStr={resumeTimeState.diffStr} nextResumeDiffStr={nextResumeTimeState.diffStr} />
+              <ResumeProduct
+                formType="update"
+                formData={formData}
+                onValid={submitProduct}
+                isLoading={loadingProduct}
+                resumeDiffStr={resumeTimeState.diffStr}
+                nextResumeDiffStr={nextResumeTimeState.diffStr}
+              />
             </div>
           </>
         )}

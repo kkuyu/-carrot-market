@@ -36,7 +36,7 @@ const ChatsDetailPage: NextPage = () => {
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(chatData?.chat?.productId ? `/api/products/${chatData?.chat?.productId}?` : null);
 
   // mutation data
-  const [uploadChatMessage, { loading: loadingChatMessage }] = useMutation<PostChatsDetailResponse>(`/api/chats/${router.query.id}`, {
+  const [createChatMessage, { loading: loadingChatMessage }] = useMutation<PostChatsDetailResponse>(`/api/chats/${router.query.id}`, {
     onSuccess: async () => {
       await mutateChat();
       window.scrollTo({ behavior: "smooth", top: document.body.scrollHeight });
@@ -105,10 +105,10 @@ const ChatsDetailPage: NextPage = () => {
     if (!user || loadingChatMessage) return;
     mutateChat((prev) => {
       const time = new Date();
-      const newMessage = { id: time.getTime(), text: data.text, userId: user?.id, chatId: 1, createdAt: time, updatedAt: time };
+      const newMessage = { id: time.getTime(), text: data.text, userId: user?.id, chatId: 0, createdAt: time, updatedAt: time };
       return prev && { ...prev, chat: { ...prev.chat, chatMessages: [...prev.chat.chatMessages, { ...newMessage, user }] } };
     }, false);
-    uploadChatMessage(data);
+    createChatMessage(data);
     formData.setValue("text", "");
     window.scrollTo({ behavior: "smooth", top: document.body.scrollHeight });
   };
@@ -193,7 +193,7 @@ const ChatsDetailPage: NextPage = () => {
         {/* 채팅 입력 */}
         <div className="fixed-container bottom-0 z-[50]">
           <div className="fixed-inner flex items-center h-14 border-t bg-white">
-            <EditChatMessage formData={formData} onValid={submitChatMessage} isLoading={loadingChatMessage} className="w-full px-5" />
+            <EditChatMessage formType="create" formData={formData} onValid={submitChatMessage} isLoading={loadingChatMessage} className="w-full px-5" />
           </div>
         </div>
       </div>

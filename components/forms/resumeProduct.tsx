@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 // @components
 import Buttons from "@components/buttons";
 import Inputs from "@components/inputs";
@@ -11,8 +11,9 @@ export interface ResumeProductTypes {
 }
 
 interface ResumeProductProps extends HTMLAttributes<HTMLFormElement> {
+  formType: "update";
   formData: UseFormReturn<ResumeProductTypes, object>;
-  onValid: (validForm: ResumeProductTypes) => void;
+  onValid: SubmitHandler<ResumeProductTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
   resumeDiffStr: string;
@@ -20,7 +21,7 @@ interface ResumeProductProps extends HTMLAttributes<HTMLFormElement> {
 }
 
 const ResumeProduct = (props: ResumeProductProps) => {
-  const { formData, onValid, isSuccess, isLoading, resumeDiffStr, nextResumeDiffStr, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, resumeDiffStr, nextResumeDiffStr, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue } = formData;
 
   // variable: visible

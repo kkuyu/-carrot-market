@@ -1,6 +1,6 @@
 import type { HTMLAttributes } from "react";
 import { useState } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { MannerValue } from "@prisma/client";
 // @api
 import { ProductMannerValues, ProductReviewScores } from "@api/products/reviews/types";
@@ -20,21 +20,21 @@ export interface EditProductReviewTypes {
 }
 
 interface EditProductReviewProps extends HTMLAttributes<HTMLFormElement> {
-  formId: string;
+  formType: "create";
   formData: UseFormReturn<EditProductReviewTypes, object>;
-  onValid: (validForm: EditProductReviewTypes) => void;
+  onValid: SubmitHandler<EditProductReviewTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
 const EditProductReview = (props: EditProductReviewProps) => {
-  const { formId, formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, getValues, resetField } = formData;
 
   const [editState, setEditState] = useState<{ score: number; isFoldMode: boolean }>({ score: 0, isFoldMode: true });
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 선호도 */}
       <div className="space-y-1">
         <div className="flex flex-wrap gap-2">
@@ -58,7 +58,10 @@ const EditProductReview = (props: EditProductReviewProps) => {
                 value={score.value}
                 className="peer sr-only"
               />
-              <label htmlFor={`score-${score.value}`} className="inline-block px-3 py-1 rounded-lg border peer-checked:text-white peer-checked:bg-orange-500 peer-checked:border-orange-500">
+              <label
+                htmlFor={`score-${score.value}`}
+                className="inline-block px-3 py-1 rounded-lg border peer-focus:ring-2 peer-focus:ring-offset-2 peer-focus:ring-gray-300 peer-checked:text-white peer-checked:bg-orange-500 peer-checked:border-orange-500"
+              >
                 {score.text}
               </label>
             </span>

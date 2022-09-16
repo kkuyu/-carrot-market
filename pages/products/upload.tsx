@@ -26,7 +26,7 @@ const ProductsUploadPage: NextPage = () => {
   const [isLoading, setIsLoading] = useState(false);
 
   // mutation data
-  const [uploadProduct, { loading: loadingProduct }] = useMutation<PostProductsResponse>("/api/products", {
+  const [createProduct, { loading: loadingProduct }] = useMutation<PostProductsResponse>("/api/products", {
     onSuccess: async (data) => {
       await router.replace(`/products/${data.product.id}`);
     },
@@ -40,20 +40,16 @@ const ProductsUploadPage: NextPage = () => {
 
   // update: Product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
-    if (!user || loadingProduct || isLoading) return;
-    if (!currentPhotoFiles?.length) {
-      uploadProduct({ ...data, photos: [], ...currentAddr });
-      return;
-    }
+    if (loadingProduct || isLoading) return;
     setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, ProductPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
-    uploadProduct({ ...data, photos: validPaths, ...currentAddr });
+    createProduct({ ...data, photos: validPaths, ...currentAddr });
   };
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct formId="upload-product" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditProduct id="upload-product" formType="create" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
     </div>
   );
 };

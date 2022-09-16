@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { ProductCategory } from "@prisma/client";
 // @libs
 import { getCategory } from "@libs/utils";
@@ -23,16 +23,16 @@ export interface EditProductTypes {
 }
 
 interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
-  formId: string;
+  formType: "create" | "update";
   formData: UseFormReturn<EditProductTypes, object>;
-  onValid: (validForm: EditProductTypes) => void;
+  onValid: SubmitHandler<EditProductTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
   emdPosNm: string;
 }
 
 const EditProduct = (props: EditProductProps) => {
-  const { formId, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue, getValues } = formData;
 
   // variable: invisible
@@ -44,7 +44,7 @@ const EditProduct = (props: EditProductProps) => {
   );
 
   return (
-    <form id={formId} onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
+    <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>
       {/* 이미지 업로드 */}
       <div className="space-y-1">
         <Files

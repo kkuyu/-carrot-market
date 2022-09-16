@@ -32,7 +32,7 @@ const StoriesEditPage: NextPage = () => {
   const { data: storyData, mutate: mutateStory } = useSWR<GetStoriesDetailResponse>(router?.query?.id ? `/api/stories/${router.query.id}?` : null);
 
   // mutation data
-  const [editStory, { loading: loadingStory }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
+  const [updateStory, { loading: loadingStory }] = useMutation<PostStoriesUpdateResponse>(`/api/stories/${router.query.id}/update`, {
     onSuccess: async (data) => {
       await mutateStory();
       await router.replace(`/stories/${data.story.id}`);
@@ -53,11 +53,11 @@ const StoriesEditPage: NextPage = () => {
 
   // update: Story
   const submitStory = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditStoryTypes) => {
-    if (!user || loadingStory || isLoading) return;
+    if (loadingStory || isLoading) return;
     setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, StoryPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
-    editStory({ ...data, photos: validPaths });
+    updateStory({ ...data, photos: validPaths });
   };
 
   // update: isValidStory
@@ -92,7 +92,7 @@ const StoriesEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory formId="edit-story" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
+      <EditStory id="edit-story" formType="update" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
     </div>
   );
 };
