@@ -25,6 +25,7 @@ interface GetVworldSearchKeywordResponse {
 }
 
 export interface GetSearchKeywordResponse extends ResponseDataType {
+  status: "keyword-list" | "keyword-empty";
   emdList: {
     id: string;
     addrNm: string;
@@ -32,6 +33,43 @@ export interface GetSearchKeywordResponse extends ResponseDataType {
     emdCd: string;
   }[];
 }
+
+export const getSearchKeyword = async (query: { keyword: string }) => {
+  const { keyword } = query;
+
+  const params = new URLSearchParams({
+    service: "data",
+    request: "GetFeature",
+    key: process.env.VWORLD_KEY!,
+    domain: process.env.VWORLD_URL!,
+    size: "20",
+    page: "1",
+    data: "LT_C_ADEMD_INFO",
+    geometry: "false",
+    attrFilter: `emd_kor_nm:like:${keyword}`,
+  }).toString();
+
+  const keywordResponse: GetVworldSearchKeywordResponse = await (
+    await fetch(`http://api.vworld.kr/req/data?${params}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+    })
+  ).json();
+
+  return {
+    emdList:
+      keywordResponse.response.status === "OK"
+        ? keywordResponse.response.result.featureCollection.features.map((data) => ({
+            id: data.properties.emd_cd,
+            addrNm: data.properties.full_nm,
+            emdNm: data.properties.emd_kor_nm,
+            emdCd: data.properties.emd_cd,
+          }))
+        : [],
+  };
+};
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
@@ -47,41 +85,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // params
     const keyword = _keyword.toString();
 
-    // search params
-    const params = new URLSearchParams({
-      service: "data",
-      request: "GetFeature",
-      key: process.env.VWORLD_KEY!,
-      domain: process.env.VWORLD_URL!,
-      size: "20",
-      page: "1",
-      data: "LT_C_ADEMD_INFO",
-      geometry: "false",
-      attrFilter: `emd_kor_nm:like:${keyword}`,
-    }).toString();
-
     // fetch data
-    const response: GetVworldSearchKeywordResponse = await (
-      await fetch(`http://api.vworld.kr/req/data?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-        },
-      })
-    ).json();
+    const { emdList } = await getSearchKeyword({ keyword });
 
     // result
     const result: GetSearchKeywordResponse = {
       success: true,
-      emdList:
-        response.response.status === "OK"
-          ? response.response.result.featureCollection.features.map((data) => ({
-              id: data.properties.emd_cd,
-              addrNm: data.properties.full_nm,
-              emdNm: data.properties.emd_kor_nm,
-              emdCd: data.properties.emd_cd,
-            }))
-          : [],
+      status: emdList.length ? "keyword-list" : "keyword-empty",
+      emdList,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

@@ -1,10 +1,10 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
-import { getAbsoluteUrl, getRandomName } from "@libs/utils";
+import { getRandomName } from "@libs/utils";
 import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 // @api
-import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
+import { getSearchGeoCode } from "@api/locate/searchGeoCode";
 
 export interface PostDummyResponse extends ResponseDataType {}
 
@@ -39,19 +39,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // mainAddrNm
     if (mainAddrNm && Boolean(!mainPosX && !mainPosY)) {
-      const { origin: originUrl } = getAbsoluteUrl(req);
-      const mainResponse: GetSearchGeoCodeResponse = await (await fetch(`${originUrl}/api/address/searchGeoCode?addrNm=${mainAddrNm}`)).json();
-      if (!mainResponse.success) {
-        const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
-        error.name = "GeoCodeDistrictError";
-        throw error;
-      }
+      const { addrNm, posX, posY } = await getSearchGeoCode({
+        keyword: mainAddrNm,
+      });
       dummyPayload = {
         ...dummyPayload,
-        MAIN_emdAddrNm: mainResponse.addrNm,
-        MAIN_emdPosNm: mainResponse.addrNm.match(/(\S+)$/g)?.[0] || "",
-        MAIN_emdPosX: mainResponse.posX,
-        MAIN_emdPosY: mainResponse.posY,
+        MAIN_emdAddrNm: addrNm,
+        MAIN_emdPosNm: addrNm.match(/(\S+)$/g)?.[0] || "",
+        MAIN_emdPosX: posX,
+        MAIN_emdPosY: posY,
       };
     } else if (mainAddrNm && Boolean(mainPosX && mainPosY)) {
       dummyPayload = {

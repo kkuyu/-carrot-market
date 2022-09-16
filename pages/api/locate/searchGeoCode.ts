@@ -25,47 +25,58 @@ export interface GetSearchGeoCodeResponse extends ResponseDataType {
   posY: number;
 }
 
+export const getSearchGeoCode = async (query: { keyword: string }) => {
+  const { keyword } = query;
+
+  const params = new URLSearchParams({
+    query: keyword,
+    service: "search",
+    request: "search",
+    key: process.env.VWORLD_KEY!,
+    type: "district",
+    category: "L4",
+    refine: "false",
+  }).toString();
+
+  const geoCodeResponse: GetVworldSearchGeoCodeResponse = await (
+    await fetch(`http://api.vworld.kr/req/search?${params}`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json; charset=utf-8",
+      },
+    })
+  ).json();
+
+  return {
+    addrNm: geoCodeResponse.response.result.items[0].title,
+    posX: +geoCodeResponse.response.result.items[0].point.x,
+    posY: +geoCodeResponse.response.result.items[0].point.y,
+  };
+};
+
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { addrNm: _addrNm } = req.query;
+    const { keyword: _keyword } = req.query;
 
     // invalid
-    if (!_addrNm) {
+    if (!_keyword) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // params
-    const query = _addrNm.toString();
+    const keyword = _keyword.toString();
 
-    // search params
-    const params = new URLSearchParams({
-      query,
-      service: "search",
-      request: "search",
-      key: process.env.VWORLD_KEY!,
-      type: "district",
-      category: "L4",
-      refine: "false",
-    }).toString();
-
-    // fetch data
-    const response: GetVworldSearchGeoCodeResponse = await (
-      await fetch(`http://api.vworld.kr/req/search?${params}`, {
-        method: "GET",
-        headers: {
-          "Content-Type": "application/json; charset=utf-8",
-        },
-      })
-    ).json();
+    //  fetch data
+    const { addrNm, posX, posY } = await getSearchGeoCode({ keyword });
 
     // result
     const result: GetSearchGeoCodeResponse = {
       success: true,
-      addrNm: response.response.result.items[0].title,
-      posX: +response.response.result.items[0].point.x,
-      posY: +response.response.result.items[0].point.y,
+      addrNm,
+      posX,
+      posY,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

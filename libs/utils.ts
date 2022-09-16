@@ -29,16 +29,6 @@ export const objMap = (obj: object, fn: (value: [string, any]) => [string, any])
   return Object.fromEntries(Object.entries(obj).map(fn));
 };
 
-export const getAbsoluteUrl: (req?: IncomingMessage) => { protocol: string; host: string; origin: string } = (req) => {
-  const host = (req && req.headers ? req.headers["x-forwarded-host"] || req.headers.host : window.location.host)?.toString() || "";
-  const protocol = /^localhost(:\d+)?$/.test(host) ? "http:" : "https:";
-  return {
-    protocol: protocol,
-    host: host,
-    origin: protocol + "//" + host,
-  };
-};
-
 export const truncateStr = (str: string = "", count: number = 0) => {
   if (!str.length) return "";
   return str.length > count ? str.slice(0, count - 1) + "..." : str;

@@ -1,12 +1,12 @@
 import { NextApiRequest, NextApiResponse } from "next";
 import { EmdType, User, Concern, ConcernValue } from "@prisma/client";
 // @libs
-import { getAbsoluteUrl, isInstance } from "@libs/utils";
+import { isInstance } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute, IronUserType, IronDummyUserType } from "@libs/server/withSession";
 // @api
-import { GetSearchGeoCodeResponse } from "@api/address/searchGeoCode";
+import { getSearchGeoCode } from "@api/locate/searchGeoCode";
 
 export interface GetUserResponse extends ResponseDataType {
   profile: (User & { concerns: Concern[] }) | null;
@@ -18,14 +18,6 @@ export interface GetUserResponse extends ResponseDataType {
     emdPosX: number | null;
     emdPosY: number | null;
   };
-}
-
-export interface PostUserRequestBody {
-  emdType?: EmdType;
-  mainAddrNm?: string;
-  mainDistance?: number;
-  subAddrNm?: string | null;
-  subDistance?: number | null;
 }
 
 export interface PostUserResponse extends ResponseDataType {}
@@ -198,19 +190,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // mainAddrNm
       if (mainAddrNm) {
-        const { origin: originUrl } = getAbsoluteUrl(req);
-        const mainResponse: GetSearchGeoCodeResponse = await (await fetch(`${originUrl}/api/address/searchGeoCode?addrNm=${mainAddrNm}`)).json();
-        if (!mainResponse.success) {
-          const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
-          error.name = "GeoCodeDistrictError";
-          throw error;
-        }
+        const { addrNm, posX, posY } = await getSearchGeoCode({
+          keyword: mainAddrNm,
+        });
         userPayload = {
           ...userPayload,
-          MAIN_emdAddrNm: mainResponse.addrNm,
-          MAIN_emdPosNm: mainResponse.addrNm.match(/(\S+)$/g)?.[0],
-          MAIN_emdPosX: mainResponse.posX,
-          MAIN_emdPosY: mainResponse.posY,
+          MAIN_emdAddrNm: addrNm,
+          MAIN_emdPosNm: addrNm.match(/(\S+)$/g)?.[0],
+          MAIN_emdPosX: posX,
+          MAIN_emdPosY: posY,
         };
       }
 
@@ -232,19 +220,15 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
           SUB_emdPosY: null,
         };
       } else if (subAddrNm) {
-        const { origin: originUrl } = getAbsoluteUrl(req);
-        const subResponse: GetSearchGeoCodeResponse = await (await fetch(`${originUrl}/api/address/searchGeoCode?addrNm=${subAddrNm}`)).json();
-        if (!subResponse.success) {
-          const error = new Error("서버와 통신이 원활하지않습니다. 잠시후 다시 시도해주세요.");
-          error.name = "GeoCodeDistrictError";
-          throw error;
-        }
+        const { addrNm, posX, posY } = await getSearchGeoCode({
+          keyword: subAddrNm,
+        });
         userPayload = {
           ...userPayload,
-          SUB_emdAddrNm: subResponse.addrNm,
-          SUB_emdPosNm: subResponse.addrNm.match(/(\S+)$/g)?.[0],
-          SUB_emdPosX: subResponse.posX,
-          SUB_emdPosY: subResponse.posY,
+          SUB_emdAddrNm: addrNm,
+          SUB_emdPosNm: addrNm.match(/(\S+)$/g)?.[0],
+          SUB_emdPosX: posX,
+          SUB_emdPosY: posY,
         };
       }
 
@@ -258,7 +242,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
       // disconnect concern
       await client.$transaction(
-        foundUser.concerns.map(({ id }: Concern) =>
+        (foundUser.concerns || [])?.map(({ id }: Concern) =>
           client.concern.update({
             where: {
               id,
@@ -278,13 +262,13 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       await client.$transaction(
         await (
           await client.$transaction(
-            _concerns.map((value: ConcernValue) =>
+            (_concerns || [])?.map((value: ConcernValue) =>
               client.concern.findFirst({
                 where: { value },
               })
             )
           )
-        ).map((concern: Concern | null, index: number) =>
+        )?.map((concern: Concern | null, index: number) =>
           client.concern.upsert({
             where: {
               id: concern?.id || 0,

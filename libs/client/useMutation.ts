@@ -5,8 +5,8 @@ import { ResponseDataType } from "@libs/server/withHandler";
 interface UseMutationState<T> {
   pending: boolean;
   loading: boolean;
-  data?: T | undefined;
-  error?: Error | undefined;
+  data?: T;
+  error?: Error;
 }
 
 const useMutation = <T extends ResponseDataType>(

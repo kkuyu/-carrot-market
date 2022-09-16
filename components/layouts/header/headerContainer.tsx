@@ -78,7 +78,7 @@ const Header = (props: HeaderProps) => {
         if (!currentAddr?.emdPosNm) return null;
         const clickAddress = () => {
           if (userType === "member" && user?.SUB_emdPosNm) {
-            openModal<HometownDropdownModalProps>(HometownDropdownModal, HometownDropdownModalName, {});
+            openModal<HometownSwitchModalProps>(HometownSwitchModal, HometownSwitchModalName, {});
             return;
           }
           openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});

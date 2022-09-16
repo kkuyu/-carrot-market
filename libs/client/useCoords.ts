@@ -1,31 +1,44 @@
 import { useEffect, useState } from "react";
 
+export const CoordsStateEnum = {
+  ["loading"]: "loading",
+  ["denied"]: "denied",
+  ["granted"]: "granted",
+  ["error"]: "error",
+} as const;
+
+export type CoordsStateEnum = typeof CoordsStateEnum[keyof typeof CoordsStateEnum];
+
 interface UseCoordsState {
-  state: "loading" | "denied" | "granted" | "error";
+  state: CoordsStateEnum;
   latitude: number;
   longitude: number;
 }
 
-const useCoords = (): UseCoordsState => {
-  const [coords, setCoords] = useState<UseCoordsState>({ state: "loading", latitude: 0, longitude: 0 });
+const useCoords = (): UseCoordsState & { mutate: () => void } => {
+  const [coords, setCoords] = useState<UseCoordsState>({ state: CoordsStateEnum.loading, latitude: 0, longitude: 0 });
 
   const onSuccess = ({ coords: { latitude, longitude } }: GeolocationPosition) => {
-    setCoords({ state: "granted", latitude, longitude });
+    setCoords({ state: CoordsStateEnum.granted, latitude, longitude });
   };
 
   const onError = (error: GeolocationPositionError) => {
     setCoords({
-      state: error.code == error.PERMISSION_DENIED ? "denied" : "error",
+      state: error.code == error.PERMISSION_DENIED ? CoordsStateEnum.denied : CoordsStateEnum.error,
       latitude: 0,
       longitude: 0,
     });
   };
 
-  useEffect(() => {
+  const mutate = () => {
     navigator.geolocation.getCurrentPosition(onSuccess, onError);
+  };
+
+  useEffect(() => {
+    mutate();
   }, []);
 
-  return coords;
+  return { ...coords, mutate };
 };
 
 export default useCoords;
