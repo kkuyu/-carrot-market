@@ -1,26 +1,34 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
+import { getRandomNumber } from "@libs/utils";
 import client from "@libs/server/client";
-import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
+import { withSessionRoute } from "@libs/server/withSession";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostAccountLoginResponse extends ResponseDataType {}
+export interface PostAccountLoginPhoneResponse extends ResponseDataType {
+  phone: string;
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { phone } = req.body;
 
     // invalid
-    if (!phone || phone.length < 8) {
+    if (!phone) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (phone && phone.length < 8) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // fetch data
-    const foundUser = await client.user.findUnique({
+    // fetch user
+    const foundUser = await client.user.findFirst({
       where: {
         phone,
       },
@@ -28,6 +36,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
       },
     });
+    console.log("foundUser", foundUser);
     if (!foundUser) {
       const error = new Error("휴대폰 번호를 다시 확인해주세요.");
       error.name = "NotFoundUser";
@@ -37,14 +46,14 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // create token
     const newToken = await client.token.create({
       data: {
-        payload: Math.floor(100000 + Math.random() * 900000) + "",
+        phone,
+        payload: `${getRandomNumber(100000, 999999)}`,
         user: {
-          connect: {
-            phone,
-          },
+          ...(foundUser ? { connect: { id: foundUser?.id } } : null),
         },
       },
     });
+    console.log("newToken", newToken);
 
     // send message
     sendMessage({
@@ -56,8 +65,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostAccountLoginResponse = {
+    const result: PostAccountLoginPhoneResponse = {
       success: true,
+      phone,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {

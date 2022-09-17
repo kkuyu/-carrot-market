@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 // @components
 import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
@@ -10,14 +10,15 @@ export interface VerifyPhoneTypes {
 }
 
 interface VerifyPhoneProps extends HTMLAttributes<HTMLFormElement> {
+  formType: "confirm";
   formData: UseFormReturn<VerifyPhoneTypes, object>;
-  onValid: (validForm: VerifyPhoneTypes) => void;
+  onValid: SubmitHandler<VerifyPhoneTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
 const VerifyPhone = (props: VerifyPhoneProps) => {
-  const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (

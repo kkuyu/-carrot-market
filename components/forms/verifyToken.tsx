@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 // @components
 import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
@@ -9,15 +9,16 @@ export interface VerifyTokenTypes {
 }
 
 interface VerifyTokenProps extends HTMLAttributes<HTMLFormElement> {
+  formType: "confirm";
   formData: UseFormReturn<VerifyTokenTypes, object>;
-  onValid: (validForm: VerifyTokenTypes) => void;
+  onValid: SubmitHandler<VerifyTokenTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
   submitButtonText?: string;
 }
 
 const VerifyToken = (props: VerifyTokenProps) => {
-  const { formData, onValid, isSuccess, isLoading, submitButtonText = "인증번호 확인", className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, submitButtonText = "인증번호 확인", className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (

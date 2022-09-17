@@ -42,10 +42,14 @@ export const getPostposition = (str: string, format: PostPositionFormats) => {
   return `${str}${hasFinalConsonant ? format.replace(/\;.*$/g, "") : format.replace(/^.*\;/g, "")}`;
 };
 
+export const getRandomNumber = (min: number, max: number) => {
+  return Math.floor(Math.random() * (max - min) + min);
+};
+
 export const getRandomName = () => {
   const adjectiveIndex = Math.floor(Math.random() * name.adjective.length);
   const animalIndex = Math.floor(Math.random() * name.animal.length);
-  return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]}`;
+  return `${name.adjective[adjectiveIndex]} ${name.animal[animalIndex]} ${getRandomNumber(1000, 9999)}`;
 };
 
 export const getCategory = <T extends ProductCategories | StoryCategories>(

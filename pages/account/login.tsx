@@ -1,16 +1,14 @@
 import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { mutate } from "swr";
 // @libs
-import useLayouts from "@libs/client/useLayouts";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 // @api
-import { PostAccountLoginResponse } from "@api/account/login";
-import { PostVerificationTokenResponse } from "@api/verification/token";
+import { PostAccountLoginPhoneResponse } from "@api/account/login/phone";
+import { PostAccountLoginTokenResponse } from "@api/account/login/token";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -22,20 +20,19 @@ import Buttons from "@components/buttons";
 
 const AccountLoginPage: NextPage = () => {
   const router = useRouter();
-  const { changeLayout } = useLayouts();
   const { openToast } = useToast();
 
-  // phone
-  const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [login, { loading: loginLoading, data: loginData }] = useMutation<PostAccountLoginResponse>("/api/account/login", {
+  // mutation data
+  const [confirmPhone, { loading: loadingPhone, data: phoneData }] = useMutation<PostAccountLoginPhoneResponse>("/api/account/login/phone", {
     onSuccess: () => {
-      verifyTokenFocus("token");
+      formDataByToken.setValue("token", "");
+      formDataByToken.setFocus("token");
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "NotFoundUser":
-          verifyPhoneForm.setError("phone", { type: "validate", message: data.error.message });
-          verifyPhoneForm.setFocus("phone");
+          formDataByPhone.setError("phone", { type: "invalid", message: data.error.message });
+          formDataByPhone.setFocus("phone");
           return;
         default:
           console.error(data.error);
@@ -43,24 +40,20 @@ const AccountLoginPage: NextPage = () => {
       }
     },
   });
-
-  // token
-  const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
-  const { setError: verifyTokenError, setFocus: verifyTokenFocus } = verifyTokenForm;
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
+  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostAccountLoginTokenResponse>("/api/account/login/token", {
     onSuccess: async () => {
       openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
         message: "로그인 되었어요",
       });
-      await mutate("/api/user");
+      await mutate("/api/user?");
       router.replace("/");
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          verifyTokenError("token", { type: "validate", message: data.error.message });
-          verifyTokenFocus("token");
+          formDataByToken.setError("token", { type: "validate", message: data.error.message });
+          formDataByToken.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -69,16 +62,30 @@ const AccountLoginPage: NextPage = () => {
     },
   });
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
+  // variable: visible
+  const formDataByPhone = useForm<VerifyPhoneTypes>({ mode: "onChange" });
+  const formDataByToken = useForm<VerifyTokenTypes>({ mode: "onChange" });
+
+  // confirm: User.phone
+  const submitPhone = (data: VerifyPhoneTypes) => {
+    if (loadingPhone) return;
+    confirmPhone({
+      ...data,
     });
-  }, []);
+  };
+
+  // confirm: User.tokens
+  const submitToken = (data: VerifyTokenTypes) => {
+    if (tokenLoading) return;
+    confirmToken({
+      ...data,
+      phone: phoneData?.phone,
+    });
+  };
 
   return (
     <section className="container pt-5 pb-5">
+      {/* 헤드라인 */}
       <h1 className="text-2xl font-bold">
         안녕하세요!
         <br />
@@ -86,33 +93,25 @@ const AccountLoginPage: NextPage = () => {
       </h1>
       <p className="mt-2">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
-      {/* 전화번호 입력 */}
-      <div className="mt-5">
-        <VerifyPhone
-          formData={verifyPhoneForm}
-          onValid={(data: VerifyPhoneTypes) => {
-            if (loginLoading) return;
-            login(data);
-          }}
-          isSuccess={loginData?.success}
-          isLoading={loginLoading}
-        />
-      </div>
+      {/* 휴대폰 번호 */}
+      <VerifyPhone formType="confirm" formData={formDataByPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone} className="mt-5" />
 
+      {/* 인증 번호 */}
+      {phoneData?.success && <VerifyToken formType="confirm" formData={formDataByToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={tokenLoading} className="mt-4" />}
+
+      {/* 시작하기, 이메일로 계정 찾기 */}
       <div className="empty:hidden mt-5 text-center space-y-1">
-        {/* 시작하기 */}
-        {verifyPhoneForm.control.getFieldState("phone").error?.type === "validate" && (
+        {!phoneData?.success && (
           <p>
             <span className="text-gray-500">첫 방문이신가요?</span>
             <Link href="/welcome/locate" passHref>
-              <Buttons tag="a" sort="text-link" status="primary">
+              <Buttons tag="a" sort="text-link" status="default" className="font-semibold text-orange-500">
                 당근마켓 시작하기
               </Buttons>
             </Link>
           </p>
         )}
-        {/* 이메일로 계정 찾기 */}
-        {!loginData?.success && (
+        {!phoneData?.success && (
           <p>
             <span className="text-gray-500">전화번호가 변경되었나요?</span>
             <Link href="/verification/email" passHref>
@@ -123,21 +122,6 @@ const AccountLoginPage: NextPage = () => {
           </p>
         )}
       </div>
-
-      {/* 인증 결과 확인 */}
-      {loginData?.success && (
-        <div className="mt-4">
-          <VerifyToken
-            formData={verifyTokenForm}
-            onValid={(data: VerifyTokenTypes) => {
-              if (tokenLoading) return;
-              confirmToken(data);
-            }}
-            isSuccess={tokenData?.success}
-            isLoading={tokenLoading}
-          />
-        </div>
-      )}
     </section>
   );
 };

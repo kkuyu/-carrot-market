@@ -52,7 +52,7 @@ const Buttons = <Tag extends As>(props: ButtonsProps<Tag>, ref?: ForwardedRef<El
     if (size === "base") classNames += "text-base ";
     if (size === "lg") classNames += "text-lg ";
     if (status === "primary") classNames += "px-1 font-semibold text-orange-500 ";
-    if (status === "default") classNames += "px-1 font-semibold font-normal underline ";
+    if (status === "default") classNames += "px-1 underline ";
     if (status === "danger") classNames += "px-1 font-semibold text-red-500 ";
     if (status === "unset") classNames += "";
     return classNames;
