@@ -4,49 +4,73 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 
-export interface PostVerificationTokenResponse extends ResponseDataType {}
+export interface PostVerificationEmailTokenResponse extends ResponseDataType {}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { token, key } = req.body;
+    const { email, token } = req.body;
 
     // invalid
-    if (!token || !key) {
+    if (!email || !token) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    if (email && !email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
     // fetch data
-    const foundToken = await client.token.findUnique({
+    const foundToken = await client.token.findFirst({
       where: {
+        email,
         payload: token,
       },
     });
+
+    console.log("foundToken", foundToken);
+
     if (!foundToken) {
       const error = new Error("인증번호를 다시 확인해주세요.");
       error.name = "InvalidToken";
       throw error;
     }
+    if (!foundToken.userId) {
+      const error = new Error("인증번호를 다시 확인해주세요.");
+      error.name = "InvalidToken";
+      throw error;
+    }
+
+    const foundUser = await client.user.update({
+      where: {
+        id: foundToken.userId,
+      },
+      data: {
+        enteredAt: new Date(),
+      },
+    });
+
+    console.log("foundUser", foundUser);
 
     // delete token
     await client.token.deleteMany({
       where: {
-        userId: foundToken.userId,
+        userId: foundUser?.id,
+        email,
       },
     });
 
-    // if (/\/account\/login$/.test(referer) || /\/account\/join?.*$/.test(referer) || /\/account\/phone$/.test(referer)) {
-    //   // update user
-    //   req.session.user = {
-    //     id: foundToken.userId,
-    //   };
-    //   delete req.session.dummyUser;
-    //   await req.session.save();
-    // }
+    // update user
+    req.session.user = {
+      id: foundUser?.id,
+    };
+    delete req.session.dummyUser;
+    await req.session.save();
 
     // result
-    const result: PostVerificationTokenResponse = {
+    const result: PostVerificationEmailTokenResponse = {
       success: true,
     };
     return res.status(200).json(result);

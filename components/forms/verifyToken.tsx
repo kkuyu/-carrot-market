@@ -14,11 +14,11 @@ interface VerifyTokenProps extends HTMLAttributes<HTMLFormElement> {
   onValid: SubmitHandler<VerifyTokenTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
-  submitButtonText?: string;
+  submitText?: string;
 }
 
 const VerifyToken = (props: VerifyTokenProps) => {
-  const { formType, formData, onValid, isSuccess, isLoading, submitButtonText = "인증번호 확인", className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, submitText = "인증번호 확인", className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (
@@ -37,7 +37,7 @@ const VerifyToken = (props: VerifyTokenProps) => {
         <span className="empty:hidden invalid">{formState.errors.token?.message}</span>
       </div>
       <Buttons tag="button" type="submit" status="primary" disabled={isLoading}>
-        {submitButtonText}
+        {submitText}
       </Buttons>
     </form>
   );

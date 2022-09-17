@@ -16,29 +16,20 @@ const AccountLogoutPage: NextPage = () => {
   const router = useRouter();
   const { openToast } = useToast();
 
-  const [logoutUser, { data: logoutUserData, loading: logoutUserLoading }] = useMutation<PostAccountLogoutResponse>("/api/account/logout", {
-    onSuccess: () => {},
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          break;
+  const [logoutUser, { data: userData, loading: loadingUser }] = useMutation<PostAccountLogoutResponse>("/api/account/logout", {
+    onSuccess: async () => {
+      if (userData?.isExisted) {
+        openToast<MessageToastProps>(MessageToast, "LogoutUser", {
+          placement: "bottom",
+          message: "로그아웃되었습니다",
+        });
       }
+      await router.replace("/welcome");
     },
   });
 
   useEffect(() => {
-    if (logoutUserData?.isExisted) {
-      openToast<MessageToastProps>(MessageToast, "LogoutUser", {
-        placement: "bottom",
-        message: "로그아웃되었습니다",
-      });
-    }
-    router.replace("/welcome");
-  }, [logoutUserData]);
-
-  useEffect(() => {
-    if (logoutUserLoading) return;
+    if (loadingUser) return;
     logoutUser({});
   }, []);
 

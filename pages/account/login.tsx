@@ -24,7 +24,7 @@ const AccountLoginPage: NextPage = () => {
 
   // mutation data
   const [confirmPhone, { loading: loadingPhone, data: phoneData }] = useMutation<PostAccountLoginPhoneResponse>("/api/account/login/phone", {
-    onSuccess: () => {
+    onSuccess: async () => {
       formDataByToken.setValue("token", "");
       formDataByToken.setFocus("token");
     },
@@ -40,7 +40,7 @@ const AccountLoginPage: NextPage = () => {
       }
     },
   });
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostAccountLoginTokenResponse>("/api/account/login/token", {
+  const [confirmToken, { loading: loadingToken, data: tokenData }] = useMutation<PostAccountLoginTokenResponse>("/api/account/login/token", {
     onSuccess: async () => {
       openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
@@ -76,7 +76,7 @@ const AccountLoginPage: NextPage = () => {
 
   // confirm: User.tokens
   const submitToken = (data: VerifyTokenTypes) => {
-    if (tokenLoading) return;
+    if (loadingToken) return;
     confirmToken({
       ...data,
       phone: phoneData?.phone,
@@ -94,10 +94,10 @@ const AccountLoginPage: NextPage = () => {
       <p className="mt-2">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
       {/* 휴대폰 번호 */}
-      <VerifyPhone formType="confirm" formData={formDataByPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone} className="mt-5" />
+      <VerifyPhone formType="confirm" formData={formDataByPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
 
       {/* 인증 번호 */}
-      {phoneData?.success && <VerifyToken formType="confirm" formData={formDataByToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={tokenLoading} className="mt-4" />}
+      {phoneData?.success && <VerifyToken formType="confirm" formData={formDataByToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
 
       {/* 시작하기, 이메일로 계정 찾기 */}
       <div className="empty:hidden mt-5 text-center space-y-1">

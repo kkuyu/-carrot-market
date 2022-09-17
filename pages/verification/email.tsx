@@ -1,30 +1,31 @@
 import type { GetStaticProps, NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { mutate } from "swr";
 // @libs
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
+import useToast from "@libs/client/useToast";
 // @api
-import { PostVerificationEmailResponse } from "@api/verification/email";
-import { PostVerificationTokenResponse } from "@api/verification/token";
+import { PostVerificationEmailEmailResponse } from "@api/verification/email/email";
+import { PostVerificationEmailTokenResponse } from "@api/verification/email/token";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
+import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 import Buttons from "@components/buttons";
 
 const VerificationEmailPage: NextPage = () => {
   const router = useRouter();
-  const { changeLayout } = useLayouts();
+  const { openToast } = useToast();
 
-  // email
-  const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
-  const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostVerificationEmailResponse>("/api/verification/email", {
-    onSuccess: () => {
+  // mutation data
+  const [confirmEmail, { loading: loadingEmail, data: emailData }] = useMutation<PostVerificationEmailEmailResponse>("/api/verification/email/email", {
+    onSuccess: async () => {
+      verifyTokenForm.setValue("token", "");
       verifyTokenForm.setFocus("token");
     },
     onError: (data) => {
@@ -39,12 +40,14 @@ const VerificationEmailPage: NextPage = () => {
       }
     },
   });
-
-  // token
-  const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
-    onSuccess: () => {
-      router.push({ pathname: "/verification/phone", query: { targetEmail: verifyEmailForm.getValues("email") } });
+  const [confirmToken, { loading: loadingToken, data: tokenData }] = useMutation<PostVerificationEmailTokenResponse>("/api/verification/email/token", {
+    onSuccess: async () => {
+      openToast<MessageToastProps>(MessageToast, "LoginUser", {
+        placement: "bottom",
+        message: "로그인 되었어요",
+      });
+      await mutate("/api/user?");
+      await router.push({ pathname: "/account/phone" });
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -59,38 +62,45 @@ const VerificationEmailPage: NextPage = () => {
     },
   });
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
+  // variable: visible
+  const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
+  const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
+
+  // confirm: User.email
+  const submitEmail = (data: VerifyEmailTypes) => {
+    if (loadingEmail) return;
+    confirmEmail({
+      ...data,
     });
-  }, []);
+  };
+
+  // confirm: User.tokens
+  const submitToken = (data: VerifyTokenTypes) => {
+    if (loadingToken) return;
+    confirmToken({
+      ...data,
+      email: emailData?.email,
+    });
+  };
 
   return (
     <section className="container pt-5 pb-5">
+      {/* 헤드라인 */}
       <h1 className="text-2xl font-bold">
         등록하신 이메일 주소를
         <br />
         입력해주세요
       </h1>
 
-      {/* 이메일 입력 */}
-      <div className="mt-5">
-        <VerifyEmail
-          formData={verifyEmailForm}
-          onValid={(data: VerifyEmailTypes) => {
-            if (emailLoading) return;
-            confirmEmail(data);
-          }}
-          isSuccess={tokenData?.success}
-          isLoading={tokenLoading}
-        />
-      </div>
+      {/* 이메일 */}
+      <VerifyEmail formType="confirm" formData={verifyEmailForm} onValid={submitEmail} isSuccess={tokenData?.success} isLoading={loadingEmail || loadingToken} className="mt-5" />
 
+      {/* 인증 번호 */}
+      {emailData?.success && <VerifyToken formType="confirm" formData={verifyTokenForm} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
+
+      {/* 문의하기 */}
+      {/* todo: 문의하기(자주 묻는 질문) */}
       <div className="empty:hidden mt-5 text-center space-y-1">
-        {/* 문의하기 */}
-        {/* todo: 문의하기(자주 묻는 질문) */}
         {!emailData?.success && (
           <p>
             <span className="text-gray-500">이메일을 등록한 적이 없으세요?</span>
@@ -102,21 +112,6 @@ const VerificationEmailPage: NextPage = () => {
           </p>
         )}
       </div>
-
-      {/* 인증 결과 확인 */}
-      {emailData?.success && (
-        <div className="mt-4">
-          <VerifyToken
-            formData={verifyTokenForm}
-            onValid={(data: VerifyTokenTypes) => {
-              if (tokenLoading) return;
-              confirmToken(data);
-            }}
-            isSuccess={tokenData?.success}
-            isLoading={tokenLoading}
-          />
-        </div>
-      )}
     </section>
   );
 };

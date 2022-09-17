@@ -55,7 +55,8 @@ model User {
 
 model Token {
   id        Int      @id @default(autoincrement())
-  phone     String
+  phone     String?
+  email     String?
   payload   String   @unique
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

@@ -26,19 +26,19 @@ const AccountJoinPage: NextPage = () => {
 
   // fetch data
   const { data: locateData } = useSWR<GetSearchGeoCodeResponse>(router?.query?.locate ? `/api/locate/searchGeoCode?keyword=${router?.query?.locate}` : null, {
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       if (data.success) return;
       openToast<MessageToastProps>(MessageToast, "InvalidLocation", {
         placement: "bottom",
         message: "먼저 동네를 설정해주세요",
       });
-      router.replace("/welcome/locate");
+      await router.replace("/welcome/locate");
     },
   });
 
   // mutation data
   const [confirmPhone, { loading: loadingPhone, data: phoneData }] = useMutation<PostAccountJoinPhoneResponse>("/api/account/join/phone", {
-    onSuccess: () => {
+    onSuccess: async () => {
       formDataByToken.setValue("token", "");
       formDataByToken.setFocus("token");
     },
@@ -50,7 +50,7 @@ const AccountJoinPage: NextPage = () => {
         message: phoneData?.isExisted ? "기존 정보로 로그인 되었어요" : "회원가입이 완료되었어요",
       });
       await mutate("/api/user?");
-      router.replace("/");
+      await router.replace("/");
     },
     onError: (data) => {
       switch (data?.error?.name) {
@@ -65,12 +65,12 @@ const AccountJoinPage: NextPage = () => {
     },
   });
   const [confirmDummy, { loading: loadingDummy }] = useMutation<PostDummyResponse>("/api/user/dummy", {
-    onSuccess: () => {
+    onSuccess: async () => {
       openToast<MessageToastProps>(MessageToast, "LoginUser", {
         placement: "bottom",
         message: "비회원으로 로그인 되었어요",
       });
-      router.replace("/");
+      await router.replace("/");
     },
   });
 
@@ -86,6 +86,7 @@ const AccountJoinPage: NextPage = () => {
     });
   };
 
+  // confirm: User.tokens
   const submitToken = (data: VerifyTokenTypes) => {
     if (loadingToken) return;
     confirmToken({
@@ -98,6 +99,7 @@ const AccountJoinPage: NextPage = () => {
     });
   };
 
+  // confirm: Dummy
   const submitDummy = () => {
     if (loadingDummy) return;
     confirmDummy({
@@ -119,7 +121,7 @@ const AccountJoinPage: NextPage = () => {
       <p className="mt-2">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
       {/* 휴대폰 번호 */}
-      <VerifyPhone formType="confirm" formData={formDataByPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone} className="mt-5" />
+      <VerifyPhone formType="confirm" formData={formDataByPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
 
       {/* 인증 번호 */}
       {phoneData?.success && <VerifyToken formType="confirm" formData={formDataByToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}

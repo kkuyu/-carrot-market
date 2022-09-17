@@ -1,25 +1,34 @@
 import { NextApiRequest, NextApiResponse } from "next";
 // @libs
+import { getRandomNumber } from "@libs/utils";
 import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 import { EmailTemplateKey } from "@libs/server/getUtilsNcp";
 import sendEmail from "@libs/server/sendEmail";
 
-export interface PostVerificationEmailResponse extends ResponseDataType {}
+export interface PostVerificationEmailEmailResponse extends ResponseDataType {
+  email: string;
+}
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
     const { email } = req.body;
 
     // invalid
-    if (!email || !email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
+    if (!email) {
+      const error = new Error("InvalidRequestBody");
+      error.name = "InvalidRequestBody";
+      throw error;
+    }
+    // invalid
+    if (email && !email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // fetch data
+    // fetch user
     const foundUser = await client.user.findUnique({
       where: {
         email,
@@ -28,6 +37,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
       },
     });
+    console.log("foundUser", foundUser);
     if (!foundUser) {
       const error = new Error("이메일 주소를 다시 확인해주세요.");
       error.name = "NotFoundUser";
@@ -37,16 +47,16 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     // create token
     const newToken = await client.token.create({
       data: {
-        payload: Math.floor(100000 + Math.random() * 900000) + "",
+        email,
+        payload: `${getRandomNumber(100000, 999999)}`,
         user: {
-          connect: {
-            email,
-          },
+          ...(foundUser ? { connect: { id: foundUser?.id } } : null),
         },
       },
     });
+    console.log("newToken", newToken);
 
-    // send email
+    // send message
     sendEmail({
       sendTo: email,
       templateId: EmailTemplateKey.verificationEmail,
@@ -56,8 +66,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostVerificationEmailResponse = {
+    const result: PostVerificationEmailEmailResponse = {
       success: true,
+      email,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
