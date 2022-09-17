@@ -29,13 +29,16 @@ export const getSearchGeoCode = async (query: { keyword: string }) => {
   const { keyword } = query;
 
   const params = new URLSearchParams({
-    query: keyword,
+    version: "2.0",
     service: "search",
     request: "search",
     key: process.env.VWORLD_KEY!,
+    size: "5",
+    page: "1",
     type: "district",
     category: "L4",
-    refine: "false",
+    query: keyword,
+    crs: "EPSG:4326",
   }).toString();
 
   const geoCodeResponse: GetVworldSearchGeoCodeResponse = await (
@@ -47,10 +50,12 @@ export const getSearchGeoCode = async (query: { keyword: string }) => {
     })
   ).json();
 
+  const locate = geoCodeResponse.response.result.items.find((item) => item.title === keyword) ?? null;
+
   return {
-    addrNm: geoCodeResponse.response.result.items[0].title,
-    posX: +geoCodeResponse.response.result.items[0].point.x,
-    posY: +geoCodeResponse.response.result.items[0].point.y,
+    addrNm: locate?.title || "",
+    posX: +(locate?.point?.x || 0),
+    posY: +(locate?.point?.y || 0),
   };
 };
 
@@ -73,7 +78,7 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
 
     // result
     const result: GetSearchGeoCodeResponse = {
-      success: true,
+      success: Boolean(addrNm),
       addrNm,
       posX,
       posY,

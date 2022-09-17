@@ -47,6 +47,7 @@ export const getSearchKeyword = async (query: { keyword: string }) => {
     data: "LT_C_ADEMD_INFO",
     geometry: "false",
     attrFilter: `emd_kor_nm:like:${keyword}`,
+    crs: "EPSG:4326",
   }).toString();
 
   const keywordResponse: GetVworldSearchKeywordResponse = await (
@@ -57,6 +58,7 @@ export const getSearchKeyword = async (query: { keyword: string }) => {
       },
     })
   ).json();
+  console.log(`http://api.vworld.kr/req/data?${params}`);
 
   return {
     emdList:

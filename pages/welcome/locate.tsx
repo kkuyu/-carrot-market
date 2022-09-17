@@ -51,7 +51,7 @@ const WelcomeLocatePage: NextPage = () => {
   };
 
   const selectLocate = (item: LocateItem) => {
-    router.push({ pathname: "/account/join", query: { addrNm: item?.addrNm } });
+    router.push({ pathname: "/account/join", query: { locate: item?.addrNm } });
   };
 
   return (

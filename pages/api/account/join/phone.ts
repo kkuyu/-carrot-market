@@ -1,35 +1,34 @@
 import { NextApiRequest, NextApiResponse } from "next";
-import { EmdType } from "@prisma/client";
 // @libs
-import { getRandomName } from "@libs/utils";
+import { getRandomNumber } from "@libs/utils";
 import client from "@libs/server/client";
-import { withSessionRoute } from "@libs/server/withSession";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
+import { withSessionRoute } from "@libs/server/withSession";
 import { MessageTemplateKey } from "@libs/server/getUtilsNcp";
 import sendMessage from "@libs/server/sendMessage";
 
-export interface PostAccountJoinResponse extends ResponseDataType {
-  isExisted: boolean;
+export interface PostAccountJoinPhoneResponse extends ResponseDataType {
+  phone: string;
 }
 
 async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataType>) {
   try {
-    const { phone, mainAddrNm, mainPosX, mainPosY, mainDistance } = req.body;
+    const { phone } = req.body;
 
     // invalid
-    if (!phone || phone.length < 8) {
+    if (!phone) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
-    if (!mainAddrNm || !mainPosX || !mainPosY || !mainDistance) {
+    if (phone && phone.length < 8) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
     }
 
-    // fetch data
-    const foundUser = await client.user.findUnique({
+    // fetch user
+    const foundUser = await client.user.findFirst({
       where: {
         phone,
       },
@@ -37,30 +36,19 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
       },
     });
+    console.log("foundUser", foundUser);
 
     // create token
     const newToken = await client.token.create({
       data: {
-        payload: Math.floor(100000 + Math.random() * 900000) + "",
+        phone,
+        payload: `${getRandomNumber(100000, 999999)}`,
         user: {
-          connectOrCreate: {
-            where: {
-              phone,
-            },
-            create: {
-              name: getRandomName(),
-              phone,
-              emdType: EmdType.MAIN,
-              MAIN_emdAddrNm: mainAddrNm,
-              MAIN_emdPosNm: mainAddrNm.match(/(\S+)$/g)?.[0],
-              MAIN_emdPosX: mainPosX,
-              MAIN_emdPosY: mainPosY,
-              MAIN_emdPosDx: mainDistance,
-            },
-          },
+          ...(foundUser ? { connect: { id: foundUser?.id } } : null),
         },
       },
     });
+    console.log("newToken", newToken);
 
     // send message
     sendMessage({
@@ -72,9 +60,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     });
 
     // result
-    const result: PostAccountJoinResponse = {
+    const result: PostAccountJoinPhoneResponse = {
       success: true,
-      isExisted: Boolean(foundUser),
+      phone,
     };
     return res.status(200).json(result);
   } catch (error: unknown) {
