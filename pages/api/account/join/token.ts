@@ -71,7 +71,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     await client.token.deleteMany({
       where: {
         userId: foundUser?.id,
-        phone,
       },
     });
 

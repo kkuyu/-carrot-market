@@ -1,21 +1,17 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
-import { SWRConfig } from "swr";
+import useSWR, { SWRConfig } from "swr";
 // @libs
-import useLayouts from "@libs/client/useLayouts";
 import useUser from "@libs/client/useUser";
 import useModal from "@libs/client/useModal";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/user";
-import { PostAccountPhoneResponse } from "@api/account/phone";
-import { PostVerificationTokenResponse } from "@api/verification/token";
-import { PostVerificationUpdateResponse } from "@api/verification/update";
+import { GetUserResponse, PostUserResponse, getUser } from "@api/user";
+import { PostAccountPhonePhoneResponse } from "@api/account/phone/phone";
+import { PostAccountPhoneTokenResponse } from "@api/account/phone/token";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -28,25 +24,30 @@ import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 const AccountPhonePage: NextPage = () => {
   const router = useRouter();
   const { user, type: userType, mutate: mutateUser } = useUser();
-  const { changeLayout } = useLayouts();
   const { openModal } = useModal();
   const { openToast } = useToast();
 
-  // copy user
-  const originalUser = useRef({ ...user, userType });
-
-  // phone
-  const verifyPhoneForm = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const [confirmPhone, { loading: phoneLoading, data: phoneData }] = useMutation<PostAccountPhoneResponse>("/api/account/phone", {
-    onSuccess: () => {
-      verifyTokenForm.setFocus("token");
+  // mutation data
+  const [updateUser, { loading: updateLoading }] = useMutation<PostUserResponse>("/api/user", {
+    onSuccess: async () => {
+      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
+        placement: "bottom",
+        message: "휴대폰 번호가 변경되었어요",
+      });
+      await router.replace("/account");
+      await mutateUser();
+    },
+  });
+  const [confirmPhone, { loading: loadingPhone, data: phoneData }] = useMutation<PostAccountPhonePhoneResponse>("/api/account/phone/phone", {
+    onSuccess: async () => {
+      tokenFormData.setFocus("token");
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "SameAccount":
         case "AlreadyRegisteredAccount":
-          verifyPhoneForm.setError("phone", { type: "validate", message: data.error.message });
-          verifyPhoneForm.setFocus("phone");
+          phoneFormData.setError("phone", { type: "validate", message: data.error.message });
+          phoneFormData.setFocus("phone");
           return;
         default:
           console.error(data.error);
@@ -54,28 +55,24 @@ const AccountPhonePage: NextPage = () => {
       }
     },
   });
-
-  // token
-  const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
+  const [confirmToken, { loading: loadingToken, data: tokenData }] = useMutation<PostAccountPhoneTokenResponse>("/api/account/phone/token", {
     onSuccess: async () => {
-      if (updateLoading) return;
-      if (originalUser.current.userType === "member") {
-        openPhoneUpdateModal();
-        return;
+      if (userType === "member") {
+        openConfirmUserUpdateModal();
+      } else {
+        openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
+          placement: "bottom",
+          message: "휴대폰 번호가 등록되었어요",
+        });
+        await router.replace("/account");
+        await mutateUser();
       }
-      await mutateUser();
-      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
-        placement: "bottom",
-        message: "휴대폰 번호가 등록되었어요",
-      });
-      router.replace("/account");
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          verifyTokenForm.setError("token", { type: "validate", message: data.error.message });
-          verifyTokenForm.setFocus("token");
+          tokenFormData.setError("token", { type: "validate", message: data.error.message });
+          tokenFormData.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -84,38 +81,48 @@ const AccountPhonePage: NextPage = () => {
     },
   });
 
-  // update user
-  const [updateUser, { loading: updateLoading }] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
-    onSuccess: async () => {
-      await mutateUser();
-      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
-        placement: "bottom",
-        message: "휴대폰 번호가 변경되었어요",
-      });
-      router.replace("/account");
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
+  // variable: visible
+  const phoneFormData = useForm<VerifyPhoneTypes>({ mode: "onChange" });
+  const tokenFormData = useForm<VerifyTokenTypes>({ mode: "onChange" });
 
-  const openPhoneUpdateModal = () => {
-    openModal<AlertModalProps>(AlertModal, "ConfirmPhoneUpdate", {
-      message: `${verifyPhoneForm.getValues("phone")} 로 변경할까요?`,
+  // confirm: User.phone
+  const submitPhone = (data: VerifyPhoneTypes) => {
+    if (loadingPhone) return;
+    confirmPhone({
+      ...data,
+    });
+  };
+
+  // confirm: User.tokens
+  const submitToken = (data: VerifyTokenTypes) => {
+    if (loadingToken) return;
+    confirmToken({
+      ...data,
+      phone: phoneData?.phone,
+      name: user?.name,
+      emdType: user?.emdType,
+      mainAddrNm: user?.MAIN_emdAddrNm,
+      mainPosX: user?.MAIN_emdPosX,
+      mainPosY: user?.MAIN_emdPosY,
+      mainDistance: user?.MAIN_emdPosDx,
+    });
+  };
+
+  // modal: ConfirmUserUpdate
+  const openConfirmUserUpdateModal = () => {
+    openModal<AlertModalProps>(AlertModal, "ConfirmUserUpdate", {
+      message: `'${phoneData?.phone}'로 변경할까요?`,
       actions: [
         {
           key: "cancel",
           style: AlertStyleEnum["cancel"],
           text: "취소",
           handler: () => {
-            verifyTokenForm.setValue("token", "");
-            setTimeout(() => {
-              (document.querySelector(".container button[type='submit']") as HTMLButtonElement)?.focus();
-            }, 0);
+            tokenFormData.setValue("token", "");
+            confirmToken(null);
+            phoneFormData.setValue("phone", "");
+            phoneFormData.setFocus("phone");
+            confirmPhone(null);
           },
         },
         {
@@ -124,8 +131,7 @@ const AccountPhonePage: NextPage = () => {
           text: "변경하기",
           handler: () => {
             updateUser({
-              originData: { phone: user?.phone },
-              updateData: { phone: verifyPhoneForm.getValues("phone") },
+              phone: phoneData?.phone,
             });
           },
         },
@@ -133,75 +139,32 @@ const AccountPhonePage: NextPage = () => {
     });
   };
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
-
   return (
     <section className="container pt-5 pb-5">
-      <h1 className="text-2xl font-bold">{originalUser.current.userType === "member" ? "새로운" : ""} 휴대폰 번호를 입력해주세요</h1>
+      {/* 헤드라인 */}
+      <h1 className="text-2xl font-bold">{userType === "member" ? "새로운" : ""} 휴대폰 번호를 입력해주세요</h1>
       <p className="mt-2">
-        휴대폰 번호는 안전하게 보관되며 어디에도 공개되지 않아요.
-        {originalUser.current.userType === "member" && originalUser.current?.phone && <span className="block">현재 등록된 번호는 {originalUser.current.phone} 이에요</span>}
+        <span className="block">휴대폰 번호는 안전하게 보관되며 어디에도 공개되지 않아요.</span>
+        {user?.phone && <span className="block">현재 등록된 번호는 &apos;{user?.phone}&apos;이에요</span>}
       </p>
 
-      {/* 전화번호 입력 */}
-      <div className="mt-5">
-        <VerifyPhone
-          formData={verifyPhoneForm}
-          onValid={(data: VerifyPhoneTypes) => {
-            if (phoneLoading) return;
-            confirmPhone({
-              ...data,
-              ...(user && userType !== "member"
-                ? {
-                    name: user.name,
-                    emdType: user.emdType,
-                    mainAddrNm: user.MAIN_emdAddrNm,
-                    mainPosNm: user.MAIN_emdPosNm,
-                    mainPosX: user.MAIN_emdPosX,
-                    mainPosY: user.MAIN_emdPosY,
-                    mainDistance: user.MAIN_emdPosDx,
-                  }
-                : {}),
-            });
-          }}
-          isSuccess={phoneData?.success}
-          isLoading={phoneLoading}
-        />
-      </div>
+      {/* 휴대폰 번호 */}
+      <VerifyPhone formType="confirm" formData={phoneFormData} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
 
-      {/* 인증 결과 확인 */}
-      {phoneData?.success && (
-        <div className="mt-4">
-          <VerifyToken
-            formData={verifyTokenForm}
-            onValid={(data: VerifyTokenTypes) => {
-              if (tokenLoading) return;
-              confirmToken(data);
-            }}
-            isSuccess={tokenData?.success}
-            isLoading={tokenLoading}
-            submitButtonText={originalUser.current.userType === "member" ? "인증번호 확인" : "인증번호 확인 및 회원가입"}
-          />
-        </div>
-      )}
+      {/* 인증 번호 */}
+      {phoneData?.success && <VerifyToken formType="confirm" formData={tokenFormData} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
     </section>
   );
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
 }> = ({ getUser }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
         },
       }}
     >
@@ -212,17 +175,17 @@ const Page: NextPageWithLayout<{
 
 Page.getLayout = getLayout;
 
-export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${ssrUser.profile ? "휴대폰 번호 변경" : "휴대폰 번호 등록"} | 계정 관리`,
+      title: `휴대폰 번호 ${ssrUser.profile ? "변경" : "등록"} | 계정 관리`,
     },
     header: {
-      title: `${ssrUser.profile ? "휴대폰 번호 변경" : "휴대폰 번호 등록"}`,
+      title: `휴대폰 번호 ${ssrUser.profile ? "변경" : "등록"}`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -235,6 +198,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
     },

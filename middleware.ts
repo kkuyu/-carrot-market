@@ -18,7 +18,6 @@ export const middleware: NextMiddleware = (req) => {
       case "/account/login":
       case "/account/logout":
       case "/verification/email":
-      case "/verification/phone":
         return NextResponse.next();
       default:
         if (/^\/products\/\w*$/.test(url.pathname)) return NextResponse.next();
@@ -40,7 +39,6 @@ export const middleware: NextMiddleware = (req) => {
       case "/account/login":
       // case "/account/logout":
       case "/verification/email":
-      case "/verification/phone":
         url.pathname = "/";
         url.search = "";
         return NextResponse.redirect(url);

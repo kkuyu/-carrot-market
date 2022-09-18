@@ -21,7 +21,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
       error.name = "InvalidRequestBody";
       throw error;
     }
-    // invalid
     if (email && !email.match(/^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";

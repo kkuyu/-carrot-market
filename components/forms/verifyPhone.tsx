@@ -43,7 +43,7 @@ const VerifyPhone = (props: VerifyPhoneProps) => {
         <span className="empty:hidden invalid">{formState.errors.phone?.message}</span>
       </div>
       <Buttons tag="button" type="submit" status="default" disabled={!formState.isValid || isLoading}>
-        {!isSuccess ? "인증문자 받기" : "인증문자 다시 받기"}
+        {!isSuccess ? "인증 문자 받기" : "인증 문자 다시 받기"}
       </Buttons>
     </form>
   );

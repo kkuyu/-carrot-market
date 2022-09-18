@@ -16,6 +16,7 @@ const AccountLogoutPage: NextPage = () => {
   const router = useRouter();
   const { openToast } = useToast();
 
+  // mutation data
   const [logoutUser, { data: userData, loading: loadingUser }] = useMutation<PostAccountLogoutResponse>("/api/account/logout", {
     onSuccess: async () => {
       if (userData?.isExisted) {
@@ -28,6 +29,7 @@ const AccountLogoutPage: NextPage = () => {
     },
   });
 
+  // logout
   useEffect(() => {
     if (loadingUser) return;
     logoutUser({});

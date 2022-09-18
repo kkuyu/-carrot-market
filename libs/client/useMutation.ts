@@ -24,7 +24,17 @@ const useMutation = <T extends ResponseDataType>(
     setState((state) => ({ ...state, [name]: value }));
   };
 
-  const mutation = (data: any) => {
+  const mutation = (data: { [key: string]: any } | null) => {
+    if (data === null) {
+      setState({
+        pending: false,
+        loading: false,
+        data: undefined,
+        error: undefined,
+      });
+      return;
+    }
+
     fetchState("pending", true);
     fetchState("loading", true);
 

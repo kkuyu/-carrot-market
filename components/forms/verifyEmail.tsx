@@ -1,5 +1,5 @@
 import type { HTMLAttributes } from "react";
-import { UseFormReturn } from "react-hook-form";
+import { SubmitHandler, UseFormReturn } from "react-hook-form";
 // @components
 import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
@@ -9,14 +9,15 @@ export interface VerifyEmailTypes {
 }
 
 interface VerifyEmailProps extends HTMLAttributes<HTMLFormElement> {
+  formType: "confirm";
   formData: UseFormReturn<VerifyEmailTypes, object>;
-  onValid: (validForm: VerifyEmailTypes) => void;
+  onValid: SubmitHandler<VerifyEmailTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
 }
 
 const VerifyEmail = (props: VerifyEmailProps) => {
-  const { formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
 
   return (
@@ -41,7 +42,7 @@ const VerifyEmail = (props: VerifyEmailProps) => {
         <span className="empty:hidden invalid">{formState.errors.email?.message}</span>
       </div>
       <Buttons tag="button" type="submit" status="default" disabled={!formState.isValid || isLoading}>
-        {!isSuccess ? "인증메일 받기" : isLoading ? "인증메일 받기" : "인증메일 다시 받기"}
+        {!isSuccess ? "인증 메일 받기" : "인증 메일 다시 받기"}
       </Buttons>
     </form>
   );

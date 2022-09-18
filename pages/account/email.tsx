@@ -1,25 +1,23 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
 import Link from "next/link";
-import { useEffect, useRef } from "react";
 import { useForm } from "react-hook-form";
 import { SWRConfig } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
-import useLayouts from "@libs/client/useLayouts";
+import useModal from "@libs/client/useModal";
 import useToast from "@libs/client/useToast";
 import useMutation from "@libs/client/useMutation";
 import { withSsrSession } from "@libs/server/withSession";
-import getSsrUser from "@libs/server/getUser";
 // @api
-import { GetUserResponse } from "@api/user";
-import { PostAccountEmailResponse } from "@api/account/email";
-import { PostVerificationTokenResponse } from "@api/verification/token";
-import { PostVerificationUpdateResponse } from "@api/verification/update";
+import { GetUserResponse, PostUserResponse, getUser } from "@api/user";
+import { PostAccountEmailEmailResponse } from "@api/account/email/email";
+import { PostAccountEmailTokenResponse } from "@api/account/email/token";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
+import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import VerifyEmail, { VerifyEmailTypes } from "@components/forms/verifyEmail";
 import VerifyToken, { VerifyTokenTypes } from "@components/forms/verifyToken";
 import MessageToast, { MessageToastProps } from "@components/commons/toasts/case/messageToast";
@@ -27,25 +25,31 @@ import Buttons from "@components/buttons";
 
 const AccountEmailPage: NextPage = () => {
   const router = useRouter();
-  const { user, type: userType, mutate: mutateUser } = useUser();
-  const { changeLayout } = useLayouts();
+  const { user, mutate: mutateUser } = useUser();
+  const { openModal } = useModal();
   const { openToast } = useToast();
 
-  // copy user
-  const originalUser = useRef({ ...user, userType });
-
-  // email
-  const verifyEmailForm = useForm<VerifyEmailTypes>({ mode: "onChange" });
-  const [confirmEmail, { loading: emailLoading, data: emailData }] = useMutation<PostAccountEmailResponse>("/api/account/email", {
-    onSuccess: () => {
-      verifyTokenForm.setFocus("token");
+  // mutation data
+  const [updateUser, { loading: updateLoading }] = useMutation<PostUserResponse>("/api/user", {
+    onSuccess: async () => {
+      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
+        placement: "bottom",
+        message: "이메일 주소가 변경되었어요",
+      });
+      await router.replace("/account");
+      await mutateUser();
     },
-    onError: (data) => {
+  });
+  const [confirmEmail, { loading: loadingEmail, data: emailData }] = useMutation<PostAccountEmailEmailResponse>("/api/account/email/email", {
+    onSuccess: async () => {
+      tokenFormData.setFocus("token");
+    },
+    onError: async (data) => {
       switch (data?.error?.name) {
         case "SameAccount":
         case "AlreadyRegisteredAccount":
-          verifyEmailForm.setError("email", { type: "validate", message: data.error.message });
-          verifyEmailForm.setFocus("email");
+          emailFormData.setError("email", { type: "validate", message: data.error.message });
+          emailFormData.setFocus("email");
           return;
         default:
           console.error(data.error);
@@ -53,25 +57,24 @@ const AccountEmailPage: NextPage = () => {
       }
     },
   });
-
-  // token
-  const verifyTokenForm = useForm<VerifyTokenTypes>({ mode: "onChange" });
-  const [confirmToken, { loading: tokenLoading, data: tokenData }] = useMutation<PostVerificationTokenResponse>("/api/verification/token", {
-    onSuccess: () => {
-      if (updateLoading) return;
-      updateUser({
-        originData: {
-          ...(originalUser.current?.email ? { email: originalUser.current?.email } : {}),
-          ...(originalUser.current?.phone ? { phone: originalUser.current?.phone } : {}),
-        },
-        updateData: { email: verifyEmailForm.getValues("email") },
-      });
+  const [confirmToken, { loading: loadingToken, data: tokenData }] = useMutation<PostAccountEmailTokenResponse>("/api/account/email/token", {
+    onSuccess: async () => {
+      if (user?.email) {
+        openConfirmUserUpdateModal();
+      } else {
+        openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
+          placement: "bottom",
+          message: "이메일 주소가 등록되었어요",
+        });
+        await router.replace("/account");
+        await mutateUser();
+      }
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          verifyTokenForm.setError("token", { type: "validate", message: data.error.message });
-          verifyTokenForm.setFocus("token");
+          tokenFormData.setError("token", { type: "validate", message: data.error.message });
+          tokenFormData.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -80,60 +83,77 @@ const AccountEmailPage: NextPage = () => {
     },
   });
 
-  // update user
-  const [updateUser, { loading: updateLoading }] = useMutation<PostVerificationUpdateResponse>("/api/verification/update", {
-    onSuccess: async () => {
-      await mutateUser();
-      openToast<MessageToastProps>(MessageToast, "UpdatedUser", {
-        placement: "bottom",
-        message: originalUser.current.email ? "이메일이 변경 되었어요" : "이메일이 등록 되었어요",
-      });
-      router.replace("/account");
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
+  // variable: visible
+  const emailFormData = useForm<VerifyEmailTypes>({ mode: "onChange" });
+  const tokenFormData = useForm<VerifyTokenTypes>({ mode: "onChange" });
 
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
+  // confirm: User.email
+  const submitEmail = (data: VerifyEmailTypes) => {
+    if (loadingEmail) return;
+    confirmEmail({
+      ...data,
     });
-  }, []);
+  };
+
+  // confirm: User.tokens
+  const submitToken = (data: VerifyTokenTypes) => {
+    if (loadingToken) return;
+    confirmToken({
+      ...data,
+      email: emailData?.email,
+    });
+  };
+
+  // modal: ConfirmUserUpdate
+  const openConfirmUserUpdateModal = () => {
+    openModal<AlertModalProps>(AlertModal, "ConfirmUserUpdate", {
+      message: `'${emailData?.email}'로 변경할까요?`,
+      actions: [
+        {
+          key: "cancel",
+          style: AlertStyleEnum["cancel"],
+          text: "취소",
+          handler: () => {
+            tokenFormData.setValue("token", "");
+            confirmToken(null);
+            emailFormData.setValue("email", "");
+            emailFormData.setFocus("email");
+            confirmEmail(null);
+          },
+        },
+        {
+          key: "default",
+          style: AlertStyleEnum["primary"],
+          text: "변경하기",
+          handler: () => {
+            updateUser({
+              email: emailData?.email,
+            });
+          },
+        },
+      ],
+    });
+  };
 
   return (
     <section className="container pt-5 pb-5">
-      <h1 className="text-2xl font-bold">{originalUser.current.userType === "member" ? "새로운" : ""} 이메일 주소를 입력해주세요</h1>
+      {/* 헤드라인 */}
+      <h1 className="text-2xl font-bold">{user?.email ? "새로운" : ""} 이메일 주소를 입력해주세요</h1>
       <p className="mt-2">
-        안전한 계정 관리를 위해 이메일을 등록해주세요!
-        <br />
-        휴대폰 번호 변경 등 계정에 변동사항이 있을 때 사용할 수 있어요.
-        <br />
-        {originalUser.current.userType === "member" && originalUser.current?.email && <span className="block">현재 등록된 주소는 {originalUser.current.email} 이에요</span>}
+        <span className="block">안전한 계정 관리를 위해 이메일을 등록해주세요!</span>
+        <span className="block">휴대폰 번호 변경 등 계정에 변동사항이 있을 때 사용할 수 있어요.</span>
+        {user?.email && <span className="block">현재 등록된 이메일 주소는 &apos;{user.email}&apos;이에요</span>}
       </p>
 
-      {/* 이메일 입력 */}
-      <div className="mt-5">
-        <VerifyEmail
-          formData={verifyEmailForm}
-          onValid={(data: VerifyEmailTypes) => {
-            if (emailLoading) return;
-            confirmEmail(data);
-          }}
-          isSuccess={tokenData?.success}
-          isLoading={tokenLoading}
-        />
-      </div>
+      {/* 이메일 */}
+      <VerifyEmail formType="confirm" formData={emailFormData} onValid={submitEmail} isSuccess={tokenData?.success} isLoading={loadingEmail || loadingToken} className="mt-5" />
 
+      {/* 인증 번호 */}
+      {emailData?.success && <VerifyToken formType="confirm" formData={tokenFormData} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
+
+      {/* 문의하기 */}
+      {/* todo: 문의하기(자주 묻는 질문) */}
       <div className="empty:hidden mt-5 text-center space-y-1">
-        {/* 문의하기 */}
-        {/* todo: 문의하기(자주 묻는 질문) */}
         {!emailData?.success && (
           <p>
             <Link href="" passHref>
@@ -144,33 +164,18 @@ const AccountEmailPage: NextPage = () => {
           </p>
         )}
       </div>
-
-      {/* 인증 결과 확인 */}
-      {emailData?.success && (
-        <div className="mt-4">
-          <VerifyToken
-            formData={verifyTokenForm}
-            onValid={(data: VerifyTokenTypes) => {
-              if (tokenLoading) return;
-              confirmToken(data);
-            }}
-            isSuccess={tokenData?.success}
-            isLoading={tokenLoading}
-          />
-        </div>
-      )}
     </section>
   );
 };
 
 const Page: NextPageWithLayout<{
-  getUser: { response: GetUserResponse };
+  getUser: { options: { url: string; query: string }; response: GetUserResponse };
 }> = ({ getUser }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/user": getUser.response,
+          [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
         },
       }}
     >
@@ -181,9 +186,9 @@ const Page: NextPageWithLayout<{
 
 Page.getLayout = getLayout;
 
-export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getUser
-  const ssrUser = await getSsrUser(req);
+  const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
   let invalidUser = false;
@@ -217,6 +222,10 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getUser: {
+        options: {
+          url: "/api/user",
+          query: "",
+        },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
     },
