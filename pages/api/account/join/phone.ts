@@ -36,7 +36,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
       },
     });
-    console.log("foundUser", foundUser);
 
     // create token
     const newToken = await client.token.create({
@@ -48,7 +47,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
       },
     });
-    console.log("newToken", newToken);
 
     // send message
     sendMessage({

@@ -2,11 +2,11 @@ import type { HTMLAttributes } from "react";
 // @libs
 import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
-import { GetProfilesDetailReviewsResponse } from "@api/profiles/[id]/reviews/[filter]";
+import { GetProfilesReviewsResponse } from "@api/profiles/[id]/reviews/[filter]";
 // @components
 import Profiles from "@components/profiles";
 
-export type ReviewItem = GetProfilesDetailReviewsResponse["reviews"][number];
+export type ReviewItem = GetProfilesReviewsResponse["reviews"][number];
 
 export interface ReviewProps extends HTMLAttributes<HTMLDivElement> {
   item: ReviewItem;

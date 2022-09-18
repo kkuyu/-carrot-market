@@ -30,7 +30,7 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const { data, setSize, mutate } = useSWRInfinite<GetProductsCategoriesResponse>((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => {
     const options = {
       url: `/api/products/categories/${category?.kebabCaseValue || router.query?.category?.toString()}`,
-      query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "",
+      query: currentAddr ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "",
     };
     return getKey<GetProductsCategoriesResponse>(...arg, options);
   });

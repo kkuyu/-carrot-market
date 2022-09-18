@@ -9,12 +9,12 @@ import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
 // @components
 import Buttons from "@components/buttons";
 
-export type FeedbackProductItem = GetProfilesDetailProductsResponse["products"][number];
+export type FeedbackProductItem = GetProfilesProductsResponse["products"][number];
 
 export interface FeedbackProductProps extends HTMLAttributes<HTMLDivElement> {
   item?: FeedbackProductItem;

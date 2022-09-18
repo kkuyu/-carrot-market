@@ -8,8 +8,8 @@ import useUser from "@libs/client/useUser";
 // @api
 import { ProfileConcerns } from "@api/profiles/types";
 import { GetProfilesDetailResponse, getProfilesDetail } from "@api/profiles/[id]";
-import { GetProfilesDetailMannersResponse, getProfilesDetailManners } from "@api/profiles/[id]/manners/[filter]";
-import { GetProfilesDetailReviewsResponse, getProfilesDetailReviews } from "@api/profiles/[id]/reviews/[filter]";
+import { GetProfilesMannersResponse, getProfilesManners } from "@api/profiles/[id]/manners/[filter]";
+import { GetProfilesReviewsResponse, getProfilesReviews } from "@api/profiles/[id]/reviews/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -26,8 +26,8 @@ const ProfilesDetailPage: NextPage = () => {
 
   // fetch data
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router.query.id ? `/api/profiles/${router.query.id}?` : null);
-  const { data: mannerData } = useSWR<GetProfilesDetailMannersResponse>(router.query.id ? `/api/profiles/${router.query.id}/manners/preview?prevCursor=0` : null);
-  const { data: reviewData } = useSWR<GetProfilesDetailReviewsResponse>(router.query.id ? `/api/profiles/${router.query.id}/reviews/preview?prevCursor=0` : null);
+  const { data: mannerData } = useSWR<GetProfilesMannersResponse>(router.query.id ? `/api/profiles/${router.query.id}/manners/preview?prevCursor=0` : null);
+  const { data: reviewData } = useSWR<GetProfilesReviewsResponse>(router.query.id ? `/api/profiles/${router.query.id}/reviews/preview?prevCursor=0` : null);
 
   if (!profileData?.success || !profileData?.profile) {
     return <NextError statusCode={404} />;
@@ -118,9 +118,9 @@ const ProfilesDetailPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getProfilesDetail: { options: { url: string; query: string }; response: GetProfilesDetailResponse };
-  getProfilesDetailManners: { options: { url: string; query: string }; response: GetProfilesDetailMannersResponse };
-  getProfilesDetailReviews: { options: { url: string; query: string }; response: GetProfilesDetailReviewsResponse };
-}> = ({ getProfilesDetail, getProfilesDetailManners, getProfilesDetailReviews }) => {
+  getProfilesManners: { options: { url: string; query: string }; response: GetProfilesMannersResponse };
+  getProfilesReviews: { options: { url: string; query: string }; response: GetProfilesReviewsResponse };
+}> = ({ getProfilesDetail, getProfilesManners, getProfilesReviews }) => {
   return (
     <SWRConfig
       value={{
@@ -128,8 +128,8 @@ const Page: NextPageWithLayout<{
           ...(getProfilesDetail
             ? {
                 [`${getProfilesDetail?.options?.url}?${getProfilesDetail?.options?.query}`]: getProfilesDetail.response,
-                [`${getProfilesDetailManners?.options?.url}?${getProfilesDetailManners?.options?.query}`]: getProfilesDetailManners.response,
-                [`${getProfilesDetailReviews?.options?.url}?${getProfilesDetailReviews?.options?.query}`]: getProfilesDetailReviews.response,
+                [`${getProfilesManners?.options?.url}?${getProfilesManners?.options?.query}`]: getProfilesManners.response,
+                [`${getProfilesReviews?.options?.url}?${getProfilesReviews?.options?.query}`]: getProfilesReviews.response,
               }
             : {}),
         },
@@ -168,9 +168,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
     };
   }
 
-  // getProfilesDetailManners
+  // getProfilesManners
   const profilesDetailManners = profilesDetail?.profile?.id
-    ? await getProfilesDetailManners({
+    ? await getProfilesManners({
         filter: "preview",
         id: profilesDetail?.profile?.id,
         prevCursor: 0,
@@ -179,9 +179,9 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
         manners: [],
       };
 
-  // getProfilesDetailReviews
+  // getProfilesReviews
   const profilesDetailReviews = profilesDetail?.profile?.id
-    ? await getProfilesDetailReviews({
+    ? await getProfilesReviews({
         filter: "preview",
         id: profilesDetail?.profile?.id,
         prevCursor: 0,
@@ -219,7 +219,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           ...JSON.parse(JSON.stringify(profilesDetail || {})),
         },
       },
-      getProfilesDetailManners: {
+      getProfilesManners: {
         options: {
           url: profilesDetail?.profile?.id ? `/api/profiles/${profilesDetail?.profile?.id}/manners/preview` : "",
           query: "prevCursor=0",
@@ -229,7 +229,7 @@ export const getStaticProps: GetStaticProps = async ({ params }) => {
           ...JSON.parse(JSON.stringify(profilesDetailManners || {})),
         },
       },
-      getProfilesDetailReviews: {
+      getProfilesReviews: {
         options: {
           url: profilesDetail?.profile?.id ? `/api/profiles/${profilesDetail?.profile?.id}/reviews/preview` : "",
           query: "prevCursor=0",

@@ -6,17 +6,17 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
 import { CommentMaximumDepth, CommentMinimumDepth } from "@api/comments/types";
-import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
+import { GetProfilesModelsResponse } from "@api/profiles/[id]/[models]/[filter]";
 
-export type GetProfilesDetailCommentsResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "comments">;
+export type GetProfilesCommentsResponse = Pick<GetProfilesModelsResponse, "success" | "totalCount" | "lastCursor" | "comments">;
 
-export const ProfileCommentsFilterEnum = {
+export const ProfileCommentsEnum = {
   ["all"]: "all",
 } as const;
 
-export type ProfileCommentsFilterEnum = typeof ProfileCommentsFilterEnum[keyof typeof ProfileCommentsFilterEnum];
+export type ProfileCommentsEnum = typeof ProfileCommentsEnum[keyof typeof ProfileCommentsEnum];
 
-export const getProfilesDetailComments = async (query: { filter: ProfileCommentsFilterEnum; id: number; prevCursor: number }) => {
+export const getProfilesComments = async (query: { filter: ProfileCommentsEnum; id: number; prevCursor: number }) => {
   const { filter, id, prevCursor } = query;
 
   const where = {
@@ -80,9 +80,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as ProfileCommentsFilterEnum;
+    const filter = _filter.toString() as ProfileCommentsEnum;
     const prevCursor = +_prevCursor.toString();
-    if (!isInstance(filter, ProfileCommentsFilterEnum)) {
+    if (!isInstance(filter, ProfileCommentsEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -102,10 +102,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, comments } = await getProfilesDetailComments({ filter, id, prevCursor });
+    const { totalCount, comments } = await getProfilesComments({ filter, id, prevCursor });
 
     // result
-    const result: GetProfilesDetailCommentsResponse = {
+    const result: GetProfilesCommentsResponse = {
       success: true,
       totalCount,
       lastCursor: comments.length ? comments[comments.length - 1].id : -1,

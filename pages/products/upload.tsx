@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { SWRConfig } from "swr";
 // @libs
@@ -20,7 +20,7 @@ import EditProduct, { EditProductTypes } from "@components/forms/editProduct";
 
 const ProductsUploadPage: NextPage = () => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { currentAddr } = useUser();
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +35,15 @@ const ProductsUploadPage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const formData = useForm<EditProductTypes>();
+  // variable: form
+  const formData = useForm<EditProductTypes>({
+    defaultValues: {
+      emdAddrNm: currentAddr?.emdAddrNm,
+      emdPosNm: currentAddr?.emdPosNm,
+      emdPosX: currentAddr?.emdPosX,
+      emdPosY: currentAddr?.emdPosY,
+    },
+  });
 
   // update: Product
   const submitProduct = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditProductTypes) => {
@@ -47,9 +54,17 @@ const ProductsUploadPage: NextPage = () => {
     createProduct({ ...data, photos: validPaths, ...currentAddr });
   };
 
+  // update: formData
+  useEffect(() => {
+    formData.setValue("emdAddrNm", currentAddr?.emdAddrNm);
+    formData.setValue("emdPosNm", currentAddr?.emdPosNm);
+    formData.setValue("emdPosX", currentAddr?.emdPosX);
+    formData.setValue("emdPosY", currentAddr?.emdPosY);
+  }, [currentAddr]);
+
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct id="upload-product" formType="create" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditProduct id="upload-product" formType="create" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} />
     </div>
   );
 };

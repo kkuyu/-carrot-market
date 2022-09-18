@@ -31,6 +31,7 @@ const EditProductReview = (props: EditProductReviewProps) => {
   const { formType, formData, onValid, isLoading, isSuccess, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, getValues, resetField } = formData;
 
+  // variable: invisible
   const [editState, setEditState] = useState<{ score: number; isFoldMode: boolean }>({ score: 0, isFoldMode: true });
 
   return (
@@ -112,7 +113,7 @@ const EditProductReview = (props: EditProductReviewProps) => {
                 <span className="text-gray-500">남겨주신 거래 후기는 상대방의 프로필에 공개돼요</span>
               </>
             )}
-            <TextAreas<EditProductReviewTypes["description"]> register={register("description", {})} required minLength={10} name="description" placeholder={"여기에 적어주세요(선택사항)"} />
+            <TextAreas<EditProductReviewTypes["description"]> register={register("description", {})} required minLength={10} name="description" placeholder="여기에 적어주세요(선택사항)" />
             <span className="empty:hidden invalid">{formState.errors.description?.message}</span>
           </div>
           <Buttons tag="button" type="submit" disabled={isLoading}>

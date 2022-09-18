@@ -15,7 +15,7 @@ import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
-import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsUpdateResponse } from "@api/products/[id]/update";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -23,7 +23,7 @@ import type { NextPageWithLayout } from "@app";
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import ProductSummary from "@components/cards/productSummary";
-import ResumeProduct, { ResumeProductTypes } from "@components/forms/resumeProduct";
+import EditProductResume, { EditProductResumeTypes } from "@components/forms/editProductResume";
 
 type ResumeState = {
   type: "HoldOff" | "MaxCount" | "ReadyFreeProduct" | "ReadyPayProduct" | "Error" | null;
@@ -48,9 +48,9 @@ const ProductsResumePage: NextPage = () => {
   const [editProduct, { loading: loadingProduct }] = useMutation<PostProductsUpdateResponse>(`/api/products/${router.query.id}/update`, {
     onSuccess: async () => {
       productsCaches?.forEach(async ([key, value]) => {
-        const filterProducts = (data: GetProfilesDetailProductsResponse) => data && { ...data, products: data?.products?.filter((product) => product?.id !== productData?.product?.id) };
+        const filterProducts = (data: GetProfilesProductsResponse) => data && { ...data, products: data?.products?.filter((product) => product?.id !== productData?.product?.id) };
         let updateValue = null;
-        if (/^\$inf\$\/api\//.test(key)) updateValue = value.map((data: GetProfilesDetailProductsResponse) => filterProducts(data));
+        if (/^\$inf\$\/api\//.test(key)) updateValue = value.map((data: GetProfilesProductsResponse) => filterProducts(data));
         if (/^\/api\//.test(key)) updateValue = filterProducts(value);
         if (updateValue) await mutate(key, updateValue);
       });
@@ -58,18 +58,20 @@ const ProductsResumePage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const { timeState: resumeTimeState } = useTimeDiff(resumeState?.possibleDate?.toString() || null, { config: { type: "presentToPast" } });
-  const { timeState: nextResumeTimeState } = useTimeDiff(resumeState?.afterDate?.toString() || null, { config: { type: "presentToPast" } });
-  const formData = useForm<ResumeProductTypes>({
+  // variable: form
+  const formData = useForm<EditProductResumeTypes>({
     defaultValues: {
       originalPrice: productData?.product?.price,
       currentPrice: productData?.product?.price,
     },
   });
 
+  // variable: visible
+  const { timeState: resumeTimeState } = useTimeDiff(resumeState?.possibleDate?.toString() || null, { config: { type: "presentToPast" } });
+  const { timeState: nextResumeTimeState } = useTimeDiff(resumeState?.afterDate?.toString() || null, { config: { type: "presentToPast" } });
+
   // update: Product
-  const submitProduct = ({ currentPrice, originalPrice, ...data }: ResumeProductTypes) => {
+  const submitProduct = ({ currentPrice, originalPrice, ...data }: EditProductResumeTypes) => {
     if (!user || loadingProduct) return;
     editProduct({
       ...data,
@@ -191,7 +193,7 @@ const ProductsResumePage: NextPage = () => {
               지금 끌어올리시겠어요?
             </strong>
             <div className="mt-4">
-              <ResumeProduct
+              <EditProductResume
                 formType="update"
                 formData={formData}
                 onValid={submitProduct}
@@ -211,7 +213,7 @@ const ProductsResumePage: NextPage = () => {
               가격을 낮춰보세요
             </strong>
             <div className="mt-4">
-              <ResumeProduct
+              <EditProductResume
                 formType="update"
                 formData={formData}
                 onValid={submitProduct}

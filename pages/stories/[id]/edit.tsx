@@ -42,12 +42,16 @@ const StoriesEditPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditStoryTypes>({
     defaultValues: {
       originalPhotoPaths: storyData?.story?.photos,
       category: storyData?.story?.category as EditStoryTypes["category"],
       content: storyData?.story?.content,
+      emdAddrNm: storyData?.story?.emdAddrNm,
+      emdPosNm: storyData?.story?.emdPosNm,
+      emdPosX: storyData?.story?.emdPosX,
+      emdPosY: storyData?.story?.emdPosY,
     },
   });
 
@@ -84,6 +88,10 @@ const StoriesEditPage: NextPage = () => {
     formData.setValue("originalPhotoPaths", storyData?.story?.photos);
     formData.setValue("category", storyData?.story?.category as EditStoryTypes["category"]);
     formData.setValue("content", storyData?.story?.content);
+    formData.setValue("emdAddrNm", storyData?.story?.emdAddrNm);
+    formData.setValue("emdPosNm", storyData?.story?.emdPosNm);
+    formData.setValue("emdPosX", storyData?.story?.emdPosX);
+    formData.setValue("emdPosY", storyData?.story?.emdPosY);
   }, [storyData?.story]);
 
   if (!isValidStory) {
@@ -92,7 +100,7 @@ const StoriesEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory id="edit-story" formType="update" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={storyData?.story?.emdPosNm || ""} />
+      <EditStory id="edit-story" formType="update" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} />
     </div>
   );
 };

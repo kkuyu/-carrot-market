@@ -25,7 +25,7 @@ const ProductsIndexPage: NextPage = () => {
 
   // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
-    const options = { url: "/api/products", query: currentAddr?.emdAddrNm ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "" };
+    const options = { url: "/api/products", query: currentAddr ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "" };
     return getKey<GetProductsResponse>(...arg, options);
   });
 
@@ -104,10 +104,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile && !ssrUser.dummyProfile) invalidUser = true;
   // redirect `/welcome` OR `/account/logout`
-  if (invalidUser) {
+  if (!ssrUser.profile && !ssrUser.dummyProfile) {
     return {
       redirect: {
         permanent: false,
@@ -142,7 +140,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     header: {
       title: "",
       titleTag: "strong",
-      utils: ["address", "title", "search", "hamburger"],
+      utils: ["address", "title", "magnifier", "hamburger"],
       hamburgerAction: {
         pathname: "/products/categories",
       },
@@ -169,7 +167,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
         },
         response: {
           success: true,
-          ...JSON.parse(JSON.stringify(productsData || 0)),
+          ...JSON.parse(JSON.stringify(productsData || {})),
         },
       },
     },

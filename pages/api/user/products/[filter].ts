@@ -5,18 +5,19 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 import { isInstance } from "@libs/utils";
-import { GetUserDetailModelsResponse } from "@api/user/[models]/[filter]";
+// @api
+import { GetUserModelsResponse } from "@api/user/[models]/[filter]";
 
-export type GetUserDetailProductsResponse = Pick<GetUserDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "products">;
+export type GetUserProductsResponse = Pick<GetUserModelsResponse, "success" | "totalCount" | "lastCursor" | "products">;
 
-export const UserProductsFilterEnum = {
+export const UserProductsEnum = {
   ["purchase"]: "purchase",
   ["like"]: "like",
 } as const;
 
-export type UserProductsFilterEnum = typeof UserProductsFilterEnum[keyof typeof UserProductsFilterEnum];
+export type UserProductsEnum = typeof UserProductsEnum[keyof typeof UserProductsEnum];
 
-export const getUserDetailProducts = async (query: { filter: UserProductsFilterEnum; prevCursor: number; userId: number }) => {
+export const getUserProducts = async (query: { filter: UserProductsEnum; prevCursor: number; userId: number }) => {
   const { filter, prevCursor, userId } = query;
 
   const where = {
@@ -85,9 +86,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as UserProductsFilterEnum;
+    const filter = _filter.toString() as UserProductsEnum;
     const prevCursor = +_prevCursor.toString();
-    if (!isInstance(filter, UserProductsFilterEnum)) {
+    if (!isInstance(filter, UserProductsEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -99,10 +100,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, products } = await getUserDetailProducts({ filter, prevCursor, userId: user?.id });
+    const { totalCount, products } = await getUserProducts({ filter, prevCursor, userId: user?.id });
 
     // result
-    const result: GetUserDetailProductsResponse = {
+    const result: GetUserProductsResponse = {
       success: true,
       totalCount,
       lastCursor: products.length ? products[products.length - 1].id : -1,

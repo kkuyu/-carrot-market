@@ -12,8 +12,8 @@ import useOnScreen from "@libs/client/useOnScreen";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
-import { GetUserDetailModelsResponse, UserModelsEnum, UserModelsEnums, UserDetailContents } from "@api/user/[models]/[filter]";
-import { UserProductsFilterEnum, getUserDetailProducts } from "@api/user/products/[filter]";
+import { GetUserModelsResponse, UserModelsEnum, UserModelsEnums, UserModelsContent } from "@api/user/[models]/[filter]";
+import { UserProductsEnum, getUserProducts } from "@api/user/products/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -34,9 +34,9 @@ const UserDetailModelsPage: NextPage = () => {
   const currentType = modelTypes.find((type) => type.models === router?.query?.models?.toString() && type.filter === router?.query?.filter?.toString())!;
 
   // fetch data
-  const { data, setSize } = useSWRInfinite<GetUserDetailModelsResponse>((...arg: [index: number, previousPageData: GetUserDetailModelsResponse]) => {
-    const options = { url: currentType?.models && currentType?.filter ? `/api/user/${currentType?.models}/${currentType?.filter}` : "" };
-    return getKey<GetUserDetailModelsResponse>(...arg, options);
+  const { data, setSize } = useSWRInfinite<GetUserModelsResponse>((...arg: [index: number, previousPageData: GetUserModelsResponse]) => {
+    const options = { url: currentType ? `/api/user/${currentType?.models}/${currentType?.filter}` : "" };
+    return getKey<GetUserModelsResponse>(...arg, options);
   });
 
   // variable data: visible
@@ -44,13 +44,13 @@ const UserDetailModelsPage: NextPage = () => {
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const contents = useMemo(() => {
-    if (!data) return {} as UserDetailContents;
+    if (!data) return {} as UserModelsContent;
     return data.reduce((acc, cur) => {
       Object.entries(cur)
         .filter(([key, values]) => Array.isArray(values) && values.length)
         .forEach(([key, values]) => (acc[key as UserModelsEnum] = [...(acc?.[key as UserModelsEnum] || []), ...values]));
       return acc;
-    }, {} as UserDetailContents);
+    }, {} as UserModelsContent);
   }, [data]);
 
   // update: infinite list
@@ -90,27 +90,35 @@ const UserDetailModelsPage: NextPage = () => {
       <section className="container">
         <h2 className="sr-only">나의 {currentType.caption}</h2>
 
-        {/* Models: List */}
-        {currentType.isInfinite && Boolean(contents?.[currentType.models]?.length) && (
-          <>
-            {currentType.models === "products" && (
-              <ProductList list={contents?.products || []} className={`-mx-5 ${currentType.filter === "purchase" ? "border-b-2 divide-y-2" : ""}`}>
-                {currentType.filter === "like" ? <LikeProduct key="LikeProduct" /> : <></>}
-                {currentType.filter === "purchase" ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
-              </ProductList>
+        {/* Models: Infinite */}
+        {currentType.isInfinite && (
+          <Fragment>
+            {/* Models: List */}
+            {Boolean(Object.keys(contents)?.length) && (
+              <>
+                {currentType.models === "products" && (
+                  <ProductList list={contents?.products || []} className={`-mx-5 ${currentType.filter === "purchase" ? "border-b-2 divide-y-2" : ""}`}>
+                    {currentType.filter === "like" ? <LikeProduct key="LikeProduct" /> : <></>}
+                    {currentType.filter === "purchase" ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
+                  </ProductList>
+                )}
+                <span className="empty:hidden list-loading">
+                  {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
+                </span>
+              </>
             )}
-            <span className="empty:hidden list-loading">
-              {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
-            </span>
-          </>
+
+            {/* Models: Empty */}
+            {!Boolean(Object.keys(contents)?.length) && (
+              <p className="list-empty">
+                <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
+              </p>
+            )}
+          </Fragment>
         )}
 
-        {/* Models: Empty */}
-        {currentType.isInfinite && !Boolean(contents?.[currentType.models]?.length) && (
-          <p className="list-empty">
-            <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
-          </p>
-        )}
+        {/* Models: Finite */}
+        {/* {!currentType.isInfinite && <Fragment></Fragment>} */}
 
         {/* Models: InfiniteRef */}
         <div id="infiniteRef" ref={infiniteRef} />
@@ -121,19 +129,17 @@ const UserDetailModelsPage: NextPage = () => {
 
 const Page: NextPageWithLayout<{
   getUser: { options: { url: string; query: string }; response: GetUserResponse };
-  getUserDetailModels: {
+  getUserModels: {
     options: { url: string; query: string };
-    response: GetUserDetailModelsResponse;
+    response: GetUserModelsResponse;
   };
-}> = ({ getUser, getUserDetailModels }) => {
+}> = ({ getUser, getUserModels }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetUserDetailModelsResponse]) => getKey<GetUserDetailModelsResponse>(...arg, getUserDetailModels.options))]: [
-            getUserDetailModels.response,
-          ],
+          [unstable_serialize((...arg: [index: number, previousPageData: GetUserModelsResponse]) => getKey<GetUserModelsResponse>(...arg, getUserModels.options))]: [getUserModels.response],
         },
       }}
     >
@@ -181,11 +187,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // UserDetailProducts
-  const userDetailProducts =
+  // userProducts
+  const userProducts =
     ssrUser?.profile?.id && !isNaN(+ssrUser?.profile?.id)
-      ? await getUserDetailProducts({
-          filter: filter as Extract<UserModelsEnums[keyof UserModelsEnums], UserProductsFilterEnum>,
+      ? await getUserProducts({
+          filter: filter as Extract<UserModelsEnums[keyof UserModelsEnums], UserProductsEnum>,
           prevCursor: 0,
           userId: ssrUser?.profile?.id,
         })
@@ -194,18 +200,18 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           products: [],
         };
 
-  const userDetailModels = {
-    ...(models === "products" && filter === "purchase" ? { title: "구매내역", contents: userDetailProducts } : {}),
-    ...(models === "products" && filter === "like" ? { title: "관심목록", contents: userDetailProducts } : {}),
+  const userModels = {
+    ...(models === "products" && filter === "purchase" ? { title: "구매내역", contents: userProducts } : {}),
+    ...(models === "products" && filter === "like" ? { title: "관심목록", contents: userProducts } : {}),
   };
 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${userDetailModels?.title} | 나의 당근`,
+      title: `${userModels?.title} | 나의 당근`,
     },
     header: {
-      title: `${userDetailModels?.title}`,
+      title: `${userModels?.title}`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -224,14 +230,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
         },
         response: JSON.parse(JSON.stringify(ssrUser || {})),
       },
-      getUserDetailModels: {
+      getUserModels: {
         options: {
           url: `/api/user/${models}/${filter}`,
           query: "",
         },
         response: {
           success: true,
-          ...JSON.parse(JSON.stringify(userDetailModels?.contents || {})),
+          ...JSON.parse(JSON.stringify(userModels?.contents || {})),
         },
       },
     },

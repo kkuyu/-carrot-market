@@ -1,11 +1,11 @@
 import type { HTMLAttributes } from "react";
 // @api
 import { ProductMannerValues } from "@api/products/reviews/types";
-import { GetProfilesDetailMannersResponse } from "@api/profiles/[id]/manners/[filter]";
+import { GetProfilesMannersResponse } from "@api/profiles/[id]/manners/[filter]";
 // @components
 import Icons from "@components/icons";
 
-type MannerItem = GetProfilesDetailMannersResponse["manners"][number];
+type MannerItem = GetProfilesMannersResponse["manners"][number];
 
 interface MannerListProps extends HTMLAttributes<HTMLUListElement> {
   list: MannerItem[];

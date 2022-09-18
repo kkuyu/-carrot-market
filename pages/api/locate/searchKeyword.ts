@@ -58,16 +58,15 @@ export const getSearchKeyword = async (query: { keyword: string }) => {
       },
     })
   ).json();
-  console.log(`http://api.vworld.kr/req/data?${params}`);
 
   return {
     emdList:
-      keywordResponse.response.status === "OK"
-        ? keywordResponse.response.result.featureCollection.features.map((data) => ({
-            id: data.properties.emd_cd,
-            addrNm: data.properties.full_nm,
-            emdNm: data.properties.emd_kor_nm,
-            emdCd: data.properties.emd_cd,
+      keywordResponse?.response?.status === "OK"
+        ? keywordResponse?.response?.result?.featureCollection?.features?.map((data) => ({
+            id: data?.properties?.emd_cd,
+            addrNm: data?.properties?.full_nm,
+            emdNm: data?.properties?.emd_kor_nm,
+            emdCd: data?.properties?.emd_cd,
           }))
         : [],
   };

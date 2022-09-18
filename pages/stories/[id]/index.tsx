@@ -59,9 +59,11 @@ const StoriesDetailPage: NextPage = () => {
     },
   });
 
+  // variable: form
+  const formData = useForm<EditStoryCommentTypes>({ defaultValues: { reCommentRefId: null } });
+
   // variable: visible
   const { isMounted, timeState } = useTimeDiff(storyData?.story?.createdAt?.toString() || null);
-  const formData = useForm<EditStoryCommentTypes>({ defaultValues: { reCommentRefId: null } });
 
   // variable: comments
   const [flatComments, setFlatComments] = useState<GetStoriesCommentsResponse["comments"]>(() => {

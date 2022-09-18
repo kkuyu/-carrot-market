@@ -35,7 +35,7 @@ const CommentsEditPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditStoryCommentTypes>({
     defaultValues: {
       content: commentData?.comment?.content,
@@ -111,10 +111,8 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/comments/${commentId}`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,

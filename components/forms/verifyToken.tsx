@@ -1,5 +1,7 @@
 import type { HTMLAttributes } from "react";
 import { SubmitHandler, UseFormReturn } from "react-hook-form";
+// @libs
+import useUser from "@libs/client/useUser";
 // @components
 import Inputs from "@components/inputs";
 import Buttons from "@components/buttons";
@@ -14,11 +16,11 @@ interface VerifyTokenProps extends HTMLAttributes<HTMLFormElement> {
   onValid: SubmitHandler<VerifyTokenTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
-  userType?: "member" | "non-member";
 }
 const VerifyToken = (props: VerifyTokenProps) => {
-  const { formType, formData, onValid, isSuccess, isLoading, userType, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState } = formData;
+  const { type: userType } = useUser();
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-3 ${className}`} {...restProps}>

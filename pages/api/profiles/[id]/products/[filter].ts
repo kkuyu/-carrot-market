@@ -6,19 +6,19 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
+import { GetProfilesModelsResponse } from "@api/profiles/[id]/[models]/[filter]";
 
-export type GetProfilesDetailProductsResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "products">;
+export type GetProfilesProductsResponse = Pick<GetProfilesModelsResponse, "success" | "totalCount" | "lastCursor" | "products">;
 
-export const ProfileProductsFilterEnum = {
+export const ProfileProductsEnum = {
   ["all"]: "all",
   ["sale"]: "sale",
   ["sold"]: "sold",
 } as const;
 
-export type ProfileProductsFilterEnum = typeof ProfileProductsFilterEnum[keyof typeof ProfileProductsFilterEnum];
+export type ProfileProductsEnum = typeof ProfileProductsEnum[keyof typeof ProfileProductsEnum];
 
-export const getProfilesDetailProducts = async (query: { filter: ProfileProductsFilterEnum; id: number; prevCursor: number }) => {
+export const getProfilesProducts = async (query: { filter: ProfileProductsEnum; id: number; prevCursor: number }) => {
   const { filter, id, prevCursor } = query;
 
   const where = {
@@ -93,9 +93,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as ProfileProductsFilterEnum;
+    const filter = _filter.toString() as ProfileProductsEnum;
     const prevCursor = +_prevCursor.toString();
-    if (!isInstance(filter, ProfileProductsFilterEnum)) {
+    if (!isInstance(filter, ProfileProductsEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -115,10 +115,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, products } = await getProfilesDetailProducts({ filter, id, prevCursor });
+    const { totalCount, products } = await getProfilesProducts({ filter, id, prevCursor });
 
     // result
-    const result: GetProfilesDetailProductsResponse = {
+    const result: GetProfilesProductsResponse = {
       success: true,
       totalCount,
       lastCursor: products.length ? products[products.length - 1].id : -1,

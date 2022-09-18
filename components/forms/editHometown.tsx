@@ -3,7 +3,7 @@ import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import useSWR from "swr";
 import { EmdType } from "@prisma/client";
 // @libs
-import { UserProfile } from "@libs/client/useUser";
+import useUser from "@libs/client/useUser";
 // @api
 import { GetSearchBoundaryResponse } from "@api/locate/searchBoundary";
 // @components
@@ -19,7 +19,7 @@ export interface EditHometownTypes {
   subDistance?: number | null;
 }
 
-interface EditHometownProps extends HTMLAttributes<HTMLFormElement>, Pick<UserProfile, "user" | "currentAddr"> {
+interface EditHometownProps extends HTMLAttributes<HTMLFormElement> {
   formType: "update";
   formData: UseFormReturn<EditHometownTypes, object>;
   onValid: SubmitHandler<EditHometownTypes>;
@@ -28,8 +28,9 @@ interface EditHometownProps extends HTMLAttributes<HTMLFormElement>, Pick<UserPr
 }
 
 const EditHometown = (props: EditHometownProps) => {
-  const { formType, formData, onValid, isSuccess, isLoading, user, currentAddr, className = "", ...restProps } = props;
-  const { register, handleSubmit, formState, setValue, watch } = formData;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
+  const { register, handleSubmit, setValue } = formData;
+  const { user, currentAddr } = useUser();
 
   // fetch data
   const { data: boundaryData } = useSWR<GetSearchBoundaryResponse>(

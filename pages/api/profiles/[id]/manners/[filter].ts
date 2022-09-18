@@ -5,18 +5,18 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
+import { GetProfilesModelsResponse } from "@api/profiles/[id]/[models]/[filter]";
 
-export type GetProfilesDetailMannersResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "manners">;
+export type GetProfilesMannersResponse = Pick<GetProfilesModelsResponse, "success" | "totalCount" | "lastCursor" | "manners">;
 
-export const ProfileMannersFilterEnum = {
+export const ProfileMannersEnum = {
   ["all"]: "all",
   ["preview"]: "preview",
 } as const;
 
-export type ProfileMannersFilterEnum = typeof ProfileMannersFilterEnum[keyof typeof ProfileMannersFilterEnum];
+export type ProfileMannersEnum = typeof ProfileMannersEnum[keyof typeof ProfileMannersEnum];
 
-export const getProfilesDetailManners = async (query: { filter: ProfileMannersFilterEnum; id: number; prevCursor: number; userId?: number }) => {
+export const getProfilesManners = async (query: { filter: ProfileMannersEnum; id: number; prevCursor: number; userId?: number }) => {
   const { filter, id, prevCursor, userId } = query;
 
   const manners = await client.manner.findMany({
@@ -67,9 +67,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
   }
 
   // params
-  const filter = _filter.toString() as ProfileMannersFilterEnum;
+  const filter = _filter.toString() as ProfileMannersEnum;
   const prevCursor = +_prevCursor.toString();
-  if (!isInstance(filter, ProfileMannersFilterEnum)) {
+  if (!isInstance(filter, ProfileMannersEnum)) {
     const error = new Error("InvalidRequestBody");
     error.name = "InvalidRequestBody";
     throw error;
@@ -89,10 +89,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
   }
 
   // fetch data
-  const { manners } = await getProfilesDetailManners({ filter, id, prevCursor, userId: user?.id });
+  const { manners } = await getProfilesManners({ filter, id, prevCursor, userId: user?.id });
 
   // result
-  const result: GetProfilesDetailMannersResponse = {
+  const result: GetProfilesMannersResponse = {
     success: true,
     totalCount: 0,
     lastCursor: -1,

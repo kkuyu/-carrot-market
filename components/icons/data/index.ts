@@ -3,6 +3,7 @@ export * from "@components/icons/data/bars3";
 export * from "@components/icons/data/chatBubbleLeftRight";
 export * from "@components/icons/data/chatBubbleOvalLeftEllipsis";
 export * from "@components/icons/data/checkCircle";
+export * from "@components/icons/data/checkCircleSold";
 export * from "@components/icons/data/chevronDown";
 export * from "@components/icons/data/chevronLeft";
 export * from "@components/icons/data/chevronRight";

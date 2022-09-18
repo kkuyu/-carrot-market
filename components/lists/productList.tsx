@@ -19,7 +19,7 @@ const ProductList = (props: ProductListProps) => {
   if (!Boolean(list.length)) return null;
 
   return (
-    <ul className={`[&:not(.divide-y-2)]:divide-y [&:not(.border-b-2)]:border-b ${className}`} {...restProps}>
+    <ul className={`[&:not(.divide-y-2)]:divide-y [&:not(.border-b-0):not(.border-b-2)]:border-b ${className}`} {...restProps}>
       {list.map((item) => {
         const childrenWithProps = Children.map(children, (child) => {
           if (isValidElement(child)) {

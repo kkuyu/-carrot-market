@@ -20,6 +20,10 @@ export interface EditProductTypes {
   name: string;
   price: number;
   description: string;
+  emdAddrNm: string | null;
+  emdPosNm: string | null;
+  emdPosX: number | null;
+  emdPosY: number | null;
 }
 
 interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
@@ -28,14 +32,14 @@ interface EditProductProps extends HTMLAttributes<HTMLFormElement> {
   onValid: SubmitHandler<EditProductTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
-  emdPosNm: string;
 }
 
 const EditProduct = (props: EditProductProps) => {
-  const { formType, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue, getValues } = formData;
 
   // variable: invisible
+  const emdPosNm = getValues("emdPosNm");
   const productCategories = Object.values(ProductCategory).map(
     (category) =>
       getCategory<ProductCategories>(category, {

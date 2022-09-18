@@ -9,7 +9,7 @@ import useMutation from "@libs/client/useMutation";
 import useModal from "@libs/client/useModal";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
-import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsLikeResponse } from "@api/products/[id]/like";
 // @components
 import WelcomeAlertModal, { WelcomeAlertModalProps, WelcomeAlertModalName } from "@components/commons/modals/instance/welcomeAlertModal";
@@ -17,7 +17,7 @@ import RegisterAlertModal, { RegisterAlertModalProps, RegisterAlertModalName } f
 import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
-export type LikeProductItem = GetProfilesDetailProductsResponse["products"][number];
+export type LikeProductItem = GetProfilesProductsResponse["products"][number];
 
 export interface LikeProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: LikeProductItem;
@@ -71,7 +71,7 @@ const LikeProduct = (props: LikeProductProps) => {
       }}
       disabled={loadingProductLike}
       {...restProps}
-      aria-label={`관심상품 ${productData?.productCondition?.isLike ? "취소" : "추가"}`}
+      aria-label={`관심 상품 ${productData?.productCondition?.isLike ? "취소" : "추가"}`}
     >
       {productData?.productCondition?.isLike ? <Icons name="HeartSolid" className="w-6 h-6 text-gray-600" /> : <Icons name="Heart" className="w-6 h-6" />}
     </Buttons>

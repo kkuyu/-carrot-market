@@ -44,7 +44,7 @@ const CommentsDetailPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditStoryCommentTypes>();
 
   // variable: comments

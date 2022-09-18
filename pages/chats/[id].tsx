@@ -58,8 +58,10 @@ const ChatsDetailPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditChatMessageTypes>({});
+
+  // variable: visible
   const userGroup = chatData?.chat?.users ? chatData.chat.users.filter((chatUser) => chatUser.id !== user?.id) : [];
 
   // update: Record.Kind.ProductSale

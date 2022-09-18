@@ -1,6 +1,6 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { SWRConfig } from "swr";
 // @libs
@@ -20,7 +20,7 @@ import EditStory, { EditStoryTypes } from "@components/forms/editStory";
 
 const StoriesUploadPage: NextPage = () => {
   const router = useRouter();
-  const { user, currentAddr } = useUser();
+  const { currentAddr } = useUser();
 
   // variable: invisible
   const [isLoading, setIsLoading] = useState(false);
@@ -35,8 +35,15 @@ const StoriesUploadPage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const formData = useForm<EditStoryTypes>();
+  // variable: form
+  const formData = useForm<EditStoryTypes>({
+    defaultValues: {
+      emdAddrNm: currentAddr?.emdAddrNm,
+      emdPosNm: currentAddr?.emdPosNm,
+      emdPosX: currentAddr?.emdPosX,
+      emdPosY: currentAddr?.emdPosY,
+    },
+  });
 
   // update: Product
   const submitStory = async ({ originalPhotoPaths, currentPhotoFiles, ...data }: EditStoryTypes) => {
@@ -44,12 +51,20 @@ const StoriesUploadPage: NextPage = () => {
     setIsLoading(true);
     const { validFiles } = validateFiles(currentPhotoFiles, StoryPhotoOptions);
     const { uploadPaths: validPaths } = await submitFiles(validFiles, { ...(originalPhotoPaths?.length ? { originalPaths: originalPhotoPaths?.split(";") } : {}) });
-    createStory({ ...data, photos: validPaths, ...currentAddr });
+    createStory({ ...data, photos: validPaths });
   };
+
+  // update: formData
+  useEffect(() => {
+    formData.setValue("emdAddrNm", currentAddr?.emdAddrNm);
+    formData.setValue("emdPosNm", currentAddr?.emdPosNm);
+    formData.setValue("emdPosX", currentAddr?.emdPosX);
+    formData.setValue("emdPosY", currentAddr?.emdPosY);
+  }, [currentAddr]);
 
   return (
     <div className="container pt-5 pb-5">
-      <EditStory id="upload-story" formType="create" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} emdPosNm={currentAddr?.emdPosNm || ""} />
+      <EditStory id="upload-story" formType="create" formData={formData} onValid={submitStory} isLoading={loadingStory || isLoading} />
     </div>
   );
 };

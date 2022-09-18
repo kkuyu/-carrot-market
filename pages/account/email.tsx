@@ -42,14 +42,14 @@ const AccountEmailPage: NextPage = () => {
   });
   const [confirmEmail, { loading: loadingEmail, data: emailData }] = useMutation<PostAccountEmailEmailResponse>("/api/account/email/email", {
     onSuccess: async () => {
-      tokenFormData.setFocus("token");
+      formDataWithToken.setFocus("token");
     },
     onError: async (data) => {
       switch (data?.error?.name) {
         case "SameAccount":
         case "AlreadyRegisteredAccount":
-          emailFormData.setError("email", { type: "validate", message: data.error.message });
-          emailFormData.setFocus("email");
+          formDataWithEmail.setError("email", { type: "validate", message: data.error.message });
+          formDataWithEmail.setFocus("email");
           return;
         default:
           console.error(data.error);
@@ -73,8 +73,8 @@ const AccountEmailPage: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          tokenFormData.setError("token", { type: "validate", message: data.error.message });
-          tokenFormData.setFocus("token");
+          formDataWithToken.setError("token", { type: "validate", message: data.error.message });
+          formDataWithToken.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -83,9 +83,9 @@ const AccountEmailPage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const emailFormData = useForm<VerifyEmailTypes>({ mode: "onChange" });
-  const tokenFormData = useForm<VerifyTokenTypes>({ mode: "onChange" });
+  // variable: form
+  const formDataWithEmail = useForm<VerifyEmailTypes>({ mode: "onChange" });
+  const formDataWithToken = useForm<VerifyTokenTypes>({ mode: "onChange" });
 
   // confirm: User.email
   const submitEmail = (data: VerifyEmailTypes) => {
@@ -114,10 +114,10 @@ const AccountEmailPage: NextPage = () => {
           style: AlertStyleEnum["cancel"],
           text: "취소",
           handler: () => {
-            tokenFormData.setValue("token", "");
+            formDataWithToken.setValue("token", "");
             confirmToken(null);
-            emailFormData.setValue("email", "");
-            emailFormData.setFocus("email");
+            formDataWithEmail.setValue("email", "");
+            formDataWithEmail.setFocus("email");
             confirmEmail(null);
           },
         },
@@ -146,10 +146,10 @@ const AccountEmailPage: NextPage = () => {
       </p>
 
       {/* 이메일 */}
-      <VerifyEmail formType="confirm" formData={emailFormData} onValid={submitEmail} isSuccess={tokenData?.success} isLoading={loadingEmail || loadingToken} className="mt-5" />
+      <VerifyEmail formType="confirm" formData={formDataWithEmail} onValid={submitEmail} isSuccess={tokenData?.success} isLoading={loadingEmail || loadingToken} className="mt-5" />
 
       {/* 인증 번호 */}
-      {emailData?.success && <VerifyToken formType="confirm" formData={tokenFormData} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
+      {emailData?.success && <VerifyToken formType="confirm" formData={formDataWithToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
 
       {/* 문의하기 */}
       {/* todo: 문의하기(자주 묻는 질문) */}
@@ -191,10 +191,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
-  let invalidUser = false;
-  if (!ssrUser.profile) invalidUser = true;
   // redirect `/account`
-  if (invalidUser) {
+  if (!ssrUser.profile) {
     return {
       redirect: {
         permanent: false,

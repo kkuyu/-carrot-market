@@ -1,10 +1,10 @@
 import { ConcernValue } from "@prisma/client";
 // @api
-import { ProfileProductsFilterEnum } from "@api/profiles/[id]/products/[filter]";
-import { ProfileStoriesFilterEnum } from "@api/profiles/[id]/stories/[filter]";
-import { ProfileCommentsFilterEnum } from "@api/profiles/[id]/comments/[filter]";
+import { ProfileProductsEnum } from "@api/profiles/[id]/products/[filter]";
+import { ProfileStoriesEnum } from "@api/profiles/[id]/stories/[filter]";
+import { ProfileCommentsEnum } from "@api/profiles/[id]/comments/[filter]";
 import { ProfileReviewsFilterEnum } from "@api/profiles/[id]/reviews/[filter]";
-import { ProfileMannersFilterEnum } from "@api/profiles/[id]/manners/[filter]";
+import { ProfileMannersEnum } from "@api/profiles/[id]/manners/[filter]";
 
 export const ProfilePhotoOptions = {
   maxLength: 5,

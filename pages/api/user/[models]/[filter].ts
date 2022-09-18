@@ -2,9 +2,9 @@ import { Chat, Product, Record, Review } from "@prisma/client";
 // @libs
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
-import { UserProductsFilterEnum } from "@api/user/products/[filter]";
+import { UserProductsEnum } from "@api/user/products/[filter]";
 
-export interface GetUserDetailModelsResponse extends ResponseDataType {
+export interface GetUserModelsResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   products: (Product & {
@@ -21,13 +21,13 @@ export const UserModelsEnum = {
 export type UserModelsEnum = typeof UserModelsEnum[keyof typeof UserModelsEnum];
 
 export const UserModelsEnums = {
-  [UserModelsEnum.products]: UserProductsFilterEnum,
+  [UserModelsEnum.products]: UserProductsEnum,
 } as const;
 
 export type UserModelsEnums = {
   [K in UserModelsEnum]: keyof typeof UserModelsEnums[K];
 };
 
-export type UserDetailContents = {
-  [K in UserModelsEnum]?: GetUserDetailModelsResponse[K];
+export type UserModelsContent = {
+  [K in UserModelsEnum]?: GetUserModelsResponse[K];
 };

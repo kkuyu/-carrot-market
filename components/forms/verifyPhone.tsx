@@ -6,7 +6,6 @@ import Buttons from "@components/buttons";
 
 export interface VerifyPhoneTypes {
   phone: string;
-  targetEmail?: string;
 }
 
 interface VerifyPhoneProps extends HTMLAttributes<HTMLFormElement> {

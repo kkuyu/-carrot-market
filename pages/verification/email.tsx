@@ -25,14 +25,14 @@ const VerificationEmailPage: NextPage = () => {
   // mutation data
   const [confirmEmail, { loading: loadingEmail, data: emailData }] = useMutation<PostVerificationEmailEmailResponse>("/api/verification/email/email", {
     onSuccess: async () => {
-      tokenFormData.setValue("token", "");
-      tokenFormData.setFocus("token");
+      formDataWithToken.setValue("token", "");
+      formDataWithToken.setFocus("token");
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "NotFoundUser":
-          emailFormData.setError("email", { type: "validate", message: data.error.message });
-          emailFormData.setFocus("email");
+          formDataWithEmail.setError("email", { type: "validate", message: data.error.message });
+          formDataWithEmail.setFocus("email");
           return;
         default:
           console.error(data.error);
@@ -52,8 +52,8 @@ const VerificationEmailPage: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          tokenFormData.setError("token", { type: "validate", message: data.error.message });
-          tokenFormData.setFocus("token");
+          formDataWithToken.setError("token", { type: "validate", message: data.error.message });
+          formDataWithToken.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -62,9 +62,9 @@ const VerificationEmailPage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const emailFormData = useForm<VerifyEmailTypes>({ mode: "onChange" });
-  const tokenFormData = useForm<VerifyTokenTypes>({ mode: "onChange" });
+  // variable: form
+  const formDataWithEmail = useForm<VerifyEmailTypes>({ mode: "onChange" });
+  const formDataWithToken = useForm<VerifyTokenTypes>({ mode: "onChange" });
 
   // confirm: User.email
   const submitEmail = (data: VerifyEmailTypes) => {
@@ -93,10 +93,10 @@ const VerificationEmailPage: NextPage = () => {
       </h1>
 
       {/* 이메일 */}
-      <VerifyEmail formType="confirm" formData={emailFormData} onValid={submitEmail} isSuccess={tokenData?.success} isLoading={loadingEmail || loadingToken} className="mt-5" />
+      <VerifyEmail formType="confirm" formData={formDataWithEmail} onValid={submitEmail} isSuccess={tokenData?.success} isLoading={loadingEmail || loadingToken} className="mt-5" />
 
       {/* 인증 번호 */}
-      {emailData?.success && <VerifyToken formType="confirm" formData={tokenFormData} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
+      {emailData?.success && <VerifyToken formType="confirm" formData={formDataWithToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
 
       {/* 문의하기 */}
       {/* todo: 문의하기(자주 묻는 질문) */}

@@ -44,7 +44,7 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
     onClose: () => closeModal(HometownUpdateModal, HometownUpdateModalName),
   };
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditHometownTypes>({
     defaultValues: {
       emdType: user?.emdType,
@@ -78,10 +78,14 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
                 style: AlertStyleEnum["destructive"],
                 text: "삭제",
                 handler: () => {
+                  if (!user?.SUB_emdAddrNm || !user?.SUB_emdPosDx) {
+                    console.error("ConfirmDeleteMainAddress", user);
+                    return;
+                  }
                   formData.setValue("submitType", "MAIN-update");
                   formData.setValue("emdType", EmdType.MAIN);
-                  formData.setValue("mainAddrNm", user?.SUB_emdAddrNm!);
-                  formData.setValue("mainDistance", user?.SUB_emdPosDx!);
+                  formData.setValue("mainAddrNm", user?.SUB_emdAddrNm);
+                  formData.setValue("mainDistance", user?.SUB_emdPosDx);
                   formData.setValue("subAddrNm", null);
                   formData.setValue("subDistance", null);
                   formData.handleSubmit(submitUser)();
@@ -169,7 +173,7 @@ const HometownUpdateModal = (props: HometownUpdateModalProps & LayerModalProps &
   return (
     <LayerModal {...modalProps}>
       <section className="container pt-5 pb-5">
-        <EditHometown formType="update" formData={formData} onValid={submitUser} isLoading={loadingUser} user={user} currentAddr={currentAddr} />
+        <EditHometown formType="update" formData={formData} onValid={submitUser} isLoading={loadingUser} />
       </section>
     </LayerModal>
   );

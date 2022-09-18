@@ -40,14 +40,14 @@ const AccountPhonePage: NextPage = () => {
   });
   const [confirmPhone, { loading: loadingPhone, data: phoneData }] = useMutation<PostAccountPhonePhoneResponse>("/api/account/phone/phone", {
     onSuccess: async () => {
-      tokenFormData.setFocus("token");
+      formDataWithToken.setFocus("token");
     },
     onError: (data) => {
       switch (data?.error?.name) {
         case "SameAccount":
         case "AlreadyRegisteredAccount":
-          phoneFormData.setError("phone", { type: "validate", message: data.error.message });
-          phoneFormData.setFocus("phone");
+          formDataWithPhone.setError("phone", { type: "validate", message: data.error.message });
+          formDataWithPhone.setFocus("phone");
           return;
         default:
           console.error(data.error);
@@ -71,8 +71,8 @@ const AccountPhonePage: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          tokenFormData.setError("token", { type: "validate", message: data.error.message });
-          tokenFormData.setFocus("token");
+          formDataWithToken.setError("token", { type: "validate", message: data.error.message });
+          formDataWithToken.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -81,9 +81,9 @@ const AccountPhonePage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const phoneFormData = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const tokenFormData = useForm<VerifyTokenTypes>({ mode: "onChange" });
+  // variable: form
+  const formDataWithPhone = useForm<VerifyPhoneTypes>({ mode: "onChange" });
+  const formDataWithToken = useForm<VerifyTokenTypes>({ mode: "onChange" });
 
   // confirm: User.phone
   const submitPhone = (data: VerifyPhoneTypes) => {
@@ -118,10 +118,10 @@ const AccountPhonePage: NextPage = () => {
           style: AlertStyleEnum["cancel"],
           text: "취소",
           handler: () => {
-            tokenFormData.setValue("token", "");
+            formDataWithToken.setValue("token", "");
             confirmToken(null);
-            phoneFormData.setValue("phone", "");
-            phoneFormData.setFocus("phone");
+            formDataWithPhone.setValue("phone", "");
+            formDataWithPhone.setFocus("phone");
             confirmPhone(null);
           },
         },
@@ -149,10 +149,10 @@ const AccountPhonePage: NextPage = () => {
       </p>
 
       {/* 휴대폰 번호 */}
-      <VerifyPhone formType="confirm" formData={phoneFormData} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
+      <VerifyPhone formType="confirm" formData={formDataWithPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
 
       {/* 인증 번호 */}
-      {phoneData?.success && <VerifyToken formType="confirm" formData={tokenFormData} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
+      {phoneData?.success && <VerifyToken formType="confirm" formData={formDataWithToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
     </section>
   );
 };

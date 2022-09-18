@@ -4,9 +4,10 @@ import { SubmitHandler, UseFormReturn } from "react-hook-form";
 import { ConcernValue } from "@prisma/client";
 // @libs
 import { getRandomName } from "@libs/utils";
-import type { UserProfile } from "@libs/client/useUser";
 // @api
 import { ProfilePhotoOptions, ProfileConcerns } from "@api/profiles/types";
+// @libs
+import useUser from "@libs/client/useUser";
 // @components
 import Labels from "@components/labels";
 import Files from "@components/files";
@@ -27,12 +28,12 @@ interface EditProfileProps extends HTMLAttributes<HTMLFormElement> {
   onValid: SubmitHandler<EditProfileTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
-  userType: UserProfile["type"];
 }
 
 const EditProfile = (props: EditProfileProps) => {
-  const { formType, formData, onValid, isSuccess, isLoading, userType, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, getValues, setValue } = formData;
+  const { type: userType } = useUser();
 
   return (
     <form onSubmit={handleSubmit(onValid)} noValidate className={`space-y-5 ${className}`} {...restProps}>

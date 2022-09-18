@@ -67,15 +67,15 @@ export const getSearchBoundary = async (query: { state: string; posX: number; po
   ).json();
 
   return {
-    totalCount: boundaryResponse.response.record.total,
+    totalCount: boundaryResponse?.response?.record?.total,
     emdList:
-      boundaryResponse.response.status === "OK"
-        ? boundaryResponse.response.result.featureCollection.features
-            .map((data) => ({
-              id: data.properties.emd_cd,
-              addrNm: data.properties.full_nm,
-              emdNm: data.properties.emd_kor_nm,
-              emdCd: data.properties.emd_cd,
+      boundaryResponse?.response?.status === "OK"
+        ? boundaryResponse?.response?.result?.featureCollection?.features
+            ?.map((data) => ({
+              id: data?.properties?.emd_cd,
+              addrNm: data?.properties?.full_nm,
+              emdNm: data?.properties?.emd_kor_nm,
+              emdCd: data?.properties?.emd_cd,
             }))
             .reverse()
         : [],

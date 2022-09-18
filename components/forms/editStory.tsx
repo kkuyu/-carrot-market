@@ -17,6 +17,10 @@ export interface EditStoryTypes {
   currentPhotoFiles: FileList;
   category: StoryCategory;
   content: string;
+  emdAddrNm: string | null;
+  emdPosNm: string | null;
+  emdPosX: number | null;
+  emdPosY: number | null;
 }
 
 interface EditStoryProps extends HTMLAttributes<HTMLFormElement> {
@@ -25,14 +29,14 @@ interface EditStoryProps extends HTMLAttributes<HTMLFormElement> {
   onValid: SubmitHandler<EditStoryTypes>;
   isSuccess?: boolean;
   isLoading?: boolean;
-  emdPosNm: string;
 }
 
 const EditStory = (props: EditStoryProps) => {
-  const { formType, formData, onValid, isSuccess, isLoading, emdPosNm, className = "", ...restProps } = props;
+  const { formType, formData, onValid, isSuccess, isLoading, className = "", ...restProps } = props;
   const { register, handleSubmit, formState, setValue, getValues } = formData;
 
   // variable: invisible
+  const emdPosNm = getValues("emdPosNm");
   const storyCategories = Object.values(StoryCategory).map(
     (category) =>
       getCategory<StoryCategories>(category, {

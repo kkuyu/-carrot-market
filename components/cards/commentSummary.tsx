@@ -6,11 +6,11 @@ import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { CommentMinimumDepth, CommentMaximumDepth } from "@api/comments/types";
 import { StoryCommentCondition } from "@api/comments/[id]";
-import { GetProfilesDetailCommentsResponse } from "@api/profiles/[id]/comments/[filter]";
+import { GetProfilesCommentsResponse } from "@api/profiles/[id]/comments/[filter]";
 // @components
 import Icons from "@components/icons";
 
-export type CommentSummaryItem = GetProfilesDetailCommentsResponse["comments"][number];
+export type CommentSummaryItem = GetProfilesCommentsResponse["comments"][number];
 
 export interface CommentSummaryProps extends HTMLAttributes<HTMLDivElement> {
   item: CommentSummaryItem;

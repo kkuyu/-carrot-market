@@ -2,13 +2,13 @@ import { Chat, Manner, Product, Record, Review, Story, StoryComment, User } from
 // @libs
 import { ResponseDataType } from "@libs/server/withHandler";
 // @api
-import { ProfileProductsFilterEnum } from "@api/profiles/[id]/products/[filter]";
-import { ProfileStoriesFilterEnum } from "@api/profiles/[id]/stories/[filter]";
-import { ProfileCommentsFilterEnum } from "@api/profiles/[id]/comments/[filter]";
-import { ProfileReviewsFilterEnum } from "@api/profiles/[id]/reviews/[filter]";
-import { ProfileMannersFilterEnum } from "@api/profiles/[id]/manners/[filter]";
+import { ProfileProductsEnum } from "@api/profiles/[id]/products/[filter]";
+import { ProfileStoriesEnum } from "@api/profiles/[id]/stories/[filter]";
+import { ProfileCommentsEnum } from "@api/profiles/[id]/comments/[filter]";
+import { ProfileReviewsEnum } from "@api/profiles/[id]/reviews/[filter]";
+import { ProfileMannersEnum } from "@api/profiles/[id]/manners/[filter]";
 
-export interface GetProfilesDetailModelsResponse extends ResponseDataType {
+export interface GetProfilesModelsResponse extends ResponseDataType {
   totalCount: number;
   lastCursor: number;
   products: (Product & {
@@ -42,17 +42,17 @@ export const ProfileModelsEnum = {
 export type ProfileModelsEnum = typeof ProfileModelsEnum[keyof typeof ProfileModelsEnum];
 
 export const ProfileModelsEnums = {
-  [ProfileModelsEnum.products]: ProfileProductsFilterEnum,
-  [ProfileModelsEnum.stories]: ProfileStoriesFilterEnum,
-  [ProfileModelsEnum.comments]: ProfileCommentsFilterEnum,
-  [ProfileModelsEnum.reviews]: ProfileReviewsFilterEnum,
-  [ProfileModelsEnum.manners]: ProfileMannersFilterEnum,
+  [ProfileModelsEnum.products]: ProfileProductsEnum,
+  [ProfileModelsEnum.stories]: ProfileStoriesEnum,
+  [ProfileModelsEnum.comments]: ProfileCommentsEnum,
+  [ProfileModelsEnum.reviews]: ProfileReviewsEnum,
+  [ProfileModelsEnum.manners]: ProfileMannersEnum,
 } as const;
 
 export type ProfileModelsEnums = {
   [K in ProfileModelsEnum]: keyof typeof ProfileModelsEnums[K];
 };
 
-export type ProfilesDetailContents = {
-  [K in ProfileModelsEnum]?: GetProfilesDetailModelsResponse[K];
+export type ProfileModelsContent = {
+  [K in ProfileModelsEnum]?: GetProfilesModelsResponse[K];
 };

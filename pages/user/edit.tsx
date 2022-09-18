@@ -37,7 +37,7 @@ const UserEditPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditProfileTypes>({
     defaultValues: {
       originalPhotoPaths: user?.photos,
@@ -68,7 +68,7 @@ const UserEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProfile id="edit-profile" formType="update" formData={formData} onValid={submitUser} isLoading={loadingUser || isLoading} userType={userType} />
+      <EditProfile id="edit-profile" formType="update" formData={formData} onValid={submitUser} isLoading={loadingUser || isLoading} />
     </div>
   );
 };

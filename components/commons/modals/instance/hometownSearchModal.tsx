@@ -52,7 +52,7 @@ const HometownSearchModal = (props: HometownSearchModalProps & LayerModalProps &
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditLocateKeywordTypes>({
     defaultValues: {
       locateKeyword: "",

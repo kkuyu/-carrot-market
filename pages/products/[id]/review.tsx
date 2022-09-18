@@ -43,7 +43,7 @@ const ProductsReviewPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditProductReviewTypes>({
     defaultValues: {
       role: productData?.productCondition?.role?.myRole as "sellUser" | "purchaseUser",

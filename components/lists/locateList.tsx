@@ -63,7 +63,7 @@ const LocateList = (props: LocateListProps) => {
 
   return (
     <ul className={`${className}`} {...restProps}>
-      {list.map((item) => (
+      {list?.map((item) => (
         <li key={item?.id}>
           <Buttons tag="button" type="button" sort="text-link" status="unset" onClick={() => selectLocate(item)} className="block w-full py-1.5">
             {item.addrNm}

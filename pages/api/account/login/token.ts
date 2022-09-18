@@ -29,9 +29,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         payload: token,
       },
     });
-
-    console.log("foundToken", foundToken);
-
     if (!foundToken) {
       const error = new Error("인증번호를 다시 확인해주세요.");
       error.name = "InvalidToken";
@@ -51,8 +48,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         enteredAt: new Date(),
       },
     });
-
-    console.log("foundUser", foundUser);
 
     // delete token
     await client.token.deleteMany({

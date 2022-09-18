@@ -27,7 +27,7 @@ const StoriesIndexPage: NextPage = () => {
 
   // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) => {
-    const options = { url: "/api/stories", query: currentAddr.emdPosNm ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
+    const options = { url: "/api/stories", query: currentAddr ? `posX=${currentAddr.emdPosX}&posY=${currentAddr.emdPosY}&distance=${currentAddr.emdPosDx}` : "" };
     return getKey<GetStoriesResponse>(...arg, options);
   });
 
@@ -142,7 +142,7 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     header: {
       title: "",
       titleTag: "strong",
-      utils: ["address", "search"],
+      utils: ["address", "magnifier"],
     },
     navBar: {
       utils: ["home", "chat", "profile", "story", "streams"],

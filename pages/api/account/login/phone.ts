@@ -36,7 +36,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         id: true,
       },
     });
-    console.log("foundUser", foundUser);
     if (!foundUser) {
       const error = new Error("휴대폰 번호를 다시 확인해주세요.");
       error.name = "NotFoundUser";
@@ -53,7 +52,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
       },
     });
-    console.log("newToken", newToken);
 
     // send message
     sendMessage({

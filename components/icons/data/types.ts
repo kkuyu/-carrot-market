@@ -4,6 +4,7 @@ export const IconName = {
   ["ChatBubbleLeftRight"]: "ChatBubbleLeftRight",
   ["ChatBubbleOvalLeftEllipsis"]: "ChatBubbleOvalLeftEllipsis",
   ["CheckCircle"]: "CheckCircle",
+  ["CheckCircleSold"]: "CheckCircleSold",
   ["ChevronDown"]: "ChevronDown",
   ["ChevronLeft"]: "ChevronLeft",
   ["ChevronRight"]: "ChevronRight",

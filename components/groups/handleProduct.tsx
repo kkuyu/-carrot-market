@@ -10,14 +10,14 @@ import useMutation from "@libs/client/useMutation";
 // @api
 import { GetProductsDetailResponse } from "@api/products/[id]";
 import { PostProductsSaleResponse } from "@api/products/[id]/sale";
-import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 // @components
 import AlertModal, { AlertModalProps, AlertStyleEnum } from "@components/commons/modals/case/alertModal";
 import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
 import Buttons, { ButtonsProps } from "@components/buttons";
 import Icons from "@components/icons";
 
-export type HandleProductItem = GetProfilesDetailProductsResponse["products"][number];
+export type HandleProductItem = GetProfilesProductsResponse["products"][number];
 
 export interface HandleProductProps extends HTMLAttributes<HTMLButtonElement> {
   item?: HandleProductItem;

@@ -5,20 +5,20 @@ import client from "@libs/server/client";
 import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
-import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
+import { GetProfilesModelsResponse } from "@api/profiles/[id]/[models]/[filter]";
 
-export type GetProfilesDetailReviewsResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "reviews">;
+export type GetProfilesReviewsResponse = Pick<GetProfilesModelsResponse, "success" | "totalCount" | "lastCursor" | "reviews">;
 
-export const ProfileReviewsFilterEnum = {
+export const ProfileReviewsEnum = {
   ["all"]: "all",
   ["preview"]: "preview",
   ["purchaseUser"]: "purchaseUser",
   ["sellUser"]: "sellUser",
 } as const;
 
-export type ProfileReviewsFilterEnum = typeof ProfileReviewsFilterEnum[keyof typeof ProfileReviewsFilterEnum];
+export type ProfileReviewsEnum = typeof ProfileReviewsEnum[keyof typeof ProfileReviewsEnum];
 
-export const getProfilesDetailReviews = async (query: { filter: ProfileReviewsFilterEnum; id: number; prevCursor: number }) => {
+export const getProfilesReviews = async (query: { filter: ProfileReviewsEnum; id: number; prevCursor: number }) => {
   const { filter, id, prevCursor } = query;
 
   const where = {
@@ -88,9 +88,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as ProfileReviewsFilterEnum;
+    const filter = _filter.toString() as ProfileReviewsEnum;
     const prevCursor = +_prevCursor.toString();
-    if (!isInstance(filter, ProfileReviewsFilterEnum)) {
+    if (!isInstance(filter, ProfileReviewsEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -110,10 +110,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, reviews } = await getProfilesDetailReviews({ filter, id, prevCursor });
+    const { totalCount, reviews } = await getProfilesReviews({ filter, id, prevCursor });
 
     // result
-    const result: GetProfilesDetailReviewsResponse = {
+    const result: GetProfilesReviewsResponse = {
       success: true,
       totalCount,
       lastCursor: reviews.length ? reviews[reviews.length - 1].id : -1,

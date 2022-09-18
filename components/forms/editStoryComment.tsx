@@ -40,7 +40,7 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
               })}
               name="content"
               type="text"
-              placeholder={`${commentType}을 입력해주세요`}
+              placeholder={commentType ? `${commentType}을 입력해주세요` : ""}
               appendButtons={
                 <Buttons tag="button" type="submit" sort="icon-block" size="sm" status="default" disabled={isLoading} aria-label="전송">
                   <Icons name="ArrowUpCircle" strokeWidth={1.5} className="w-6 h-6" />
@@ -64,7 +64,7 @@ const EditStoryComment = (props: EditStoryCommentProps) => {
               })}
               required={true}
               name="content"
-              placeholder={`${commentType}을 입력해주세요`}
+              placeholder={commentType ? `${commentType}을 입력해주세요` : ""}
             />
             <span className="empty:hidden invalid">{formState.errors.content?.message}</span>
           </div>

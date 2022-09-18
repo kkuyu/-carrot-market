@@ -13,12 +13,12 @@ import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProfilesDetailResponse, getProfilesDetail } from "@api/profiles/[id]";
-import { GetProfilesDetailModelsResponse, ProfileModelsEnum, ProfileModelsEnums, ProfilesDetailContents } from "@api/profiles/[id]/[manners]/[filter]";
-import { ProfileProductsFilterEnum, getProfilesDetailProducts } from "@api/profiles/[id]/products/[filter]";
-import { ProfileStoriesFilterEnum, getProfilesDetailStories } from "@api/profiles/[id]/stories/[filter]";
-import { ProfileCommentsFilterEnum, getProfilesDetailComments } from "@api/profiles/[id]/comments/[filter]";
-import { ProfileReviewsFilterEnum, getProfilesDetailReviews } from "@api/profiles/[id]/reviews/[filter]";
-import { ProfileMannersFilterEnum, getProfilesDetailManners } from "@api/profiles/[id]/manners/[filter]";
+import { GetProfilesModelsResponse, ProfileModelsEnum, ProfileModelsEnums, ProfileModelsContent } from "@api/profiles/[id]/[models]/[filter]";
+import { ProfileProductsEnum, getProfilesProducts } from "@api/profiles/[id]/products/[filter]";
+import { ProfileStoriesEnum, getProfilesStories } from "@api/profiles/[id]/stories/[filter]";
+import { ProfileCommentsEnum, getProfilesComments } from "@api/profiles/[id]/comments/[filter]";
+import { ProfileReviewsEnum, getProfilesReviews } from "@api/profiles/[id]/reviews/[filter]";
+import { ProfileMannersEnum, getProfilesManners } from "@api/profiles/[id]/manners/[filter]";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
@@ -54,9 +54,9 @@ const ProfilesDetailModelsPage: NextPage = () => {
 
   // fetch data
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router?.query?.id ? `/api/profiles/${router?.query?.id}?` : null);
-  const { data, setSize } = useSWRInfinite<GetProfilesDetailModelsResponse>((...arg: [index: number, previousPageData: GetProfilesDetailModelsResponse]) => {
-    const options = { url: router?.query?.id && currentType?.models && currentType?.filter ? `/api/profiles/${router?.query?.id}/${currentType?.models}/${currentType?.filter}` : "" };
-    return getKey<GetProfilesDetailModelsResponse>(...arg, options);
+  const { data, setSize } = useSWRInfinite<GetProfilesModelsResponse>((...arg: [index: number, previousPageData: GetProfilesModelsResponse]) => {
+    const options = { url: currentType && router?.query?.id ? `/api/profiles/${router?.query?.id}/${currentType?.models}/${currentType?.filter}` : "" };
+    return getKey<GetProfilesModelsResponse>(...arg, options);
   });
 
   // variable data: visible
@@ -64,13 +64,13 @@ const ProfilesDetailModelsPage: NextPage = () => {
   const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
   const isLoading = data && typeof data[data.length - 1] === "undefined";
   const contents = useMemo(() => {
-    if (!data) return {} as ProfilesDetailContents;
+    if (!data) return {} as ProfileModelsContent;
     return data.reduce((acc, cur) => {
       Object.entries(cur)
         .filter(([key, values]) => Array.isArray(values) && values.length)
         .forEach(([key, values]) => (acc[key as ProfileModelsEnum] = [...(acc?.[key as ProfileModelsEnum] || []), ...values]));
       return acc;
-    }, {} as ProfilesDetailContents);
+    }, {} as ProfileModelsContent);
   }, [data]);
 
   // update: isValidProfile
@@ -127,62 +127,72 @@ const ProfilesDetailModelsPage: NextPage = () => {
           {profileData?.profile?.name}님의 {currentType.caption}
         </h2>
 
-        {/* Models: List */}
-        {currentType.isInfinite && Boolean(contents?.[currentType.models]?.length) && (
-          <>
-            {currentType.models === "products" && (
-              <ProductList list={contents?.products || []} className={`-mx-5 ${profileData?.profile.id === user?.id ? "border-b-2 divide-y-2" : ""}`}>
-                {profileData?.profile.id === user?.id ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
-                {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" size="base" /> : <></>}
-              </ProductList>
+        {/* Models: Infinite */}
+        {currentType.isInfinite && (
+          <Fragment>
+            {/* Models: List */}
+            {Boolean(Object.keys(contents)?.length) && (
+              <>
+                {currentType.models === "products" && (
+                  <ProductList list={contents?.products || []} className={`-mx-5 ${profileData?.profile.id === user?.id ? "border-b-2 divide-y-2" : ""}`}>
+                    {profileData?.profile.id === user?.id ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
+                    {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" size="base" /> : <></>}
+                  </ProductList>
+                )}
+                {currentType.models === "stories" && (
+                  <StoryList list={contents?.stories || []} cardProps={{ summaryType: "report" }} className="-mx-5">
+                    <PictureList key="PictureList" className="px-5 pb-3" />
+                  </StoryList>
+                )}
+                {currentType.models === "comments" && <CommentSummaryList list={contents?.comments || []} className="-mx-5 border-b divide-y" />}
+                {currentType.models === "reviews" && <ReviewList list={contents?.reviews || []} className="-mx-5 border-b divide-y" cardProps={{ className: "block px-5 pt-3 pb-3" }} />}
+                <span className="empty:hidden list-loading">
+                  {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
+                </span>
+              </>
             )}
-            {currentType.models === "stories" && (
-              <StoryList list={contents?.stories || []} cardProps={{ summaryType: "report" }} className="-mx-5">
-                <PictureList key="PictureList" className="px-5 pb-3" />
-              </StoryList>
-            )}
-            {currentType.models === "comments" && <CommentSummaryList list={contents?.comments || []} className="-mx-5 border-b divide-y" />}
-            {currentType.models === "reviews" && <ReviewList list={contents?.reviews || []} className="-mx-5 border-b divide-y" cardProps={{ className: "block px-5 pt-3 pb-3" }} />}
-            <span className="empty:hidden list-loading">
-              {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
-            </span>
-          </>
-        )}
 
-        {/* Models: Empty */}
-        {currentType.isInfinite && !Boolean(contents?.[currentType.models]?.length) && (
-          <p className="list-empty">
-            <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
-          </p>
-        )}
-
-        {/* Models: Manners */}
-        {!currentType.isInfinite && currentType.models === "manners" && (
-          <div className="pt-5 pb-5 space-y-5">
-            {[
-              { isRude: false, title: "받은 매너", emptyText: "받은 매너 칭찬이 아직 없어요" },
-              { isRude: true, title: "받은 비매너", emptyText: user?.id === profileData?.profile.id ? "받은 비매너가 없어요" : "받은 비매너는 본인에게만 보여요" },
-            ]
-              .map((block) => ({ ...block, manners: contents?.manners?.filter((manner) => manner.isRude === block.isRude) || [] }))
-              .map((block) => (
-                <div key={block.title}>
-                  <h3>{block.title}</h3>
-                  {Boolean(block?.manners?.length) ? <MannerList className="mt-1" list={block?.manners} /> : <p className="mt-2">{block?.emptyText}</p>}
-                </div>
-              ))}
-
-            {/* todo: 당근마켓 거래매너 보기 */}
-            <div className="mt-5 pt-5 border-t">
-              <p className="text-center">
-                따뜻한 거래를 위한
-                <br />
-                당근마켓 거래매너를 확인해보세요
+            {/* Models: Empty */}
+            {!Boolean(Object.keys(contents)?.length) && (
+              <p className="list-empty">
+                <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
               </p>
-              <Buttons tag="button" className="mt-5">
-                당근마켓 거래매너 보기
-              </Buttons>
-            </div>
-          </div>
+            )}
+          </Fragment>
+        )}
+
+        {/* Models: Finite */}
+        {!currentType.isInfinite && (
+          <Fragment>
+            {/* Models: Manners */}
+            {currentType.models === "manners" && (
+              <div className="pt-5 pb-5 space-y-5">
+                {[
+                  { isRude: false, title: "받은 매너", emptyText: "받은 매너 칭찬이 아직 없어요" },
+                  { isRude: true, title: "받은 비매너", emptyText: user?.id === profileData?.profile.id ? "받은 비매너가 없어요" : "받은 비매너는 본인에게만 보여요" },
+                ]
+                  .map((block) => ({ ...block, manners: contents?.manners?.filter((manner) => manner.isRude === block.isRude) || [] }))
+                  .map((block) => (
+                    <div key={block.title}>
+                      <h3>{block.title}</h3>
+                      {Boolean(block?.manners?.length) ? <MannerList className="mt-1" list={block?.manners} /> : <p className="mt-2">{block?.emptyText}</p>}
+                    </div>
+                  ))}
+
+                {/* todo: 당근마켓 거래매너 보기 */}
+                <div className="mt-5 pt-5 border-t">
+                  <p className="text-center">
+                    따뜻한 거래를 위한
+                    <br />
+                    당근마켓 거래매너를 확인해보세요
+                  </p>
+                  <Buttons tag="button" className="mt-5">
+                    당근마켓 거래매너 보기
+                  </Buttons>
+                </div>
+              </div>
+            )}
+          </Fragment>
         )}
 
         {/* Models: InfiniteRef */}
@@ -195,19 +205,19 @@ const ProfilesDetailModelsPage: NextPage = () => {
 const Page: NextPageWithLayout<{
   getUser: { options: { url: string; query: string }; response: GetUserResponse };
   getProfilesDetail: { options: { url: string; query: string }; response: GetProfilesDetailResponse };
-  getProfilesDetailModels: {
+  getProfilesModels: {
     options: { url: string; query: string };
-    response: GetProfilesDetailModelsResponse;
+    response: GetProfilesModelsResponse;
   };
-}> = ({ getUser, getProfilesDetail, getProfilesDetailModels }) => {
+}> = ({ getUser, getProfilesDetail, getProfilesModels }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
           [`${getUser?.options?.url}?${getUser?.options?.query}`]: getUser.response,
           [`${getProfilesDetail?.options?.url}?${getProfilesDetail?.options?.query}`]: getProfilesDetail.response,
-          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesDetailModelsResponse]) => getKey<GetProfilesDetailModelsResponse>(...arg, getProfilesDetailModels.options))]: [
-            getProfilesDetailModels.response,
+          [unstable_serialize((...arg: [index: number, previousPageData: GetProfilesModelsResponse]) => getKey<GetProfilesModelsResponse>(...arg, getProfilesModels.options))]: [
+            getProfilesModels.response,
           ],
         },
       }}
@@ -263,11 +273,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     };
   }
 
-  // getProfilesDetailProducts
-  const profilesDetailProducts =
+  // getProfilesProducts
+  const profilesProducts =
     profilesDetail?.profile?.id && models === "products"
-      ? await getProfilesDetailProducts({
-          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileProductsFilterEnum>,
+      ? await getProfilesProducts({
+          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileProductsEnum>,
           id: profilesDetail?.profile?.id,
           prevCursor: 0,
         })
@@ -276,11 +286,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           products: [],
         };
 
-  // getProfilesDetailStories
-  const profilesDetailStories =
+  // getProfilesStories
+  const profilesStories =
     profilesDetail?.profile?.id && models === "stories"
-      ? await getProfilesDetailStories({
-          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileStoriesFilterEnum>,
+      ? await getProfilesStories({
+          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileStoriesEnum>,
           id: profilesDetail?.profile?.id,
           prevCursor: 0,
         })
@@ -289,11 +299,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           stories: [],
         };
 
-  // getProfilesDetailComments
-  const profilesDetailComments =
+  // getProfilesComments
+  const profilesComments =
     profilesDetail?.profile?.id && models === "comments"
-      ? await getProfilesDetailComments({
-          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileCommentsFilterEnum>,
+      ? await getProfilesComments({
+          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileCommentsEnum>,
           id: profilesDetail?.profile?.id,
           prevCursor: 0,
         })
@@ -302,11 +312,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           comments: [],
         };
 
-  // getProfilesDetailReviews
-  const profilesDetailReviews =
+  // getProfilesReviews
+  const profilesReviews =
     profilesDetail?.profile?.id && models === "reviews"
-      ? await getProfilesDetailReviews({
-          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileReviewsFilterEnum>,
+      ? await getProfilesReviews({
+          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileReviewsEnum>,
           id: profilesDetail?.profile?.id,
           prevCursor: 0,
         })
@@ -315,11 +325,11 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           reviews: [],
         };
 
-  // getProfilesDetailManners
-  const profilesDetailManners =
+  // getProfilesManners
+  const profilesManners =
     profilesDetail?.profile?.id && models === "manners"
-      ? await getProfilesDetailManners({
-          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileMannersFilterEnum>,
+      ? await getProfilesManners({
+          filter: filter as Extract<ProfileModelsEnums[keyof ProfileModelsEnums], ProfileMannersEnum>,
           id: profilesDetail?.profile?.id,
           prevCursor: 0,
           userId: ssrUser?.profile?.id,
@@ -329,22 +339,21 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           rudeManners: [],
         };
 
-  const profilesDetailModels = (() => {
-    if (models === "products") return { title: "판매 상품", contents: profilesDetailProducts };
-    if (models === "stories") return { title: "판매 상품", contents: profilesDetailStories };
-    if (models === "comments") return { title: "판매 상품", contents: profilesDetailComments };
-    if (models === "reviews") return { title: "판매 상품", contents: profilesDetailReviews };
-    if (models === "manners") return { title: "판매 상품", contents: profilesDetailManners };
-    return { title: "", contents: {} };
-  })();
+  const profilesModels = {
+    ...(models === "products" ? { title: "판매 상품", contents: profilesProducts } : {}),
+    ...(models === "stories" ? { title: "동네생활", contents: profilesStories } : {}),
+    ...(models === "comments" ? { title: "동네생활", contents: profilesComments } : {}),
+    ...(models === "reviews" ? { title: "매너 후기", contents: profilesReviews } : {}),
+    ...(models === "manners" ? { title: "매너 평가", contents: profilesManners } : {}),
+  };
 
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${profilesDetailModels?.title} | ${profilesDetail?.profile?.name} | 프로필`,
+      title: `${profilesModels?.title} | ${profilesDetail?.profile?.name} | 프로필`,
     },
     header: {
-      title: `${profilesDetail?.profile?.name}님의 ${profilesDetailModels?.title}`,
+      title: `${profilesDetail?.profile?.name}님의 ${profilesModels?.title}`,
       titleTag: "h1",
       utils: ["back", "title"],
     },
@@ -373,14 +382,14 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
           ...JSON.parse(JSON.stringify(profilesDetail || {})),
         },
       },
-      getProfilesDetailModels: {
+      getProfilesModels: {
         options: {
           url: `/api/profiles/${profileId}/${models}/${filter}`,
           query: "",
         },
         response: {
           success: true,
-          ...JSON.parse(JSON.stringify(profilesDetailModels?.contents || {})),
+          ...JSON.parse(JSON.stringify(profilesModels?.contents || {})),
         },
       },
     },

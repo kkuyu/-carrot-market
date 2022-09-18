@@ -12,7 +12,7 @@ import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
 import { GetProductsDetailResponse, getProductsDetail } from "@api/products/[id]";
-import { GetProfilesDetailProductsResponse } from "@api/profiles/[id]/products/[filter]";
+import { GetProfilesProductsResponse } from "@api/profiles/[id]/products/[filter]";
 import { PostProductsDeleteResponse } from "@api/products/[id]/delete";
 // @app
 import type { NextPageWithLayout } from "@app";
@@ -37,9 +37,9 @@ const ProductsDeletePage: NextPage = () => {
   const [deleteProduct, { loading: loadingProduct }] = useMutation<PostProductsDeleteResponse>(`/api/products/${router.query.id}/delete`, {
     onSuccess: async () => {
       productsCaches?.forEach(async ([key, value]) => {
-        const filterProducts = (data: GetProfilesDetailProductsResponse) => data && { ...data, products: data?.products?.filter((product) => product?.id !== productData?.product?.id) };
+        const filterProducts = (data: GetProfilesProductsResponse) => data && { ...data, products: data?.products?.filter((product) => product?.id !== productData?.product?.id) };
         let updateValue = null;
-        if (/^\$inf\$\/api\//.test(key)) updateValue = value.map((data: GetProfilesDetailProductsResponse) => filterProducts(data));
+        if (/^\$inf\$\/api\//.test(key)) updateValue = value.map((data: GetProfilesProductsResponse) => filterProducts(data));
         if (/^\/api\//.test(key)) updateValue = filterProducts(value);
         if (updateValue) await mutate(key, updateValue);
       });

@@ -38,7 +38,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         email: true,
       },
     });
-    console.log("foundUser", foundUser);
     if (!dummyUser && !foundUser) {
       const error = new Error("계정 정보를 다시 확인해주세요.");
       error.name = "NotFoundUser";
@@ -75,7 +74,6 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
         },
       },
     });
-    console.log("newToken", newToken);
 
     // send message
     sendEmail({

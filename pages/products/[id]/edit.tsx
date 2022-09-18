@@ -42,7 +42,7 @@ const ProductsEditPage: NextPage = () => {
     },
   });
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditProductTypes>({
     defaultValues: {
       originalPhotoPaths: productData?.product?.photos,
@@ -50,6 +50,10 @@ const ProductsEditPage: NextPage = () => {
       name: productData?.product?.name,
       description: productData?.product?.description,
       price: productData?.product?.price,
+      emdAddrNm: productData?.product?.emdAddrNm,
+      emdPosNm: productData?.product?.emdPosNm,
+      emdPosX: productData?.product?.emdPosX,
+      emdPosY: productData?.product?.emdPosY,
     },
   });
 
@@ -88,6 +92,10 @@ const ProductsEditPage: NextPage = () => {
     formData.setValue("name", productData?.product?.name);
     formData.setValue("description", productData?.product?.description);
     formData.setValue("price", productData?.product?.price);
+    formData.setValue("emdAddrNm", productData?.product?.emdAddrNm);
+    formData.setValue("emdPosNm", productData?.product?.emdPosNm);
+    formData.setValue("emdPosX", productData?.product?.emdPosX);
+    formData.setValue("emdPosY", productData?.product?.emdPosY);
   }, [productData?.product]);
 
   if (!isValidProduct) {
@@ -96,7 +104,7 @@ const ProductsEditPage: NextPage = () => {
 
   return (
     <div className="container pt-5 pb-5">
-      <EditProduct id="edit-product" formType="update" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} emdPosNm={productData?.product?.emdPosNm || ""} />
+      <EditProduct id="edit-product" formType="update" formData={formData} onValid={submitProduct} isLoading={loadingProduct || isLoading} />
     </div>
   );
 };

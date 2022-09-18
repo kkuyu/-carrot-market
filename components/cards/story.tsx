@@ -6,14 +6,14 @@ import useTimeDiff from "@libs/client/useTimeDiff";
 // @api
 import { GetStoriesResponse } from "@api/stories";
 import { StoryCondition } from "@api/stories/[id]";
-import { GetProfilesDetailStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
-import { GetSearchResultResponse } from "@api/search/result/[filter]";
+import { GetProfilesStoriesResponse } from "@api/profiles/[id]/stories/[filter]";
+import { GetSearchModelsResponse } from "@api/search/result/[models]/[filter]";
 // @components
 import HighlightText from "@components/highlightText";
 import Icons from "@components/icons";
 import Images from "@components/images";
 
-export type StoryItem = GetStoriesResponse["stories"][number] | GetProfilesDetailStoriesResponse["stories"][number] | GetSearchResultResponse["stories"][number];
+export type StoryItem = GetStoriesResponse["stories"][number] | GetProfilesStoriesResponse["stories"][number] | GetSearchModelsResponse["stories"][number];
 
 export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   item: StoryItem;
@@ -21,11 +21,10 @@ export interface StoryProps extends HTMLAttributes<HTMLDivElement> {
   highlightWord?: string;
   summaryType?: "record" | "report";
   isVisiblePreviewPhoto?: boolean;
-  isVisiblePreviewComment?: boolean;
 }
 
 const Story = (props: StoryProps) => {
-  const { item, condition, highlightWord, summaryType = "record", isVisiblePreviewPhoto = false, isVisiblePreviewComment = false, className = "", ...restProps } = props;
+  const { item, condition, highlightWord, summaryType = "record", isVisiblePreviewPhoto = false, className = "", ...restProps } = props;
   const { user } = useUser();
 
   // variable: visible
@@ -88,21 +87,6 @@ const Story = (props: StoryProps) => {
               </span>
             )}
           </div>
-        </div>
-      )}
-      {isVisiblePreviewComment && Boolean(item?.comments?.filter((comment) => comment.content)?.length) && (
-        <div className="mt-2">
-          <strong className="sr-only">댓글</strong>
-          <ul className="space-y-2">
-            {item?.comments
-              ?.filter((comment) => comment.content)
-              ?.map((comment) => (
-                <li key={comment.id} className="relative block py-1.5 pl-6 pr-2 border border-gray-300 rounded-lg">
-                  <span className="absolute top-2.5 left-2.5 w-2 h-2 border-l border-b border-gray-300" />
-                  <span>{highlightWord ? <HighlightText originalText={comment?.content || ""} highlightWord={highlightWord} /> : comment?.content}</span>
-                </li>
-              ))}
-          </ul>
         </div>
       )}
     </div>

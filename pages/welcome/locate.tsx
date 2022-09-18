@@ -22,6 +22,7 @@ const WelcomeLocatePage: NextPage = () => {
   // variable: invisible
   const [locateKeyword, setLocateKeyword] = useState("");
 
+  // fetch data
   const { data: locateData, error: locateError } = useSWR<GetSearchKeywordResponse | GetSearchBoundaryResponse>(
     Boolean(locateKeyword.length)
       ? `/api/locate/searchKeyword?keyword=${locateKeyword}`
@@ -30,7 +31,7 @@ const WelcomeLocatePage: NextPage = () => {
       : null
   );
 
-  // variable: visible
+  // variable: form
   const formData = useForm<EditLocateKeywordTypes>({
     defaultValues: {
       locateKeyword: "",

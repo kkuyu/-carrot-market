@@ -6,17 +6,17 @@ import withHandler, { ResponseDataType } from "@libs/server/withHandler";
 import { withSessionRoute } from "@libs/server/withSession";
 // @api
 import { CommentMaximumDepth, CommentMinimumDepth } from "@api/comments/types";
-import { GetProfilesDetailModelsResponse } from "@api/profiles/[id]/[manners]/[filter]";
+import { GetProfilesModelsResponse } from "@api/profiles/[id]/[models]/[filter]";
 
-export type GetProfilesDetailStoriesResponse = Pick<GetProfilesDetailModelsResponse, "success" | "totalCount" | "lastCursor" | "stories">;
+export type GetProfilesStoriesResponse = Pick<GetProfilesModelsResponse, "success" | "totalCount" | "lastCursor" | "stories">;
 
-export const ProfileStoriesFilterEnum = {
+export const ProfileStoriesEnum = {
   ["all"]: "all",
 } as const;
 
-export type ProfileStoriesFilterEnum = typeof ProfileStoriesFilterEnum[keyof typeof ProfileStoriesFilterEnum];
+export type ProfileStoriesEnum = typeof ProfileStoriesEnum[keyof typeof ProfileStoriesEnum];
 
-export const getProfilesDetailStories = async (query: { filter: ProfileStoriesFilterEnum; id: number; prevCursor: number }) => {
+export const getProfilesStories = async (query: { filter: ProfileStoriesEnum; id: number; prevCursor: number }) => {
   const { filter, id, prevCursor } = query;
 
   const where = {
@@ -81,9 +81,9 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // page
-    const filter = _filter.toString() as ProfileStoriesFilterEnum;
+    const filter = _filter.toString() as ProfileStoriesEnum;
     const prevCursor = +_prevCursor.toString();
-    if (!isInstance(filter, ProfileStoriesFilterEnum)) {
+    if (!isInstance(filter, ProfileStoriesEnum)) {
       const error = new Error("InvalidRequestBody");
       error.name = "InvalidRequestBody";
       throw error;
@@ -103,10 +103,10 @@ async function handler(req: NextApiRequest, res: NextApiResponse<ResponseDataTyp
     }
 
     // fetch data
-    const { totalCount, stories } = await getProfilesDetailStories({ filter, id, prevCursor });
+    const { totalCount, stories } = await getProfilesStories({ filter, id, prevCursor });
 
     // result
-    const result: GetProfilesDetailStoriesResponse = {
+    const result: GetProfilesStoriesResponse = {
       success: true,
       totalCount,
       lastCursor: stories.length ? stories[stories.length - 1].id : -1,

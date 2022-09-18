@@ -39,8 +39,8 @@ const AccountJoinPage: NextPage = () => {
   // mutation data
   const [confirmPhone, { loading: loadingPhone, data: phoneData }] = useMutation<PostAccountJoinPhoneResponse>("/api/account/join/phone", {
     onSuccess: async () => {
-      formDataByToken.setValue("token", "");
-      formDataByToken.setFocus("token");
+      formDataWithToken.setValue("token", "");
+      formDataWithToken.setFocus("token");
     },
   });
   const [confirmToken, { loading: loadingToken, data: tokenData }] = useMutation<PostAccountJoinTokenResponse>("/api/account/join/token", {
@@ -55,8 +55,8 @@ const AccountJoinPage: NextPage = () => {
     onError: (data) => {
       switch (data?.error?.name) {
         case "InvalidToken":
-          formDataByToken.setError("token", { type: "validate", message: data.error.message });
-          formDataByToken.setFocus("token");
+          formDataWithToken.setError("token", { type: "validate", message: data.error.message });
+          formDataWithToken.setFocus("token");
           return;
         default:
           console.error(data.error);
@@ -74,9 +74,9 @@ const AccountJoinPage: NextPage = () => {
     },
   });
 
-  // variable: visible
-  const formDataByPhone = useForm<VerifyPhoneTypes>({ mode: "onChange" });
-  const formDataByToken = useForm<VerifyTokenTypes>({ mode: "onChange" });
+  // variable: form
+  const formDataWithPhone = useForm<VerifyPhoneTypes>({ mode: "onChange" });
+  const formDataWithToken = useForm<VerifyTokenTypes>({ mode: "onChange" });
 
   // confirm: User.phone
   const submitPhone = (data: VerifyPhoneTypes) => {
@@ -121,10 +121,10 @@ const AccountJoinPage: NextPage = () => {
       <p className="mt-2">휴대폰 번호는 안전하게 보관되며 이웃들에게 공개되지 않아요.</p>
 
       {/* 휴대폰 번호 */}
-      <VerifyPhone formType="confirm" formData={formDataByPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
+      <VerifyPhone formType="confirm" formData={formDataWithPhone} onValid={submitPhone} isSuccess={phoneData?.success} isLoading={loadingPhone || loadingToken} className="mt-5" />
 
       {/* 인증 번호 */}
-      {phoneData?.success && <VerifyToken formType="confirm" formData={formDataByToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
+      {phoneData?.success && <VerifyToken formType="confirm" formData={formDataWithToken} onValid={submitToken} isSuccess={tokenData?.success} isLoading={loadingToken} className="mt-4" />}
 
       {/* 둘러보기, 이메일로 로그인하기 */}
       <div className="empty:hidden mt-5 text-center space-y-1">
