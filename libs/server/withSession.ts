@@ -23,8 +23,8 @@ export type IronSearchType = {
     createdAt: string;
     updatedAt: string;
   }[];
-  productFilter: {
-    excludeSold?: boolean;
+  filter: {
+    includeSoldProducts?: boolean;
   };
 };
 

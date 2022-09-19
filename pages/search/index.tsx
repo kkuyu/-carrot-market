@@ -1,87 +1,38 @@
 import type { NextPage } from "next";
-import { useRouter } from "next/router";
-import { useEffect } from "react";
 import useSWR, { SWRConfig } from "swr";
 // @lib
-import useLayouts from "@libs/client/useLayouts";
 import useMutation from "@libs/client/useMutation";
-import client from "@libs/server/client";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
-import { GetSearchResponse, PostSearchResponse } from "@api/search";
-import { PostSearchDeleteResponse } from "@api/search/delete";
+import { getSearch, GetSearchResponse } from "@api/search";
+import { PostSearchKeywordDeleteResponse } from "@api/search/keyword/delete";
 // @app
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
 import Buttons from "@components/buttons";
 import Icons from "@components/icons";
+import Link from "next/link";
 
 const SearchIndexPage: NextPage = () => {
-  const router = useRouter();
-  const { changeLayout } = useLayouts();
+  // fetch data
+  const { data: searchData, mutate: searchMutate } = useSWR<GetSearchResponse>("/api/search?");
 
-  // search
-  const { data: searchData, mutate: searchMutate } = useSWR<GetSearchResponse>("/api/search");
-  const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
-    onSuccess: (data) => {
-      const filter = router?.query?.filter || "all";
-      const [{ keyword }] = data?.history;
-      switch (router.pathname) {
-        case "/search":
-          router.push({ pathname: "/search/result/[filter]", query: { filter, keyword } });
-          break;
-        case "/search/result/[filter]":
-          if (router?.query?.keyword?.toString() === keyword) return;
-          searchMutate();
-          router.replace({ pathname: "/search/result/[filter]", query: { filter, keyword } });
-          break;
-        default:
-          break;
-      }
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
-    },
-  });
-  const [deleteSearch, { loading: deleteLoading }] = useMutation<PostSearchDeleteResponse>(`/api/search/delete`, {
-    onSuccess: (data) => {
-      searchMutate();
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
-      }
+  // mutation data
+  const [deleteSearchKeyword, { loading: loadingSearchKeyword }] = useMutation<PostSearchKeywordDeleteResponse>(`/api/search/keyword/delete`, {
+    onSuccess: async (data) => {
+      await searchMutate();
     },
   });
 
-  const clickSave = (record: GetSearchResponse["history"][number] | GetSearchResponse["record"][number]) => {
-    if (saveLoading) return;
-    saveSearch({ keyword: record.keyword });
-  };
-
-  const clickDelete = (records: GetSearchResponse["history"]) => {
-    if (deleteLoading) return;
+  const removeSearch = (records: GetSearchResponse["history"]) => {
+    if (loadingSearchKeyword) return;
     const keywords = records.map((record) => record.keyword);
     searchMutate((prev) => {
       return prev && { ...prev, history: [...prev.history].filter((record) => !keywords.includes(record.keyword)) };
     }, false);
-    deleteSearch({ keywords });
+    deleteSearchKeyword({ keywords });
   };
-
-  useEffect(() => {
-    changeLayout({
-      meta: {},
-      header: {},
-      navBar: {},
-    });
-  }, []);
 
   return (
     <div className="container pt-5 pb-5">
@@ -89,52 +40,43 @@ const SearchIndexPage: NextPage = () => {
 
       <div>
         <h2>이웃들이 많이 찾고 있어요!</h2>
-        <ul className="mt-3 -mx-1 overflow-x-auto whitespace-nowrap">
-          {[...(searchData && Boolean(searchData?.records?.length) ? [...searchData.records] : [{ id: 0, keyword: "당근마켓" }])].map((record) => (
-            <li key={record.id} className="inline-block px-1">
-              <Buttons tag="button" type="button" sort="text-link" status="unset" size="base" onClick={() => clickSave(record)} className="pt-0.5 pb-0.5 !px-2.5 border border-gray-300 rounded-2xl">
-                {record.keyword}
-              </Buttons>
-            </li>
-          ))}
+        <ul className="mt-3 space-x-2 overflow-x-auto whitespace-nowrap">
+          {searchData &&
+            Boolean(searchData?.searches?.length) &&
+            searchData?.searches?.map((record) => (
+              <li key={record.id} className="inline-block">
+                <Link href={{ pathname: "/search/result/[models]", query: { models: "previews", keyword: record.keyword } }} passHref>
+                  <Buttons tag="a" sort="text-link" status="unset" size="base" className="pt-0.5 pb-0.5 pl-2.5 pr-2.5 border border-gray-300 rounded-2xl">
+                    {record.keyword}
+                  </Buttons>
+                </Link>
+              </li>
+            ))}
         </ul>
       </div>
 
       {searchData && Boolean(searchData?.history?.length) && (
         <div className="mt-5 relative">
           <h2>최근 검색어</h2>
-          <ul className="mt-1.5 -mx-3 flex flex-wrap">
+          <ul className="mt-1.5 grid grid-cols-2 gap-x-4 gap-y-1">
             {searchData.history.map((record) => {
               return (
-                <li key={record.keyword} className="relative w-1/2 px-3 [&:nth-child(n+3)]:mt-1">
-                  <Buttons
-                    tag="button"
-                    type="button"
-                    sort="text-link"
-                    status="unset"
-                    onClick={() => clickSave(record)}
-                    className="w-full py-1.5 pr-8 border-b border-gray-300 text-ellipsis"
-                    aria-label={`${record.keyword} 검색`}
-                  >
-                    {record.keyword}
-                  </Buttons>
-                  <Buttons
-                    tag="button"
-                    type="button"
-                    sort="icon-block"
-                    status="default"
-                    size="sm"
-                    onClick={() => clickDelete([record])}
-                    className="absolute top-1/2 right-3 flex -translate-y-1/2"
-                    aria-label={`${record.keyword} 삭제`}
-                  >
+                <li key={record.keyword} className="relative">
+                  <Link href={{ pathname: "/search/result/[models]", query: { models: "previews", keyword: record.keyword } }} passHref>
+                    <Buttons tag="a" sort="text-link" status="unset" className="w-full py-1.5 pl-0 pr-8 border-b border-gray-300 text-ellipsis align-top">
+                      <span>{record.keyword}</span>
+                      <span className="sr-only"> 검색</span>
+                    </Buttons>
+                  </Link>
+                  <Buttons tag="button" type="button" sort="icon-block" status="default" size="sm" onClick={() => removeSearch([record])} className="absolute top-1/2 right-0 -translate-y-1/2">
                     <Icons name="XMark" className="w-4 h-4" />
+                    <span className="sr-only">{record.keyword} 삭제</span>
                   </Buttons>
                 </li>
               );
             })}
           </ul>
-          <Buttons tag="button" type="button" sort="text-link" status="unset" size="sm" className="absolute top-0 right-0" onClick={() => clickDelete([...searchData.history])}>
+          <Buttons tag="button" type="button" sort="text-link" status="unset" size="sm" className="absolute top-0 right-0" onClick={() => removeSearch([...searchData.history])}>
             모두 지우기
           </Buttons>
         </div>
@@ -144,13 +86,13 @@ const SearchIndexPage: NextPage = () => {
 };
 
 const Page: NextPageWithLayout<{
-  getSearch: { response: GetSearchResponse };
+  getSearch: { options: { url: string; query: string }; response: GetSearchResponse };
 }> = ({ getSearch }) => {
   return (
     <SWRConfig
       value={{
         fallback: {
-          "/api/search": getSearch.response,
+          [`${getSearch?.options?.url}?${getSearch?.options?.query}`]: getSearch.response,
         },
       }}
     >
@@ -161,19 +103,10 @@ const Page: NextPageWithLayout<{
 
 Page.getLayout = getLayout;
 
-export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+export const getServerSideProps = withSsrSession(async ({ req }) => {
   // getSearch
-  const history = [...(req?.session?.search?.history || [])].reverse();
-  const productFilter = { ...req?.session?.search?.productFilter };
-  const records = await client.searchRecord.findMany({
-    take: 10,
-    orderBy: [{ count: "desc" }, { updatedAt: "desc" }],
-    select: {
-      id: true,
-      keyword: true,
-      createdAt: true,
-      updatedAt: true,
-    },
+  const searchData = await getSearch({
+    search: req?.session?.search,
   });
 
   // defaultLayout
@@ -184,7 +117,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     header: {
       title: "",
       titleTag: "strong",
-      utils: ["back", "keyword"],
+      utils: ["back", "search"],
     },
     navBar: {
       utils: [],
@@ -195,11 +128,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
     props: {
       defaultLayout,
       getSearch: {
+        options: {
+          url: "/api/search",
+          query: "",
+        },
         response: {
           success: true,
-          history: JSON.parse(JSON.stringify(history || [])),
-          productFilter: JSON.parse(JSON.stringify(productFilter || {})),
-          records: JSON.parse(JSON.stringify(records || [])),
+          ...JSON.parse(JSON.stringify(searchData || {})),
         },
       },
     },

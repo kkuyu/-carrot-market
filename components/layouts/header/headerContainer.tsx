@@ -3,6 +3,7 @@ import Link from "next/link";
 import { useEffect } from "react";
 import type { HTMLAttributes, ReactElement } from "react";
 import { useForm } from "react-hook-form";
+import { mutate } from "swr";
 // @libs
 import useUser from "@libs/client/useUser";
 import useMutation from "@libs/client/useMutation";
@@ -12,48 +13,49 @@ import { PostSearchResponse } from "@api/search";
 // @components
 import { HeaderOptions, HeaderUtils } from "@components/layouts/header/headerWrapper";
 import ActionModal, { ActionModalProps, ActionStyleEnum } from "@components/commons/modals/case/actionModal";
-import HometownDropdownModal, { HometownDropdownModalProps, HometownDropdownModalName } from "@components/commons/modals/instance/hometownDropdownModal";
+import HometownSwitchModal, { HometownSwitchModalProps, HometownSwitchModalName } from "@components/commons/modals/instance/hometownSwitchModal";
 import HometownUpdateModal, { HometownUpdateModalProps, HometownUpdateModalName } from "@components/commons/modals/instance/hometownUpdateModal";
-import SearchKeyword, { SearchKeywordTypes } from "@components/forms/searchKeyword";
+import EditSearchKeyword, { EditSearchKeywordTypes } from "@components/forms/editSearchKeyword";
 import Buttons from "@components/buttons";
 import Icons from "@components/icons";
 
 export interface HeaderProps extends HeaderOptions {}
 
 const Header = (props: HeaderProps) => {
-  const { title = "", titleTag = "h1", isTransparent = false, utils = [], kebabActions, hamburgerAction, submitId } = props;
+  const { title = "", titleTag: TitleTag = "h1", isTransparent = false, utils = [], kebabActions, hamburgerAction, submitId } = props;
   const router = useRouter();
-  const { user, currentAddr, type: userType } = useUser();
+  const { user, currentAddr } = useUser();
   const { openModal } = useModal();
 
-  // search
-  const searchKeywordForm = useForm<SearchKeywordTypes>();
-  const [saveSearch, { loading: saveLoading }] = useMutation<PostSearchResponse>("/api/search", {
-    onSuccess: (data) => {
-      const filter = router?.query?.filter || "all";
+  // mutation data
+  const [updateSearch, { loading: loadingSearch }] = useMutation<PostSearchResponse>("/api/search", {
+    onSuccess: async (data) => {
+      const models = router?.query?.models || "previews";
       const [{ keyword }] = data?.history;
-      switch (router.pathname) {
-        case "/search":
-          router.push({ pathname: "/search/result/[filter]", query: { filter, keyword } });
-          break;
-        case "/search/result/[filter]":
-          if (router?.query?.keyword?.toString() === keyword) return;
-          router.replace({ pathname: "/search/result/[filter]", query: { filter, keyword } });
-          break;
-        default:
-          break;
-      }
-    },
-    onError: (data) => {
-      switch (data?.error?.name) {
-        default:
-          console.error(data.error);
-          return;
+      if (router.pathname === "/search/result/[models]") {
+        if (router?.query?.keyword?.toString() === keyword) {
+          await mutate("/api/search?");
+        } else {
+          await router.replace({ pathname: "/search/result/[models]", query: { models, keyword } });
+        }
+      } else {
+        await router.push({ pathname: "/search/result/[models]", query: { models, keyword } });
       }
     },
   });
 
-  const HeaderButton = (buttonProps: { pathname?: string; children: ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
+  // variable: form
+  const formDataWithSearch = useForm<EditSearchKeywordTypes>();
+
+  // update: Search
+  const submitSearchKeyword = (data: EditSearchKeywordTypes) => {
+    if (loadingSearch) return;
+    updateSearch({ ...data });
+  };
+
+  if (!utils?.length) return null;
+
+  const CustomIconButton = (buttonProps: { pathname?: string; children: ReactElement } & HTMLAttributes<HTMLButtonElement | HTMLAnchorElement>) => {
     const { pathname, onClick, className: buttonClassName = "", children, ...restButtonProps } = buttonProps;
     if (!pathname) {
       return (
@@ -71,123 +73,81 @@ const Header = (props: HeaderProps) => {
     );
   };
 
-  const getUtils = (name: HeaderUtils) => {
-    if (!utils?.includes(name)) return null;
-    switch (name) {
-      case HeaderUtils["Address"]:
-        if (!currentAddr?.emdPosNm) return null;
-        const clickAddress = () => {
-          if (userType === "member" && user?.SUB_emdPosNm) {
-            openModal<HometownSwitchModalProps>(HometownSwitchModal, HometownSwitchModalName, {});
-            return;
-          }
-          openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {});
-        };
-        return (
-          <button className="h-12 flex items-center px-5" onClick={clickAddress}>
-            <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>
-            <Icons name="ChevronDown" className="w-4 h-4" />
-          </button>
-        );
-      case HeaderUtils["Back"]:
-        return (
-          <HeaderButton onClick={() => router.back()} aria-label="뒤로가기">
-            <Icons name="ChevronLeft" className="w-6 h-6" />
-          </HeaderButton>
-        );
-      case HeaderUtils["Home"]:
-        return (
-          <HeaderButton pathname="/" aria-label="홈">
-            <Icons name="Home" className="w-6 h-6" />
-          </HeaderButton>
-        );
-      case HeaderUtils["Hamburger"]:
-        return (
-          <HeaderButton pathname={hamburgerAction?.pathname} onClick={hamburgerAction?.onClick} aria-label="메뉴">
-            <Icons name="Bars3" className="w-6 h-6" />
-          </HeaderButton>
-        );
-      case HeaderUtils["Kebab"]:
-        return (
-          <HeaderButton onClick={() => openModal<ActionModalProps>(ActionModal, "HeaderKebab", { actions: kebabActions || [] })} aria-label="옵션 더보기">
-            <Icons name="EllipsisVertical" className="w-6 h-6" />
-          </HeaderButton>
-        );
-      case HeaderUtils["Keyword"]:
-        if (!currentAddr?.emdPosNm) return null;
-        return (
-          <SearchKeyword
-            formData={searchKeywordForm}
-            onValid={(data: SearchKeywordTypes) => {
-              if (saveLoading) return;
-              saveSearch({ ...data });
-            }}
-            placeholder={`${currentAddr?.emdPosNm} 근처에서 검색`}
-            className="w-full"
-          />
-        );
-      case HeaderUtils["Search"]:
-        return (
-          <HeaderButton pathname="/search" aria-label="검색">
-            <Icons name="MagnifyingGlass" className="w-6 h-6" />
-          </HeaderButton>
-        );
-      case HeaderUtils["Share"]:
-        // todo: share
-        return <span>share</span>;
-      case HeaderUtils["Submit"]:
-        return (
-          <Buttons tag="button" type="submit" size="base" sort="text-link" status="primary" form={submitId} className="h-12 pl-5 pr-5 font-semibold">
-            완료
-          </Buttons>
-        );
-      case HeaderUtils["Title"]:
-        const Tag = titleTag;
-        if (!title) return null;
-        return <Tag className="text-base font-semibold truncate">{title}</Tag>;
-      default:
-        return null;
-    }
-  };
-
-  useEffect(() => {
-    if (!router.isReady) return;
-    if (!utils?.includes(HeaderUtils["Keyword"])) return;
-
-    let recentlySearchKeyword = undefined;
-    if (router.pathname === "/search") recentlySearchKeyword = "";
-    if (router.pathname === "/search/result/[filter]") recentlySearchKeyword = router?.query?.keyword?.toString();
-
-    if (typeof recentlySearchKeyword === "undefined") return;
-    if (searchKeywordForm.getValues("keyword") === recentlySearchKeyword) return;
-    searchKeywordForm.setValue("keyword", recentlySearchKeyword);
-  }, [router.isReady, router.pathname, router.query]);
-
-  if (!utils?.length) return null;
-
   return (
     <div id="layout-header" className={`fixed-container top-0 z-[100] ${isTransparent ? "is-transparent" : ""}`}>
       <header className={`fixed-inner h-12 ${isTransparent ? "bg-gradient-to-b from-black/20  text-white" : "bg-white border-b text-black"}`}>
-        {/* left utils */}
+        {/* Left */}
         <div className="absolute top-1/2 left-0 flex -translate-y-1/2">
-          {getUtils(HeaderUtils["Back"])}
-          {getUtils(HeaderUtils["Address"])}
+          {/* Back */}
+          {utils?.includes(HeaderUtils["Back"]) && (
+            <CustomIconButton onClick={() => router.back()} aria-label="뒤로가기">
+              <Icons name="ChevronLeft" className="w-6 h-6" />
+            </CustomIconButton>
+          )}
+          {/* Address */}
+          {utils?.includes(HeaderUtils["Address"]) && currentAddr?.emdPosNm && (
+            <button
+              className="h-12 flex items-center px-5"
+              onClick={() =>
+                user?.SUB_emdPosNm
+                  ? openModal<HometownSwitchModalProps>(HometownSwitchModal, HometownSwitchModalName, {})
+                  : openModal<HometownUpdateModalProps>(HometownUpdateModal, HometownUpdateModalName, {})
+              }
+            >
+              <span className="pr-1 text-lg font-semibold">{currentAddr?.emdPosNm}</span>
+              <Icons name="ChevronDown" className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* title utils */}
-        <div className="empty:hidden flex justify-center items-center w-full h-full pl-24 pr-24">{getUtils(HeaderUtils["Title"])}</div>
+        {/* Title */}
+        <div className="empty:hidden flex justify-center items-center w-full h-full pl-24 pr-24">
+          {utils?.includes(HeaderUtils["Title"]) && Boolean(title?.length) && <TitleTag className="text-base font-semibold truncate">{title}</TitleTag>}
+        </div>
 
-        {/* search utils */}
-        <div className="empty:hidden flex justify-center items-center w-full h-full pl-12 pr-5">{getUtils(HeaderUtils["Keyword"])}</div>
+        {/* Search */}
+        <div className="empty:hidden flex justify-center items-center w-full h-full pl-12 pr-5">
+          {utils?.includes(HeaderUtils["Search"]) && <EditSearchKeyword formType="create" formData={formDataWithSearch} onValid={submitSearchKeyword} className="w-full" />}
+        </div>
 
-        {/* right utils */}
+        {/* Right */}
         <div className="absolute top-1/2 right-0 flex -translate-y-1/2">
-          {getUtils(HeaderUtils["Home"])}
-          {getUtils(HeaderUtils["Share"])}
-          {getUtils(HeaderUtils["Search"])}
-          {getUtils(HeaderUtils["Hamburger"])}
-          {getUtils(HeaderUtils["Kebab"])}
-          {getUtils(HeaderUtils["Submit"])}
+          {/* Home */}
+          {utils?.includes(HeaderUtils["Home"]) && (
+            <CustomIconButton pathname="/" aria-label="홈">
+              <Icons name="Home" className="w-6 h-6" />
+            </CustomIconButton>
+          )}
+          {/* Share */}
+          {utils?.includes(HeaderUtils["Share"]) && (
+            <CustomIconButton onClick={() => console.log("share")} aria-label="공유">
+              <strong>Share</strong>
+            </CustomIconButton>
+          )}
+          {/* Magnifier */}
+          {utils?.includes(HeaderUtils["Magnifier"]) && (
+            <CustomIconButton pathname="/search" aria-label="검색">
+              <Icons name="MagnifyingGlass" className="w-6 h-6" />
+            </CustomIconButton>
+          )}
+          {/* Hamburger */}
+          {utils?.includes(HeaderUtils["Hamburger"]) && (
+            <CustomIconButton pathname={hamburgerAction?.pathname} onClick={hamburgerAction?.onClick} aria-label="메뉴">
+              <Icons name="Bars3" className="w-6 h-6" />
+            </CustomIconButton>
+          )}
+          {/* Kebab */}
+          {utils?.includes(HeaderUtils["Kebab"]) && (
+            <CustomIconButton onClick={() => openModal<ActionModalProps>(ActionModal, "HeaderKebab", { actions: kebabActions || [] })} aria-label="옵션 더보기">
+              <Icons name="EllipsisVertical" className="w-6 h-6" />
+            </CustomIconButton>
+          )}
+          {/* Submit */}
+          {utils?.includes(HeaderUtils["Submit"]) && (
+            <Buttons tag="button" type="submit" size="base" sort="text-link" status="primary" form={submitId} className="h-12 pl-5 pr-5 font-semibold">
+              완료
+            </Buttons>
+          )}
         </div>
       </header>
     </div>

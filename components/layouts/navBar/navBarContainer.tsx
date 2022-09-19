@@ -11,7 +11,7 @@ const NavBar = (props: NavBarProps) => {
   const { utils = [] } = props;
   const router = useRouter();
 
-  const IconButton = (buttonProps: HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & { pathname: string }) => {
+  const CustomIconButton = (buttonProps: HTMLAttributes<HTMLButtonElement | HTMLAnchorElement> & { pathname: string }) => {
     const { pathname, children } = buttonProps;
     const classNames = {
       wrapper: "basis-full h-full pt-2",
@@ -25,60 +25,42 @@ const NavBar = (props: NavBarProps) => {
     );
   };
 
-  const getUtils = (name: NavBarUtils) => {
-    if (!utils?.includes(name)) return null;
-    switch (name) {
-      case "home":
-        return (
-          <IconButton pathname="/">
-            <Icons name="Home" />
-            <span>홈</span>
-          </IconButton>
-        );
-      case "chat":
-        return (
-          <IconButton pathname="/chats">
-            <Icons name="ChatBubbleLeftRight" />
-            <span>채팅</span>
-          </IconButton>
-        );
-      case "profile":
-        return (
-          <IconButton pathname="/user">
-            <Icons name="User" />
-            <span>나의 당근</span>
-          </IconButton>
-        );
-      case "story":
-        return (
-          <IconButton pathname="/stories">
-            <Icons name="Newspaper" />
-            <span>동네생활</span>
-          </IconButton>
-        );
-      case "streams":
-        return (
-          <IconButton pathname="/streams">
-            <Icons name="VideoCamera" />
-            <span>스트리밍</span>
-          </IconButton>
-        );
-      default:
-        return null;
-    }
-  };
-
   if (!utils?.length) return null;
 
   return (
     <div id="layout-nav-bar" className="fixed-container bottom-0 z-[100]">
       <nav className="fixed-inner h-14 border-t bg-white">
         <div className="-mb-1 flex w-full h-full">
-          {getUtils(NavBarUtils["Home"])}
-          {getUtils(NavBarUtils["Story"])}
-          {getUtils(NavBarUtils["Chat"])}
-          {getUtils(NavBarUtils["Streams"])}
-          {getUtils(NavBarUtils["Profile"])}
+          {utils?.includes(NavBarUtils["Home"]) && (
+            <CustomIconButton pathname="/">
+              <Icons name="Home" />
+              <span>홈</span>
+            </CustomIconButton>
+          )}
+          {utils?.includes(NavBarUtils["Story"]) && (
+            <CustomIconButton pathname="/stories">
+              <Icons name="Newspaper" />
+              <span>동네생활</span>
+            </CustomIconButton>
+          )}
+          {utils?.includes(NavBarUtils["Chat"]) && (
+            <CustomIconButton pathname="/chats">
+              <Icons name="ChatBubbleLeftRight" />
+              <span>채팅</span>
+            </CustomIconButton>
+          )}
+          {utils?.includes(NavBarUtils["Streams"]) && (
+            <CustomIconButton pathname="/streams">
+              <Icons name="VideoCamera" />
+              <span>스트리밍</span>
+            </CustomIconButton>
+          )}
+          {utils?.includes(NavBarUtils["Profile"]) && (
+            <CustomIconButton pathname="/user">
+              <Icons name="User" />
+              <span>나의 당근</span>
+            </CustomIconButton>
+          )}
         </div>
       </nav>
     </div>
