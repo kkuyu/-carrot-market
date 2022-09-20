@@ -1,13 +1,13 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 import { ProductCategory } from "@prisma/client";
 // @lib
 import { getCategory, getKey, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useOnScreen from "@libs/client/useOnScreen";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { ProductCategories } from "@api/products/types";
@@ -23,52 +23,51 @@ const ProductsCategoryDetailPage: NextPage = () => {
   const router = useRouter();
   const { currentAddr, type: userType } = useUser();
 
-  // variable: invisible
-  const category = getCategory<ProductCategories>(router.query?.category?.toString() || "");
+  const currentQueries = useMemo(() => {
+    const category = router?.query?.category?.toString() || "";
+    return {
+      searchCategory: category,
+      identifyCategory: getCategory<ProductCategories>(category),
+    };
+  }, [router?.query]);
 
   // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetProductsCategoriesResponse>((...arg: [index: number, previousPageData: GetProductsCategoriesResponse]) => {
     const options = {
-      url: `/api/products/categories/${category?.kebabCaseValue || router.query?.category?.toString()}`,
+      url: currentQueries ? `/api/products/categories/${currentQueries?.searchCategory}` : "",
       query: currentAddr ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "",
     };
     return getKey<GetProductsCategoriesResponse>(...arg, options);
   });
 
   // variable: visible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const products = data ? data.flatMap((item) => item.products) : null;
-
-  // update: infinite list
-  useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetProductsCategoriesResponse>({ data, setSize });
 
   // reload: infinite list
   useEffect(() => {
     (async () => {
-      if (!data?.[0].success && category && currentAddr?.emdAddrNm) await mutate();
+      if (!collection?.singleValue?.success && currentAddr && currentQueries) await mutate();
     })();
-  }, [data, category, currentAddr, userType]);
+  }, [data, currentAddr, currentQueries]);
 
   return (
     <div className="container">
       {/* 카테고리: List */}
-      {products && Boolean(products.length) && (
+      {collection?.multiValues?.products && Boolean(collection?.multiValues?.products?.length) && (
         <>
-          <ProductList list={products} className="-mx-5" />
-          <span className="empty:hidden list-loading">{isReachingEnd ? `${category?.text} 상품을 모두 확인하였어요` : isLoading ? `${category?.text} 상품을 불러오고있어요` : null}</span>
+          <ProductList list={collection?.multiValues?.products} className="-mx-5" />
+          <span className="empty:hidden list-loading">
+            {isReachingEnd ? `${currentQueries?.identifyCategory?.text} 상품을 모두 확인하였어요` : isLoading ? `${currentQueries?.identifyCategory?.text} 상품을 불러오고있어요` : null}
+          </span>
         </>
       )}
 
       {/* 카테고리: Empty */}
-      {products && !Boolean(products.length) && (
+      {collection?.multiValues?.products && !Boolean(collection?.multiValues?.products?.length) && (
         <p className="list-empty">
           앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
           <br />
-          {category?.text} 상품이 없어요
+          {currentQueries?.identifyCategory?.text} 상품이 없어요
         </p>
       )}
 
@@ -101,30 +100,31 @@ const Page: NextPageWithLayout<{
 Page.getLayout = getLayout;
 
 export const getServerSideProps = withSsrSession(async ({ req, params }) => {
+  // params
+  const searchCategory = params?.category?.toString() || "";
+  const identifyCategory = getCategory<ProductCategories>(searchCategory);
+
+  // invalidCategory
+  // redirect `/products/categories`
+  if (!searchCategory || !identifyCategory || !isInstance(identifyCategory?.value, ProductCategory)) {
+    return {
+      redirect: {
+        permanent: false,
+        destination: `/products/categories`,
+      },
+    };
+  }
+
   // getUser
   const ssrUser = await getUser({ user: req.session.user, dummyUser: req.session.dummyUser });
 
   // invalidUser
   // redirect: `/`
-  if (!ssrUser.profile) {
+  if (!ssrUser?.currentAddr) {
     return {
       redirect: {
         permanent: false,
         destination: `/`,
-      },
-    };
-  }
-
-  // category
-  const category = getCategory<ProductCategories>(params?.category?.toString() || "");
-
-  // invalidCategory
-  // redirect `/products/categories`
-  if (!category || !isInstance(category?.value, ProductCategory)) {
-    return {
-      redirect: {
-        permanent: false,
-        destination: `/products/categories`,
       },
     };
   }
@@ -135,13 +135,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   const distance = ssrUser?.currentAddr?.emdPosDx;
 
   const productsCategoriesData =
-    posX && posY && distance && category
+    posX && posY && distance && identifyCategory
       ? await getProductsCategories({
           prevCursor: 0,
           posX,
           posY,
           distance,
-          category: category?.value,
+          category: identifyCategory?.value,
         })
       : {
           products: [],
@@ -151,12 +151,13 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
   // defaultLayout
   const defaultLayout = {
     meta: {
-      title: `${ssrUser?.currentAddr?.emdPosNm} 근처 ${category?.text} | 카테고리 | 중고거래`,
+      title: `${ssrUser?.currentAddr?.emdPosNm} 근처 ${identifyCategory?.text} | 카테고리 | 중고거래`,
     },
     header: {
-      title: category?.value === "POPULAR_PRODUCT" ? `${ssrUser?.currentAddr?.emdPosNm} 근처 ${category?.text}` : `${category?.text}`,
+      title: identifyCategory?.value === "POPULAR_PRODUCT" ? `${ssrUser?.currentAddr?.emdPosNm} 근처 ${identifyCategory?.text}` : `${identifyCategory?.text}`,
       titleTag: "h1",
       utils: ["back", "title"],
+      customUtils: [{ type: "magnifier", pathname: `/search?category=${identifyCategory?.kebabCaseValue}` }],
     },
     navBar: {
       utils: [],
@@ -175,7 +176,7 @@ export const getServerSideProps = withSsrSession(async ({ req, params }) => {
       },
       getProductsCategories: {
         options: {
-          url: `/api/products/categories/${category?.kebabCaseValue}`,
+          url: `/api/products/categories/${identifyCategory?.kebabCaseValue}`,
           query: `posX=${posX}&posY=${posY}&distance=${distance}`,
         },
         response: {

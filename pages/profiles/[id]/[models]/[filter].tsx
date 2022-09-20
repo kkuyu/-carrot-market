@@ -1,14 +1,14 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import NextError from "next/error";
-import { useState, useEffect, Fragment, useMemo } from "react";
+import { useState, useEffect, Fragment } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
 import { getKey, getPostposition, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useOnScreen from "@libs/client/useOnScreen";
+import useRouterTabs from "@libs/client/useRouterTabs";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
@@ -23,6 +23,7 @@ import { ProfileMannersEnum, getProfilesManners } from "@api/profiles/[id]/manne
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
+import TabList from "@components/groups/tabList";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import HandleProduct from "@components/groups/handleProduct";
 import ProductList from "@components/lists/productList";
@@ -37,41 +38,33 @@ const ProfilesDetailModelsPage: NextPage = () => {
   const router = useRouter();
   const { user } = useUser();
 
-  // variable data: invisible
+  // variable: tabs
+  const { list, listContainer, currentTab } = useRouterTabs({
+    list: [
+      { key: "products", isInfinite: true, models: "products", filter: "all", caption: "등록된 게시글", tabName: "전체" },
+      { key: "products", isInfinite: true, models: "products", filter: "sale", caption: "판매 중인 게시글", tabName: "판매중" },
+      { key: "products", isInfinite: true, models: "products", filter: "sold", caption: "판매 완료된 게시글", tabName: "판매완료" },
+      { key: "stories", isInfinite: true, models: "stories", filter: "all", caption: "동네생활 게시글", tabName: "게시글" },
+      { key: "stories", isInfinite: true, models: "comments", filter: "all", caption: "동네생활 댓글", tabName: "댓글" },
+      { key: "reviews", isInfinite: true, models: "reviews", filter: "all", caption: "전체 매너 후기", tabName: "전체 후기" },
+      { key: "reviews", isInfinite: true, models: "reviews", filter: "sellUser", caption: "판매자 매너 후기", tabName: "판매자 후기" },
+      { key: "reviews", isInfinite: true, models: "reviews", filter: "purchaseUser", caption: "구매자 매너 후기", tabName: "구매자 후기" },
+      { key: "manners", isInfinite: false, models: "manners", filter: "all", caption: "받은 매너 평가", tabName: "받은 매너 평가" },
+    ],
+  });
+
+  // variable: invisible
   const [isValidProfile, setIsValidProfile] = useState(true);
-  const modelTypes: { key: string; isInfinite: boolean; models: ProfileModelsEnum; filter: ProfileModelsEnums[keyof ProfileModelsEnums]; caption: string; tabName: string }[] = [
-    { key: "products", isInfinite: true, models: "products", filter: "all", caption: "등록된 게시글", tabName: "전체" },
-    { key: "products", isInfinite: true, models: "products", filter: "sale", caption: "판매 중인 게시글", tabName: "판매중" },
-    { key: "products", isInfinite: true, models: "products", filter: "sold", caption: "판매 완료된 게시글", tabName: "판매완료" },
-    { key: "stories", isInfinite: true, models: "stories", filter: "all", caption: "동네생활 게시글", tabName: "게시글" },
-    { key: "stories", isInfinite: true, models: "comments", filter: "all", caption: "동네생활 댓글", tabName: "댓글" },
-    { key: "reviews", isInfinite: true, models: "reviews", filter: "all", caption: "전체 매너 후기", tabName: "전체 후기" },
-    { key: "reviews", isInfinite: true, models: "reviews", filter: "sellUser", caption: "판매자 매너 후기", tabName: "판매자 후기" },
-    { key: "reviews", isInfinite: true, models: "reviews", filter: "purchaseUser", caption: "구매자 매너 후기", tabName: "구매자 후기" },
-    { key: "manners", isInfinite: false, models: "manners", filter: "all", caption: "받은 매너 평가", tabName: "받은 매너 평가" },
-  ];
-  const currentType = modelTypes.find((type) => type.models === router?.query?.models?.toString() && type.filter === router?.query?.filter?.toString())!;
 
   // fetch data
   const { data: profileData } = useSWR<GetProfilesDetailResponse>(router?.query?.id ? `/api/profiles/${router?.query?.id}?` : null);
-  const { data, setSize } = useSWRInfinite<GetProfilesModelsResponse>((...arg: [index: number, previousPageData: GetProfilesModelsResponse]) => {
-    const options = { url: currentType && router?.query?.id ? `/api/profiles/${router?.query?.id}/${currentType?.models}/${currentType?.filter}` : "" };
+  const { data, setSize, mutate } = useSWRInfinite<GetProfilesModelsResponse>((...arg: [index: number, previousPageData: GetProfilesModelsResponse]) => {
+    const options = { url: router?.query?.id && currentTab ? `/api/profiles/${router?.query?.id}/${currentTab?.models}/${currentTab?.filter}` : "" };
     return getKey<GetProfilesModelsResponse>(...arg, options);
   });
 
-  // variable data: visible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const contents = useMemo(() => {
-    if (!data) return {} as ProfileModelsContent;
-    return data.reduce((acc, cur) => {
-      Object.entries(cur)
-        .filter(([key, values]) => Array.isArray(values) && values.length)
-        .forEach(([key, values]) => (acc[key as ProfileModelsEnum] = [...(acc?.[key as ProfileModelsEnum] || []), ...values]));
-      return acc;
-    }, {} as ProfileModelsContent);
-  }, [data]);
+  // variable: visible
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetProfilesModelsResponse>({ data, setSize });
 
   // update: isValidProfile
   useEffect(() => {
@@ -88,10 +81,12 @@ const ProfilesDetailModelsPage: NextPage = () => {
     setIsValidProfile(true);
   }, [profileData]);
 
-  // update: infinite list
+  // reload: infinite list
   useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
+    (async () => {
+      if (!collection?.singleValue?.success && router.query.id) await mutate();
+    })();
+  }, [data, router.query.id]);
 
   if (!isValidProfile) {
     return <NextError statusCode={500} />;
@@ -99,79 +94,58 @@ const ProfilesDetailModelsPage: NextPage = () => {
 
   return (
     <div className="">
-      <nav className="empty:hidden sticky top-12 left-0 flex bg-white border-b z-[1]">
-        {modelTypes
-          ?.filter((type) => type.key === currentType.key)
-          ?.map((type, index, array) => {
-            if (array.length < 2) return null;
-            return (
-              <Fragment key={`${type.models}-${type.filter}`}>
-                <Link href={{ pathname: router.pathname, query: { models: type.models, filter: type.filter, id: router.query.id } }} replace passHref>
-                  <a className={`basis-full py-2 text-sm text-center font-semibold ${type.models === currentType.models && type.filter === currentType.filter ? "text-black" : "text-gray-500"}`}>
-                    {type.tabName}
-                  </a>
-                </Link>
-                {index === array.length - 1 ? (
-                  <span
-                    className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-                    style={{ width: `${100 / array.length}%`, transform: `translateX(${100 * array.findIndex((type) => type.models === currentType.models && type.filter === currentType.filter)}%)` }}
-                  />
-                ) : null}
-              </Fragment>
-            );
-          })}
-      </nav>
+      <TabList ref={listContainer} list={list} currentTab={currentTab} hrefPathname={router.pathname} hrefQuery={["models", "filter"]} hrefExtraQuery={{ id: router?.query?.id?.toString() || "" }} />
 
       <section className="container">
         <h2 className="sr-only">
-          {profileData?.profile?.name}님의 {currentType.caption}
+          {profileData?.profile?.name}님의 {currentTab?.caption}
         </h2>
 
         {/* Models: Infinite */}
-        {currentType.isInfinite && (
+        {currentTab?.isInfinite && (
           <Fragment>
             {/* Models: List */}
-            {Boolean(Object.keys(contents)?.length) && (
+            {Boolean(Object.keys(collection?.multiValues)?.length) && (
               <>
-                {currentType.models === "products" && (
-                  <ProductList list={contents?.products || []} className={`-mx-5 ${profileData?.profile.id === user?.id ? "border-b-2 divide-y-2" : ""}`}>
+                {currentTab?.models === "products" && (
+                  <ProductList list={collection?.multiValues?.products || []} className={`-mx-5 ${profileData?.profile.id === user?.id ? "border-b-2 divide-y-2" : ""}`}>
                     {profileData?.profile.id === user?.id ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
                     {profileData?.profile.id === user?.id ? <HandleProduct key="HandleProduct" size="base" /> : <></>}
                   </ProductList>
                 )}
-                {currentType.models === "stories" && (
-                  <StoryList list={contents?.stories || []} cardProps={{ summaryType: "report" }} className="-mx-5">
+                {currentTab?.models === "stories" && (
+                  <StoryList list={collection?.multiValues?.stories || []} cardProps={{ summaryType: "report" }} className="-mx-5">
                     <PictureList key="PictureList" className="px-5 pb-3" />
                   </StoryList>
                 )}
-                {currentType.models === "comments" && <CommentSummaryList list={contents?.comments || []} className="-mx-5 border-b divide-y" />}
-                {currentType.models === "reviews" && <ReviewList list={contents?.reviews || []} className="-mx-5 border-b divide-y" cardProps={{ className: "block px-5 pt-3 pb-3" }} />}
+                {currentTab?.models === "comments" && <CommentSummaryList list={collection?.multiValues?.comments || []} className="-mx-5 border-b divide-y" />}
+                {currentTab?.models === "reviews" && <ReviewList list={collection?.multiValues?.reviews || []} className="-mx-5 border-b divide-y" cardProps={{ className: "block px-5 pt-3 pb-3" }} />}
                 <span className="empty:hidden list-loading">
-                  {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
+                  {isReachingEnd ? `${getPostposition(currentTab?.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentTab?.caption}을 불러오고있어요` : null}
                 </span>
               </>
             )}
 
             {/* Models: Empty */}
-            {!Boolean(Object.keys(contents)?.length) && (
+            {!Boolean(Object.keys(collection?.multiValues)?.length) && (
               <p className="list-empty">
-                <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
+                <>{getPostposition(currentTab?.caption, "이;가")} 존재하지 않아요</>
               </p>
             )}
           </Fragment>
         )}
 
         {/* Models: Finite */}
-        {!currentType.isInfinite && (
+        {!currentTab?.isInfinite && (
           <Fragment>
             {/* Models: Manners */}
-            {currentType.models === "manners" && (
+            {currentTab?.models === "manners" && (
               <div className="pt-5 pb-5 space-y-5">
                 {[
                   { isRude: false, title: "받은 매너", emptyText: "받은 매너 칭찬이 아직 없어요" },
                   { isRude: true, title: "받은 비매너", emptyText: user?.id === profileData?.profile.id ? "받은 비매너가 없어요" : "받은 비매너는 본인에게만 보여요" },
                 ]
-                  .map((block) => ({ ...block, manners: contents?.manners?.filter((manner) => manner.isRude === block.isRude) || [] }))
+                  .map((block) => ({ ...block, manners: collection?.multiValues?.manners?.filter((manner) => manner.isRude === block.isRude) || [] }))
                   .map((block) => (
                     <div key={block.title}>
                       <h3>{block.title}</h3>

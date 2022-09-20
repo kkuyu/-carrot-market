@@ -6,7 +6,7 @@ import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @libs
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useOnScreen from "@libs/client/useOnScreen";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
@@ -19,7 +19,7 @@ import ChatList from "@components/lists/chatList";
 import Buttons from "@components/buttons";
 
 const ChatsIndexPage: NextPage = () => {
-  const { type: userType } = useUser();
+  const { type: userType, mutate: mutateUser } = useUser();
 
   // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetChatsResponse>((...arg: [index: number, previousPageData: GetChatsResponse]) => {
@@ -27,21 +27,14 @@ const ChatsIndexPage: NextPage = () => {
     return getKey<GetChatsResponse>(...arg, options);
   });
 
-  // variable: invisible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const chats = data ? data.flatMap((item) => item.chats) : null;
-
-  // update: infinite list
-  useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
+  // variable: visible
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetChatsResponse>({ data, setSize });
 
   // reload: infinite list
   useEffect(() => {
     (async () => {
-      if (!data?.[0].success && userType === "member") await mutate();
+      if (userType === "guest") await mutateUser();
+      if (!collection?.singleValue?.success && userType === "member") await mutate();
     })();
   }, [data, userType]);
 
@@ -65,15 +58,15 @@ const ChatsIndexPage: NextPage = () => {
   return (
     <div className="container">
       {/* 채팅: List */}
-      {chats && Boolean(chats.length) && (
+      {collection?.multiValues?.chats && Boolean(collection?.multiValues?.chats?.length) && (
         <div className="-mx-5">
-          <ChatList list={chats} isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true, isVisibleLastChatMessage: true }} className="border-b" />
+          <ChatList list={collection?.multiValues?.chats} isVisibleSingleUser={false} cardProps={{ isVisibleProduct: true, isVisibleLastChatMessage: true }} className="border-b" />
           <span className="empty:hidden list-loading">{isReachingEnd ? "채팅을 모두 확인하였어요" : isLoading ? "채팅을 불러오고있어요" : null}</span>
         </div>
       )}
 
       {/* 채팅: Empty */}
-      {chats && !Boolean(chats.length) && (
+      {collection?.multiValues?.chats && !Boolean(collection?.multiValues?.chats?.length) && (
         <p className="list-empty">
           <>채팅한 이웃이 없어요</>
         </p>

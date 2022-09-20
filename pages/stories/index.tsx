@@ -5,7 +5,7 @@ import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @libs
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useOnScreen from "@libs/client/useOnScreen";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
@@ -20,10 +20,7 @@ import FloatingButtons from "@components/floatingButtons";
 import FeedbackStory from "@components/groups/feedbackStory";
 
 const StoriesIndexPage: NextPage = () => {
-  const { currentAddr } = useUser();
-
-  // variable: visible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
+  const { currentAddr, type: userType, mutate: mutateUser } = useUser();
 
   // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetStoriesResponse>((...arg: [index: number, previousPageData: GetStoriesResponse]) => {
@@ -31,20 +28,14 @@ const StoriesIndexPage: NextPage = () => {
     return getKey<GetStoriesResponse>(...arg, options);
   });
 
-  // variable: invisible
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const stories = data ? data.flatMap((item) => item.stories) : null;
-
-  // update: infinite list
-  useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
+  // variable: visible
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetStoriesResponse>({ data, setSize });
 
   // reload: infinite list
   useEffect(() => {
     (async () => {
-      if (!data?.[0].success && currentAddr.emdPosNm) await mutate();
+      if (userType === "guest") await mutateUser();
+      if (!collection?.singleValue?.success && currentAddr) await mutate();
     })();
   }, [data, currentAddr]);
 
@@ -53,9 +44,9 @@ const StoriesIndexPage: NextPage = () => {
       <h1 className="sr-only">동네생활</h1>
 
       {/* 동네생활: List */}
-      {stories && Boolean(stories.length) && (
+      {collection?.multiValues?.stories && Boolean(collection?.multiValues?.stories?.length) && (
         <>
-          <StoryList list={stories} cardProps={{ summaryType: "record" }} className="-mx-5 border-b-2 divide-y-2">
+          <StoryList list={collection?.multiValues?.stories} cardProps={{ summaryType: "record" }} className="-mx-5 border-b-2 divide-y-2">
             <PictureList key="PictureList" />
             <FeedbackStory key="FeedbackStory" />
           </StoryList>
@@ -64,7 +55,7 @@ const StoriesIndexPage: NextPage = () => {
       )}
 
       {/* 동네생활: Empty */}
-      {stories && !Boolean(stories.length) && (
+      {collection?.multiValues?.stories && !Boolean(collection?.multiValues?.stories?.length) && (
         <p className="list-empty">
           앗! {currentAddr.emdPosNm ? `${currentAddr.emdPosNm} 근처에는` : "근처에"}
           <br />
@@ -142,7 +133,8 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     header: {
       title: "",
       titleTag: "strong",
-      utils: ["address", "magnifier"],
+      utils: ["address"],
+      customUtils: [{ type: "magnifier", pathname: "/search" }],
     },
     navBar: {
       utils: ["home", "chat", "profile", "story", "streams"],

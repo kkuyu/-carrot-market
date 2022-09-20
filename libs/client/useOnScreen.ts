@@ -1,24 +1,34 @@
 import { useState, useEffect, useRef } from "react";
 
-interface UseOnScreenProps {
-  rootMargin: string;
+interface UseOnScreenState {
+  isVisible: boolean;
 }
 
-export default function useOnScreen({ rootMargin = "0px" }: UseOnScreenProps) {
+const useOnScreen = () => {
+  const [screenState, setScreenState] = useState<UseOnScreenState>({ isVisible: false });
+  const observerRef = useRef<IntersectionObserver | null>(null);
   const infiniteRef = useRef<HTMLDivElement | null>(null);
-  const [isVisible, setIsVisible] = useState(false);
-  const [observer, setObserver] = useState<null | IntersectionObserver>(null);
+
+  const resetScreenState = () => {
+    setScreenState(() => ({ isVisible: false }));
+  };
 
   const updateObserver = () => {
     if (!infiniteRef.current) return;
-    const io = new IntersectionObserver(([entry]) => setIsVisible(entry.isIntersecting), { rootMargin });
+    const io = new IntersectionObserver(
+      ([entry], observer) => {
+        setScreenState((prev) => ({ ...prev, isVisible: entry.isIntersecting }));
+      },
+      { rootMargin: "100px" }
+    );
     io.observe(infiniteRef.current);
-    setObserver(() => io);
+    observerRef.current = io;
   };
 
   const removeObserver = () => {
-    if (!observer) return;
-    observer.disconnect();
+    if (!observerRef.current) return;
+    observerRef.current.disconnect();
+    resetScreenState();
   };
 
   useEffect(() => {
@@ -28,5 +38,7 @@ export default function useOnScreen({ rootMargin = "0px" }: UseOnScreenProps) {
     };
   }, []);
 
-  return { infiniteRef, isVisible };
-}
+  return { infiniteRef, ...screenState, resetScreenState };
+};
+
+export default useOnScreen;

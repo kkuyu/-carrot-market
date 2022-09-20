@@ -125,17 +125,21 @@ const Header = (props: HeaderProps) => {
             </CustomIconButton>
           )}
           {/* Magnifier */}
-          {utils?.includes(HeaderUtils["Magnifier"]) && (
-            <CustomIconButton pathname="/search" aria-label="검색">
-              <Icons name="MagnifyingGlass" className="w-6 h-6" />
-            </CustomIconButton>
-          )}
+          {customUtils
+            ?.filter((util) => util.type?.includes(HeaderCustomUtils["Magnifier"]))
+            ?.map(({ type, pathname, onClick }) => (
+              <CustomIconButton key={type} pathname={pathname} onClick={onClick} aria-label="검색">
+                <Icons name="MagnifyingGlass" className="w-6 h-6" />
+              </CustomIconButton>
+            ))}
           {/* Hamburger */}
-          {utils?.includes(HeaderUtils["Hamburger"]) && (
-            <CustomIconButton pathname={hamburgerAction?.pathname} onClick={hamburgerAction?.onClick} aria-label="메뉴">
-              <Icons name="Bars3" className="w-6 h-6" />
-            </CustomIconButton>
-          )}
+          {customUtils
+            ?.filter((util) => util.type?.includes(HeaderCustomUtils["Hamburger"]))
+            ?.map(({ type, pathname, onClick }) => (
+              <CustomIconButton key={type} pathname={pathname} onClick={onClick} aria-label="메뉴">
+                <Icons name="Bars3" className="w-6 h-6" />
+              </CustomIconButton>
+            ))}
           {/* Kebab */}
           {utils?.includes(HeaderUtils["Kebab"]) && (
             <CustomIconButton onClick={() => openModal<ActionModalProps>(ActionModal, "HeaderKebab", { actions: kebabActions || [] })} aria-label="옵션 더보기">

@@ -15,7 +15,7 @@ interface UseCoordsState {
   longitude: number;
 }
 
-const useCoords = (): UseCoordsState & { mutate: () => void } => {
+const useCoords = () => {
   const [coords, setCoords] = useState<UseCoordsState>({ state: CoordsStateEnum.loading, latitude: 0, longitude: 0 });
 
   const onSuccess = ({ coords: { latitude, longitude } }: GeolocationPosition) => {

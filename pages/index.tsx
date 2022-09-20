@@ -5,7 +5,7 @@ import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
 import { getKey } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useOnScreen from "@libs/client/useOnScreen";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetProductsResponse, getProducts } from "@api/products";
@@ -20,9 +20,6 @@ import ProductList from "@components/lists/productList";
 const ProductsIndexPage: NextPage = () => {
   const { currentAddr, type: userType, mutate: mutateUser } = useUser();
 
-  // variable: invisible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "0px" });
-
   // fetch data
   const { data, setSize, mutate } = useSWRInfinite<GetProductsResponse>((...arg: [index: number, previousPageData: GetProductsResponse]) => {
     const options = { url: "/api/products", query: currentAddr ? `posX=${currentAddr?.emdPosX}&posY=${currentAddr?.emdPosY}&distance=${currentAddr?.emdPosDx}` : "" };
@@ -30,22 +27,15 @@ const ProductsIndexPage: NextPage = () => {
   });
 
   // variable: visible
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const products = data ? data.flatMap((item) => item.products) : null;
-
-  // update: infinite list
-  useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetProductsResponse>({ data, setSize });
 
   // reload: infinite list
   useEffect(() => {
     (async () => {
       if (userType === "guest") await mutateUser();
-      if (!data?.[0].success && currentAddr?.emdAddrNm) await mutate();
+      if (!collection?.singleValue?.success && currentAddr) await mutate();
     })();
-  }, [data, currentAddr, userType]);
+  }, [data, userType, currentAddr]);
 
   if (userType === "guest") return null;
 
@@ -54,15 +44,15 @@ const ProductsIndexPage: NextPage = () => {
       <h1 className="sr-only">판매 상품</h1>
 
       {/* 판매 상품: List */}
-      {products && Boolean(products.length) && (
+      {collection?.multiValues?.products && Boolean(collection?.multiValues?.products?.length) && (
         <>
-          <ProductList list={products} className="-mx-5" />
+          <ProductList list={collection?.multiValues?.products} className="-mx-5" />
           <span className="empty:hidden list-loading">{isReachingEnd ? "판매 상품을 모두 확인하였어요" : isLoading ? "판매 상품을 불러오고있어요" : null}</span>
         </>
       )}
 
       {/* 판매 상품: Empty */}
-      {products && !Boolean(products.length) && (
+      {collection?.multiValues?.products && !Boolean(collection?.multiValues?.products?.length) && (
         <p className="list-empty">
           앗! {currentAddr?.emdPosNm ? `${currentAddr?.emdPosNm} 근처에는` : "근처에"}
           <br />
@@ -140,10 +130,11 @@ export const getServerSideProps = withSsrSession(async ({ req }) => {
     header: {
       title: "",
       titleTag: "strong",
-      utils: ["address", "title", "magnifier", "hamburger"],
-      hamburgerAction: {
-        pathname: "/products/categories",
-      },
+      utils: ["address", "title"],
+      customUtils: [
+        { type: "hamburger", pathname: "/products/categories" },
+        { type: "magnifier", pathname: "/search" },
+      ],
     },
     navBar: {
       utils: ["home", "chat", "profile", "story", "streams"],

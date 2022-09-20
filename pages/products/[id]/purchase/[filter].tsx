@@ -8,7 +8,8 @@ import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
 import { getKey, getPostposition, isInstance, truncateStr } from "@libs/utils";
 import useMutation from "@libs/client/useMutation";
-import useOnScreen from "@libs/client/useOnScreen";
+import useRouterTabs from "@libs/client/useRouterTabs";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
@@ -26,18 +27,21 @@ import Buttons from "@components/buttons";
 const ProductsPurchasePage: NextPage = () => {
   const router = useRouter();
 
-  // variable data: invisible
+  // variable: tabs
+  const { list, currentTab } = useRouterTabs({
+    list: [
+      { key: "chat", isInfinite: true, models: "chats", filter: "all", tabName: "대화중인 채팅", caption: "대화중인 채팅", extraInfo: { partnerName: "대화중인 이웃" } },
+      { key: "chat", isInfinite: true, models: "chats", filter: "available", tabName: "최근 채팅", caption: "최근 채팅", extraInfo: { partnerName: "최근 채팅한 이웃" } },
+    ],
+  });
+
+  // variable: invisible
   const [isValidProduct, setIsValidProduct] = useState(true);
-  const chatTypes: { key: string; isInfinite: boolean; filter: ChatsFilterEnum; caption: string; partnerName: string }[] = [
-    { key: "chat", isInfinite: true, filter: "all", caption: "최근 채팅", partnerName: "최근 채팅한 이웃" },
-    { key: "chat", isInfinite: true, filter: "available", caption: "대화중인 채팅", partnerName: "대화중인 이웃" },
-  ];
-  const currentType = chatTypes.find((type) => type.filter === router?.query?.filter?.toString())!;
 
   // fetch data
   const { data: productData, mutate: mutateProduct } = useSWR<GetProductsDetailResponse>(router?.query?.id ? `/api/products/${router?.query?.id}?` : null);
   const { data, setSize, mutate } = useSWRInfinite<GetProductsChatsResponse>((...arg: [index: number, previousPageData: GetProductsChatsResponse]) => {
-    const options = { url: router?.query?.id && currentType.filter ? `/api/products/${router?.query?.id}/chats/${currentType.filter}` : "", query: "" };
+    const options = { url: router?.query?.id && currentTab ? `/api/products/${router?.query?.id}/chats/${currentTab?.filter}` : "", query: "" };
     return getKey<GetProductsChatsResponse>(...arg, options);
   });
 
@@ -49,11 +53,8 @@ const ProductsPurchasePage: NextPage = () => {
     },
   });
 
-  // variable data: visible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const chats = data ? data.flatMap((item) => item.chats) : null;
+  // variable: visible
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetProductsChatsResponse>({ data, setSize });
 
   // update: Record.Kind.ProductPurchase
   const purchaseItem = (item: GetProductsChatsResponse["chats"][number], chatUser: GetProductsChatsResponse["chats"][number]["users"]) => {
@@ -84,15 +85,10 @@ const ProductsPurchasePage: NextPage = () => {
     setIsValidProduct(true);
   }, [productData]);
 
-  // update: infinite list
-  useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
-
   // reload: infinite list
   useEffect(() => {
     (async () => {
-      if (!data?.[0].success && router.query.id) await mutate();
+      if (!collection?.singleValue?.success && router.query.id) await mutate();
     })();
   }, [data, router.query.id]);
 
@@ -103,7 +99,7 @@ const ProductsPurchasePage: NextPage = () => {
   return (
     <div className="">
       {/* 제품정보 */}
-      {productData?.product && currentType.filter === "available" && (
+      {productData?.product && currentTab?.filter === "available" && (
         <Link href={`/products/${productData?.product.id}`}>
           <a className="block px-5 py-3.5 bg-gray-200">
             <ProductSummary item={productData?.product} {...(productData?.productCondition ? { condition: productData?.productCondition } : {})} />
@@ -113,7 +109,7 @@ const ProductsPurchasePage: NextPage = () => {
 
       {/* 구매자 선택 */}
       <div className="container [&:not(:first-child)]:mt-5 pb-5">
-        {currentType.filter === "available" && (
+        {currentTab?.filter === "available" && (
           <strong className="text-lg">
             판매가 완료되었어요
             <br />
@@ -122,25 +118,25 @@ const ProductsPurchasePage: NextPage = () => {
         )}
 
         {/* 채팅 목록: List */}
-        {chats && Boolean(chats.length) && (
+        {collection?.multiValues?.chats && Boolean(collection?.multiValues?.chats?.length) && (
           <>
             <ChatList
-              list={chats}
+              list={collection?.multiValues?.chats}
               isVisibleSingleUser={true}
               cardProps={{ isVisibleProduct: false, isVisibleLastChatMessage: false }}
               selectItem={purchaseItem}
               className="-mx-5 border-b [&:not(:first-child)]:mt-5 [&:not(:first-child)]:border-t"
             />
             <span className="empty:hidden list-loading">
-              {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
+              {isReachingEnd ? `${getPostposition(currentTab?.tabName || "", "을;를")} 모두 확인하였어요` : isLoading ? `${currentTab?.tabName}을 불러오고있어요` : null}
             </span>
           </>
         )}
 
         {/* 채팅 목록: Empty */}
-        {chats && !Boolean(chats.length) && (
+        {collection?.multiValues?.chats && !Boolean(collection?.multiValues?.chats?.length) && (
           <p className="list-empty">
-            <>{getPostposition(currentType.caption, "이;가")}이 없어요</>
+            <>{getPostposition(currentTab?.tabName || "", "이;가")}이 없어요</>
           </p>
         )}
 
@@ -148,11 +144,11 @@ const ProductsPurchasePage: NextPage = () => {
         <div id="infiniteRef" ref={infiniteRef} />
 
         {/* 구매자 찾기 */}
-        {chats && (!Boolean(chats.length) || isReachingEnd) && (
+        {collection?.multiValues?.chats && (!Boolean(collection?.multiValues?.chats?.length) || isReachingEnd) && (
           <div className="text-center">
-            <Link href={`/products/${router.query.id}/purchase/${chatTypes.find((type) => type.filter !== currentType.filter)?.filter!}`} passHref>
+            <Link href={`/products/${router.query.id}/purchase/${list.find((item) => item.filter !== currentTab?.filter)?.filter!}`} passHref>
               <Buttons tag="a" sort="text-link" size="sm" status="default">
-                {`${chatTypes.find((type) => type.filter !== currentType.filter)?.caption!}에서 구매자 찾기`}
+                {`${list.find((item) => item.filter !== currentTab?.filter)?.tabName!}에서 구매자 찾기`}
               </Buttons>
             </Link>
           </div>

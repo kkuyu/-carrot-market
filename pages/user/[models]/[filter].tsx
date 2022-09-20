@@ -1,14 +1,14 @@
 import type { NextPage } from "next";
 import { useRouter } from "next/router";
-import Link from "next/link";
 import NextError from "next/error";
-import { useEffect, Fragment, useMemo } from "react";
+import { useEffect, Fragment } from "react";
 import useSWR, { SWRConfig } from "swr";
 import useSWRInfinite, { unstable_serialize } from "swr/infinite";
 // @lib
 import { getKey, getPostposition, isInstance } from "@libs/utils";
 import useUser from "@libs/client/useUser";
-import useOnScreen from "@libs/client/useOnScreen";
+import useRouterTabs from "@libs/client/useRouterTabs";
+import useInfiniteDataConverter from "@libs/client/useInfiniteDataConverter";
 import { withSsrSession } from "@libs/server/withSession";
 // @api
 import { GetUserResponse, getUser } from "@api/user";
@@ -18,107 +18,80 @@ import { UserProductsEnum, getUserProducts } from "@api/user/products/[filter]";
 import type { NextPageWithLayout } from "@app";
 // @components
 import { getLayout } from "@components/layouts/case/siteLayout";
+import TabList from "@components/groups/tabList";
 import FeedbackProduct from "@components/groups/feedbackProduct";
 import ProductList from "@components/lists/productList";
 import LikeProduct from "@components/groups/likeProduct";
 
 const UserDetailModelsPage: NextPage = () => {
   const router = useRouter();
-  const { user } = useUser();
+  const { user, type: userType, mutate: mutateUser } = useUser();
 
-  // variable data: invisible
-  const modelTypes: { key: string; isInfinite: boolean; models: UserModelsEnum; filter: UserModelsEnums[keyof UserModelsEnums]; caption: string; tabName: string }[] = [
-    { key: "purchase", isInfinite: true, models: "products", filter: "purchase", caption: "구매내역", tabName: "구매내역" },
-    { key: "like", isInfinite: true, models: "products", filter: "like", caption: "관심목록", tabName: "관심목록" },
-  ];
-  const currentType = modelTypes.find((type) => type.models === router?.query?.models?.toString() && type.filter === router?.query?.filter?.toString())!;
+  // variable: tabs
+  const { list, listContainer, currentTab } = useRouterTabs({
+    list: [
+      { key: "purchase", isInfinite: true, models: "products", filter: "purchase", caption: "구매내역", tabName: "구매내역" },
+      { key: "like", isInfinite: true, models: "products", filter: "like", caption: "관심목록", tabName: "관심목록" },
+    ],
+  });
 
   // fetch data
-  const { data, setSize } = useSWRInfinite<GetUserModelsResponse>((...arg: [index: number, previousPageData: GetUserModelsResponse]) => {
-    const options = { url: currentType ? `/api/user/${currentType?.models}/${currentType?.filter}` : "" };
+  const { data, setSize, mutate } = useSWRInfinite<GetUserModelsResponse>((...arg: [index: number, previousPageData: GetUserModelsResponse]) => {
+    const options = { url: currentTab ? `/api/user/${currentTab?.models}/${currentTab?.filter}` : "" };
     return getKey<GetUserModelsResponse>(...arg, options);
   });
 
-  // variable data: visible
-  const { infiniteRef, isVisible } = useOnScreen({ rootMargin: "55px" });
-  const isReachingEnd = data && data?.[data.length - 1].lastCursor === -1;
-  const isLoading = data && typeof data[data.length - 1] === "undefined";
-  const contents = useMemo(() => {
-    if (!data) return {} as UserModelsContent;
-    return data.reduce((acc, cur) => {
-      Object.entries(cur)
-        .filter(([key, values]) => Array.isArray(values) && values.length)
-        .forEach(([key, values]) => (acc[key as UserModelsEnum] = [...(acc?.[key as UserModelsEnum] || []), ...values]));
-      return acc;
-    }, {} as UserModelsContent);
-  }, [data]);
+  // variable: visible
+  const { infiniteRef, isReachingEnd, isLoading, collection } = useInfiniteDataConverter<GetUserModelsResponse>({ data, setSize });
 
-  // update: infinite list
+  // reload: infinite list
   useEffect(() => {
-    if (isVisible && !isReachingEnd) setSize((size) => size + 1);
-  }, [isVisible, isReachingEnd]);
+    (async () => {
+      if (userType === "guest") await mutateUser();
+      if (!collection?.singleValue?.success && userType === "member") await mutate();
+    })();
+  }, [data, userType]);
 
-  if (!user) {
+  if (userType !== "member") {
     return <NextError statusCode={500} />;
   }
 
   return (
     <div className="">
-      <nav className="empty:hidden sticky top-12 left-0 flex bg-white border-b z-[1]">
-        {modelTypes
-          ?.filter((type) => type.key === currentType.key)
-          ?.map((type, index, array) => {
-            if (array.length < 2) return null;
-            return (
-              <Fragment key={`${type.models}-${type.filter}`}>
-                <Link href={{ pathname: router.pathname, query: { models: type.models, filter: type.filter, id: router.query.id } }} replace passHref>
-                  <a className={`basis-full py-2 text-sm text-center font-semibold ${type.models === currentType.models && type.filter === currentType.filter ? "text-black" : "text-gray-500"}`}>
-                    {type.tabName}
-                  </a>
-                </Link>
-                {index === array.length - 1 ? (
-                  <span
-                    className="absolute bottom-0 left-0 h-[2px] bg-black transition-transform"
-                    style={{ width: `${100 / array.length}%`, transform: `translateX(${100 * array.findIndex((type) => type.models === currentType.models && type.filter === currentType.filter)}%)` }}
-                  />
-                ) : null}
-              </Fragment>
-            );
-          })}
-      </nav>
+      <TabList ref={listContainer} list={list} currentTab={currentTab} hrefPathname={router.pathname} hrefQuery={["models", "filter"]} hrefExtraQuery={{ id: router.query.id?.toString() || "" }} />
 
       <section className="container">
-        <h2 className="sr-only">나의 {currentType.caption}</h2>
+        <h2 className="sr-only">나의 {currentTab?.caption}</h2>
 
         {/* Models: Infinite */}
-        {currentType.isInfinite && (
+        {currentTab?.isInfinite && (
           <Fragment>
             {/* Models: List */}
-            {Boolean(Object.keys(contents)?.length) && (
+            {Boolean(Object.keys(collection?.multiValues)?.length) && (
               <>
-                {currentType.models === "products" && (
-                  <ProductList list={contents?.products || []} className={`-mx-5 ${currentType.filter === "purchase" ? "border-b-2 divide-y-2" : ""}`}>
-                    {currentType.filter === "like" ? <LikeProduct key="LikeProduct" /> : <></>}
-                    {currentType.filter === "purchase" ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
+                {currentTab?.models === "products" && (
+                  <ProductList list={collection?.multiValues?.products || []} className={`-mx-5 ${currentTab?.filter === "purchase" ? "border-b-2 divide-y-2" : ""}`}>
+                    {currentTab?.filter === "like" ? <LikeProduct key="LikeProduct" /> : <></>}
+                    {currentTab?.filter === "purchase" ? <FeedbackProduct key="FeedbackProduct" /> : <></>}
                   </ProductList>
                 )}
                 <span className="empty:hidden list-loading">
-                  {isReachingEnd ? `${getPostposition(currentType.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentType.caption}을 불러오고있어요` : null}
+                  {isReachingEnd ? `${getPostposition(currentTab?.caption, "을;를")} 모두 확인하였어요` : isLoading ? `${currentTab?.caption}을 불러오고있어요` : null}
                 </span>
               </>
             )}
 
             {/* Models: Empty */}
-            {!Boolean(Object.keys(contents)?.length) && (
+            {!Boolean(Object.keys(collection?.multiValues)?.length) && (
               <p className="list-empty">
-                <>{getPostposition(currentType.caption, "이;가")} 존재하지 않아요</>
+                <>{getPostposition(currentTab?.caption, "이;가")} 존재하지 않아요</>
               </p>
             )}
           </Fragment>
         )}
 
         {/* Models: Finite */}
-        {/* {!currentType.isInfinite && <Fragment></Fragment>} */}
+        {/* {!currentTab?.isInfinite && <Fragment></Fragment>} */}
 
         {/* Models: InfiniteRef */}
         <div id="infiniteRef" ref={infiniteRef} />
